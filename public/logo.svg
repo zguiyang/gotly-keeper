@@ -1,0 +1,24 @@
+<svg width="180" height="48" viewBox="0 0 180 48" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .fg { fill: currentColor; }
+    .stroke { stroke: currentColor; }
+  </style>
+
+  <!-- Icon background (auto adapts via opacity) -->
+  <rect x="0" y="0" width="48" height="48" rx="12" fill="currentColor" opacity="0.1"/>
+
+  <!-- Chat bubble -->
+  <path d="M14 14C14 11.7909 15.7909 10 18 10H30C32.2091 10 34 11.7909 34 14V22C34 24.2091 32.2091 26 30 26H22L17 30V26H18C15.7909 26 14 24.2091 14 22V14Z" fill="currentColor" opacity="0.2"/>
+
+  <!-- Check -->
+  <path d="M20 18L24 22L30 16" class="stroke" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Text -->
+  <text x="60" y="30" class="fg" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="600">
+    Gotly
+  </text>
+
+  <text x="120" y="30" fill="currentColor" opacity="0.5" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="500">
+    AI
+  </text>
+</svg>
