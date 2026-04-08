@@ -1,20 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Gotly AI",
-  description: "Gotly AI is a lightweight AI-powered capture tool that turns one sentence into notes, todos, and bookmarks. Just say it, and it’s saved.",
+  title: "Gotly AI - Quiet Architect",
+  description:
+    "Gotly AI is a lightweight AI-powered capture tool that turns one sentence into notes, todos, and bookmarks. Just say it, and it's saved.",
 };
 
 export default function RootLayout({
@@ -23,11 +26,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="zh-CN" className="light">
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        />
+      </head>
+      <body
+        className={`${inter.variable} ${manrope.variable} min-h-full flex flex-col antialiased`}
+      >
+        {children}
+      </body>
     </html>
   );
 }
