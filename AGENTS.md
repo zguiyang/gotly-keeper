@@ -39,10 +39,12 @@ Project architecture and coding rules live in `.ai-rules/`.
 
 Current rule files:
 - `.ai-rules/nextjs-fullstack-project-rules.md`
+- `.ai-rules/nextjs-runtime-and-boundaries-rules.md`
 - `.ai-rules/git-commit-rules.md`
 
 How to use them:
-- Read `.ai-rules/nextjs-fullstack-project-rules.md` for project structure, server/client boundaries, API rules, and `modules/` / `shared/` conventions.
+- Read `.ai-rules/nextjs-fullstack-project-rules.md` first for the repository's stable architecture rules and file organization conventions.
+- Read `.ai-rules/nextjs-runtime-and-boundaries-rules.md` for data fetching, API route usage, and server/client boundary rules.
 - Read `.ai-rules/git-commit-rules.md` before staging or committing changes.
 - Treat `.ai-rules` as the source of truth for implementation rules.
 - Do not restate those rules in `AGENTS.md`; update the rule file instead.
@@ -108,7 +110,7 @@ Typical mapping:
 ## Editing Rule
 
 Before editing code:
-- identify the relevant rule file in `.ai-rules`
+- identify the umbrella rule file and any relevant topic rule file in `.ai-rules`
 - identify whether a local skill applies
 - identify whether official Next.js docs or MCP runtime inspection is needed
 

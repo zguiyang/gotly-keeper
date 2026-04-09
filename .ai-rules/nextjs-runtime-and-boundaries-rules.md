@@ -1,0 +1,51 @@
+# Next.js Runtime and Boundaries Rules
+
+## 1. Scope
+
+These rules define how runtime-facing Next.js code should handle data fetching, API routes, and server/client boundaries in this repository.
+
+Use this file for decisions that affect rendering flow, data access, request handling, and what is allowed to run on the client.
+
+## 2. Data Fetching Rules
+
+1. Prefer fetching data in Server Components.
+2. Do not make internal pages call their own internal API routes just to fetch app data.
+3. If server-side data is needed for rendering, fetch it directly in the server layer instead of round-tripping through HTTP.
+4. Reserve `app/api/**/route.ts` for real HTTP interfaces such as public APIs, callbacks, integrations, or cases where an actual network boundary is required.
+5. As domain complexity grows, move data access and orchestration into `modules/` rather than leaving it inside route entry files.
+
+## 3. Server and Client Boundaries
+
+1. Server-only logic must remain on the server.
+2. Client Components must not import server-only modules, database access code, or privileged helpers.
+3. Sensitive logic should stay in server-side code paths.
+4. Shape and trim data before passing it from the server into client components.
+5. Pass only the minimum safe props needed by Client Components.
+
+If a file is intended for server-only use, explicitly protect it with:
+
+```ts
+import 'server-only'
+```
+
+## 4. API Route Rules
+
+For any `app/api/**/route.ts` file:
+
+- validate input
+- authenticate when required
+- authorize when required
+- return only safe response fields
+- avoid leaking sensitive internal errors
+
+API routes are not the default data layer for internal page rendering.
+
+## 5. Full-Stack Project Reminder
+
+This repository is a Next.js full-stack application, not a frontend/backend split system.
+
+That means:
+
+- prefer direct server-side access over internal HTTP hops
+- keep rendering, server logic, and integration boundaries coherent
+- introduce network boundaries only when they serve a real interface or integration need
