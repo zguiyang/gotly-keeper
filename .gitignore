@@ -43,4 +43,6 @@ next-env.d.ts
 .idea
 .next
 
+# production
 prd
+.stitch
