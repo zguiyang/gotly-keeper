@@ -14,7 +14,6 @@ modules/
 shared/
 public/
 .ai-rules/
-DESIGN.md
 AGENTS.md
 ```
 
@@ -125,25 +124,7 @@ For any `app/api/**/route.ts` file:
 
 API routes are not the default data layer for internal page rendering.
 
-## 7. UI Rules
-
-All UI work must align with `DESIGN.md`.
-
-Before changing UI, read `DESIGN.md` if the task touches:
-
-- page layout
-- typography
-- spacing
-- cards
-- buttons
-- colors
-- visual hierarchy
-- motion
-- global styles
-
-Do not introduce a conflicting visual language unless the user explicitly asks for a redesign.
-
-## 8. AI Code Generation Rules
+## 7. AI Code Generation Rules
 
 When generating or editing code:
 
@@ -157,7 +138,7 @@ When generating or editing code:
 8. Do not introduce unnecessary architecture that the current project does not need yet.
 9. When adding domain files in `modules/`, prefer `*.service.ts` and `*.model.ts` naming.
 
-## 9. Next.js Version Rule
+## 8. Next.js Version Rule
 
 This project uses a modern Next.js version with behavior that may differ from stale framework memory.
 
@@ -167,7 +148,7 @@ Before changing framework-facing code:
 2. Check for deprecations.
 3. Prefer official or runtime-backed guidance over memory.
 
-## 10. Evolution Rule
+## 9. Evolution Rule
 
 As the project grows:
 
