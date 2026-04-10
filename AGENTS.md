@@ -41,12 +41,14 @@ Current rule files:
 - `.ai-rules/nextjs-fullstack-project-rules.md`
 - `.ai-rules/nextjs-runtime-and-boundaries-rules.md`
 - `.ai-rules/react-client-state-and-forms-rules.md`
+- `.ai-rules/project-tooling-and-runtime-rules.md`
 - `.ai-rules/git-commit-rules.md`
 
 How to use them:
 - Read `.ai-rules/nextjs-fullstack-project-rules.md` first for the repository's stable architecture rules and file organization conventions.
 - Read `.ai-rules/nextjs-runtime-and-boundaries-rules.md` for data fetching, API route usage, and server/client boundary rules.
 - Read `.ai-rules/react-client-state-and-forms-rules.md` when the task touches client-side state, custom hooks, form handling, or validation schemas.
+- Read `.ai-rules/project-tooling-and-runtime-rules.md` when the task touches dependency installation, project commands, service startup, browser inspection, or the order of using skills and MCP tools.
 - Read `.ai-rules/git-commit-rules.md` before staging or committing changes.
 - Treat `.ai-rules` as the source of truth for implementation rules.
 - Do not restate those rules in `AGENTS.md`; update the rule file instead.
@@ -79,6 +81,8 @@ Available MCP categories:
 
 Usage rule:
 - For framework behavior, prefer official docs and runtime-aware MCP tools over memory.
+- During implementation, prefer relevant local skills first, then MCP services, and then Context7 MCP when additional package or library documentation is still needed.
+- For browser-based page inspection, prefer `agent-browser` first, `chrome-devtools` second, and Playwright MCP or Playwright-related skills last.
 
 ## Local Skills
 
@@ -98,6 +102,9 @@ Current skill set:
 - `tanstack-form`
 - `better-auth-best-practices`
 - `drizzle-orm`
+- `postgres`
+- `postgres-pro`
+- `postgresql-table-design`
 - `zod`
 
 How to use skills:
@@ -115,6 +122,8 @@ Typical mapping:
 - type-safe validated forms: `tanstack-form`, `zod`
 - auth work: `better-auth-best-practices`
 - data layer work: `drizzle-orm`
+- PostgreSQL operations and query tuning: `postgres`, `postgres-pro`
+- PostgreSQL schema design and review: `postgresql-table-design`
 - validation work: `zod`
 
 ## Installed App Dependencies
@@ -123,12 +132,27 @@ The current application codebase includes these implementation-level dependencie
 
 - `@tanstack/react-form`
 - `ahooks`
+- `ioredis`
 - `zod`
 
 Usage notes:
 - Treat installed dependencies as available building blocks, not automatic defaults.
 - Follow `.ai-rules/react-client-state-and-forms-rules.md` before introducing them into new code.
+- Treat `ioredis` as a server-only infrastructure dependency. Do not import it into Client Components or other cross-runtime modules.
 - Do not assume `@tanstack/zod-form-adapter` is installed; verify `package.json` before generating adapter-based schema integration or add the dependency in the same change.
+
+## Local Infrastructure
+
+Local development infrastructure is defined in `docker-compose.yml`.
+
+Current local services:
+- PostgreSQL 16 on `localhost:5434` with database `gotly_dev`
+- Redis 7 on `localhost:6382`
+
+Usage notes:
+- Read `docker-compose.yml` before assuming local service names, ports, or credentials.
+- Use these services for runtime verification when a task touches persistence, caching, queues, or job orchestration.
+- Keep service clients on the server side of the Next.js boundary.
 
 ## Editing Rule
 
@@ -136,5 +160,6 @@ Before editing code:
 - identify the umbrella rule file and any relevant topic rule file in `.ai-rules`
 - identify whether a local skill applies
 - identify whether official Next.js docs or MCP runtime inspection is needed
+- identify whether `.ai-rules/project-tooling-and-runtime-rules.md` applies to the task
 
 If a rule changes, update the rule document in `.ai-rules`, not `AGENTS.md`, unless the entry workflow itself has changed.

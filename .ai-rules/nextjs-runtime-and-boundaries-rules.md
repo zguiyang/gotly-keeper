@@ -18,7 +18,7 @@ Use this file for decisions that affect rendering flow, data access, request han
 ## 3. Server and Client Boundaries
 
 1. Server-only logic must remain on the server.
-2. Client Components must not import server-only modules, database access code, or privileged helpers.
+2. Client Components must not import server-only modules, database access code, Redis clients, or other privileged helpers.
 3. Sensitive logic should stay in server-side code paths.
 4. Shape and trim data before passing it from the server into client components.
 5. Pass only the minimum safe props needed by Client Components.
@@ -40,6 +40,15 @@ For any `app/api/**/route.ts` file:
 - avoid leaking sensitive internal errors
 
 API routes are not the default data layer for internal page rendering.
+
+### 4.1 Data Store and Cache Access
+
+For PostgreSQL, Redis, and similar infrastructure clients:
+
+- access them only from server-side modules
+- prefer calling server/domain code directly from Server Components instead of creating internal HTTP hops
+- keep credentials, connection setup, and retry logic out of Client Components and shared cross-runtime modules
+- treat cache and queue behavior as privileged infrastructure, not as client-side state
 
 ## 5. Full-Stack Project Reminder
 

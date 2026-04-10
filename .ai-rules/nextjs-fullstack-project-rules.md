@@ -22,6 +22,7 @@ Future growth should follow these rules without inventing unnecessary layers too
 - Keep cross-runtime shared code in `shared/`.
 - Prefer integrated full-stack design over frontend/backend separation.
 - Treat security and data minimization as default requirements.
+- Keep privileged infrastructure access such as database and Redis clients on the server-only side.
 
 ## 3. Rule File Strategy
 
@@ -91,6 +92,7 @@ Rules:
 - Treat `<domain>.service.ts` as the main domain service entry point.
 - Use `<domain>.model.ts` for model-layer logic, mapping, and domain-shaped data helpers.
 - Do not introduce nested layers such as `server/modules/` or `server/common/` unless the codebase genuinely needs them.
+- Keep database access, Redis access, job orchestration, and other privileged infrastructure integrations in server-only code paths.
 
 ### 4.5 `shared/`
 
@@ -103,6 +105,17 @@ Rules:
 - Do not move server-only business logic or privileged infrastructure into `shared/`.
 - If code is only reused on the server, prefer `server/<domain>/` or a focused server-only helper rather than pushing it into `shared/`.
 
+### 4.6 Server-Side Infrastructure Rule
+
+Infrastructure clients such as PostgreSQL connections, Redis clients, queue adapters, admin SDKs, and other credentialed integrations are server-only concerns.
+
+Rules:
+
+- Do not import infrastructure clients into Client Components.
+- Do not place privileged connection code in `shared/`.
+- Prefer wrapping infrastructure access in domain-oriented server modules instead of spreading raw client usage across route files.
+- It is acceptable to use focused server-only helpers for infrastructure setup when that is clearer than putting connection code directly inside a domain service.
+
 ## 5. Topic Files
 
 Read topic-specific rule files when the task touches those areas.
@@ -111,6 +124,7 @@ Current topic files:
 
 - `.ai-rules/nextjs-runtime-and-boundaries-rules.md`
 - `.ai-rules/react-client-state-and-forms-rules.md`
+- `.ai-rules/project-tooling-and-runtime-rules.md`
 - `.ai-rules/git-commit-rules.md`
 
 ## 6. AI Code Generation Rules
