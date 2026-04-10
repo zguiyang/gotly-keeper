@@ -6,18 +6,22 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "500", "600"],
+  fallback: ["PingFang SC", "Noto Sans SC", "system-ui", "sans-serif"],
 });
 
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "500", "600", "700"],
+  fallback: ["PingFang SC", "Noto Sans SC", "system-ui", "sans-serif"],
 });
 
 export const metadata: Metadata = {
-  title: "Gotly AI - Quiet Architect",
+  title: "Gotly AI",
   description:
-    "Gotly AI is a lightweight AI-powered capture tool that turns one sentence into notes, todos, and bookmarks. Just say it, and it's saved.",
+    "Gotly AI is a lightweight AI-powered capture tool for collecting, refining, and retrieving ideas.",
 };
 
 export default function RootLayout({

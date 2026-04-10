@@ -1,0 +1,57 @@
+import Link from "next/link";
+import { AuthShell } from "@/components/auth/auth-shell";
+import { AuthBrand } from "@/components/auth/auth-brand";
+import { AuthField } from "@/components/auth/auth-field";
+import { AuthPageFooter } from "@/components/auth/auth-footer";
+
+export default function ForgotPasswordPage() {
+  return (
+    <AuthShell>
+      <header className="w-full px-8 py-8">
+        <div className="mx-auto flex w-full max-w-7xl items-center">
+          <AuthBrand />
+        </div>
+      </header>
+
+      <main className="flex flex-1 items-center justify-center px-6">
+        <div className="w-full max-w-md">
+          <div className="mb-10 text-left">
+            <h1 className="mb-3 text-4xl font-extrabold tracking-tight text-on-surface">找回密码</h1>
+            <p className="font-medium leading-relaxed text-on-surface-variant">
+              请输入你的注册邮箱，我们将为你发送验证链接
+            </p>
+          </div>
+
+          <div className="space-y-8">
+            <AuthField
+              autoComplete="email"
+              inputClassName="py-4"
+              label="EMAIL"
+              placeholder="your@email.com"
+              prefixIcon={<span className="material-symbols-outlined text-lg">mail</span>}
+            />
+
+            <button
+              className="w-full rounded-full bg-gradient-to-r from-primary to-primary-container px-8 py-4 text-base font-bold text-white shadow-[0_12px_32px_-4px_rgba(0,81,177,0.06)] transition-all hover:brightness-105 active:scale-[0.98]"
+              type="submit"
+            >
+              发送验证链接
+            </button>
+
+            <div className="flex flex-col items-center pt-4">
+              <Link
+                className="group flex items-center gap-2 text-sm font-semibold text-primary transition-opacity hover:opacity-80"
+                href="/auth/sign-in"
+              >
+                <span className="material-symbols-outlined text-base">arrow_back</span>
+                <span>返回登录</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <AuthPageFooter />
+    </AuthShell>
+  );
+}
