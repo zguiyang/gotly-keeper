@@ -56,12 +56,19 @@ How to use them:
 The current repository includes:
 - `app/`
 - `components/`
+- `server/`
 - `lib/`
-- `modules/`
 - `shared/`
 - `.ai-rules/`
 
 Agents should follow the actual repository structure and the conventions defined in `.ai-rules`.
+
+Directory intent:
+- `app/` for routes, layouts, pages, and optional `app/api/**/route.ts` files
+- `components/` for reusable UI
+- `server/` for server-only business logic grouped by domain
+- `lib/` for lightweight shared helpers such as `cn` and other generic utilities
+- `shared/` for cross-runtime shared types, schemas, constants, and utilities that are intentionally reused by both server and client
 
 ## MCP Services
 

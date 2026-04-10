@@ -25,7 +25,7 @@ Examples:
 - `feat(auth): add email sign-in flow`
 - `fix(api): handle empty search params`
 - `docs: add git commit rules`
-- `refactor(modules): extract billing service`
+- `refactor(server): extract billing service`
 
 ## 4. Default Brevity Rule
 

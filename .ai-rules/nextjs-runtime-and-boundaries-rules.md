@@ -11,8 +11,9 @@ Use this file for decisions that affect rendering flow, data access, request han
 1. Prefer fetching data in Server Components.
 2. Do not make internal pages call their own internal API routes just to fetch app data.
 3. If server-side data is needed for rendering, fetch it directly in the server layer instead of round-tripping through HTTP.
-4. Reserve `app/api/**/route.ts` for real HTTP interfaces such as public APIs, callbacks, integrations, or cases where an actual network boundary is required.
-5. As domain complexity grows, move data access and orchestration into `modules/` rather than leaving it inside route entry files.
+4. Reserve `app/api/**/route.ts` for real HTTP interfaces such as public APIs, callbacks, integrations, OAuth flows, auth endpoints, or cases where an actual network boundary is required.
+5. `app/api/**/route.ts` is optional. Do not create it unless the product actually needs an HTTP boundary.
+6. As domain complexity grows, move data access and orchestration into `server/` rather than leaving it inside route entry files.
 
 ## 3. Server and Client Boundaries
 
@@ -49,6 +50,7 @@ That means:
 - prefer direct server-side access over internal HTTP hops
 - keep rendering, server logic, and integration boundaries coherent
 - introduce network boundaries only when they serve a real interface or integration need
+- keep server-only business logic inside `server/`, not in route entry files
 
 ## 6. Client-Side Library Reminder
 

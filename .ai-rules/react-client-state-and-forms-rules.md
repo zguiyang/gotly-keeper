@@ -105,7 +105,7 @@ When adding new code related to these libraries:
 
 1. Keep route entries and `app/` files focused on orchestration.
 2. Keep reusable form UI in `components/`.
-3. Keep domain submission logic and persistence orchestration in `modules/`.
+3. Keep domain submission logic and persistence orchestration in `server/`.
 4. Keep shared validators and cross-domain parsing helpers in `shared/` or domain-local schema files.
 5. Do not let Client Components become the only place where business rules are enforced.
 
