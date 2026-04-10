@@ -51,24 +51,20 @@ How to use them:
 - Treat `.ai-rules` as the source of truth for implementation rules.
 - Do not restate those rules in `AGENTS.md`; update the rule file instead.
 
-## Current Project Structure
-
-The current repository includes:
-- `app/`
-- `components/`
-- `server/`
-- `lib/`
-- `shared/`
-- `.ai-rules/`
+## Project Organization
 
 Agents should follow the actual repository structure and the conventions defined in `.ai-rules`.
 
-Directory intent:
+Primary directory responsibilities:
 - `app/` for routes, layouts, pages, and optional `app/api/**/route.ts` files
 - `components/` for reusable UI
 - `server/` for server-only business logic grouped by domain
 - `lib/` for lightweight shared helpers such as `cn` and other generic utilities
 - `shared/` for cross-runtime shared types, schemas, constants, and utilities that are intentionally reused by both server and client
+
+These are responsibility anchors, not a complete or fixed directory list.
+
+New directories such as `hooks/`, `types/`, or `styles/` may be added as the project evolves without requiring `AGENTS.md` updates, as long as they do not conflict with the architectural rules in `.ai-rules/`.
 
 ## MCP Services
 

@@ -10,18 +10,7 @@ Use this file for long-lived structure and layering rules.
 
 Use topic-specific files in `.ai-rules/` for rules that are more likely to grow or change independently.
 
-The current project structure is:
-
-```txt
-app/
-components/
-server/
-lib/
-shared/
-public/
-.ai-rules/
-AGENTS.md
-```
+This file defines directory responsibilities and boundaries, not a complete top-level directory inventory.
 
 Future growth should follow these rules without inventing unnecessary layers too early.
 
@@ -46,6 +35,10 @@ Use these rules when deciding whether to split documents:
 4. Do not create extra rule files unless they reduce ambiguity or maintenance cost.
 
 ## 4. Directory Responsibilities
+
+These responsibilities describe the main architectural anchors in the repository.
+
+They are intentionally not a complete directory list. New directories such as `hooks/`, `types/`, `styles/`, or other focused folders may be added when they improve clarity and do not violate these boundaries.
 
 ### 4.1 `app/`
 
