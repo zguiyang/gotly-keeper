@@ -125,6 +125,7 @@ Current topic files:
 - `.ai-rules/nextjs-runtime-and-boundaries-rules.md`
 - `.ai-rules/react-client-state-and-forms-rules.md`
 - `.ai-rules/project-tooling-and-runtime-rules.md`
+- `.ai-rules/testing-and-integration-rules.md`
 - `.ai-rules/git-commit-rules.md`
 
 ## 6. AI Code Generation Rules

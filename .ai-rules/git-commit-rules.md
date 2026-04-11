@@ -89,7 +89,18 @@ Do not skip the analysis step.
 - Avoid "temporary", "misc", "update stuff", or similarly vague messages.
 - Do not create commits that hide unrelated work behind a broad summary.
 
-## 9. AI Commit Behavior
+## 9. Commit Confirmation Rule
+
+AI agents must not create git commits without explicit user confirmation.
+
+Rules:
+
+1. Before running `git commit` or any equivalent action that records repository changes, ask for and receive explicit confirmation from the user.
+2. Confirmation is required even when the AI agent made the changes itself.
+3. If multiple logical commit batches are proposed, confirm the intended batch and message before creating each commit, unless the user has explicitly approved a broader commit scope.
+4. It is acceptable to analyze changes, propose commit grouping, and suggest commit messages before confirmation.
+
+## 10. AI Commit Behavior
 
 When an AI agent prepares commits, it must:
 

@@ -11,6 +11,7 @@ Use this file when the task touches:
 - starting or checking local services
 - browser-based page inspection
 - implementation workflows that require skills, MCP services, or package/framework documentation
+- written proposal, planning, or execution-plan artifacts
 
 ## 2. Package Manager and Command Runner Rule
 
@@ -65,7 +66,19 @@ Before implementing unfamiliar or version-sensitive behavior:
 3. Use Context7 MCP for package/library documentation when local rules and MCP coverage do not fully answer the question.
 4. Prefer source-backed guidance over memory when there is any material risk of drift.
 
-## 7. Operational Checklist
+## 7. Planning and Proposal Artifact Rule
+
+Substantial proposals, implementation plans, execution plans, and handoff-oriented analysis should be written to repository files instead of being output only in the console or chat.
+
+Rules:
+
+1. When a plan or proposal is intended to guide later execution, review, or handoff to another AI agent or person, create or update a Markdown file in an appropriate repository location.
+2. Prefer existing documentation and planning locations such as `docs/` or `docs/superpowers/plans/` when they match the work.
+3. If no existing location fits, choose a clear, narrowly named Markdown file path rather than adding a new planning hierarchy by default.
+4. Keep chat summaries concise and point to the file that contains the durable plan or proposal.
+5. Short tactical notes, quick status updates, and ordinary implementation explanations do not need a dedicated file unless the user asks for one or the content is needed as a durable handoff artifact.
+
+## 8. Operational Checklist
 
 Before running commands or implementing code:
 
@@ -75,3 +88,4 @@ Before running commands or implementing code:
 4. Do not start services without user approval.
 5. Prefer skills first, then MCP, then Context7 when additional guidance is needed.
 6. For browser work, follow the browser priority order defined in Section 4.
+7. For substantial proposals or execution plans, write the durable artifact to an appropriate repository file.
