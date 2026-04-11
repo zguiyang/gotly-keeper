@@ -5,10 +5,10 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 const navItems = [
-  { icon: Bot, label: "助手", href: "/workspace" },
-  { icon: Package, label: "全部", href: "/workspace/all" },
-  { icon: Bookmark, label: "收藏", href: "/workspace/bookmarks" },
-  { icon: CheckSquare, label: "待办", href: "/workspace/todos" },
+  { icon: Bot, label: "入口", href: "/workspace" },
+  { icon: Package, label: "全部内容", href: "/workspace/all" },
+  { icon: Bookmark, label: "收藏链接", href: "/workspace/bookmarks" },
+  { icon: CheckSquare, label: "待处理", href: "/workspace/todos" },
 ]
 
 export function Sidebar() {
@@ -22,7 +22,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-surface border-r border-outline-variant/20 flex flex-col py-6 px-4 font-[family-name:var(--font-manrope)] text-sm z-50">
+    <aside className="fixed left-0 top-0 h-full w-64 hidden lg:flex flex-col py-6 px-4 font-[family-name:var(--font-manrope)] text-sm z-50 bg-surface border-r border-outline-variant/20">
       <div className="mb-10 px-2">
         <div className="text-xl font-bold text-primary tracking-tight">Gotly AI</div>
         <div className="text-[10px] text-on-surface-variant uppercase tracking-widest mt-0.5">
@@ -37,13 +37,16 @@ export function Sidebar() {
           return (
             <Link
               key={item.label}
-              className={`flex items-center gap-3 px-3 py-2 rounded-sm transition-colors duration-150 ${
+              className={`group relative flex items-center gap-3 px-3 py-2 rounded-sm transition-colors duration-150 ${
                 active
                   ? "text-primary font-medium bg-primary/5"
                   : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low"
               }`}
               href={item.href}
             >
+              {active && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary rounded-r" />
+              )}
               <Icon className="w-4 h-4" />
               <span>{item.label}</span>
             </Link>

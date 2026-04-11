@@ -21,9 +21,9 @@ export default async function WorkspaceLayout({
   return (
     <>
       <Sidebar />
-      <main className="ml-64 min-h-screen">
+      <main className="min-h-screen lg:ml-64">
         <TopAppBar userImage={session.user.image} userName={session.user.name} />
-        <div className="max-w-4xl mx-auto px-12 pt-12 pb-24">
+        <div className="mx-auto px-4 sm:px-6 lg:px-12 pt-8 lg:pt-12 pb-24 max-w-6xl">
           {children}
         </div>
       </main>

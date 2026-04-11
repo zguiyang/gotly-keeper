@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 
 type AssetType = 'note' | 'link' | 'todo'
+type DateGroup = 'today' | 'yesterday' | 'older'
 
 type Asset = {
   id: string
@@ -20,7 +21,14 @@ type Asset = {
   tag: string
   time: string
   type: AssetType
+  dateGroup: DateGroup
   completed?: boolean
+}
+
+const typeLabels: Record<AssetType, string> = {
+  note: '普通记录',
+  link: '链接收藏',
+  todo: '待处理',
 }
 
 const mockAssets: Asset[] = [
@@ -34,28 +42,31 @@ const mockAssets: Asset[] = [
     tag: '#个人灵感',
     time: '2小时前',
     type: 'note',
+    dateGroup: 'today',
   },
   {
     id: '2',
     icon: Link2,
-    iconBg: 'bg-emerald-100',
-    iconColor: 'text-emerald-600',
+    iconBg: 'bg-secondary/10',
+    iconColor: 'text-secondary',
     title: 'Figma 插件开发的最佳实践指南',
     excerpt: 'https://developer.figma.com/plugin-docs/intro/',
     tag: '#技术收藏',
     time: '4小时前',
     type: 'link',
+    dateGroup: 'today',
   },
   {
     id: '3',
     icon: CheckCircle,
-    iconBg: 'bg-amber-100',
-    iconColor: 'text-amber-600',
+    iconBg: 'bg-tertiary/10',
+    iconColor: 'text-tertiary',
     title: '提交本周设计周报至内部系统',
     excerpt: '需要包含三个主要迭代点的性能对比数据截图',
     tag: '#工作待办',
     time: '6小时前',
     type: 'todo',
+    dateGroup: 'today',
   },
   {
     id: '4',
@@ -67,17 +78,19 @@ const mockAssets: Asset[] = [
     tag: '#个人灵感',
     time: '昨天 14:20',
     type: 'note',
+    dateGroup: 'yesterday',
   },
   {
     id: '5',
     icon: Link2,
-    iconBg: 'bg-emerald-100',
-    iconColor: 'text-emerald-600',
+    iconBg: 'bg-secondary/10',
+    iconColor: 'text-secondary',
     title: 'Tailwind CSS 官方文档 - 容器查询',
     excerpt: '介绍如何在不使用媒体查询的情况下实现组件级自适应...',
     tag: '#学习资料',
     time: '昨天 10:15',
     type: 'link',
+    dateGroup: 'yesterday',
   },
   {
     id: '6',
@@ -87,8 +100,9 @@ const mockAssets: Asset[] = [
     title: '预定下周二去杭州的高铁票',
     excerpt: '已完成：G7345次列车，商务座',
     tag: '#生活',
-    time: '昨天 09:00',
+    time: '上周',
     type: 'todo',
+    dateGroup: 'older',
     completed: true,
   },
 ]
@@ -111,6 +125,19 @@ function DateDivider({ label }: { label: string }) {
   )
 }
 
+function TypePill({ type }: { type: AssetType }) {
+  const colors = {
+    note: 'bg-primary/10 text-primary',
+    link: 'bg-secondary/10 text-secondary',
+    todo: 'bg-tertiary/10 text-tertiary',
+  }
+  return (
+    <span className={`px-2 py-0.5 rounded-sm text-[10px] font-medium ${colors[type]}`}>
+      {typeLabels[type]}
+    </span>
+  )
+}
+
 function AssetItem({ asset }: { asset: Asset }) {
   const Icon = asset.icon
 
@@ -122,7 +149,7 @@ function AssetItem({ asset }: { asset: Asset }) {
         <Icon className={`w-5 h-5 ${asset.iconColor}`} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-3 mb-1">
+        <div className="flex items-center gap-3 mb-1 flex-wrap">
           <h3
             className={`text-sm font-medium truncate ${
               asset.completed
@@ -132,9 +159,12 @@ function AssetItem({ asset }: { asset: Asset }) {
           >
             {asset.title}
           </h3>
-          <span className="px-2 py-0.5 rounded-sm bg-surface-container-high text-[10px] font-medium text-on-surface-variant flex-shrink-0">
-            {asset.tag}
-          </span>
+          <TypePill type={asset.type} />
+          {asset.completed && (
+            <span className="px-2 py-0.5 rounded-sm bg-surface-container-high text-[10px] font-medium text-on-surface-variant">
+              已完成
+            </span>
+          )}
         </div>
         <p
           className={`text-xs line-clamp-1 ${
@@ -144,11 +174,14 @@ function AssetItem({ asset }: { asset: Asset }) {
           {asset.excerpt}
         </p>
       </div>
-      <div className="ml-8 text-right flex-shrink-0">
+      <div className="ml-4 lg:ml-8 text-right flex-shrink-0">
         <span className="text-xs font-medium text-on-surface-variant/60">{asset.time}</span>
       </div>
-      <div className="ml-6 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button className="p-1 text-on-surface-variant hover:text-primary rounded-sm transition-colors cursor-pointer">
+      <div className="ml-2 lg:ml-6 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          className="p-1 text-on-surface-variant hover:text-primary rounded-sm transition-colors cursor-pointer"
+          aria-label="更多操作"
+        >
           <MoreVertical className="w-4 h-4" />
         </button>
       </div>
@@ -164,21 +197,24 @@ export function AllClient() {
       ? mockAssets
       : mockAssets.filter((asset) => asset.type === activeFilter)
 
-  const todayAssets = filteredAssets.filter((asset) => asset.time.includes('小时') || asset.time.includes('分钟'))
-  const yesterdayAssets = filteredAssets.filter((asset) => asset.time.includes('昨天'))
+  const todayAssets = filteredAssets.filter((asset) => asset.dateGroup === 'today')
+  const yesterdayAssets = filteredAssets.filter((asset) => asset.dateGroup === 'yesterday')
+  const olderAssets = filteredAssets.filter((asset) => asset.dateGroup === 'older')
+
+  const hasAnyAssets = filteredAssets.length > 0
 
   return (
     <>
-      <div className="mb-12">
-        <h1 className="text-3xl font-headline font-bold text-on-surface tracking-tight mb-6">
-          全部资产
+      <div className="mb-10">
+        <h1 className="text-2xl lg:text-3xl font-bold text-on-surface tracking-tight mb-6 font-[family-name:var(--font-manrope)]">
+          全部内容
         </h1>
-        <div className="flex gap-6 border-b border-outline-variant/10">
+        <div className="flex gap-6 border-b border-outline-variant/10 overflow-x-auto">
           {filterTabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveFilter(tab.key)}
-              className={`pb-4 text-sm font-medium transition-colors relative ${
+              className={`pb-4 text-sm font-medium transition-colors relative whitespace-nowrap ${
                 activeFilter === tab.key
                   ? 'text-primary font-bold'
                   : 'text-on-surface-variant hover:text-on-surface'
@@ -193,7 +229,7 @@ export function AllClient() {
         </div>
       </div>
 
-      <div className="max-w-5xl">
+      <div className="max-w-6xl">
         {todayAssets.length > 0 && (
           <>
             <DateDivider label="今天" />
@@ -212,10 +248,19 @@ export function AllClient() {
           </>
         )}
 
-        {filteredAssets.length === 0 && (
-          <div className="mt-20 text-center py-12 border-2 border-dashed border-outline-variant/10 rounded-sm">
+        {olderAssets.length > 0 && (
+          <>
+            <DateDivider label="更早" />
+            {olderAssets.map((asset) => (
+              <AssetItem key={asset.id} asset={asset} />
+            ))}
+          </>
+        )}
+
+        {!hasAnyAssets && (
+          <div className="mt-20 text-center py-12 border-2 border-dashed border-outline-variant/10 rounded-lg">
             <p className="text-sm text-on-surface-variant font-medium">
-              暂无资产。试试搜索框来查找你的灵感。
+              暂无内容。试试搜索框来查找你的记录。
             </p>
           </div>
         )}

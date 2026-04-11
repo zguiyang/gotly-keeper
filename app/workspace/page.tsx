@@ -13,5 +13,5 @@ export default async function WorkspacePage() {
     redirect('/auth/sign-in')
   }
 
-  return <WorkspaceClient userName={session.user.name} />
+  return <WorkspaceClient />
 }

@@ -43,7 +43,7 @@
   --color-on-primary-fixed: #003993;
   --color-on-primary-fixed-variant: #0253cd;
   --color-surface-tint: #0c56d0;
-  --color-background: #f7f9fb;
+  --color-background: #f5f5f5;
   --color-foreground: #191c1e;
   --color-error: #ba1a1a;
   --color-error-container: #ffdad6;
@@ -89,6 +89,16 @@
   --color-card-foreground: var(--on-surface);
   --color-card: var(--surface-container-lowest);
 
+  /* Content Type Semantic Colors */
+  --color-type-note: var(--primary);
+  --color-type-note-bg: var(--primary-fixed);
+  --color-type-link: var(--secondary);
+  --color-type-link-bg: var(--secondary-fixed);
+  --color-type-todo: var(--tertiary);
+  --color-type-todo-bg: var(--tertiary-fixed);
+  --color-status-completed: var(--on-surface-variant);
+  --color-status-urgent: var(--error);
+
   /* Border Radius - Ethereal Archive */
   --radius-sm: 0.125rem;   /* DEFAULT */
   --radius-md: 0.25rem;    /* lg */
@@ -123,7 +133,7 @@
 }
 
 :root {
-  --background: #f7f9fb;
+  --background: #f5f5f5;
   --foreground: #191c1e;
   --card: #ffffff;
   --card-foreground: #191c1e;
@@ -158,7 +168,7 @@
 }
 
 .dark {
-  --background: #0b0f10;
+  --background: #0d0f10;
   --foreground: #f7f9fb;
   --card: #1a1f22;
   --card-foreground: #f7f9fb;
@@ -189,6 +199,16 @@
   --sidebar-accent-foreground: #c6d3ff;
   --sidebar-border: #2a3439;
   --sidebar-ring: #a6c8ff;
+
+  /* Dark mode content type colors */
+  --color-type-note: #a6c8ff;
+  --color-type-note-bg: #1e3a5f;
+  --color-type-link: #9a9d9f;
+  --color-type-link-bg: #2a3439;
+  --color-type-todo: #c6d3ff;
+  --color-type-todo-bg: #2a2545;
+  --color-status-completed: #9a9d9f;
+  --color-status-urgent: #fe8983;
 }
 
 
@@ -297,4 +317,33 @@
 
 .surface-tonal:hover {
   background-color: var(--surface-container-high);
+}
+
+/* Unified interactive row states */
+.interactive-row {
+  @apply cursor-pointer rounded-sm transition-colors duration-150;
+}
+
+.interactive-row:hover {
+  background-color: var(--surface-container-low);
+}
+
+.interactive-row:focus-visible {
+  @apply outline-none ring-2 ring-primary/30;
+}
+
+/* Semantic type colors for content type pills */
+.type-pill-note {
+  background-color: var(--color-type-note-bg);
+  color: var(--color-type-note);
+}
+
+.type-pill-link {
+  background-color: var(--color-type-link-bg);
+  color: var(--color-type-link);
+}
+
+.type-pill-todo {
+  background-color: var(--color-type-todo-bg);
+  color: var(--color-type-todo);
 }
