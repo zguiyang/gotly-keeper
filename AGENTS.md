@@ -42,6 +42,7 @@ Current rule files:
 - `.ai-rules/nextjs-runtime-and-boundaries-rules.md`
 - `.ai-rules/react-client-state-and-forms-rules.md`
 - `.ai-rules/project-tooling-and-runtime-rules.md`
+- `.ai-rules/testing-and-integration-rules.md`
 - `.ai-rules/git-commit-rules.md`
 
 How to use them:
@@ -49,6 +50,7 @@ How to use them:
 - Read `.ai-rules/nextjs-runtime-and-boundaries-rules.md` for data fetching, API route usage, and server/client boundary rules.
 - Read `.ai-rules/react-client-state-and-forms-rules.md` when the task touches client-side state, custom hooks, form handling, or validation schemas.
 - Read `.ai-rules/project-tooling-and-runtime-rules.md` when the task touches dependency installation, project commands, service startup, browser inspection, or the order of using skills and MCP tools.
+- Read `.ai-rules/testing-and-integration-rules.md` when the task touches test strategy, test structure, end-to-end testing, or integration testing.
 - Read `.ai-rules/git-commit-rules.md` before staging or committing changes.
 - Treat `.ai-rules` as the source of truth for implementation rules.
 - Do not restate those rules in `AGENTS.md`; update the rule file instead.
