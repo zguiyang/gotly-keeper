@@ -11,7 +11,7 @@ export async function callAction<T>(
   }
 ): Promise<T> {
   if (options?.loading || options?.success || options?.error) {
-    const promise = action()
+    const promise = Promise.resolve().then(action)
     toast.promise(promise, {
       loading: options.loading,
       success: options.success,

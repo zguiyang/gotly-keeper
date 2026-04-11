@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { unstable_rethrow } from 'next/navigation'
+
 import { ActionError, getActionErrorMessage } from './action-error'
 
 type ServerActionContext = {
@@ -25,6 +27,8 @@ export async function runServerAction<T>(
 
     return result
   } catch (error) {
+    unstable_rethrow(error)
+
     console.error('[server-action]', {
       action,
       requestId,
