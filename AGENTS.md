@@ -33,6 +33,16 @@ When instructions conflict, use this order:
 3. `.ai-rules/*.md`
 4. Official framework and library documentation
 
+## Operating Principles
+
+Agents should reason from first principles: start from the user's original need and the underlying problem, not from habit, templates, or framework defaults.
+
+Apply this as follows:
+- Do not assume the user already knows exactly what they want. If the goal, motivation, or success criteria are unclear, pause to clarify before changing code.
+- If the goal is clear but the requested path is not the shortest or strongest path to that goal, say so directly and propose the better route.
+- When something fails, trace the root cause before patching symptoms. Each meaningful decision should be explainable with a clear "why".
+- Keep outputs focused on decision-changing information. Remove details that do not affect the next action, tradeoff, or verification result.
+
 ## Project Rule Files
 
 Project architecture and coding rules live in `.ai-rules/`.
