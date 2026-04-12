@@ -217,7 +217,7 @@ export function WorkspaceClient({
             <Sparkles className="w-5 h-5 text-on-surface-variant/50" />
           </div>
           <input
-            className="w-full h-14 bg-surface-container-lowest rounded-lg sm:rounded-full pl-14 pr-5 sm:pr-28 text-base text-on-surface placeholder:text-on-surface-variant/40 shadow-[0_4px_16px_rgba(0,0,0,0.06)] border border-outline-variant/10 focus:outline-none focus:ring-2 focus:ring-primary/15 focus:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-200"
+            className="w-full h-14 bg-surface-container-lowest rounded-full pl-14 pr-28 text-base text-on-surface placeholder:text-on-surface-variant/40 shadow-[0_4px_16px_rgba(0,0,0,0.06)] border border-outline-variant/10 focus:outline-none focus:ring-2 focus:ring-primary/15 focus:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-200"
             placeholder="粘贴链接、记下想法或搜索..."
             type="text"
             value={inputValue}
@@ -228,7 +228,7 @@ export function WorkspaceClient({
             type="button"
             onClick={handleSubmit}
             disabled={status === 'submitting'}
-            className="mt-3 sm:mt-0 sm:absolute sm:inset-y-0 sm:right-2 sm:my-auto flex w-full sm:w-auto items-center justify-center gap-2 px-5 h-10 bg-primary hover:bg-primary/90 text-on-primary rounded-lg sm:rounded-full font-medium text-sm transition-all duration-150 cursor-pointer hover:shadow-[0_4px_12px_rgba(0,81,177,0.2)] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            className="absolute inset-y-0 right-2 my-auto flex items-center justify-center gap-2 px-5 h-10 bg-primary hover:bg-primary/90 text-on-primary rounded-full font-medium text-sm transition-all duration-150 cursor-pointer hover:shadow-[0_4px_12px_rgba(0,81,177,0.2)] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
           >
             {status === 'submitting' ? '处理中...' : '提交'}
           </button>
