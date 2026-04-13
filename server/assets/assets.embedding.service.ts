@@ -10,7 +10,7 @@ import {
   assets,
   type Asset,
 } from '@/server/db/schema'
-import { ASSET_EMBEDDING_DIMENSIONS, ASSET_EMBEDDING_TIMEOUT_MS } from './assets.embedding-config'
+import { ASSET_EMBEDDING_CANDIDATE_MULTIPLIER, ASSET_EMBEDDING_DIMENSIONS, ASSET_EMBEDDING_MAX_COSINE_DISTANCE, ASSET_EMBEDDING_TIMEOUT_MS } from './assets.embedding-config'
 import { getAssetEmbeddingModel } from './assets.embedding-provider'
 
 type SemanticSearchOptions = {
@@ -166,6 +166,12 @@ export async function searchAssetsByEmbedding({
     conditions.push(sql`${assets.completedAt} is null`)
   }
 
+  const clampedLimit = Math.min(Math.max(limit, 1), 20)
+  const candidateLimit = Math.min(
+    Math.max(clampedLimit * ASSET_EMBEDDING_CANDIDATE_MULTIPLIER, clampedLimit),
+    80
+  )
+
   const rows = await db
     .select({
       asset: assets,
@@ -175,10 +181,13 @@ export async function searchAssetsByEmbedding({
     .innerJoin(assets, eq(assetEmbeddings.assetId, assets.id))
     .where(and(...conditions))
     .orderBy(distance)
-    .limit(Math.min(Math.max(limit, 1), 20))
+    .limit(candidateLimit)
 
-  return rows.map((row) => ({
-    asset: row.asset,
-    distance: Number(row.distance),
-  }))
+  return rows
+    .map((row) => ({
+      asset: row.asset,
+      distance: Number(row.distance),
+    }))
+    .filter((row) => row.distance <= ASSET_EMBEDDING_MAX_COSINE_DISTANCE)
+    .slice(0, clampedLimit)
 }

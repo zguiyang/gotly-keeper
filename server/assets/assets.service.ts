@@ -5,7 +5,8 @@ import { and, desc, eq, sql } from 'drizzle-orm'
 import { db } from '@/server/db'
 import { assets, type Asset } from '@/server/db/schema'
 import { interpretAssetInput } from './assets.interpreter'
-import { createAssetEmbeddingBestEffort, searchAssetsByEmbedding } from './assets.embedding.service'
+import { scheduleAssetEmbeddingBestEffort } from './assets.embedding-scheduler'
+import { searchAssetsByEmbedding } from './assets.embedding.service'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 
 export { type AssetListItem }
@@ -295,7 +296,7 @@ export async function createAsset(input: {
       })
         .returning()
 
-    await createAssetEmbeddingBestEffort(created)
+    scheduleAssetEmbeddingBestEffort(created)
 
     return { kind: 'created', asset: toAssetListItem(created) }
   }
@@ -314,7 +315,7 @@ export async function createAsset(input: {
       })
         .returning()
 
-    await createAssetEmbeddingBestEffort(created)
+    scheduleAssetEmbeddingBestEffort(created)
 
     return { kind: 'created', asset: toAssetListItem(created) }
   }
@@ -332,7 +333,7 @@ export async function createAsset(input: {
     })
     .returning()
 
-  await createAssetEmbeddingBestEffort(created)
+  scheduleAssetEmbeddingBestEffort(created)
 
   return { kind: 'created', asset: toAssetListItem(created) }
 }
