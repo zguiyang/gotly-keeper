@@ -29,13 +29,14 @@ function getGroupKey(item: AssetListItem): GroupKey {
 
   if (item.dueAt) {
     const dueAt = new Date(item.dueAt)
-    const today = startOfDay(new Date())
-    const tomorrow = addDays(today, 1)
-    const dayAfterTomorrow = addDays(today, 2)
-    const nextWeek = addDays(today, 7)
+    if (!isNaN(dueAt.getTime())) {
+      const today = startOfDay(new Date())
+      const tomorrow = addDays(today, 1)
+      const nextWeek = addDays(today, 7)
 
-    if (isWithinRange(dueAt, today, dayAfterTomorrow)) return 'today'
-    if (isWithinRange(dueAt, today, nextWeek)) return 'thisWeek'
+      if (isWithinRange(dueAt, today, addDays(tomorrow, 1))) return 'today'
+      if (isWithinRange(dueAt, today, nextWeek)) return 'thisWeek'
+    }
   }
 
   if (item.timeText?.includes('今天') || item.timeText?.includes('明天')) return 'today'

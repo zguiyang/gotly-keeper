@@ -10,6 +10,7 @@ import {
   hasTodoIntent,
   type AssetInputType,
 } from './assets.classifier'
+import { parseAssetTimeText } from './assets.time'
 
 const ASSET_INPUT_MODEL_TIMEOUT_MS = 5_000
 const ASSET_INPUT_TIME_ZONE = 'Asia/Shanghai'
@@ -92,10 +93,20 @@ function interpretWithRuleFallback(text: string): AssetInputCommand {
   }
 }
 
-function parseDueAt(dueAtIso: string | null): Date | null {
-  if (!dueAtIso) return null
-  const parsed = new Date(dueAtIso)
-  return Number.isNaN(parsed.getTime()) ? null : parsed
+function normalizeAiTime(
+  originalText: string,
+  aiTimeText: string | null,
+  dueAtIso: string | null
+) {
+  const parsedFromText = parseAssetTimeText(aiTimeText || originalText)
+  const parsedDueAt = dueAtIso ? new Date(dueAtIso) : null
+  const safeAiDueAt =
+    parsedDueAt && !Number.isNaN(parsedDueAt.getTime()) ? parsedDueAt : null
+
+  return {
+    timeText: aiTimeText ?? parsedFromText.timeText,
+    dueAt: safeAiDueAt ?? parsedFromText.dueAt,
+  }
 }
 
 function normalizeAiResponse(
@@ -110,22 +121,32 @@ function normalizeAiResponse(
   }
 
   if (deterministicUrl && !(intent === 'create_todo' && hasTodoIntent(originalText))) {
+    const normalizedTime = normalizeAiTime(
+      originalText,
+      aiOutput.timeText ?? null,
+      aiOutput.dueAtIso
+    )
     return {
       intent: 'create_link',
       originalText,
       url: deterministicUrl,
-      timeText: aiOutput.timeText ?? null,
-      dueAt: parseDueAt(aiOutput.dueAtIso),
+      timeText: normalizedTime.timeText,
+      dueAt: normalizedTime.dueAt,
       confidence,
     }
   }
 
   if (intent === 'search_assets') {
+    const normalizedTime = normalizeAiTime(
+      originalText,
+      aiOutput.timeText ?? null,
+      aiOutput.dueAtIso
+    )
     return {
       intent: 'search_assets',
       query: aiOutput.query?.trim() || originalText,
       typeHint: aiOutput.typeHint ?? null,
-      timeHint: aiOutput.timeText ?? null,
+      timeHint: normalizedTime.timeText,
       completionHint: aiOutput.completionHint ?? null,
       confidence,
     }
@@ -135,33 +156,48 @@ function normalizeAiResponse(
     const url = deterministicUrl ?? aiOutput.url
     if (!url) return null
 
+    const normalizedTime = normalizeAiTime(
+      originalText,
+      aiOutput.timeText ?? null,
+      aiOutput.dueAtIso
+    )
     return {
       intent: 'create_link',
       originalText,
       url,
-      timeText: aiOutput.timeText ?? null,
-      dueAt: parseDueAt(aiOutput.dueAtIso),
+      timeText: normalizedTime.timeText,
+      dueAt: normalizedTime.dueAt,
       confidence,
     }
   }
 
   if (intent === 'create_todo') {
+    const normalizedTime = normalizeAiTime(
+      originalText,
+      aiOutput.timeText ?? null,
+      aiOutput.dueAtIso
+    )
     return {
       intent: 'create_todo',
       originalText,
       url: deterministicUrl ?? aiOutput.url ?? null,
-      timeText: aiOutput.timeText ?? null,
-      dueAt: parseDueAt(aiOutput.dueAtIso),
+      timeText: normalizedTime.timeText,
+      dueAt: normalizedTime.dueAt,
       confidence,
     }
   }
 
   if (intent === 'create_note') {
+    const normalizedTime = normalizeAiTime(
+      originalText,
+      aiOutput.timeText ?? null,
+      aiOutput.dueAtIso
+    )
     return {
       intent: 'create_note',
       originalText,
-      timeText: aiOutput.timeText ?? null,
-      dueAt: parseDueAt(aiOutput.dueAtIso),
+      timeText: normalizedTime.timeText,
+      dueAt: normalizedTime.dueAt,
       confidence,
     }
   }
