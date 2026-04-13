@@ -5,6 +5,7 @@ import { and, desc, eq, sql } from 'drizzle-orm'
 import { db } from '@/server/db'
 import { assets, type Asset } from '@/server/db/schema'
 import { interpretAssetInput } from './assets.interpreter'
+import { parseAssetSearchTimeHint } from './assets.time'
 import { scheduleAssetEmbeddingBestEffort } from './assets.embedding-scheduler'
 import { searchAssetsByEmbedding } from './assets.embedding.service'
 import { type AssetListItem } from '@/shared/assets/assets.types'
@@ -153,6 +154,13 @@ export async function searchAssets({
 
   if (completionHint === 'incomplete') {
     conditions.push(sql`${assets.completedAt} is null`)
+  }
+
+  const timeRangeHint = parseAssetSearchTimeHint(timeHint)
+
+  if (timeRangeHint && typeHint === 'todo') {
+    conditions.push(sql`${assets.dueAt} >= ${timeRangeHint.startsAt}`)
+    conditions.push(sql`${assets.dueAt} < ${timeRangeHint.endsAt}`)
   }
 
   let semanticResults: Awaited<ReturnType<typeof searchAssetsByEmbedding>> = []

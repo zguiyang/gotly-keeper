@@ -1,5 +1,7 @@
 export type AssetInputType = 'note' | 'link' | 'todo'
 
+import { parseAssetTimeText } from './assets.time'
+
 export type AssetClassification = {
   kind: 'asset'
   type: AssetInputType
@@ -43,56 +45,6 @@ export function hasTodoIntent(text: string): boolean {
   return TODO_KEYWORDS.some((kw) => text.includes(kw))
 }
 
-const TIME_PATTERNS = [
-  '今天',
-  '明天',
-  '后天',
-  '本周',
-  '下周',
-  '周一',
-  '周二',
-  '周三',
-  '周四',
-  '周五',
-  '周六',
-  '周日',
-  '下周一',
-  '下周二',
-  '下周三',
-  '下周四',
-  '下周五',
-  '下周六',
-  '下周日',
-  '上午',
-  '下午',
-  '晚上',
-]
-
-export function extractTimeText(text: string): string | null {
-  for (const pattern of TIME_PATTERNS) {
-    if (text.includes(pattern)) {
-      return pattern
-    }
-  }
-  return null
-}
-
-function getDateForTimeText(timeText: string | null): Date | null {
-  if (!timeText) return null
-
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-
-  if (timeText === '今天') {
-    return today
-  }
-  if (timeText === '明天') {
-    return new Date(today.getTime() + 24 * 60 * 60 * 1000)
-  }
-
-  return null
-}
-
 export function classifyAssetInput(text: string): InputClassification {
   if (isObviousQuery(text)) {
     return { kind: 'query' }
@@ -100,26 +52,24 @@ export function classifyAssetInput(text: string): InputClassification {
 
   const url = extractUrl(text)
   if (url) {
-    const timeText = extractTimeText(text)
-    const dueAt = getDateForTimeText(timeText)
+    const parsedTime = parseAssetTimeText(text)
     return {
       kind: 'asset',
       type: 'link',
       url,
-      timeText,
-      dueAt,
+      timeText: parsedTime.timeText,
+      dueAt: parsedTime.dueAt,
     }
   }
 
   if (hasTodoIntent(text)) {
-    const timeText = extractTimeText(text)
-    const dueAt = getDateForTimeText(timeText)
+    const parsedTime = parseAssetTimeText(text)
     return {
       kind: 'asset',
       type: 'todo',
       url: null,
-      timeText,
-      dueAt,
+      timeText: parsedTime.timeText,
+      dueAt: parsedTime.dueAt,
     }
   }
 

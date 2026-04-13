@@ -10,10 +10,37 @@ import { type AssetListItem } from '@/shared/assets/assets.types'
 
 type GroupKey = 'today' | 'thisWeek' | 'noDate' | 'completed'
 
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date)
+  next.setDate(next.getDate() + days)
+  return next
+}
+
+function isWithinRange(date: Date, startsAt: Date, endsAt: Date) {
+  return date.getTime() >= startsAt.getTime() && date.getTime() < endsAt.getTime()
+}
+
 function getGroupKey(item: AssetListItem): GroupKey {
   if (item.completed) return 'completed'
+
+  if (item.dueAt) {
+    const dueAt = new Date(item.dueAt)
+    if (!isNaN(dueAt.getTime())) {
+      const today = startOfDay(new Date())
+      const tomorrow = addDays(today, 1)
+      const nextWeek = addDays(today, 7)
+
+      if (isWithinRange(dueAt, today, addDays(tomorrow, 1))) return 'today'
+      if (isWithinRange(dueAt, today, nextWeek)) return 'thisWeek'
+    }
+  }
+
   if (item.timeText?.includes('今天') || item.timeText?.includes('明天')) return 'today'
-  if (item.timeText?.includes('本周') || item.timeText?.includes('周')) return 'thisWeek'
+  if (item.timeText?.includes('本周') || item.timeText?.includes('这周') || item.timeText?.includes('周')) return 'thisWeek'
   return 'noDate'
 }
 
