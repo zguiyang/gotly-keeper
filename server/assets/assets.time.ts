@@ -108,6 +108,9 @@ export function parseAssetTimeText(
   text: string,
   now = new Date()
 ): AssetTimeParseResult {
+  if (!text) {
+    return { timeText: null, dueAt: null, rangeHint: null }
+  }
   const timeText = extractTimeText(text)
   if (!timeText) {
     return { timeText: null, dueAt: null, rangeHint: null }
