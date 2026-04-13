@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { Bell, Settings, Search, Menu, Bot, Package, Bookmark, CheckSquare } from "lucide-react"
+import { Bell, Settings, Search, Menu, Bot, Package, Bookmark, CheckSquare, FileText } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -13,6 +13,7 @@ type TopAppBarProps = {
 
 const navItems = [
   { icon: Bot, label: "启动台", href: "/workspace" },
+  { icon: FileText, label: "普通记录", href: "/workspace/notes" },
   { icon: CheckSquare, label: "待办", href: "/workspace/todos" },
   { icon: Bookmark, label: "书签", href: "/workspace/bookmarks" },
   { icon: Package, label: "知识库", href: "/workspace/all" },

@@ -175,6 +175,10 @@ export function listTodoAssets(userId: string, limit = 50) {
   return listAssets({ userId, type: 'todo', limit })
 }
 
+export function listNoteAssets(userId: string, limit = 50) {
+  return listAssets({ userId, type: 'note', limit })
+}
+
 export function toAssetListItem(asset: Asset): AssetListItem {
   return {
     id: asset.id,
