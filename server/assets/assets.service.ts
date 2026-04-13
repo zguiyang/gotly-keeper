@@ -1,10 +1,14 @@
 import 'server-only'
 
-import { and, desc, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, or, sql } from 'drizzle-orm'
 
 import { db } from '@/server/db'
 import { assets, type Asset } from '@/server/db/schema'
 import { interpretAssetInput } from './assets.interpreter'
+import {
+  getAssetSearchTimeTextAliases,
+  matchesAssetSearchTimeHint,
+} from './assets.search-time'
 import { parseAssetSearchTimeHint } from './assets.time'
 import { scheduleAssetEmbeddingBestEffort } from './assets.embedding-scheduler'
 import { searchAssetsByEmbedding } from './assets.embedding.service'
@@ -157,22 +161,42 @@ export async function searchAssets({
   }
 
   const timeRangeHint = parseAssetSearchTimeHint(timeHint)
+  const timeFilter =
+    timeRangeHint && typeHint === 'todo'
+      ? { rangeHint: timeRangeHint, timeHint }
+      : null
 
-  if (timeRangeHint && typeHint === 'todo') {
-    conditions.push(sql`${assets.dueAt} >= ${timeRangeHint.startsAt}`)
-    conditions.push(sql`${assets.dueAt} < ${timeRangeHint.endsAt}`)
+  if (timeFilter) {
+    const dueAtCondition = and(
+      sql`${assets.dueAt} >= ${timeFilter.rangeHint.startsAt}`,
+      sql`${assets.dueAt} < ${timeFilter.rangeHint.endsAt}`
+    )
+    const timeTextConditions = getAssetSearchTimeTextAliases(timeFilter.timeHint).map(
+      (alias) => sql`${assets.timeText} like ${`%${alias}%`}`
+    )
+    const timeCondition = or(dueAtCondition, ...timeTextConditions)
+
+    if (timeCondition) {
+      conditions.push(timeCondition)
+    }
   }
 
   let semanticResults: Awaited<ReturnType<typeof searchAssetsByEmbedding>> = []
 
   try {
-    semanticResults = await searchAssetsByEmbedding({
-      userId,
-      query: trimmed,
-      typeHint,
-      completionHint,
-      limit: clampAssetListLimit(limit),
-    })
+    semanticResults = (
+      await searchAssetsByEmbedding({
+        userId,
+        query: trimmed,
+        typeHint,
+        completionHint,
+        limit: clampAssetListLimit(limit),
+      })
+    ).filter(
+      (result) =>
+        !timeFilter ||
+        matchesAssetSearchTimeHint(result.asset, timeFilter.rangeHint, timeFilter.timeHint)
+    )
   } catch (error) {
     console.warn('[assets.search] Semantic search failed; using keyword fallback', {
       error: error instanceof Error ? error.message : String(error),
@@ -189,6 +213,11 @@ export async function searchAssets({
     .limit(100)
 
   const keywordCandidates = rows
+    .filter(
+      (asset) =>
+        !timeFilter ||
+        matchesAssetSearchTimeHint(asset, timeFilter.rangeHint, timeFilter.timeHint)
+    )
     .map((asset) => {
       let score = scoreAssetForQuery(asset, trimmed, terms)
 
