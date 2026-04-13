@@ -6,6 +6,7 @@ import { ActionError } from '@/server/actions/action-error'
 import { runServerAction } from '@/server/actions/run-server-action'
 import { requireUser } from '@/server/auth/session'
 import { createAsset, searchAssets, setTodoCompletion, type AssetListItem } from '@/server/assets/assets.service'
+import { reviewUnfinishedTodos } from '@/server/assets/assets.todo-review'
 import { type WorkspaceAssetActionResult } from '@/shared/assets/assets.types'
 
 export async function createWorkspaceAssetAction(
@@ -91,5 +92,13 @@ export async function setTodoCompletionAction(
     revalidatePath('/workspace/todos')
 
     return updated
+  })
+}
+
+export async function reviewUnfinishedTodosAction(): Promise<WorkspaceAssetActionResult> {
+  return runServerAction('workspace.reviewUnfinishedTodos', async () => {
+    const user = await requireUser()
+    const review = await reviewUnfinishedTodos(user.id)
+    return { kind: 'todo-review', review }
   })
 }

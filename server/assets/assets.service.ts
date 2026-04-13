@@ -12,6 +12,7 @@ import {
 import { parseAssetSearchTimeHint } from './assets.time'
 import { scheduleAssetEmbeddingBestEffort } from './assets.embedding-scheduler'
 import { searchAssetsByEmbedding } from './assets.embedding.service'
+import { logAssetSearchPath } from './assets.search-logging'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 
 export { type AssetListItem }
@@ -182,6 +183,7 @@ export async function searchAssets({
   }
 
   let semanticResults: Awaited<ReturnType<typeof searchAssetsByEmbedding>> = []
+  let semanticFailed = false
 
   try {
     semanticResults = (
@@ -198,6 +200,7 @@ export async function searchAssets({
         matchesAssetSearchTimeHint(result.asset, timeFilter.rangeHint, timeFilter.timeHint)
     )
   } catch (error) {
+    semanticFailed = true
     console.warn('[assets.search] Semantic search failed; using keyword fallback', {
       error: error instanceof Error ? error.message : String(error),
     })
@@ -247,10 +250,25 @@ export async function searchAssets({
     })
   }
 
-  return Array.from(ranked.values())
+  const results = Array.from(ranked.values())
     .sort((a, b) => b.score - a.score)
     .slice(0, clampAssetListLimit(limit))
     .map((candidate) => candidate.asset)
+
+  logAssetSearchPath({
+    query: trimmed,
+    typeHint,
+    timeHint,
+    completionHint,
+    timeFilterApplied: Boolean(timeFilter),
+    semanticAttempted: true,
+    semanticFailed,
+    semanticCandidateCount: semanticResults.length,
+    keywordCandidateCount: keywordCandidates.length,
+    returnedCount: results.length,
+  })
+
+  return results
 }
 
 export async function listAssets({
@@ -282,6 +300,26 @@ export function listTodoAssets(userId: string, limit = 50) {
 
 export function listNoteAssets(userId: string, limit = 50) {
   return listAssets({ userId, type: 'note', limit })
+}
+
+export async function listIncompleteTodoAssets(
+  userId: string,
+  limit = 10
+): Promise<AssetListItem[]> {
+  const rows = await db
+    .select()
+    .from(assets)
+    .where(
+      and(
+        eq(assets.userId, userId),
+        eq(assets.type, 'todo'),
+        sql`${assets.completedAt} is null`
+      )
+    )
+    .orderBy(sql`${assets.dueAt} asc nulls last`, desc(assets.createdAt))
+    .limit(clampAssetListLimit(limit))
+
+  return rows.map(toAssetListItem)
 }
 
 export function toAssetListItem(asset: Asset): AssetListItem {

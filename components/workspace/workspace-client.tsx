@@ -12,13 +12,21 @@ import { callAction } from '@/components/actions/call-action'
 import {
   type AssetListItem,
   type AssetQueryResult,
+  type TodoReviewResult,
 } from '@/shared/assets/assets.types'
-import { createWorkspaceAssetAction } from '@/app/workspace/actions'
+import {
+  createWorkspaceAssetAction,
+  reviewUnfinishedTodosAction,
+} from '@/app/workspace/actions'
 
 function QuickActionChips({
   onChipClick,
+  onReviewTodos,
+  disabled,
 }: {
   onChipClick: (text: string) => void
+  onReviewTodos: () => void
+  disabled: boolean
 }) {
   const chips = [
     '帮我找一下上周收藏的文章',
@@ -37,6 +45,14 @@ function QuickActionChips({
           {chip}
         </button>
       ))}
+      <button
+        type="button"
+        onClick={onReviewTodos}
+        disabled={disabled}
+        className="px-3 py-1.5 text-xs font-medium bg-primary text-on-primary hover:bg-primary/90 rounded-sm transition-colors duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        复盘未完成待办
+      </button>
     </div>
   )
 }
@@ -133,6 +149,50 @@ function QueryResults({
   )
 }
 
+function TodoReviewPanel({ review }: { review: TodoReviewResult }) {
+  return (
+    <section className="mb-8">
+      <div className="flex items-center gap-4 mb-2">
+        <h2 className="text-xs font-medium uppercase tracking-wider text-on-surface-variant">
+          待办复盘
+        </h2>
+        <div className="flex-1 h-px bg-outline-variant/20" />
+      </div>
+      <div className="bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-4">
+        <h3 className="text-sm font-semibold text-on-surface">
+          {review.headline}
+        </h3>
+        <p className="text-sm text-on-surface-variant mt-2 leading-relaxed">
+          {review.summary}
+        </p>
+        {review.nextActions.length > 0 ? (
+          <ul className="mt-3 space-y-1">
+            {review.nextActions.map((action, index) => (
+              <li key={`${action}-${index}`} className="text-sm text-on-surface">
+                {index + 1}. {action}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {review.sources.length > 0 ? (
+          <div className="mt-4 pt-3 border-t border-outline-variant/10">
+            <p className="text-xs font-medium text-on-surface-variant mb-2">
+              来源
+            </p>
+            <div className="space-y-1">
+              {review.sources.map((source) => (
+                <p key={source.id} className="text-xs text-on-surface-variant/80">
+                  {source.timeText ? `${source.title} · ${source.timeText}` : source.title}
+                </p>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  )
+}
+
 const assetTypePresentation = {
   note: { icon: FileText, iconBg: 'bg-primary/10', iconColor: 'text-primary', label: '笔记' },
   link: { icon: Link2, iconBg: 'bg-secondary/10', iconColor: 'text-secondary', label: '书签' },
@@ -158,6 +218,7 @@ export function WorkspaceClient({
   const [message, setMessage] = useState<string | null>(null)
   const [recentItems, setRecentItems] = useState(recentAssets)
   const [queryResult, setQueryResult] = useState<AssetQueryResult | null>(null)
+  const [todoReview, setTodoReview] = useState<TodoReviewResult | null>(null)
 
   async function handleSubmit() {
     const text = inputValue.trim()
@@ -180,12 +241,43 @@ export function WorkspaceClient({
       if (result.kind === 'created') {
         setRecentItems((items) => [result.asset, ...items].slice(0, 6))
         setQueryResult(null)
+        setTodoReview(null)
         setInputValue('')
         setStatus('success')
         return
       }
 
-      setQueryResult({ query: result.query, results: result.results })
+      if (result.kind === 'query') {
+        setQueryResult({ query: result.query, results: result.results })
+        setTodoReview(null)
+      }
+      setTodoReview(null)
+      setStatus('success')
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  async function handleReviewTodos() {
+    if (status === 'submitting') return
+
+    setStatus('submitting')
+    setMessage(null)
+
+    try {
+      const result = await callAction(() => reviewUnfinishedTodosAction(), {
+        loading: '正在复盘待办...',
+        success: '待办复盘已生成。',
+        error: '待办复盘失败，请重试。',
+      })
+
+      if (result.kind === 'todo-review') {
+        setTodoReview(result.review)
+        setQueryResult(null)
+        setStatus('success')
+        return
+      }
+
       setStatus('success')
     } catch {
       setStatus('error')
@@ -208,7 +300,11 @@ export function WorkspaceClient({
         <p className="text-sm text-on-surface-variant mt-1">
           先收好，之后找回。Gotly 负责整理，你负责创造。
         </p>
-        <QuickActionChips onChipClick={(text) => setInputValue(text)} />
+        <QuickActionChips
+          onChipClick={(text) => setInputValue(text)}
+          onReviewTodos={handleReviewTodos}
+          disabled={status === 'submitting'}
+        />
       </div>
 
       <section className="mb-8">
@@ -246,6 +342,8 @@ export function WorkspaceClient({
 
       {queryResult ? (
         <QueryResults query={queryResult.query} results={queryResult.results} />
+      ) : todoReview ? (
+        <TodoReviewPanel review={todoReview} />
       ) : null}
 
       <section>
