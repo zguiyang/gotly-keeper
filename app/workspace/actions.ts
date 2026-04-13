@@ -25,16 +25,19 @@ export async function createWorkspaceAssetAction(
 
     const result = await createAsset({ userId: user.id, text: trimmed })
 
-    if (result.kind === 'query-not-supported') {
+    if (result.kind === 'search') {
       const results = await searchAssets({
         userId: user.id,
-        query: trimmed,
+        query: result.query || trimmed,
+        typeHint: result.typeHint,
+        timeHint: result.timeHint,
+        completionHint: result.completionHint,
         limit: 5,
       })
 
       return {
         kind: 'query',
-        query: trimmed,
+        query: result.query || trimmed,
         results,
       }
     }

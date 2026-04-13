@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { boolean, check, index, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { boolean, check, index, integer, pgTable, text, timestamp, uniqueIndex, vector } from 'drizzle-orm/pg-core'
 
 export const users = pgTable(
   'users',
@@ -61,6 +61,8 @@ export const verifications = pgTable('verifications', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
+export const ASSET_EMBEDDING_DIMENSIONS = 1024
+
 export const assets = pgTable(
   'assets',
   {
@@ -92,3 +94,30 @@ export type Account = typeof accounts.$inferSelect
 export type Verification = typeof verifications.$inferSelect
 export type Asset = typeof assets.$inferSelect
 export type NewAsset = typeof assets.$inferInsert
+
+export const assetEmbeddings = pgTable(
+  'asset_embeddings',
+  {
+    id: text('id').primaryKey(),
+    assetId: text('asset_id')
+      .notNull()
+      .references(() => assets.id, { onDelete: 'cascade' }),
+    embedding: vector('embedding', { dimensions: ASSET_EMBEDDING_DIMENSIONS }).notNull(),
+    embeddedText: text('embedded_text').notNull(),
+    modelName: text('model_name').notNull(),
+    dimensions: integer('dimensions').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('asset_embeddings_asset_model_dimensions_idx').on(
+      table.assetId,
+      table.modelName,
+      table.dimensions
+    ),
+    index('asset_embeddings_asset_id_idx').on(table.assetId),
+  ]
+)
+
+export type AssetEmbedding = typeof assetEmbeddings.$inferSelect
+export type NewAssetEmbedding = typeof assetEmbeddings.$inferInsert

@@ -27,5 +27,7 @@ export const serverEnv = {
     apiKey: env.AI_GATEWAY_API_KEY,
     url: env.AI_GATEWAY_URL,
     modelName: env.AI_MODEL_NAME,
+    embeddingModelName: env.AI_EMBEDDING_MODEL_NAME,
+    embeddingDimensions: env.AI_EMBEDDING_DIMENSIONS,
   },
 } as const

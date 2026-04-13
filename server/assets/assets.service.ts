@@ -1,10 +1,11 @@
 import 'server-only'
 
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, sql } from 'drizzle-orm'
 
 import { db } from '@/server/db'
 import { assets, type Asset } from '@/server/db/schema'
 import { interpretAssetInput } from './assets.interpreter'
+import { createAssetEmbeddingBestEffort, searchAssetsByEmbedding } from './assets.embedding.service'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 
 export { type AssetListItem }
@@ -30,7 +31,18 @@ function clampAssetListLimit(limit = 50) {
 type SearchAssetsOptions = {
   userId: string
   query: string
+  typeHint?: AssetType | null
+  timeHint?: string | null
+  completionHint?: 'complete' | 'incomplete' | null
   limit?: number
+}
+
+type AssetSearchCommand = {
+  kind: 'search'
+  query: string
+  typeHint: AssetType | null
+  timeHint: string | null
+  completionHint: 'complete' | 'incomplete' | null
 }
 
 const QUERY_FILLERS = [
@@ -120,32 +132,87 @@ function scoreAssetForQuery(asset: Asset, query: string, terms: string[]) {
 export async function searchAssets({
   userId,
   query,
+  typeHint,
+  timeHint,
+  completionHint,
   limit = 5,
 }: SearchAssetsOptions): Promise<AssetListItem[]> {
   const trimmed = query.trim()
   if (!trimmed) return []
+
+  const conditions = [eq(assets.userId, userId)]
+
+  if (typeHint) {
+    conditions.push(eq(assets.type, typeHint))
+  }
+
+  if (completionHint === 'complete') {
+    conditions.push(sql`${assets.completedAt} is not null`)
+  }
+
+  if (completionHint === 'incomplete') {
+    conditions.push(sql`${assets.completedAt} is null`)
+  }
+
+  let semanticResults: Awaited<ReturnType<typeof searchAssetsByEmbedding>> = []
+
+  try {
+    semanticResults = await searchAssetsByEmbedding({
+      userId,
+      query: trimmed,
+      typeHint,
+      completionHint,
+      limit: clampAssetListLimit(limit),
+    })
+  } catch (error) {
+    console.warn('[assets.search] Semantic search failed; using keyword fallback', {
+      error: error instanceof Error ? error.message : String(error),
+    })
+  }
 
   const terms = getAssetSearchTerms(trimmed)
 
   const rows = await db
     .select()
     .from(assets)
-    .where(eq(assets.userId, userId))
+    .where(and(...conditions))
     .orderBy(desc(assets.createdAt))
     .limit(100)
 
-  return rows
-    .map((asset) => ({
-      asset,
-      score: scoreAssetForQuery(asset, trimmed, terms),
-    }))
-    .filter((candidate) => candidate.score > 0)
-    .sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score
-      return b.asset.createdAt.getTime() - a.asset.createdAt.getTime()
+  const keywordCandidates = rows
+    .map((asset) => {
+      let score = scoreAssetForQuery(asset, trimmed, terms)
+
+      if (timeHint && asset.timeText?.includes(timeHint)) {
+        score += 2
+      }
+
+      return { asset: toAssetListItem(asset), score }
     })
+    .filter((candidate) => candidate.score > 0)
+
+  const ranked = new Map<string, { asset: AssetListItem; score: number }>()
+
+  for (const result of semanticResults) {
+    const asset = toAssetListItem(result.asset)
+    ranked.set(asset.id, {
+      asset,
+      score: Math.max(0, 10 - result.distance * 10),
+    })
+  }
+
+  for (const candidate of keywordCandidates) {
+    const existing = ranked.get(candidate.asset.id)
+    ranked.set(candidate.asset.id, {
+      asset: candidate.asset,
+      score: (existing?.score ?? 0) + candidate.score,
+    })
+  }
+
+  return Array.from(ranked.values())
+    .sort((a, b) => b.score - a.score)
     .slice(0, clampAssetListLimit(limit))
-    .map((candidate) => toAssetListItem(candidate.asset))
+    .map((candidate) => candidate.asset)
 }
 
 export async function listAssets({
@@ -196,7 +263,7 @@ export function toAssetListItem(asset: Asset): AssetListItem {
 export async function createAsset(input: {
   userId: string
   text: string
-}): Promise<{ kind: 'created'; asset: AssetListItem } | { kind: 'query-not-supported' }> {
+}): Promise<{ kind: 'created'; asset: AssetListItem } | AssetSearchCommand> {
   const trimmed = input.text.trim()
   if (!trimmed) {
     throw new Error('EMPTY_INPUT')
@@ -205,7 +272,13 @@ export async function createAsset(input: {
   const command = await interpretAssetInput(trimmed)
 
   if (command.intent === 'search_assets') {
-    return { kind: 'query-not-supported' }
+    return {
+      kind: 'search',
+      query: command.query,
+      typeHint: command.typeHint,
+      timeHint: command.timeHint,
+      completionHint: command.completionHint,
+    }
   }
 
   if (command.intent === 'create_link') {
@@ -220,7 +293,9 @@ export async function createAsset(input: {
         timeText: command.timeText,
         dueAt: command.dueAt,
       })
-      .returning()
+        .returning()
+
+    await createAssetEmbeddingBestEffort(created)
 
     return { kind: 'created', asset: toAssetListItem(created) }
   }
@@ -237,7 +312,9 @@ export async function createAsset(input: {
         timeText: command.timeText,
         dueAt: command.dueAt,
       })
-      .returning()
+        .returning()
+
+    await createAssetEmbeddingBestEffort(created)
 
     return { kind: 'created', asset: toAssetListItem(created) }
   }
@@ -254,6 +331,8 @@ export async function createAsset(input: {
       dueAt: command.dueAt,
     })
     .returning()
+
+  await createAssetEmbeddingBestEffort(created)
 
   return { kind: 'created', asset: toAssetListItem(created) }
 }
