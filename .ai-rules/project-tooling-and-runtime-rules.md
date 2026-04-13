@@ -24,6 +24,18 @@ Rules:
 3. Do not use `npm`, `npx`, `yarn`, or `bun` for dependency management or routine project execution.
 4. If documentation or a third-party example shows `npm` or `yarn`, translate it to the equivalent `pnpm` command before running it here.
 
+### 2.1 Project Script Execution Environment Rule
+
+Commands that invoke scripts defined in `package.json` should run in the user's local environment, not inside the sandbox.
+
+Rules:
+
+1. Before running a command that invokes a `package.json` script, request non-sandbox/local execution through the available approval mechanism.
+2. This applies to root and workspace package scripts, including forms such as `pnpm dev`, `pnpm run dev`, `pnpm lint`, `pnpm test`, `pnpm build`, and `pnpm --filter <workspace> <script>`.
+3. Do not first try package-script commands in the sandbox when the same command is expected to need the real local environment; avoid avoidable sandbox failures and wait time.
+4. This rule covers project scripts only. Read-only inspection commands such as `rg`, `sed`, `git diff`, and `git status` may still use the normal sandboxed execution path when they do not need local-environment access.
+5. Dependency installation and removal remain governed by the package manager rule above and any active approval requirements for commands that modify the local environment.
+
 ## 3. Service Startup Permission Rule
 
 Starting local services changes the user's environment and must not happen implicitly.
@@ -101,8 +113,9 @@ Before running commands or implementing code:
 1. Confirm whether the task touches dependency management, scripts, runtime inspection, or service startup.
 2. If yes, read this file alongside the architecture and boundary rules.
 3. Use `pnpm` for package and script operations.
-4. Do not start services without user approval.
-5. Choose tools by need and uncertainty; do not run broad tool chains by default.
-6. Prefer skills first, then MCP, then Context7 when additional guidance is needed.
-7. For browser work, follow the browser priority order defined in Section 4.
-8. For substantial proposals or execution plans, write the durable artifact to an appropriate repository file.
+4. Run `package.json` script commands in the user's local environment through the available approval mechanism instead of trying them in the sandbox first.
+5. Do not start services without user approval.
+6. Choose tools by need and uncertainty; do not run broad tool chains by default.
+7. Prefer skills first, then MCP, then Context7 when additional guidance is needed.
+8. For browser work, follow the browser priority order defined in Section 4.
+9. For substantial proposals or execution plans, write the durable artifact to an appropriate repository file.
