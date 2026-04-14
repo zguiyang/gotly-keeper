@@ -88,16 +88,16 @@ Open [http://localhost:3000](http://localhost:3000).
 ```
 app/                    # Next.js App Router routes, layouts, pages
   workspace/            # Workspace routes (启动台, 笔记, 待办, 书签, 知识库)
-  auth/                # Authentication routes
+  auth/                 # Authentication routes
 components/             # Reusable React components
-  workspace/           # Workspace-specific components
-  ui/                  # shadcn/ui components
+  workspace/            # Workspace-specific components
+  ui/                   # shadcn/ui components
 lib/                    # Lightweight shared helpers (cn, etc.)
 server/                 # Server-only business logic
-  assets/              # Asset CRUD, search, summarization
-  auth/                # Authentication
-  db/                  # Database connection and schema
-  actions/             # Server actions
+  assets/               # Asset CRUD, search, summarization
+  auth/                 # Authentication
+  db/                   # Database connection and schema
+  actions/              # Server actions
 shared/                 # Cross-runtime types, schemas, constants
 ```
 
