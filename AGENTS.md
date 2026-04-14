@@ -131,9 +131,11 @@ Current skill set:
 - `better-auth-best-practices`
 - `better-icons`
 - `drizzle-orm`
+- `pnpm`
 - `postgres`
 - `postgres-pro`
 - `postgresql-table-design`
+- `vitest`
 - `zod`
 
 How to use skills:
@@ -155,6 +157,8 @@ Typical mapping:
 - data layer work: `drizzle-orm`
 - PostgreSQL operations and query tuning: `postgres`, `postgres-pro`
 - PostgreSQL schema design and review: `postgresql-table-design`
+- package manager and workspace command orchestration: `pnpm`
+- test authoring, mock strategy, and test execution tuning: `vitest`
 - validation work: `zod`
 
 ## Installed App Dependencies

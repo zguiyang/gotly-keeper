@@ -149,3 +149,4 @@ For all phase plan execution rules (Preflight Gate, Start Gate, Sync Gate, Fail-
 
 - `.ai-rules/phase-execution-protocol.md`
 - `.ai-rules/nextjs-fullstack-project-rules.md` Section 9
+- `docs/architecture/phase-execution-lessons-learned.md` (explanatory lessons, non-normative)
