@@ -100,11 +100,11 @@ export function WorkspaceClient({
   async function handleSubmit() {
     const text = inputValue.trim()
     if (!text) {
-      setActionState(toError(actionState, '先输入一句内容。'))
+      setActionState((previous) => toError(previous, '先输入一句内容。'))
       return
     }
 
-    setActionState(toSubmitting(actionState))
+    setActionState((previous) => toSubmitting(previous))
 
     try {
       const result = await callAction(() => createWorkspaceAssetAction(text), {
@@ -116,20 +116,20 @@ export function WorkspaceClient({
       if (result.kind === 'created') {
         setRecentItems((items) => [result.asset, ...items].slice(0, 6))
         setInputValue('')
-        setActionState(applyWorkspaceActionResult(actionState, result))
+        setActionState((previous) => applyWorkspaceActionResult(previous, result))
         return
       }
 
-      setActionState(applyWorkspaceActionResult(actionState, result))
+      setActionState((previous) => applyWorkspaceActionResult(previous, result))
     } catch {
-      setActionState(toError(actionState))
+      setActionState((previous) => toError(previous))
     }
   }
 
   async function handleReviewTodos() {
     if (status === 'submitting') return
 
-    setActionState(toSubmitting(actionState))
+    setActionState((previous) => toSubmitting(previous))
 
     try {
       const result = await callAction(() => reviewUnfinishedTodosAction(), {
@@ -138,16 +138,16 @@ export function WorkspaceClient({
         error: '待办复盘失败，请重试。',
       })
 
-      setActionState(applyWorkspaceActionResult(actionState, result))
+      setActionState((previous) => applyWorkspaceActionResult(previous, result))
     } catch {
-      setActionState(toError(actionState, '待办复盘失败，请重试。'))
+      setActionState((previous) => toError(previous, '待办复盘失败，请重试。'))
     }
   }
 
   async function handleSummarizeNotes() {
     if (status === 'submitting') return
 
-    setActionState(toSubmitting(actionState))
+    setActionState((previous) => toSubmitting(previous))
 
     try {
       const result = await callAction(() => summarizeRecentNotesAction(), {
@@ -156,16 +156,16 @@ export function WorkspaceClient({
         error: '笔记摘要失败，请重试。',
       })
 
-      setActionState(applyWorkspaceActionResult(actionState, result))
+      setActionState((previous) => applyWorkspaceActionResult(previous, result))
     } catch {
-      setActionState(toError(actionState, '笔记摘要失败，请重试。'))
+      setActionState((previous) => toError(previous, '笔记摘要失败，请重试。'))
     }
   }
 
   async function handleSummarizeBookmarks() {
     if (status === 'submitting') return
 
-    setActionState(toSubmitting(actionState))
+    setActionState((previous) => toSubmitting(previous))
 
     try {
       const result = await callAction(() => summarizeRecentBookmarksAction(), {
@@ -174,9 +174,9 @@ export function WorkspaceClient({
         error: '书签摘要失败，请重试。',
       })
 
-      setActionState(applyWorkspaceActionResult(actionState, result))
+      setActionState((previous) => applyWorkspaceActionResult(previous, result))
     } catch {
-      setActionState(toError(actionState, '书签摘要失败，请重试。'))
+      setActionState((previous) => toError(previous, '书签摘要失败，请重试。'))
     }
   }
 

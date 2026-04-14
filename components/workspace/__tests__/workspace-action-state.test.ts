@@ -149,7 +149,7 @@ test('toSuccess sets status to success', () => {
 test('applyWorkspaceActionResult clears all panels when result is created', () => {
   const initialState: WorkspaceActionState = {
     status: 'submitting',
-    message: null,
+    message: 'Old error',
     queryResult: mockQueryResult,
     todoReview: mockTodoReview,
     noteSummary: mockNoteSummary,
@@ -160,6 +160,7 @@ test('applyWorkspaceActionResult clears all panels when result is created', () =
   const newState = applyWorkspaceActionResult(initialState, result)
 
   assert.equal(newState.status, 'success')
+  assert.equal(newState.message, null)
   assert.equal(newState.queryResult, null)
   assert.equal(newState.todoReview, null)
   assert.equal(newState.noteSummary, null)

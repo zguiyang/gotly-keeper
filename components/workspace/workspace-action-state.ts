@@ -60,6 +60,7 @@ export function applyWorkspaceActionResult(
   const baseState: WorkspaceActionState = {
     ...state,
     status: 'success',
+    message: null,
     queryResult: null,
     todoReview: null,
     noteSummary: null,
