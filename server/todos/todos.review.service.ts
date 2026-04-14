@@ -2,7 +2,7 @@ import 'server-only'
 
 import { generateText, Output } from 'ai'
 
-import { getAssetInputLanguageModel } from '@/server/ai/ai-provider'
+import { getAiProvider } from '@/server/ai/ai-provider'
 import { listIncompleteTodoAssets } from '@/server/assets/assets.service'
 import { TODO_REVIEW_LIMIT } from '@/server/config/constants'
 import type { AssetListItem, TodoReviewResult, TodoReviewSource } from '@/shared/assets/assets.types'
@@ -104,7 +104,7 @@ export async function reviewUnfinishedTodos(userId: string): Promise<TodoReviewR
     return normalizeTodoReviewOutput(getFallbackTodoReview(todos), todos)
   }
 
-  const model = getAssetInputLanguageModel()
+  const model = getAiProvider()
   if (!model) {
     return normalizeTodoReviewOutput(getFallbackTodoReview(todos), todos)
   }

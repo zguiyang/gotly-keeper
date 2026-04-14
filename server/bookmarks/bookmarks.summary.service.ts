@@ -2,7 +2,7 @@ import 'server-only'
 
 import { generateText, Output } from 'ai'
 
-import { getAssetInputLanguageModel } from '@/server/ai/ai-provider'
+import { getAiProvider } from '@/server/ai/ai-provider'
 import { listLinkAssets } from '@/server/assets/assets.service'
 import { BOOKMARK_SUMMARY_LIMIT } from '@/server/config/constants'
 import type { AssetListItem, BookmarkSummaryResult, BookmarkSummarySource } from '@/shared/assets/assets.types'
@@ -105,7 +105,7 @@ export async function summarizeRecentBookmarks(
     return normalizeBookmarkSummaryOutput(getFallbackBookmarkSummary(bookmarks), bookmarks)
   }
 
-  const model = getAssetInputLanguageModel()
+  const model = getAiProvider()
   if (!model) {
     return normalizeBookmarkSummaryOutput(getFallbackBookmarkSummary(bookmarks), bookmarks)
   }

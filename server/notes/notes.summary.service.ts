@@ -2,7 +2,7 @@ import 'server-only'
 
 import { generateText, Output } from 'ai'
 
-import { getAssetInputLanguageModel } from '@/server/ai/ai-provider'
+import { getAiProvider } from '@/server/ai/ai-provider'
 import { listNoteAssets } from '@/server/assets/assets.service'
 import { NOTE_SUMMARY_LIMIT } from '@/server/config/constants'
 import type { AssetListItem, NoteSummaryResult, NoteSummarySource } from '@/shared/assets/assets.types'
@@ -99,7 +99,7 @@ export async function summarizeRecentNotes(userId: string): Promise<NoteSummaryR
     return normalizeNoteSummaryOutput(getFallbackNoteSummary(notes), notes)
   }
 
-  const model = getAssetInputLanguageModel()
+  const model = getAiProvider()
   if (!model) {
     return normalizeNoteSummaryOutput(getFallbackNoteSummary(notes), notes)
   }
