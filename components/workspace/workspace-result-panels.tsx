@@ -3,7 +3,6 @@ import {
   Link2,
   StickyNote,
 } from 'lucide-react'
-
 import {
   type AssetListItem,
   type BookmarkSummaryResult,
@@ -11,7 +10,7 @@ import {
   type TodoReviewResult,
 } from '@/shared/assets/assets.types'
 
-function RecentItem({
+export function RecentItem({
   icon: Icon,
   iconBg,
   iconColor,
@@ -57,13 +56,13 @@ function RecentItem({
   )
 }
 
-const assetTypePresentation = {
+export const assetTypePresentation = {
   note: { icon: FileText, iconBg: 'bg-primary/10', iconColor: 'text-primary', label: '笔记' },
   link: { icon: Link2, iconBg: 'bg-secondary/10', iconColor: 'text-secondary', label: '书签' },
   todo: { icon: StickyNote, iconBg: 'bg-tertiary/10', iconColor: 'text-tertiary', label: '待办' },
 }
 
-function formatAssetTime(date: Date): string {
+export function formatAssetTime(date: Date): string {
   return date.toLocaleString('zh-CN', {
     month: 'numeric',
     day: 'numeric',
@@ -205,8 +204,6 @@ export function WorkspaceNoteSummaryPanel({ summary }: { summary: NoteSummaryRes
     </section>
   )
 }
-
-export { RecentItem, assetTypePresentation, formatAssetTime }
 
 export function WorkspaceBookmarkSummaryPanel({ summary }: { summary: BookmarkSummaryResult }) {
   return (
