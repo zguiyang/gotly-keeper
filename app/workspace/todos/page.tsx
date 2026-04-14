@@ -1,19 +1,11 @@
-import { headers } from 'next/headers'
-
 import { TodosClient } from '@/components/workspace/todos-client'
-import { auth } from '@/server/auth/auth'
+import { requireWorkspaceUserOrRedirect } from '@/server/auth/workspace-session'
 import { listTodoAssets } from '@/server/assets/assets.service'
 
 export default async function TodosPage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  })
+  const user = await requireWorkspaceUserOrRedirect()
 
-  if (!session?.user) {
-    return null
-  }
-
-  const todos = await listTodoAssets(session.user.id)
+  const todos = await listTodoAssets(user.id)
 
   return <TodosClient todos={todos} />
 }

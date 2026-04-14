@@ -1,19 +1,11 @@
-import { headers } from 'next/headers'
-
 import { NotesClient } from '@/components/workspace/notes-client'
-import { auth } from '@/server/auth/auth'
+import { requireWorkspaceUserOrRedirect } from '@/server/auth/workspace-session'
 import { listNoteAssets } from '@/server/assets/assets.service'
 
 export default async function NotesPage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  })
+  const user = await requireWorkspaceUserOrRedirect()
 
-  if (!session?.user) {
-    return null
-  }
-
-  const notes = await listNoteAssets(session.user.id)
+  const notes = await listNoteAssets(user.id)
 
   return <NotesClient notes={notes} />
 }
