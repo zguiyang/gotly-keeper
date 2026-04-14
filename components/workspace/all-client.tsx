@@ -9,9 +9,12 @@ import {
 } from 'lucide-react'
 
 import { type AssetListItem } from '@/shared/assets/assets.types'
+import {
+  getAssetDateGroup,
+  formatAssetRelativeTime,
+} from '@/shared/assets/asset-time-display'
 
 type AssetType = 'note' | 'link' | 'todo'
-type DateGroup = 'today' | 'yesterday' | 'older'
 
 const typeLabels: Record<AssetType, string> = {
   note: '笔记',
@@ -31,37 +34,6 @@ const emptyFilterMessages: Record<string, string> = {
   note: '暂无笔记。先保存一条想法或文本记录。',
   link: '暂无书签。粘贴链接后会出现在这里。',
   todo: '暂无待办。输入带有处理意图的内容后会出现在这里。',
-}
-
-function getDateGroup(date: Date): DateGroup {
-  const value = new Date(date)
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000)
-  const itemDay = new Date(value.getFullYear(), value.getMonth(), value.getDate())
-
-  if (itemDay.getTime() === today.getTime()) return 'today'
-  if (itemDay.getTime() === yesterday.getTime()) return 'yesterday'
-  return 'older'
-}
-
-function formatRelativeTime(date: Date): string {
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const seconds = Math.floor(diff / 1000)
-  const minutes = Math.floor(seconds / 60)
-  const hours = Math.floor(minutes / 60)
-  const days = Math.floor(hours / 24)
-
-  if (days > 7) {
-    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
-  }
-  if (days > 1) return `${days}天前`
-  if (days === 1) return '昨天'
-  if (hours > 1) return `${hours}小时前`
-  if (hours === 1) return '1小时前'
-  if (minutes > 1) return `${minutes}分钟前`
-  return '刚刚'
 }
 
 function DateDivider({ label }: { label: string }) {
@@ -133,7 +105,7 @@ function AssetItem({ asset }: { asset: AssetListItem }) {
       </div>
       <div className="ml-4 lg:ml-8 text-right flex-shrink-0">
         <span className="text-xs font-medium text-on-surface-variant/60">
-          {asset.timeText || formatRelativeTime(asset.createdAt)}
+          {asset.timeText || formatAssetRelativeTime(asset.createdAt)}
         </span>
       </div>
       <div className="ml-2 lg:ml-6 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity">
@@ -156,9 +128,9 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
       ? assets
       : assets.filter((asset) => asset.type === activeFilter)
 
-  const todayAssets = filteredAssets.filter((asset) => getDateGroup(asset.createdAt) === 'today')
-  const yesterdayAssets = filteredAssets.filter((asset) => getDateGroup(asset.createdAt) === 'yesterday')
-  const olderAssets = filteredAssets.filter((asset) => getDateGroup(asset.createdAt) === 'older')
+  const todayAssets = filteredAssets.filter((asset) => getAssetDateGroup(asset.createdAt) === 'today')
+  const yesterdayAssets = filteredAssets.filter((asset) => getAssetDateGroup(asset.createdAt) === 'yesterday')
+  const olderAssets = filteredAssets.filter((asset) => getAssetDateGroup(asset.createdAt) === 'older')
 
   const hasAnyAssets = filteredAssets.length > 0
 
