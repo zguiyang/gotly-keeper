@@ -7,42 +7,9 @@ import { Check, Circle, Clock, MoreHorizontal } from 'lucide-react'
 import { setTodoCompletionAction } from '@/app/workspace/actions'
 import { callAction } from '@/components/actions/call-action'
 import { type AssetListItem } from '@/shared/assets/assets.types'
+import { getTodoGroupKey, type TodoGroupKey } from '@/shared/assets/asset-time-display'
 
-type GroupKey = 'today' | 'thisWeek' | 'noDate' | 'completed'
-
-function startOfDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
-}
-
-function addDays(date: Date, days: number) {
-  const next = new Date(date)
-  next.setDate(next.getDate() + days)
-  return next
-}
-
-function isWithinRange(date: Date, startsAt: Date, endsAt: Date) {
-  return date.getTime() >= startsAt.getTime() && date.getTime() < endsAt.getTime()
-}
-
-function getGroupKey(item: AssetListItem): GroupKey {
-  if (item.completed) return 'completed'
-
-  if (item.dueAt) {
-    const dueAt = new Date(item.dueAt)
-    if (!isNaN(dueAt.getTime())) {
-      const today = startOfDay(new Date())
-      const tomorrow = addDays(today, 1)
-      const nextWeek = addDays(today, 7)
-
-      if (isWithinRange(dueAt, today, addDays(tomorrow, 1))) return 'today'
-      if (isWithinRange(dueAt, today, nextWeek)) return 'thisWeek'
-    }
-  }
-
-  if (item.timeText?.includes('今天') || item.timeText?.includes('明天')) return 'today'
-  if (item.timeText?.includes('本周') || item.timeText?.includes('这周') || item.timeText?.includes('周')) return 'thisWeek'
-  return 'noDate'
-}
+type GroupKey = TodoGroupKey
 
 const groupLabels: Record<GroupKey, string> = {
   today: '今天',
@@ -160,10 +127,10 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
   const [pendingIds, setPendingIds] = useState<Set<string>>(() => new Set())
 
   const grouped = {
-    today: items.filter((t) => getGroupKey(t) === 'today'),
-    thisWeek: items.filter((t) => getGroupKey(t) === 'thisWeek'),
-    noDate: items.filter((t) => getGroupKey(t) === 'noDate'),
-    completed: items.filter((t) => getGroupKey(t) === 'completed'),
+    today: items.filter((t) => getTodoGroupKey(t) === 'today'),
+    thisWeek: items.filter((t) => getTodoGroupKey(t) === 'thisWeek'),
+    noDate: items.filter((t) => getTodoGroupKey(t) === 'noDate'),
+    completed: items.filter((t) => getTodoGroupKey(t) === 'completed'),
   }
 
   const showEmptyState = items.length === 0
