@@ -3,14 +3,7 @@
 import { useState } from 'react'
 import { Sparkles } from 'lucide-react'
 
-import { callAction } from '@/client/feedback/toast-action'
 import { type AssetListItem } from '@/shared/assets/assets.types'
-import {
-  createWorkspaceAssetAction,
-  reviewUnfinishedTodosAction,
-  summarizeRecentBookmarksAction,
-  summarizeRecentNotesAction,
-} from '@/app/workspace/actions'
 import {
   RecentItem,
   assetTypePresentation,
@@ -20,13 +13,7 @@ import {
   WorkspaceQueryResultsPanel,
   WorkspaceTodoReviewPanel,
 } from './workspace-result-panels'
-import {
-  type WorkspaceActionState,
-  createInitialWorkspaceActionState,
-  toSubmitting,
-  toError,
-  applyWorkspaceActionResult,
-} from './workspace-action-state'
+import { useWorkspaceSubmit } from '@/hooks/workspace/use-workspace-submit'
 
 function QuickActionChips({
   onChipClick,
@@ -92,92 +79,19 @@ export function WorkspaceClient({
   recentAssets: AssetListItem[]
 }) {
   const [inputValue, setInputValue] = useState('')
-  const [actionState, setActionState] = useState<WorkspaceActionState>(createInitialWorkspaceActionState)
   const [recentItems, setRecentItems] = useState(recentAssets)
 
-  const { status, message, queryResult, todoReview, noteSummary, bookmarkSummary } = actionState
+  const { state, submit, reviewTodos, summarizeNotes, summarizeBookmarks } = useWorkspaceSubmit()
 
-  async function handleSubmit() {
+  const { status, message, queryResult, todoReview, noteSummary, bookmarkSummary } = state
+
+  function handleSubmit() {
     const text = inputValue.trim()
     if (!text) {
-      setActionState((previous) => toError(previous, '先输入一句内容。'))
       return
     }
-
-    setActionState((previous) => toSubmitting(previous))
-
-    try {
-      const result = await callAction(() => createWorkspaceAssetAction(text), {
-        loading: '处理中...',
-        success: '已完成。',
-        error: '处理失败，请重试。',
-      })
-
-      if (result.kind === 'created') {
-        setRecentItems((items) => [result.asset, ...items].slice(0, 6))
-        setInputValue('')
-        setActionState((previous) => applyWorkspaceActionResult(previous, result))
-        return
-      }
-
-      setActionState((previous) => applyWorkspaceActionResult(previous, result))
-    } catch {
-      setActionState((previous) => toError(previous))
-    }
-  }
-
-  async function handleReviewTodos() {
-    if (status === 'submitting') return
-
-    setActionState((previous) => toSubmitting(previous))
-
-    try {
-      const result = await callAction(() => reviewUnfinishedTodosAction(), {
-        loading: '正在复盘待办...',
-        success: '待办复盘已生成。',
-        error: '待办复盘失败，请重试。',
-      })
-
-      setActionState((previous) => applyWorkspaceActionResult(previous, result))
-    } catch {
-      setActionState((previous) => toError(previous, '待办复盘失败，请重试。'))
-    }
-  }
-
-  async function handleSummarizeNotes() {
-    if (status === 'submitting') return
-
-    setActionState((previous) => toSubmitting(previous))
-
-    try {
-      const result = await callAction(() => summarizeRecentNotesAction(), {
-        loading: '正在总结笔记...',
-        success: '笔记摘要已生成。',
-        error: '笔记摘要失败，请重试。',
-      })
-
-      setActionState((previous) => applyWorkspaceActionResult(previous, result))
-    } catch {
-      setActionState((previous) => toError(previous, '笔记摘要失败，请重试。'))
-    }
-  }
-
-  async function handleSummarizeBookmarks() {
-    if (status === 'submitting') return
-
-    setActionState((previous) => toSubmitting(previous))
-
-    try {
-      const result = await callAction(() => summarizeRecentBookmarksAction(), {
-        loading: '正在总结书签...',
-        success: '书签摘要已生成。',
-        error: '书签摘要失败，请重试。',
-      })
-
-      setActionState((previous) => applyWorkspaceActionResult(previous, result))
-    } catch {
-      setActionState((previous) => toError(previous, '书签摘要失败，请重试。'))
-    }
+    submit(text)
+    setInputValue('')
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -185,6 +99,10 @@ export function WorkspaceClient({
       e.preventDefault()
       handleSubmit()
     }
+  }
+
+  function handleChipClick(text: string) {
+    setInputValue(text)
   }
 
   return (
@@ -197,10 +115,10 @@ export function WorkspaceClient({
           先收好，之后找回。Gotly 负责整理，你负责创造。
         </p>
         <QuickActionChips
-          onChipClick={(text) => setInputValue(text)}
-          onReviewTodos={handleReviewTodos}
-          onSummarizeBookmarks={handleSummarizeBookmarks}
-          onSummarizeNotes={handleSummarizeNotes}
+          onChipClick={handleChipClick}
+          onReviewTodos={reviewTodos}
+          onSummarizeBookmarks={summarizeBookmarks}
+          onSummarizeNotes={summarizeNotes}
           disabled={status === 'submitting'}
         />
       </div>

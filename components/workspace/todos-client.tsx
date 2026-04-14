@@ -4,10 +4,9 @@ import { useState } from 'react'
 
 import { Check, Circle, Clock, MoreHorizontal } from 'lucide-react'
 
-import { setTodoCompletionAction } from '@/app/workspace/actions'
-import { callAction } from '@/client/feedback/toast-action'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 import { getTodoGroupKey, type TodoGroupKey } from '@/shared/assets/asset-time-display'
+import { useTodoCompletion } from '@/hooks/workspace/use-todo-completion'
 
 const groupLabels: Record<TodoGroupKey, string> = {
   today: '今天',
@@ -122,7 +121,8 @@ function TodoSection({
 
 export function TodosClient({ todos }: { todos: AssetListItem[] }) {
   const [items, setItems] = useState(todos)
-  const [pendingIds, setPendingIds] = useState<Set<string>>(() => new Set())
+
+  const { state, toggleCompletion } = useTodoCompletion()
 
   const grouped = {
     today: items.filter((t) => getTodoGroupKey(t) === 'today'),
@@ -140,36 +140,9 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
   }
 
   async function handleToggleTodo(item: AssetListItem) {
-    if (pendingIds.has(item.id)) return
-
-    const optimisticItem = { ...item, completed: !item.completed }
-
-    setPendingIds((current) => new Set(current).add(item.id))
-    replaceItem(optimisticItem)
-
-    try {
-      const updated = await callAction(
-        () =>
-          setTodoCompletionAction({
-            assetId: item.id,
-            completed: !item.completed,
-          }),
-        {
-          loading: item.completed ? '正在恢复待办...' : '正在完成待办...',
-          success: item.completed ? '已恢复待办。' : '已完成待办。',
-          error: '待办状态更新失败，请重试。',
-        }
-      )
-
+    const updated = await toggleCompletion(item.id, !item.completed)
+    if (updated) {
       replaceItem(updated)
-    } catch {
-      replaceItem(item)
-    } finally {
-      setPendingIds((current) => {
-        const next = new Set(current)
-        next.delete(item.id)
-        return next
-      })
     }
   }
 
@@ -207,7 +180,7 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
             <div>
               <SectionHeader label={groupLabels.today} count={grouped.today.length} />
               <div className="bg-surface-container-lowest rounded-lg">
-                <TodoSection items={grouped.today} emptyMessage="今天没有待办" pendingIds={pendingIds} onToggleTodo={handleToggleTodo} />
+                <TodoSection items={grouped.today} emptyMessage="今天没有待办" pendingIds={state.pendingId ? new Set([state.pendingId]) : new Set()} onToggleTodo={handleToggleTodo} />
               </div>
             </div>
           )}
@@ -216,7 +189,7 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
             <div>
               <SectionHeader label={groupLabels.thisWeek} count={grouped.thisWeek.length} />
               <div className="bg-surface-container-lowest rounded-lg">
-                <TodoSection items={grouped.thisWeek} emptyMessage="本周没有待办" pendingIds={pendingIds} onToggleTodo={handleToggleTodo} />
+                <TodoSection items={grouped.thisWeek} emptyMessage="本周没有待办" pendingIds={state.pendingId ? new Set([state.pendingId]) : new Set()} onToggleTodo={handleToggleTodo} />
               </div>
             </div>
           )}
@@ -225,7 +198,7 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
             <div>
               <SectionHeader label={groupLabels.noDate} count={grouped.noDate.length} />
               <div className="bg-surface-container-lowest rounded-lg">
-                <TodoSection items={grouped.noDate} emptyMessage="没有无截止日期的待办" pendingIds={pendingIds} onToggleTodo={handleToggleTodo} />
+                <TodoSection items={grouped.noDate} emptyMessage="没有无截止日期的待办" pendingIds={state.pendingId ? new Set([state.pendingId]) : new Set()} onToggleTodo={handleToggleTodo} />
               </div>
             </div>
           )}
@@ -234,7 +207,7 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
             <div>
               <SectionHeader label={groupLabels.completed} count={grouped.completed.length} />
               <div className="bg-surface-container-lowest rounded-lg">
-                <TodoSection items={grouped.completed} emptyMessage="没有已完成的待办" pendingIds={pendingIds} onToggleTodo={handleToggleTodo} />
+                <TodoSection items={grouped.completed} emptyMessage="没有已完成的待办" pendingIds={state.pendingId ? new Set([state.pendingId]) : new Set()} onToggleTodo={handleToggleTodo} />
               </div>
             </div>
           )}
