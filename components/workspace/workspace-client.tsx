@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Sparkles } from 'lucide-react'
 
 import { callAction } from '@/components/actions/call-action'
-import { type AssetListItem, type AssetQueryResult, type BookmarkSummaryResult, type NoteSummaryResult, type TodoReviewResult } from '@/shared/assets/assets.types'
+import { type AssetListItem } from '@/shared/assets/assets.types'
 import {
   createWorkspaceAssetAction,
   reviewUnfinishedTodosAction,
@@ -20,6 +20,13 @@ import {
   WorkspaceQueryResultsPanel,
   WorkspaceTodoReviewPanel,
 } from './workspace-result-panels'
+import {
+  type WorkspaceActionState,
+  createInitialWorkspaceActionState,
+  toSubmitting,
+  toError,
+  applyWorkspaceActionResult,
+} from './workspace-action-state'
 
 function QuickActionChips({
   onChipClick,
@@ -85,24 +92,19 @@ export function WorkspaceClient({
   recentAssets: AssetListItem[]
 }) {
   const [inputValue, setInputValue] = useState('')
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
-  const [message, setMessage] = useState<string | null>(null)
+  const [actionState, setActionState] = useState<WorkspaceActionState>(createInitialWorkspaceActionState)
   const [recentItems, setRecentItems] = useState(recentAssets)
-  const [queryResult, setQueryResult] = useState<AssetQueryResult | null>(null)
-  const [todoReview, setTodoReview] = useState<TodoReviewResult | null>(null)
-  const [noteSummary, setNoteSummary] = useState<NoteSummaryResult | null>(null)
-  const [bookmarkSummary, setBookmarkSummary] = useState<BookmarkSummaryResult | null>(null)
+
+  const { status, message, queryResult, todoReview, noteSummary, bookmarkSummary } = actionState
 
   async function handleSubmit() {
     const text = inputValue.trim()
     if (!text) {
-      setStatus('error')
-      setMessage('先输入一句内容。')
+      setActionState(toError(actionState, '先输入一句内容。'))
       return
     }
 
-    setStatus('submitting')
-    setMessage(null)
+    setActionState(toSubmitting(actionState))
 
     try {
       const result = await callAction(() => createWorkspaceAssetAction(text), {
@@ -113,62 +115,21 @@ export function WorkspaceClient({
 
       if (result.kind === 'created') {
         setRecentItems((items) => [result.asset, ...items].slice(0, 6))
-        setQueryResult(null)
-        setTodoReview(null)
-        setNoteSummary(null)
-        setBookmarkSummary(null)
         setInputValue('')
-        setStatus('success')
+        setActionState(applyWorkspaceActionResult(actionState, result))
         return
       }
 
-      if (result.kind === 'query') {
-        setQueryResult({ query: result.query, results: result.results })
-        setTodoReview(null)
-        setNoteSummary(null)
-        setBookmarkSummary(null)
-        setStatus('success')
-        return
-      }
-
-      if (result.kind === 'todo-review') {
-        setTodoReview(result.review)
-        setQueryResult(null)
-        setNoteSummary(null)
-        setBookmarkSummary(null)
-        setStatus('success')
-        return
-      }
-
-      if (result.kind === 'note-summary') {
-        setNoteSummary(result.summary)
-        setQueryResult(null)
-        setTodoReview(null)
-        setBookmarkSummary(null)
-        setStatus('success')
-        return
-      }
-
-      if (result.kind === 'bookmark-summary') {
-        setBookmarkSummary(result.summary)
-        setQueryResult(null)
-        setTodoReview(null)
-        setNoteSummary(null)
-        setStatus('success')
-        return
-      }
-
-      setStatus('success')
+      setActionState(applyWorkspaceActionResult(actionState, result))
     } catch {
-      setStatus('error')
+      setActionState(toError(actionState))
     }
   }
 
   async function handleReviewTodos() {
     if (status === 'submitting') return
 
-    setStatus('submitting')
-    setMessage(null)
+    setActionState(toSubmitting(actionState))
 
     try {
       const result = await callAction(() => reviewUnfinishedTodosAction(), {
@@ -177,26 +138,16 @@ export function WorkspaceClient({
         error: '待办复盘失败，请重试。',
       })
 
-      if (result.kind === 'todo-review') {
-        setTodoReview(result.review)
-        setQueryResult(null)
-        setNoteSummary(null)
-        setBookmarkSummary(null)
-        setStatus('success')
-        return
-      }
-
-      setStatus('success')
+      setActionState(applyWorkspaceActionResult(actionState, result))
     } catch {
-      setStatus('error')
+      setActionState(toError(actionState, '待办复盘失败，请重试。'))
     }
   }
 
   async function handleSummarizeNotes() {
     if (status === 'submitting') return
 
-    setStatus('submitting')
-    setMessage(null)
+    setActionState(toSubmitting(actionState))
 
     try {
       const result = await callAction(() => summarizeRecentNotesAction(), {
@@ -205,26 +156,16 @@ export function WorkspaceClient({
         error: '笔记摘要失败，请重试。',
       })
 
-      if (result.kind === 'note-summary') {
-        setNoteSummary(result.summary)
-        setTodoReview(null)
-        setQueryResult(null)
-        setBookmarkSummary(null)
-        setStatus('success')
-        return
-      }
-
-      setStatus('success')
+      setActionState(applyWorkspaceActionResult(actionState, result))
     } catch {
-      setStatus('error')
+      setActionState(toError(actionState, '笔记摘要失败，请重试。'))
     }
   }
 
   async function handleSummarizeBookmarks() {
     if (status === 'submitting') return
 
-    setStatus('submitting')
-    setMessage(null)
+    setActionState(toSubmitting(actionState))
 
     try {
       const result = await callAction(() => summarizeRecentBookmarksAction(), {
@@ -233,18 +174,9 @@ export function WorkspaceClient({
         error: '书签摘要失败，请重试。',
       })
 
-      if (result.kind === 'bookmark-summary') {
-        setBookmarkSummary(result.summary)
-        setNoteSummary(null)
-        setTodoReview(null)
-        setQueryResult(null)
-        setStatus('success')
-        return
-      }
-
-      setStatus('success')
+      setActionState(applyWorkspaceActionResult(actionState, result))
     } catch {
-      setStatus('error')
+      setActionState(toError(actionState, '书签摘要失败，请重试。'))
     }
   }
 
