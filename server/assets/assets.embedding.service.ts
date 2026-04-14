@@ -10,7 +10,7 @@ import {
   assets,
   type Asset,
 } from '@/server/db/schema'
-import { ASSET_EMBEDDING_CANDIDATE_MULTIPLIER, ASSET_EMBEDDING_DIMENSIONS, ASSET_EMBEDDING_MAX_COSINE_DISTANCE, ASSET_EMBEDDING_TIMEOUT_MS } from './assets.embedding-config'
+import { ASSET_EMBEDDING_CANDIDATE_MULTIPLIER, ASSET_EMBEDDING_DIMENSIONS, ASSET_EMBEDDING_MAX_COSINE_DISTANCE, ASSET_EMBEDDING_TIMEOUT_MS, ASSET_EMBEDDING_CANDIDATE_LIMIT_MAX, ASSET_SEARCH_LIMIT_MAX } from '@/server/config/constants'
 import { getAssetEmbeddingModel } from './assets.embedding-provider'
 
 type SemanticSearchOptions = {
@@ -166,10 +166,10 @@ export async function searchAssetsByEmbedding({
     conditions.push(sql`${assets.completedAt} is null`)
   }
 
-  const clampedLimit = Math.min(Math.max(limit, 1), 20)
+  const clampedLimit = Math.min(Math.max(limit, ASSET_LIST_LIMIT_MIN), ASSET_SEARCH_LIMIT_MAX)
   const candidateLimit = Math.min(
     Math.max(clampedLimit * ASSET_EMBEDDING_CANDIDATE_MULTIPLIER, clampedLimit),
-    80
+    ASSET_EMBEDDING_CANDIDATE_LIMIT_MAX
   )
 
   const rows = await db

@@ -15,6 +15,7 @@ import { searchAssetsByEmbedding } from './assets.embedding.service'
 import { logAssetSearchPath } from './assets.search-logging'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 import { type AssetSummaryTarget } from './assets.summary-intent.pure'
+import { ASSET_LIST_LIMIT_MIN, ASSET_LIST_LIMIT_DEFAULT, ASSET_LIST_LIMIT_MAX, ASSET_RECENT_LIMIT_DEFAULT, ASSET_RECENT_LIMIT_MAX } from '@/server/config/constants'
 
 export { type AssetListItem }
 
@@ -38,8 +39,8 @@ type ListAssetsOptions = {
   limit?: number
 }
 
-function clampAssetListLimit(limit = 50) {
-  return Math.min(Math.max(1, limit), 100)
+function clampAssetListLimit(limit = ASSET_LIST_LIMIT_DEFAULT) {
+  return Math.min(Math.max(ASSET_LIST_LIMIT_MIN, limit), ASSET_LIST_LIMIT_MAX)
 }
 
 type SearchAssetsOptions = {
@@ -429,8 +430,8 @@ export async function createAsset(input: {
   return { kind: 'created', asset: toAssetListItem(created) }
 }
 
-export async function listRecentAssets(userId: string, limit = 6): Promise<AssetListItem[]> {
-  const clampedLimit = Math.min(Math.max(1, limit), 20)
+export async function listRecentAssets(userId: string, limit = ASSET_RECENT_LIMIT_DEFAULT): Promise<AssetListItem[]> {
+  const clampedLimit = Math.min(Math.max(ASSET_LIST_LIMIT_MIN, limit), ASSET_RECENT_LIMIT_MAX)
 
   const rows = await db
     .select()
