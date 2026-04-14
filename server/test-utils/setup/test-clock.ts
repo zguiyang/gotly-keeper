@@ -19,12 +19,13 @@ export class TestClock {
     const originalDate = this.originalDateConstructor
     const currentTime = this.currentTime
     globalThis.Date = class extends originalDate {
-      constructor(...args: ConstructorParameters<typeof Date>) {
-        super(...args)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      constructor(...args: any[]) {
         if (args.length === 0) {
-          return currentTime
+          super(2000, 0, 1)
+        } else {
+          super(args[0])
         }
-        return new originalDate(...args)
       }
 
       static override now(): number {

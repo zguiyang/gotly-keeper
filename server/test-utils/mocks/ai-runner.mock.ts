@@ -1,4 +1,5 @@
 import type { AiResult } from '@/server/ai/ai.types'
+import { AiProviderError } from '@/server/ai/ai.types'
 import type { ZodSchema } from 'zod'
 
 export interface AiRunnerMockOptions<T> {
@@ -25,12 +26,12 @@ export function createAiRunnerMock<T>(options: AiRunnerMockOptions<T> = {}) {
       if (!shouldSucceed) {
         return {
           success: false,
-          error: new Error(errorMessage),
+          error: new AiProviderError(errorMessage, null),
         }
       }
       return {
         success: true,
-        data: resultData ?? ({} as T),
+        data: (resultData ?? ({} as NonNullable<T>)) as T,
       }
     },
 
@@ -60,7 +61,7 @@ export function createAiRunnerMock<T>(options: AiRunnerMockOptions<T> = {}) {
       }
       return {
         success: true,
-        data: resultData ?? ({} as T),
+        data: (resultData ?? ({} as NonNullable<T>)) as T,
       }
     },
   }
