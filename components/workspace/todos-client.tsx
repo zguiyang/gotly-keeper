@@ -9,9 +9,7 @@ import { callAction } from '@/components/actions/call-action'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 import { getTodoGroupKey, type TodoGroupKey } from '@/shared/assets/asset-time-display'
 
-type GroupKey = TodoGroupKey
-
-const groupLabels: Record<GroupKey, string> = {
+const groupLabels: Record<TodoGroupKey, string> = {
   today: '今天',
   thisWeek: '本周',
   noDate: '无截止日期',
