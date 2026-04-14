@@ -1,5 +1,4 @@
 import {
-  type AssetListItem,
   type AssetQueryResult,
   type BookmarkSummaryResult,
   type NoteSummaryResult,
