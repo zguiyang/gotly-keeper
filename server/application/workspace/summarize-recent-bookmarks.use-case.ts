@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { summarizeRecentBookmarks } from '@/server/assets/assets.bookmark-summary'
+import { summarizeRecentBookmarks } from '@/server/bookmarks/bookmarks.summary.service'
 import type { SummarizeRecentBookmarksInput, BookmarkSummaryResult } from './workspace.types'
 
 export async function summarizeRecentBookmarksUseCase(

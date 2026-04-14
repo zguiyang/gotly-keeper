@@ -1,10 +1,11 @@
 import 'server-only'
 
 import { generateText, Output } from 'ai'
+import { z } from 'zod'
 
 import { getAiProvider } from '@/server/ai/ai-provider'
 import { listIncompleteTodoAssets } from '@/server/assets/assets.service'
-import { TODO_REVIEW_LIMIT } from '@/server/config/constants'
+import { TODO_REVIEW_LIMIT, TODO_REVIEW_MODEL_TIMEOUT_MS } from '@/server/config/constants'
 import type { AssetListItem, TodoReviewResult, TodoReviewSource } from '@/shared/assets/assets.types'
 
 export { TODO_REVIEW_LIMIT }
@@ -29,19 +30,14 @@ export function buildTodoReviewPromptInput(
   }))
 }
 
-const todoReviewOutputSchema = {
-  headline: { type: 'string', minLength: 1, maxLength: 80 },
-  summary: { type: 'string', minLength: 1, maxLength: 600 },
-  nextActions: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 120 }, maxLength: 5 },
-  sourceAssetIds: { type: 'array', items: { type: 'string', minLength: 1 }, minLength: 1, maxLength: 10 },
-} as const
+const todoReviewOutputSchema = z.object({
+  headline: z.string().min(1).max(80),
+  summary: z.string().min(1).max(600),
+  nextActions: z.array(z.string().min(1).max(120)).max(5),
+  sourceAssetIds: z.array(z.string().min(1)).min(1).max(10),
+})
 
-export type TodoReviewOutput = {
-  headline: string
-  summary: string
-  nextActions: string[]
-  sourceAssetIds: string[]
-}
+export type TodoReviewOutput = z.infer<typeof todoReviewOutputSchema>
 
 function getFallbackTodoReview(todos: AssetListItem[]): TodoReviewOutput {
   return {
@@ -120,7 +116,7 @@ export async function reviewUnfinishedTodos(userId: string): Promise<TodoReviewR
       }),
       temperature: 0,
       maxRetries: 1,
-      timeout: 30000,
+      timeout: TODO_REVIEW_MODEL_TIMEOUT_MS,
       providerOptions: {
         alibaba: {
           enableThinking: false,
@@ -128,7 +124,7 @@ export async function reviewUnfinishedTodos(userId: string): Promise<TodoReviewR
       },
     })
 
-    return normalizeTodoReviewOutput(result.output as TodoReviewOutput, todos)
+    return normalizeTodoReviewOutput(result.output, todos)
   } catch (error) {
     console.warn('[todos.review] AI review failed; using fallback', {
       error: error instanceof Error ? error.message : String(error),

@@ -2,9 +2,9 @@ import 'server-only'
 
 import { ASSET_SEARCH_LIMIT_DEFAULT } from '@/server/config/constants'
 import { createAsset, searchAssets } from '@/server/assets/assets.service'
-import { reviewUnfinishedTodos } from '@/server/assets/assets.todo-review'
-import { summarizeRecentNotes } from '@/server/assets/assets.note-summary'
-import { summarizeRecentBookmarks } from '@/server/assets/assets.bookmark-summary'
+import { reviewUnfinishedTodos } from '@/server/todos/todos.review.service'
+import { summarizeRecentNotes } from '@/server/notes/notes.summary.service'
+import { summarizeRecentBookmarks } from '@/server/bookmarks/bookmarks.summary.service'
 import type { CreateWorkspaceAssetInput, WorkspaceAssetActionResult } from './workspace.types'
 
 export async function createWorkspaceAssetUseCase(

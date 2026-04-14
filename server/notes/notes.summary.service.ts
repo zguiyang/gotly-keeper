@@ -1,10 +1,11 @@
 import 'server-only'
 
 import { generateText, Output } from 'ai'
+import { z } from 'zod'
 
 import { getAiProvider } from '@/server/ai/ai-provider'
 import { listNoteAssets } from '@/server/assets/assets.service'
-import { NOTE_SUMMARY_LIMIT } from '@/server/config/constants'
+import { NOTE_SUMMARY_LIMIT, NOTE_SUMMARY_MODEL_TIMEOUT_MS } from '@/server/config/constants'
 import type { AssetListItem, NoteSummaryResult, NoteSummarySource } from '@/shared/assets/assets.types'
 
 export { NOTE_SUMMARY_LIMIT }
@@ -25,19 +26,14 @@ export function buildNoteSummaryPromptInput(
   }))
 }
 
-const noteSummaryOutputSchema = {
-  headline: { type: 'string', minLength: 1, maxLength: 80 },
-  summary: { type: 'string', minLength: 1, maxLength: 700 },
-  keyPoints: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 140 }, maxLength: 6 },
-  sourceAssetIds: { type: 'array', items: { type: 'string', minLength: 1 }, minLength: 1, maxLength: 10 },
-} as const
+const noteSummaryOutputSchema = z.object({
+  headline: z.string().min(1).max(80),
+  summary: z.string().min(1).max(700),
+  keyPoints: z.array(z.string().min(1).max(140)).max(6),
+  sourceAssetIds: z.array(z.string().min(1)).min(1).max(10),
+})
 
-export type NoteSummaryOutput = {
-  headline: string
-  summary: string
-  keyPoints: string[]
-  sourceAssetIds: string[]
-}
+export type NoteSummaryOutput = z.infer<typeof noteSummaryOutputSchema>
 
 function getFallbackNoteSummary(notes: AssetListItem[]): NoteSummaryOutput {
   return {
@@ -115,7 +111,7 @@ export async function summarizeRecentNotes(userId: string): Promise<NoteSummaryR
       }),
       temperature: 0,
       maxRetries: 1,
-      timeout: 30000,
+      timeout: NOTE_SUMMARY_MODEL_TIMEOUT_MS,
       providerOptions: {
         alibaba: {
           enableThinking: false,
@@ -123,7 +119,7 @@ export async function summarizeRecentNotes(userId: string): Promise<NoteSummaryR
       },
     })
 
-    return normalizeNoteSummaryOutput(result.output as NoteSummaryOutput, notes)
+    return normalizeNoteSummaryOutput(result.output, notes)
   } catch (error) {
     console.warn('[notes.summary] AI summary failed; using fallback', {
       error: error instanceof Error ? error.message : String(error),

@@ -1,67 +1,68 @@
-import { describe, it, expect } from 'node:test'
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
 import { normalizeSearchText, getAssetSearchTerms, getTypeHintScore, scoreAssetForQuery } from '../search.query-parser'
 
 describe('search.query-parser', () => {
   describe('normalizeSearchText', () => {
     it('converts to lowercase', () => {
-      expect(normalizeSearchText('Hello World')).toBe('hello world')
+      assert.equal(normalizeSearchText('Hello World'), 'hello world')
     })
 
     it('removes Chinese punctuation', () => {
-      expect(normalizeSearchText('你好，世界！')).toBe('你好 世界')
+      assert.equal(normalizeSearchText('你好，世界！'), '你好 世界')
     })
 
     it('removes English punctuation', () => {
-      expect(normalizeSearchText('test, (example).')).toBe('test example')
+      assert.equal(normalizeSearchText('test, (example).'), 'test example')
     })
 
     it('collapses multiple spaces', () => {
-      expect(normalizeSearchText('hello    world')).toBe('hello world')
+      assert.equal(normalizeSearchText('hello    world'), 'hello world')
     })
 
     it('trims whitespace', () => {
-      expect(normalizeSearchText('  hello  ')).toBe('hello')
+      assert.equal(normalizeSearchText('  hello  '), 'hello')
     })
   })
 
   describe('getAssetSearchTerms', () => {
     it('filters terms shorter than 2 characters', () => {
       const terms = getAssetSearchTerms('a b cd ef')
-      expect(terms).toEqual(['cd', 'ef'])
+      assert.deepEqual(terms, ['cd', 'ef'])
     })
 
     it('removes filler words', () => {
       const terms = getAssetSearchTerms('帮我找一下关于工作的事情')
-      expect(terms).not.toContain('帮我')
-      expect(terms).not.toContain('找一下')
+      assert.equal(terms.includes('帮我'), false)
+      assert.equal(terms.includes('找一下'), false)
     })
 
     it('limits to 8 terms', () => {
       const terms = getAssetSearchTerms('北京 上海 广州 深圳 成都 武汉 西安 重庆 杭州')
-      expect(terms.length).toBeLessThanOrEqual(8)
+      assert.equal(terms.length <= 8, true)
     })
 
     it('returns unique terms', () => {
       const terms = getAssetSearchTerms('北京 北京 上海 上海')
-      expect(terms).toEqual(['北京', '上海'])
+      assert.deepEqual(terms, ['北京', '上海'])
     })
   })
 
   describe('getTypeHintScore', () => {
     it('returns 2 for matching note terms', () => {
-      expect(getTypeHintScore('记录一下', 'note')).toBe(2)
+      assert.equal(getTypeHintScore('记录一下', 'note'), 2)
     })
 
     it('returns 2 for matching link terms', () => {
-      expect(getTypeHintScore('书签这个链接', 'link')).toBe(2)
+      assert.equal(getTypeHintScore('书签这个链接', 'link'), 2)
     })
 
     it('returns 2 for matching todo terms', () => {
-      expect(getTypeHintScore('待办事项', 'todo')).toBe(2)
+      assert.equal(getTypeHintScore('待办事项', 'todo'), 2)
     })
 
     it('returns 0 for non-matching types', () => {
-      expect(getTypeHintScore('记录一下', 'todo')).toBe(0)
+      assert.equal(getTypeHintScore('记录一下', 'todo'), 0)
     })
   })
 
@@ -75,7 +76,7 @@ describe('search.query-parser', () => {
       }
       const terms = ['工作', '会议']
       const score = scoreAssetForQuery(asset, '工作会议', terms)
-      expect(score).toBeGreaterThan(0)
+      assert.equal(score > 0, true)
     })
 
     it('gives bonus for long term matches', () => {
@@ -94,7 +95,7 @@ describe('search.query-parser', () => {
       const terms = ['项目计划']
       const score1 = scoreAssetForQuery(asset1, '项目计划', terms)
       const score2 = scoreAssetForQuery(asset2, '项目', terms)
-      expect(score1).toBeGreaterThan(score2)
+      assert.equal(score1 > score2, true)
     })
   })
 })

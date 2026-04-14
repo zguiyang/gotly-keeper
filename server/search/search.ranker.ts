@@ -1,12 +1,12 @@
 import type { AssetListItem } from '@/shared/assets/assets.types'
 import type { KeywordCandidate, RankResult, SemanticCandidate } from './search.types'
+import { SEMANTIC_BASE_SCORE, SEMANTIC_DISTANCE_PENALTY } from '@/server/config/constants'
 
 export function mergeSearchResults(
   semanticResults: SemanticCandidate[],
   keywordCandidates: KeywordCandidate[],
   limit: number
 ): RankResult[] {
-  const SEMANTIC_BASE_SCORE = 10
   const semanticWeight = 1.0
   const keywordWeight = 1.0
 
@@ -16,7 +16,7 @@ export function mergeSearchResults(
     const asset = toAssetListItem(result.asset)
     ranked.set(asset.id, {
       asset,
-      score: Math.max(0, SEMANTIC_BASE_SCORE - result.distance * 10) * semanticWeight,
+      score: Math.max(0, SEMANTIC_BASE_SCORE - result.distance * SEMANTIC_DISTANCE_PENALTY) * semanticWeight,
       source: 'semantic',
     })
   }

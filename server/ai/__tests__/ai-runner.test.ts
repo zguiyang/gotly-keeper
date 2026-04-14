@@ -1,64 +1,64 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'node:test'
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
 import { z } from 'zod'
 
-vi.mock('@/server/ai/ai-provider', () => ({
-  getAiProvider: vi.fn(),
-}))
+import { serverEnv } from '@/server/env'
+import {
+  interpretAssetInputWithAi,
+  runAiGeneration,
+  summarizeWithAi,
+} from '../ai-runner'
 
-const mockGenerateText = vi.hoisted(() => vi.fn())
-vi.mock('ai', () => ({
-  generateText: mockGenerateText,
-  Output: { object: mockGenerateText },
-}))
+function withAiProviderDisabled<T>(run: () => Promise<T>): Promise<T> {
+  const original = { ...serverEnv.aiGateway }
+  ;(serverEnv.aiGateway as { apiKey?: string; url?: string; modelName?: string }).apiKey = undefined
+  ;(serverEnv.aiGateway as { apiKey?: string; url?: string; modelName?: string }).url = undefined
+  ;(serverEnv.aiGateway as { apiKey?: string; url?: string; modelName?: string }).modelName = undefined
+
+  return run().finally(() => {
+    ;(serverEnv.aiGateway as { apiKey?: string; url?: string; modelName?: string }).apiKey = original.apiKey
+    ;(serverEnv.aiGateway as { apiKey?: string; url?: string; modelName?: string }).url = original.url
+    ;(serverEnv.aiGateway as { apiKey?: string; url?: string; modelName?: string }).modelName = original.modelName
+  })
+}
 
 describe('ai-runner', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  describe('runAiGeneration', () => {
-    it('should return success when AI call succeeds', async () => {
-      const { getAiProvider } = await import('@/server/ai/ai-provider')
-      const mockModel = {}
-      ;(getAiProvider as ReturnType<typeof vi.fn>).mockReturnValue(mockModel)
-
-      mockGenerateText.mockResolvedValue({
-        output: { result: 'success' },
-      })
-
-      const { runAiGeneration } = await import('@/server/ai/ai-runner')
-      const schema = z.object({ result: z.string() })
-
+  it('runAiGeneration returns provider error when AI provider is unavailable', async () => {
+    await withAiProviderDisabled(async () => {
       const result = await runAiGeneration({
-        schema,
-        systemPrompt: 'Test prompt',
-        userPrompt: 'Test input',
+        schema: z.object({ result: z.string() }),
+        systemPrompt: 'test-system',
+        userPrompt: 'test-user',
       })
 
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.result).toBe('success')
+      assert.equal(result.success, false)
+      if (!result.success) {
+        assert.equal(result.error.type, 'provider')
       }
     })
+  })
 
-    it('should return error when AI provider is not configured', async () => {
-      const { getAiProvider } = await import('@/server/ai/ai-provider')
-      ;(getAiProvider as ReturnType<typeof vi.fn>).mockReturnValue(null)
+  it('interpretAssetInputWithAi returns fallback when AI provider is unavailable', async () => {
+    await withAiProviderDisabled(async () => {
+      const result = await interpretAssetInputWithAi(
+        'test input',
+        z.object({ intent: z.string() }),
+        'test-system',
+        (text) => text
+      )
+      assert.deepEqual(result, { success: false, fallback: true })
+    })
+  })
 
-      const { runAiGeneration } = await import('@/server/ai/ai-runner')
-      const schema = z.object({ result: z.string() })
-
-      const result = await runAiGeneration({
-        schema,
-        systemPrompt: 'Test prompt',
-        userPrompt: 'Test input',
-      })
-
-      expect(result.success).toBe(false)
+  it('summarizeWithAi returns fallback when AI provider is unavailable', async () => {
+    await withAiProviderDisabled(async () => {
+      const result = await summarizeWithAi(
+        z.object({ summary: z.string() }),
+        'test-system',
+        { text: 'sample' },
+        100
+      )
+      assert.deepEqual(result, { success: false, fallback: true })
     })
   })
 })

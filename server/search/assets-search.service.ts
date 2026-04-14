@@ -13,6 +13,8 @@ import {
   ASSET_LIST_LIMIT_MIN,
   ASSET_LIST_LIMIT_MAX,
   ASSET_SEARCH_LIMIT_DEFAULT,
+  KEYWORD_TERM_MAX_COUNT,
+  KEYWORD_TERM_MIN_LENGTH,
 } from '@/server/config/constants'
 
 function clampAssetListLimit(limit = ASSET_SEARCH_LIMIT_DEFAULT) {
@@ -25,7 +27,7 @@ export async function searchAssets({
   typeHint,
   timeHint,
   completionHint,
-  limit = 5,
+  limit = ASSET_SEARCH_LIMIT_DEFAULT,
 }: SearchAssetsOptions): Promise<AssetListItem[]> {
   const trimmed = query.trim()
   if (!trimmed) return []
@@ -62,8 +64,8 @@ export async function searchAssets({
 
   const terms = normalizeSearchText(trimmed)
     .split(/\s+/)
-    .filter((t) => t.length >= 2)
-    .slice(0, 8)
+    .filter((t) => t.length >= KEYWORD_TERM_MIN_LENGTH)
+    .slice(0, KEYWORD_TERM_MAX_COUNT)
 
   const keywordCandidates = await searchByKeyword({
     userId,

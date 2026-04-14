@@ -1,10 +1,11 @@
 import 'server-only'
 
 import { generateText, Output } from 'ai'
+import { z } from 'zod'
 
 import { getAiProvider } from '@/server/ai/ai-provider'
 import { listLinkAssets } from '@/server/assets/assets.service'
-import { BOOKMARK_SUMMARY_LIMIT } from '@/server/config/constants'
+import { BOOKMARK_SUMMARY_LIMIT, BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS } from '@/server/config/constants'
 import type { AssetListItem, BookmarkSummaryResult, BookmarkSummarySource } from '@/shared/assets/assets.types'
 
 export { BOOKMARK_SUMMARY_LIMIT }
@@ -27,19 +28,14 @@ export function buildBookmarkSummaryPromptInput(
   }))
 }
 
-const bookmarkSummaryOutputSchema = {
-  headline: { type: 'string', minLength: 1, maxLength: 80 },
-  summary: { type: 'string', minLength: 1, maxLength: 700 },
-  keyPoints: { type: 'array', items: { type: 'string', minLength: 1, maxLength: 140 }, maxLength: 6 },
-  sourceAssetIds: { type: 'array', items: { type: 'string', minLength: 1 }, minLength: 1, maxLength: 10 },
-} as const
+const bookmarkSummaryOutputSchema = z.object({
+  headline: z.string().min(1).max(80),
+  summary: z.string().min(1).max(700),
+  keyPoints: z.array(z.string().min(1).max(140)).max(6),
+  sourceAssetIds: z.array(z.string().min(1)).min(1).max(10),
+})
 
-export type BookmarkSummaryOutput = {
-  headline: string
-  summary: string
-  keyPoints: string[]
-  sourceAssetIds: string[]
-}
+export type BookmarkSummaryOutput = z.infer<typeof bookmarkSummaryOutputSchema>
 
 function getFallbackBookmarkSummary(bookmarks: AssetListItem[]): BookmarkSummaryOutput {
   return {
@@ -121,7 +117,7 @@ export async function summarizeRecentBookmarks(
       }),
       temperature: 0,
       maxRetries: 1,
-      timeout: 30000,
+      timeout: BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS,
       providerOptions: {
         alibaba: {
           enableThinking: false,
@@ -129,7 +125,7 @@ export async function summarizeRecentBookmarks(
       },
     })
 
-    return normalizeBookmarkSummaryOutput(result.output as BookmarkSummaryOutput, bookmarks)
+    return normalizeBookmarkSummaryOutput(result.output, bookmarks)
   } catch (error) {
     console.warn('[bookmarks.summary] AI summary failed; using fallback', {
       error: error instanceof Error ? error.message : String(error),
