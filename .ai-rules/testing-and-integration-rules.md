@@ -247,6 +247,19 @@ New features must include:
 3. Action contract tests for server actions
 4. Updated `test:critical` coverage
 
+### 12.6 Test Minimum Contract (Enforced)
+
+Every new feature MUST include minimum contract tests based on which layers it touches:
+
+| Layer Touched | Minimum Test Requirement |
+|---------------|-------------------------|
+| `domain` only | 1 domain unit test (happy path) |
+| `application` | +1 application integration test |
+| `app/actions` | +1 action contract test |
+| `infra` (DB/Redis) | +1 integration test with real infra |
+
+**Rule**: Tests must be added in the same PR as the feature they test.
+
 ## 13. Worktree Execution Protocol
 
 When executing phase plans:

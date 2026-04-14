@@ -102,3 +102,10 @@ app/**/actions.ts → server/application/<domain>/*.use-case.ts → server/<doma
 Server/Application layer must never depend on App layer.
 
 See `docs/architecture/action-application-boundary-rules.md` for detailed boundary specifications.
+
+## 8. Phase Execution Protocol Reference
+
+For all phase plan execution rules (Preflight Gate, Start Gate, Sync Gate, Fail-Fast, PR-only merge), see:
+
+- `.ai-rules/nextjs-fullstack-project-rules.md` Section 9
+- `docs/architecture/phase-execution-protocol.md`

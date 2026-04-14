@@ -218,3 +218,52 @@ As the project grows:
 - avoid pushing business logic into route entry files just because the project is still small
 
 The target is disciplined growth, not premature architecture.
+
+## 9. Layered Architecture Boundary Rules (Enforced)
+
+The architecture follows a strict unidirectional dependency layer:
+
+```
+app/actions -> application -> domain -> infra
+```
+
+**Rule**: No reverse dependencies allowed.
+
+### 9.1 Layer Definitions
+
+| Layer | Path | Can Import |
+|-------|------|------------|
+| `app/actions` | `app/**/actions.ts` | `server/application` only |
+| `application` | `server/application/<domain>/*.use-case.ts` | `server/<domain>` only |
+| `domain` | `server/<domain>/*.service.ts`, `server/<domain>/models/` | `server/infra` only |
+| `infra` | `server/infra/**`, `server/config/**` | External libs only |
+
+### 9.2 Forbidden Patterns
+
+- `server/**` must NOT import `app/**`
+- `server/application/**` must NOT import `app/**`
+- `server/domain/**` must NOT import `server/application/**`
+- `server/infra/**` must NOT import `server/domain/**` or `server/application/**`
+
+### 9.3 Phase Plan Execution Protocol
+
+Every phase plan document MUST include:
+
+```yaml
+phase_id: <unique-id>
+depends_on: [<phase-id>, ...]  # or [] if no dependencies
+parallel_safe: true|false
+base_branch_rule: <rule>
+branch_naming_rule: <pattern>
+worktree_naming_rule: <pattern>
+failure_report_path: <path>
+merge_strategy: PR-only
+```
+
+Required gates (must execute in order):
+1. **Preflight Gate**: Dependency check before starting
+2. **Start Gate**: Branch baseline verification
+3. **Sync Gate**: Rebase on main + lint before merge
+4. **Fail-Fast**: Any gate failure stops execution immediately
+
+Required merge: **PR-only** (no direct merge to main)

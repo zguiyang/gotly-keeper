@@ -82,6 +82,19 @@ These are responsibility anchors, not a complete or fixed directory list.
 
 New directories such as `hooks/`, `types/`, or `styles/` may be added as the project evolves without requiring `AGENTS.md` updates, as long as they do not conflict with the architectural rules in `.ai-rules/`.
 
+## Phase Execution Protocol
+
+All phase plans (in `docs/superpowers/plans/`) MUST follow the execution protocol.
+
+Key rules:
+- **Preflight Gate**: Verify dependencies before starting
+- **Start Gate**: Verify branch baseline
+- **Sync Gate**: Rebase on main + lint before merge
+- **Fail-Fast**: Any gate failure stops execution immediately
+- **PR-only Merge**: No direct merge to main
+
+See `docs/architecture/phase-execution-protocol.md` for full protocol details.
+
 ## MCP Services
 
 Use MCP when it improves correctness, documentation accuracy, or runtime verification.

@@ -15,7 +15,10 @@
     "test:domain": "node --require ./scripts/register-server-only-alias.cjs --import tsx --test 'server/notes/__tests__/*.test.ts' 'server/todos/__tests__/*.test.ts' 'server/bookmarks/__tests__/*.test.ts' 'server/search/__tests__/*.test.ts' 'server/ai/__tests__/*.test.ts'",
     "test:application": "node --require ./scripts/register-server-only-alias.cjs --import tsx --test 'server/application/__tests__/*.test.ts'",
     "test:actions": "node --require ./scripts/register-server-only-alias.cjs --import tsx --test 'server/actions/__tests__/*.test.ts' 'app/workspace/__tests__/*.test.ts'",
-    "test:critical": "node --require ./scripts/register-server-only-alias.cjs --import tsx --test 'server/notes/__tests__/*.test.ts' 'server/todos/__tests__/*.test.ts' 'server/bookmarks/__tests__/*.test.ts' 'server/search/__tests__/*.test.ts' 'server/ai/__tests__/*.test.ts' 'server/actions/__tests__/*.test.ts' 'app/workspace/__tests__/*.test.ts'"
+    "test:critical": "node --require ./scripts/register-server-only-alias.cjs --import tsx --test 'server/notes/__tests__/*.test.ts' 'server/todos/__tests__/*.test.ts' 'server/bookmarks/__tests__/*.test.ts' 'server/search/__tests__/*.test.ts' 'server/ai/__tests__/*.test.ts' 'server/actions/__tests__/*.test.ts' 'app/workspace/__tests__/*.test.ts'",
+    "guard:phase-doc": "bash scripts/guards/check-phase-doc-protocol.sh",
+    "guard:boundaries": "bash scripts/guards/check-import-boundaries.sh",
+    "guard:all": "pnpm run guard:phase-doc && pnpm run guard:boundaries"
   },
   "dependencies": {
     "@ai-sdk/alibaba": "^1.0.17",

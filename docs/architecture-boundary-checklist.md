@@ -28,6 +28,28 @@
 - [ ] Infrastructure clients (PostgreSQL, Redis) are only used in `server/` code paths
 - [ ] Path aliases (`@/`) are used consistently for imports
 
+## Phase Execution Protocol
+
+All phase plans must follow these execution rules:
+
+- [ ] **Preflight Gate**: Dependency check (`depends_on`) passed before starting
+- [ ] **Start Gate**: Branch created from latest main with correct naming (`feat/{phase_id}`)
+- [ ] **Sync Gate**: Rebased on main + lint passes before merge
+- [ ] **Fail-Fast**: Any gate failure stops execution immediately
+- [ ] **PR-only Merge**: No direct merge to main
+
+### Parallel Execution
+
+- [ ] `parallel_safe: false` phases must not run concurrently
+- [ ] `parallel_safe: true` phases can run concurrently with others
+- [ ] Always verify `depends_on` chains before parallel execution
+
+### Conflict Handling
+
+- [ ] Resolve rebase conflicts before continuing
+- [ ] Never force-push to `main` or shared branches
+- [ ] Use `git worktree` for isolated parallel work
+
 ## PR Self-Check
 
 Before requesting review, verify:
@@ -37,3 +59,4 @@ Before requesting review, verify:
 3. All constants import from canonical sources
 4. New constants are placed in the correct layer (`server/config/`, `config/`, or `shared/constants/`)
 5. README and documentation are updated if environment variables or directory structure changed
+6. Phase execution protocol followed (Preflight → Start Gate → Development → Sync Gate → PR merge)

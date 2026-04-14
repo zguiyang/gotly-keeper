@@ -133,6 +133,14 @@ shared/                 # Cross-runtime types, schemas, constants
 
 Documentation in this project follows **code as source of truth**. When code and docs conflict, code wins. PRD documents are periodically synchronized to reflect implemented behavior.
 
+## Phase Execution
+
+This project uses a structured phase-based execution model for refactoring and feature work.
+
+**Protocol**: All phase plans follow Preflight → Start Gate → Development → Sync Gate → PR-only merge workflow.
+
+See `docs/architecture/phase-execution-protocol.md` for detailed execution protocol.
+
 ## Tech Stack
 
 - **Framework:** Next.js 16 (App Router)

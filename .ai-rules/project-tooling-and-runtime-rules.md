@@ -142,3 +142,10 @@ When adding or modifying constants:
 3. **Import from canonical source**: All files must import from the centralized location, not define their own copies.
 4. **No magic numbers**: Extract repeated inline numeric values into named constants.
 5. **Avoid component-level constants**: Do not define business constants inside `components/` unless they are purely presentational.
+
+## 11. Phase Execution Protocol Reference
+
+For all phase plan execution rules (Preflight Gate, Start Gate, Sync Gate, Fail-Fast, PR-only merge), see:
+
+- `.ai-rules/nextjs-fullstack-project-rules.md` Section 9
+- `docs/architecture/phase-execution-protocol.md`
