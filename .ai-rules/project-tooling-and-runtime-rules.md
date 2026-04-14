@@ -132,3 +132,13 @@ Before running commands or implementing code:
 8. For browser work, follow the browser priority order defined in Section 4.
 9. For Next.js debugging and validation, prefer actual browser/page verification over custom scripts, except for pure JavaScript utilities or delivered CLI/script artifacts.
 10. For substantial proposals or execution plans, write the durable artifact to an appropriate repository file.
+
+## 10. Constants and Config Governance
+
+When adding or modifying constants:
+
+1. **Identify the correct layer**: Server-only constants → `server/config/`, frontend UI config → `config/`, cross-runtime constants → `shared/constants/`.
+2. **Ensure unique canonical source**: Each constant has exactly one definition.
+3. **Import from canonical source**: All files must import from the centralized location, not define their own copies.
+4. **No magic numbers**: Extract repeated inline numeric values into named constants.
+5. **Avoid component-level constants**: Do not define business constants inside `components/` unless they are purely presentational.

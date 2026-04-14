@@ -66,6 +66,20 @@ Rules:
 
 - Keep presentational components reusable and focused.
 - Prefer Server Components by default unless client-side interactivity is required.
+- Do not define business constants in components; use centralized config locations.
+
+### 4.2.1 Constants and Config Governance
+
+Constants and configuration values must be centralized to prevent duplication and magic numbers.
+
+Rules:
+
+1. **Server-side constants** (embedding, search, timeouts, limits): Define in `server/config/`.
+2. **Frontend UI config** (nav items, filters, presentation): Define in `config/`.
+3. **Cross-runtime constants** (non-sensitive shared values): Define in `shared/constants/`.
+4. Each constant must have exactly one canonical source.
+5. All files import from the canonical source, not local definitions.
+6. Do not scatter business constants across multiple files.
 
 ### 4.3 `lib/`
 

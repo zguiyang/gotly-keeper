@@ -43,9 +43,23 @@ Local services:
 Create `.env.local` with required variables:
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5434/gotly_dev
-REDIS_URL=redis://localhost:6382
-AUTH_SECRET=your-auth-secret-here
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5434
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DATABASE=gotly_dev
+REDIS_HOST=localhost
+REDIS_PORT=6382
+REDIS_DB=0
+REDIS_USERNAME=
+REDIS_PASSWORD=
+BETTER_AUTH_SECRET=replace-with-at-least-32-characters
+BETTER_AUTH_URL=http://localhost:3000
+AI_GATEWAY_API_KEY=xxx
+AI_GATEWAY_URL=http://localhost:8000
+AI_MODEL_NAME=qwen3-max
+AI_EMBEDDING_MODEL_NAME=text-embedding-v4
+AI_EMBEDDING_DIMENSIONS=1024
 ```
 
 ### 3. Install dependencies
@@ -92,12 +106,16 @@ app/                    # Next.js App Router routes, layouts, pages
 components/             # Reusable React components
   workspace/            # Workspace-specific components
   ui/                   # shadcn/ui components
+config/                 # Frontend UI configuration constants
+  workspace/            # Workspace nav and filter configs
+  ui/                  # UI presentation configs
 lib/                    # Lightweight shared helpers (cn, etc.)
 server/                 # Server-only business logic
   assets/               # Asset CRUD, search, summarization
   auth/                 # Authentication
   db/                   # Database connection and schema
   actions/              # Server actions
+  config/              # Server-side constants (time, limits, timeouts)
 shared/                 # Cross-runtime types, schemas, constants
 ```
 
