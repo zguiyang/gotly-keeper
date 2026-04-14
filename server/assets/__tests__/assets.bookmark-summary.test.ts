@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { buildBookmarkSummaryPromptInput } from '../assets.bookmark-summary.pure'
+import { buildBookmarkSummaryPromptInput } from '@/server/bookmarks/bookmarks.summary.service'
 
 test('buildBookmarkSummaryPromptInput keeps bounded bookmark records', () => {
   const input = buildBookmarkSummaryPromptInput([

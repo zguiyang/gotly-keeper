@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { buildNoteSummaryPromptInput } from '../assets.note-summary.pure'
+import { buildNoteSummaryPromptInput } from '@/server/notes/notes.summary.service'
 
 test('buildNoteSummaryPromptInput keeps bounded note records', () => {
   const input = buildNoteSummaryPromptInput([

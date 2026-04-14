@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { buildTodoReviewPromptInput } from '../assets.todo-review.pure'
+import { buildTodoReviewPromptInput } from '@/server/todos/todos.review.service'
 
 test('buildTodoReviewPromptInput keeps bounded source records', () => {
   const input = buildTodoReviewPromptInput([
