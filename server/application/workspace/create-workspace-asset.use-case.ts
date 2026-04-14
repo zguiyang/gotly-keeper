@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { ASSET_SEARCH_LIMIT_DEFAULT } from '@/server/config/constants'
 import { createAsset, searchAssets } from '@/server/assets/assets.service'
 import { reviewUnfinishedTodos } from '@/server/assets/assets.todo-review'
 import { summarizeRecentNotes } from '@/server/assets/assets.note-summary'
@@ -18,7 +19,7 @@ export async function createWorkspaceAssetUseCase(
       typeHint: result.typeHint,
       timeHint: result.timeHint,
       completionHint: result.completionHint,
-      limit: 5,
+      limit: ASSET_SEARCH_LIMIT_DEFAULT,
     })
 
     return {

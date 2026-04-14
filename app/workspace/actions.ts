@@ -6,8 +6,7 @@ import { ActionError, ACTION_ERROR_CODES } from '@/server/actions/action-error'
 import { runServerAction } from '@/server/actions/run-server-action'
 import { requireUser } from '@/server/auth/session'
 import { createWorkspaceAssetUseCase, setTodoCompletionUseCase, reviewUnfinishedTodosUseCase, summarizeRecentNotesUseCase, summarizeRecentBookmarksUseCase } from '@/server/application/workspace'
-import { type AssetListItem } from '@/server/assets/assets.service'
-import { type WorkspaceAssetActionResult } from '@/shared/assets/assets.types'
+import { type AssetListItem, type WorkspaceAssetActionResult } from '@/shared/assets/assets.types'
 
 export async function createWorkspaceAssetAction(
   input: unknown
