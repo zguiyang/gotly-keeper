@@ -258,7 +258,16 @@ branch_naming_rule: <pattern>
 worktree_naming_rule: <pattern>
 failure_report_path: <path>
 merge_strategy: PR-only
+artifact_dir: docs/superpowers/plans/artifacts
+verification_report_path: docs/superpowers/plans/artifacts/${phase_id}.verification-report.md
 ```
+
+Reporting contract (required):
+- All plan artifacts must use `${phase_id}` as filename prefix.
+- Minimum required artifacts:
+  - `${phase_id}-failure-report.md`
+  - `${phase_id}.verification-report.md`
+- If dependency check fails in Preflight, stop immediately and write `${phase_id}-failure-report.md`.
 
 Required gates (must execute in order):
 1. **Preflight Gate**: Dependency check before starting

@@ -19,7 +19,30 @@ branch_naming_rule: feat/${phase_id}
 worktree_naming_rule: .worktrees/${phase_id}
 failure_report_path: docs/superpowers/plans/artifacts/${phase_id}-failure-report.md
 merge_strategy: PR-only
+artifact_dir: docs/superpowers/plans/artifacts
+verification_report_path: docs/superpowers/plans/artifacts/${phase_id}.verification-report.md
 ```
+
+## 2.1 Reporting Contract (Mandatory)
+
+All phase execution artifacts MUST be written under:
+
+`docs/superpowers/plans/artifacts/`
+
+Naming rule:
+- Use `${phase_id}` as the filename prefix (same semantic identity as branch/worktree).
+- Avoid ambiguous generic names like `phaseX-verification-report.md` for new plans.
+
+Minimum artifact set for each phase:
+- `${phase_id}-failure-report.md`
+- `${phase_id}.verification-report.md`
+
+Optional artifacts (as needed by phase scope):
+- `${phase_id}.coverage-gap-report.md`
+- `${phase_id}.performance-regression-report.md`
+- `${phase_id}.boundary-audit-report.md`
+- `${phase_id}.release-readiness-report.md`
+- `${phase_id}.final-refactor-summary.md`
 
 ## 3. Execution Gates
 
@@ -38,6 +61,15 @@ git merge-base --is-ancestor origin/${depends_on} origin/main
 ```
 
 **Fail-Fast**: If dependency check fails, STOP immediately.
+
+### 3.1.1 Dependency Failure Handling (Required)
+
+If Preflight dependency check fails:
+1. Stop all remaining tasks immediately
+2. Generate `${phase_id}-failure-report.md`
+3. Wait for explicit user confirmation before any resume
+
+This is an execution-precondition failure, not a runtime test failure.
 
 ### 3.2 Start Gate (Before Development)
 
@@ -78,6 +110,15 @@ Applies to all gates. On failure:
 1. Stop all execution immediately
 2. Generate failure report at `${failure_report_path}`
 3. Wait for user confirmation before resuming
+
+## 4.1 Task 0 Requirement (Bootstrap)
+
+Each phase plan SHOULD include `Task 0`:
+- Create failure-report template
+- Run Preflight dependency check
+- Continue only when Preflight passes
+
+Reason: ensures failure logging and stop behavior are standardized before implementation begins.
 
 ## 5. Worktree Setup
 
