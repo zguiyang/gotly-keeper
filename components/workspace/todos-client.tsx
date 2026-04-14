@@ -5,15 +5,9 @@ import { useState } from 'react'
 import { Check, Circle, Clock, MoreHorizontal } from 'lucide-react'
 
 import { type AssetListItem } from '@/shared/assets/assets.types'
-import { getTodoGroupKey, type TodoGroupKey } from '@/shared/assets/asset-time-display'
+import { getTodoGroupKey } from '@/shared/assets/asset-time-display'
+import { groupLabels } from '@/shared/constants/assets'
 import { useTodoCompletion } from '@/hooks/workspace/use-todo-completion'
-
-const groupLabels: Record<TodoGroupKey, string> = {
-  today: '今天',
-  thisWeek: '本周',
-  noDate: '无截止日期',
-  completed: '已完成',
-}
 
 function SectionHeader({ label, count }: { label: string; count: number }) {
   return (

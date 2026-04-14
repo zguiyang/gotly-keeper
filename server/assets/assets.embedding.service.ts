@@ -10,8 +10,17 @@ import {
   assets,
   type Asset,
 } from '@/server/db/schema'
-import { ASSET_EMBEDDING_CANDIDATE_MULTIPLIER, ASSET_EMBEDDING_DIMENSIONS, ASSET_EMBEDDING_MAX_COSINE_DISTANCE, ASSET_EMBEDDING_TIMEOUT_MS, ASSET_EMBEDDING_CANDIDATE_LIMIT_MAX, ASSET_SEARCH_LIMIT_MAX } from '@/server/config/constants'
+import {
+  ASSET_EMBEDDING_CANDIDATE_MULTIPLIER,
+  ASSET_EMBEDDING_MAX_COSINE_DISTANCE,
+  ASSET_EMBEDDING_TIMEOUT_MS,
+  ASSET_EMBEDDING_CANDIDATE_LIMIT_MAX,
+  ASSET_LIST_LIMIT_MIN,
+  ASSET_SEARCH_LIMIT_DEFAULT,
+  ASSET_SEARCH_LIMIT_MAX,
+} from '@/server/config/constants'
 import { getAssetEmbeddingModel } from './assets.embedding-provider'
+import { ASSET_EMBEDDING_DIMENSIONS } from './assets.embedding-config'
 
 type SemanticSearchOptions = {
   userId: string
@@ -128,7 +137,7 @@ export async function searchAssetsByEmbedding({
   query,
   typeHint,
   completionHint,
-  limit = 5,
+  limit = ASSET_SEARCH_LIMIT_DEFAULT,
 }: SemanticSearchOptions): Promise<SemanticSearchResult[]> {
   const model = getAssetEmbeddingModel()
   const trimmed = query.trim()

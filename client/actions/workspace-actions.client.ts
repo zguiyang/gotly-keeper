@@ -6,9 +6,9 @@ import {
   reviewUnfinishedTodosAction,
   summarizeRecentNotesAction,
   summarizeRecentBookmarksAction,
-  type WorkspaceAssetActionResult,
 } from '@/app/workspace/actions'
 import type { AssetListItem } from '@/server/assets/assets.service'
+import type { WorkspaceAssetActionResult } from '@/shared/assets/assets.types'
 
 export type { WorkspaceAssetActionResult }
 
