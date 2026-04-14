@@ -2,6 +2,16 @@
 
 import { toast } from 'sonner'
 
+function resolveErrorMessage(error: unknown, fallbackMessage?: string): string {
+  if (fallbackMessage !== undefined) {
+    return fallbackMessage
+  }
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+  return '操作失败，请重试。'
+}
+
 export async function callAction<T>(
   action: () => Promise<T>,
   options?: {
@@ -16,8 +26,8 @@ export async function callAction<T>(
       loading: options.loading,
       success: options.success,
       error: (error) => {
-        console.error('[client-action]', error)
-        return error instanceof Error ? error.message : options.error ?? '操作失败，请重试。'
+        console.error('[client-action]', error instanceof Error ? error.message : error)
+        return resolveErrorMessage(error, options.error)
       },
     })
     return promise
@@ -26,8 +36,8 @@ export async function callAction<T>(
   try {
     return await action()
   } catch (error) {
-    console.error('[client-action]', error)
-    toast.error(error instanceof Error ? error.message : '操作失败，请重试。')
+    console.error('[client-action]', error instanceof Error ? error.message : error)
+    toast.error(resolveErrorMessage(error, options?.error))
     throw error
   }
 }
