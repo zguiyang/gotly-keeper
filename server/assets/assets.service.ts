@@ -6,28 +6,10 @@ import { db } from '@/server/db'
 import { assets, type Asset } from '@/server/db/schema'
 import { interpretAssetInput } from './assets.interpreter'
 import { scheduleAssetEmbeddingBestEffort } from './assets.embedding-scheduler'
+import { searchAssets as performAssetSearch } from '@/server/search/assets-search.service'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 import { type AssetSummaryTarget } from './assets.summary-intent.pure'
 import { ASSET_LIST_LIMIT_MIN, ASSET_LIST_LIMIT_DEFAULT, ASSET_LIST_LIMIT_MAX, ASSET_RECENT_LIMIT_DEFAULT, ASSET_RECENT_LIMIT_MAX } from '@/server/config/constants'
-
-/**
- * Assets Domain Service
- *
- * Core responsibilities (Phase 4):
- * - Asset CRUD (create, list, query)
- * - Embedding scheduling
- * - Todo completion management
- *
- * Delegated to other domains:
- * - Search → server/search/
- * - AI interpretation → server/ai/
- * - Note summary → server/notes/
- * - Todo review → server/todos/
- * - Bookmark summary → server/bookmarks/
- *
- * DO NOT add new domain logic here. If you need new behavior,
- * create it in the appropriate domain directory.
- */
 
 export { type AssetListItem }
 
@@ -72,16 +54,10 @@ type AssetSearchCommand = {
   completionHint: 'complete' | 'incomplete' | null
 }
 
-export async function searchAssets({
-  userId,
-  query,
-  typeHint,
-  timeHint,
-  completionHint,
-  limit = 5,
-}: SearchAssetsOptions): Promise<AssetListItem[]> {
-  const { searchAssets: searchAssetsDelegate } = await import('@/server/search/assets-search.service')
-  return searchAssetsDelegate({ userId, query, typeHint, timeHint, completionHint, limit })
+export async function searchAssets(
+  options: SearchAssetsOptions
+): Promise<AssetListItem[]> {
+  return performAssetSearch(options)
 }
 
 export async function listAssets({
