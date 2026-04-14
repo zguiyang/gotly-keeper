@@ -45,6 +45,21 @@ export async function createWorkspaceAssetAction(
       }
     }
 
+    if (result.kind === 'summary') {
+      if (result.summaryTarget === 'unfinished_todos') {
+        const review = await reviewUnfinishedTodos(user.id)
+        return { kind: 'todo-review', review }
+      }
+
+      if (result.summaryTarget === 'recent_notes') {
+        const summary = await summarizeRecentNotes(user.id)
+        return { kind: 'note-summary', summary }
+      }
+
+      const summary = await summarizeRecentBookmarks(user.id)
+      return { kind: 'bookmark-summary', summary }
+    }
+
     revalidatePath('/workspace')
     return { kind: 'created', asset: result.asset }
   })

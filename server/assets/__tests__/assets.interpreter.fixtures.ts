@@ -1,6 +1,6 @@
 export interface AssetInterpreterFixture {
   input: string
-  expectedIntent: 'create_note' | 'create_link' | 'create_todo' | 'search_assets'
+  expectedIntent: 'create_note' | 'create_link' | 'create_todo' | 'search_assets' | 'summarize_assets'
 }
 
 export const assetInterpreterFixtures: AssetInterpreterFixture[] = [
@@ -35,5 +35,21 @@ export const assetInterpreterFixtures: AssetInterpreterFixture[] = [
   {
     input: '搜索一下关于 typescript 的笔记',
     expectedIntent: 'search_assets',
+  },
+  {
+    input: '总结最近笔记',
+    expectedIntent: 'summarize_assets',
+  },
+  {
+    input: '复盘一下未完成待办',
+    expectedIntent: 'summarize_assets',
+  },
+  {
+    input: '总结最近收藏的链接',
+    expectedIntent: 'summarize_assets',
+  },
+  {
+    input: '总结一下 AI',
+    expectedIntent: 'create_note',
   },
 ]

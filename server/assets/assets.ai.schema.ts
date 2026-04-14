@@ -7,6 +7,13 @@ export const assetInputIntentSchema = z.enum([
   'create_link',
   'create_todo',
   'search_assets',
+  'summarize_assets',
+])
+
+export const assetSummaryTargetSchema = z.enum([
+  'unfinished_todos',
+  'recent_notes',
+  'recent_bookmarks',
 ])
 
 export const aiAssetInputSchema = z.object({
@@ -19,6 +26,7 @@ export const aiAssetInputSchema = z.object({
   dueAtIso: z.string().datetime().nullable(),
   typeHint: z.enum(['note', 'link', 'todo']).nullable(),
   completionHint: z.enum(['complete', 'incomplete']).nullable(),
+  summaryTarget: assetSummaryTargetSchema.nullable(),
   confidence: z.number().min(0).max(1),
 })
 

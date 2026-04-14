@@ -10,6 +10,11 @@ import {
   hasTodoIntent,
   type AssetInputType,
 } from './assets.classifier'
+import {
+  detectExplicitSummaryIntent,
+  resolveExplicitSummaryTarget,
+  type AssetSummaryTarget,
+} from './assets.summary-intent.pure'
 import { parseAssetTimeText } from './assets.time'
 
 const ASSET_INPUT_MODEL_TIMEOUT_MS = 5_000
@@ -47,8 +52,24 @@ export type AssetInputCommand =
       completionHint: 'complete' | 'incomplete' | null
       confidence: number
     }
+  | {
+      intent: 'summarize_assets'
+      summaryTarget: AssetSummaryTarget
+      query: string
+      confidence: number
+    }
 
 function interpretWithRuleFallback(text: string): AssetInputCommand {
+  const summaryIntent = detectExplicitSummaryIntent(text)
+  if (summaryIntent) {
+    return {
+      intent: 'summarize_assets',
+      summaryTarget: summaryIntent.summaryTarget,
+      query: text,
+      confidence: 1,
+    }
+  }
+
   const classification = classifyAssetInput(text)
 
   if (classification.kind === 'query') {
@@ -136,6 +157,20 @@ function normalizeAiResponse(
     }
   }
 
+  if (intent === 'summarize_assets') {
+    const summaryTarget = resolveExplicitSummaryTarget(originalText)
+
+    if (!summaryTarget) return null
+    if (deterministicUrl) return null
+
+    return {
+      intent: 'summarize_assets',
+      summaryTarget,
+      query: aiOutput.query?.trim() || originalText,
+      confidence,
+    }
+  }
+
   if (intent === 'search_assets') {
     const normalizedTime = normalizeAiTime(
       originalText,
@@ -212,6 +247,7 @@ Classify the user input into exactly one of these intents:
 - create_link: Bookmark a URL or share an article
 - create_todo: Remind the user to do something, including tasks with deadlines
 - search_assets: Look for previously saved notes, links, or todos
+- summarize_assets: Summarize or review a bounded set of already saved assets, only for supported requests
 
 Rules:
 - Preserve the original text exactly as provided (after trimming)
@@ -224,6 +260,13 @@ Rules:
 - Treat the current date and time provided by the user message as the only basis for resolving relative dates
 - Resolve relative dates in the Asia/Shanghai time zone
 - If a relative time cannot be resolved safely, set dueAtIso to null and preserve the expression in timeText
+- Use summarize_assets only for clearly supported summary requests:
+  - unfinished_todos: reviewing or summarizing unfinished/pending todos
+  - recent_notes: summarizing recent notes or saved note records
+  - recent_bookmarks: summarizing recent bookmarks, saved links, or saved URLs
+- Do not use summarize_assets for broad knowledge questions like "总结一下 AI"; use search_assets when the user is looking for saved content.
+- Do not use summarize_assets for inputs that contain a URL; those should keep the existing create_link/create_todo behavior.
+- Set summaryTarget only when intent is summarize_assets; otherwise set it to null.
 
 Return a confidence score between 0 and 1:
 - 0.9-1.0: Very confident in the classification

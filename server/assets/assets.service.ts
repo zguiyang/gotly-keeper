@@ -14,8 +14,15 @@ import { scheduleAssetEmbeddingBestEffort } from './assets.embedding-scheduler'
 import { searchAssetsByEmbedding } from './assets.embedding.service'
 import { logAssetSearchPath } from './assets.search-logging'
 import { type AssetListItem } from '@/shared/assets/assets.types'
+import { type AssetSummaryTarget } from './assets.summary-intent.pure'
 
 export { type AssetListItem }
+
+export type AssetSummaryCommand = {
+  kind: 'summary'
+  summaryTarget: AssetSummaryTarget
+  query: string
+}
 
 type AssetType = Asset['type']
 
@@ -340,13 +347,21 @@ export function toAssetListItem(asset: Asset): AssetListItem {
 export async function createAsset(input: {
   userId: string
   text: string
-}): Promise<{ kind: 'created'; asset: AssetListItem } | AssetSearchCommand> {
+}): Promise<{ kind: 'created'; asset: AssetListItem } | AssetSearchCommand | AssetSummaryCommand> {
   const trimmed = input.text.trim()
   if (!trimmed) {
     throw new Error('EMPTY_INPUT')
   }
 
   const command = await interpretAssetInput(trimmed)
+
+  if (command.intent === 'summarize_assets') {
+    return {
+      kind: 'summary',
+      summaryTarget: command.summaryTarget,
+      query: command.query,
+    }
+  }
 
   if (command.intent === 'search_assets') {
     return {

@@ -368,10 +368,37 @@ export function WorkspaceClient({
         setTodoReview(null)
         setNoteSummary(null)
         setBookmarkSummary(null)
+        setStatus('success')
+        return
       }
-      setTodoReview(null)
-      setNoteSummary(null)
-      setBookmarkSummary(null)
+
+      if (result.kind === 'todo-review') {
+        setTodoReview(result.review)
+        setQueryResult(null)
+        setNoteSummary(null)
+        setBookmarkSummary(null)
+        setStatus('success')
+        return
+      }
+
+      if (result.kind === 'note-summary') {
+        setNoteSummary(result.summary)
+        setQueryResult(null)
+        setTodoReview(null)
+        setBookmarkSummary(null)
+        setStatus('success')
+        return
+      }
+
+      if (result.kind === 'bookmark-summary') {
+        setBookmarkSummary(result.summary)
+        setQueryResult(null)
+        setTodoReview(null)
+        setNoteSummary(null)
+        setStatus('success')
+        return
+      }
+
       setStatus('success')
     } catch {
       setStatus('error')
