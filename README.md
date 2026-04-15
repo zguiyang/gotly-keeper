@@ -40,7 +40,7 @@ Local services:
 
 ### 2. Configure environment
 
-Create `.env.local` with required variables:
+Create `.env` (or copy from `.env.example`) with required variables:
 
 ```env
 POSTGRES_HOST=localhost
@@ -112,11 +112,9 @@ config/                 # Frontend UI configuration
 hooks/                  # Client-side interaction and orchestration hooks
 lib/                    # Lightweight shared helpers
 server/                 # Server-side business logic and infrastructure
-  application/          # Use-case orchestration layer
-  actions/              # Action-layer helpers and tests
-  <domain>/             # Domain services by business area
-  config/               # Server-side constants and config
-  db/                   # Database access and schema wiring
+  lib/                  # Infrastructure adapters (db/cache/ai/config/env)
+  modules/              # Server module entrypoints for app/actions
+  services/             # Domain/use-case orchestration and business services
   test-utils/           # Shared server test support
 shared/                 # Cross-runtime shared types, schemas, constants, helpers
 scripts/                # Project runtime, maintenance, and test scripts

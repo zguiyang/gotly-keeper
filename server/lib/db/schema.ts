@@ -116,6 +116,10 @@ export const assetEmbeddings = pgTable(
       table.dimensions
     ),
     index('asset_embeddings_asset_id_idx').on(table.assetId),
+    index('asset_embeddings_embedding_hnsw_cosine_idx').using(
+      'hnsw',
+      table.embedding.op('vector_cosine_ops')
+    ),
   ]
 )
 

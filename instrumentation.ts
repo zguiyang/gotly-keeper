@@ -3,21 +3,29 @@ export async function register() {
     return
   }
 
-  try {
-    const [{ checkDatabaseConnection }, { checkRedisConnection }] = await Promise.all([
-      import('@/server/db/client'),
-      import('@/server/cache/redis'),
-    ])
+  const [{ checkDatabaseConnection }, { checkRedisConnection }] = await Promise.all([
+    import('@/server/lib/db/client'),
+    import('@/server/lib/cache/redis'),
+  ])
 
-    const checks = await Promise.allSettled([checkDatabaseConnection(), checkRedisConnection()])
+  const checks = await Promise.allSettled([checkDatabaseConnection(), checkRedisConnection()])
+  const failures = checks
+    .map((result, index) => ({ result, service: index === 0 ? 'Postgres' : 'Redis' }))
+    .filter((item) => item.result.status === 'rejected')
 
-    checks.forEach((result, index) => {
-      if (result.status === 'rejected') {
-        const service = index === 0 ? 'Postgres' : 'Redis'
-        console.error(`[startup] ${service} connection check failed`, result.reason)
-      }
-    })
-  } catch (error) {
-    console.error('[startup] Infrastructure startup check failed', error)
+  if (failures.length > 0) {
+    const detail = failures
+      .map(({ service, result }) =>
+        `${service}: ${
+          result.status === 'rejected'
+            ? result.reason instanceof Error
+              ? result.reason.message
+              : String(result.reason)
+            : 'unknown'
+        }`
+      )
+      .join('; ')
+
+    throw new Error(`[startup] Infrastructure startup check failed - ${detail}`)
   }
 }

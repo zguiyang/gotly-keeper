@@ -1,7 +1,7 @@
 import 'dotenv/config'
 
-import { backfillMissingAssetEmbeddings } from '@/server/search/semantic-search.service'
-import { pool } from '@/server/db/client'
+import { backfillMissingAssetEmbeddings } from '@/server/services/search/semantic-search.service'
+import { pool } from '@/server/lib/db/client'
 
 async function main() {
   const limitArg = process.argv[2]
