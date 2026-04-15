@@ -1,6 +1,6 @@
 import { BookmarksClient } from '@/components/workspace/bookmarks-client'
-import { requireWorkspaceUserOrRedirect } from '@/server/auth/workspace-session'
-import { listLinkAssets } from '@/server/assets/assets.service'
+import { requireWorkspaceUserOrRedirect } from '@/server/modules/auth/workspace-session'
+import { listLinkAssets } from '@/server/modules/assets/assets.service'
 
 export default async function BookmarksPage() {
   const user = await requireWorkspaceUserOrRedirect()

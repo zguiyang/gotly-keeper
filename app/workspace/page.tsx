@@ -1,6 +1,6 @@
 import { WorkspaceClient } from '@/components/workspace/workspace-client'
-import { requireWorkspaceUserOrRedirect } from '@/server/auth/workspace-session'
-import { listRecentAssets } from '@/server/assets/assets.service'
+import { requireWorkspaceUserOrRedirect } from '@/server/modules/auth/workspace-session'
+import { listRecentAssets } from '@/server/modules/assets/assets.service'
 
 export default async function WorkspacePage() {
   const user = await requireWorkspaceUserOrRedirect()
