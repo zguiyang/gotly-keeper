@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { setTodoCompletion } from '../../../../server/assets/assets.todo-mutation'
+import { setTodoCompletion } from '@/server/services/assets/assets.todo-mutation'
 
 const mocks = vi.hoisted(() => ({
   updateMock: vi.fn(),
@@ -9,13 +9,13 @@ const mocks = vi.hoisted(() => ({
   toAssetListItemMock: vi.fn(),
 }))
 
-vi.mock('@/server/db', () => ({
+vi.mock('@/server/lib/db', () => ({
   db: {
     update: mocks.updateMock,
   },
 }))
 
-vi.mock('@/server/db/schema', () => ({
+vi.mock('@/server/lib/db/schema', () => ({
   assets: {
     id: Symbol('id'),
     userId: Symbol('userId'),
@@ -23,7 +23,7 @@ vi.mock('@/server/db/schema', () => ({
   },
 }))
 
-vi.mock('../../../../server/assets/assets.mapper', () => ({
+vi.mock('@/server/services/assets/assets.mapper', () => ({
   toAssetListItem: mocks.toAssetListItemMock,
 }))
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   detectExplicitSummaryIntent,
   resolveExplicitSummaryTarget,
-} from '../../../server/assets/assets.summary-intent.pure'
+} from '@/server/services/assets/assets.summary-intent.pure'
 
 describe('assets.summary-intent', () => {
   it('detects supported explicit summary intents', () => {

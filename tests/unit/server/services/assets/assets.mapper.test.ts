@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { toAssetListItem } from '../../../../server/assets/assets.mapper'
-import type { Asset } from '@/server/db/schema'
+import { toAssetListItem } from '@/server/services/assets/assets.mapper'
+import type { Asset } from '@/server/lib/db/schema'
 
 describe('assets.mapper', () => {
   describe('toAssetListItem', () => {

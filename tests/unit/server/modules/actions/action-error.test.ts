@@ -5,7 +5,7 @@ import {
   getActionErrorMessage,
   isActionError,
   normalizeActionError,
-} from '../../../server/actions/action-error'
+} from '@/server/modules/actions/action-error'
 
 describe('action-error', () => {
   describe('getActionErrorMessage', () => {

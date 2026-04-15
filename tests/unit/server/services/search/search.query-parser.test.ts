@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normalizeSearchText, getAssetSearchTerms, getTypeHintScore, scoreAssetForQuery } from '../../../server/search/search.query-parser'
+import { normalizeSearchText, getAssetSearchTerms, getTypeHintScore, scoreAssetForQuery } from '@/server/services/search/search.query-parser'
 
 describe('search.query-parser', () => {
   describe('normalizeSearchText', () => {

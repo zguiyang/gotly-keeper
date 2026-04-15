@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createAsset } from '../../../../server/assets/assets.command'
+import { createAsset } from '@/server/services/assets/assets.command'
 
 const mocks = vi.hoisted(() => ({
   insertMock: vi.fn(),
@@ -10,25 +10,25 @@ const mocks = vi.hoisted(() => ({
   toAssetListItemMock: vi.fn(),
 }))
 
-vi.mock('@/server/db', () => ({
+vi.mock('@/server/lib/db', () => ({
   db: {
     insert: mocks.insertMock,
   },
 }))
 
-vi.mock('@/server/db/schema', () => ({
+vi.mock('@/server/lib/db/schema', () => ({
   assets: Symbol('assets'),
 }))
 
-vi.mock('../../../../server/assets/assets.interpreter', () => ({
+vi.mock('@/server/services/assets/assets.interpreter', () => ({
   interpretAssetInput: mocks.interpretAssetInputMock,
 }))
 
-vi.mock('../../../../server/assets/assets.embedding', () => ({
+vi.mock('@/server/services/assets/assets.embedding', () => ({
   createAssetEmbeddingBestEffort: mocks.createAssetEmbeddingBestEffortMock,
 }))
 
-vi.mock('../../../../server/assets/assets.mapper', () => ({
+vi.mock('@/server/services/assets/assets.mapper', () => ({
   toAssetListItem: mocks.toAssetListItemMock,
 }))
 

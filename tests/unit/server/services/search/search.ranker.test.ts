@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { mergeSearchResults } from '../../../server/search/search.ranker'
-import type { SemanticCandidate, KeywordCandidate } from '../../../server/search/search.types'
+import { mergeSearchResults } from '@/server/services/search/search.ranker'
+import type { SemanticCandidate, KeywordCandidate } from '@/server/services/search/search.types'
 
 describe('search.ranker', () => {
   describe('mergeSearchResults', () => {

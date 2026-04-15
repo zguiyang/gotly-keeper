@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { matchesSearchTimeHint, getSearchTimeTextAliases } from '../../../../server/search/search.time-match.pure'
+import { matchesSearchTimeHint, getSearchTimeTextAliases } from '@/server/services/search/search.time-match.pure'
 
 describe('search.time-match', () => {
   describe('matchesSearchTimeHint', () => {

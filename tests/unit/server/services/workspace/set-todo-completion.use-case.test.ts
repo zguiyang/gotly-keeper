@@ -2,12 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const setTodoCompletionMock = vi.hoisted(() => vi.fn())
 
-vi.mock('@/server/assets/assets.service', () => ({
+vi.mock('@/server/services/assets/assets.service', () => ({
   setTodoCompletion: setTodoCompletionMock,
 }))
 
-import { setTodoCompletionUseCase } from '@/server/application/workspace/set-todo-completion.use-case'
-import { WorkspaceApplicationError, WORKSPACE_APPLICATION_ERROR_CODES } from '@/server/application/workspace/workspace.application-error'
+import { setTodoCompletionUseCase } from '@/server/services/workspace/set-todo-completion.use-case'
+import { WorkspaceApplicationError, WORKSPACE_APPLICATION_ERROR_CODES } from '@/server/services/workspace/workspace.application-error'
 
 describe('setTodoCompletionUseCase', () => {
   beforeEach(() => {

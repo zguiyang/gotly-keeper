@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { z } from 'zod'
 
-import { serverEnv } from '@/server/env'
+import { serverEnv } from '@/server/lib/env'
 import {
   interpretAssetInputWithAi,
   runAiGeneration,
   summarizeWithAi,
-} from '../../../server/ai/ai-runner'
+} from '@/server/lib/ai/ai-runner'
 
 function withAiProviderDisabled<T>(run: () => Promise<T>): Promise<T> {
   const original = { ...serverEnv.aiGateway }

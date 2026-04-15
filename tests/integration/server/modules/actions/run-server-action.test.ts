@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { runServerAction } from '../../../server/actions/run-server-action'
-import { ActionError, ACTION_ERROR_CODES } from '../../../server/actions/action-error'
+import { runServerAction } from '@/server/modules/actions/run-server-action'
+import { ActionError, ACTION_ERROR_CODES } from '@/server/modules/actions/action-error'
 
 describe('runServerAction', () => {
   const mockConsoleInfo = vi.fn()
