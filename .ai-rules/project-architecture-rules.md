@@ -16,8 +16,14 @@ Read these first:
 
 - `.ai-rules/project-governance-rules.md`
 - `.ai-rules/universal-development-boundary-rules.md`
+- `.ai-rules/backend-architecture-principles.md`
 
 Use framework-specific skills and docs for framework behavior details.
+
+When directory-level mapping in this file conflicts with behavior-boundary rules, follow:
+
+1. `backend-architecture-principles.md` for behavioral boundaries and dependency intent
+2. this file for repository-specific placement and implementation mapping
 
 ## 3. Repository Architecture Intent
 
@@ -167,6 +173,8 @@ This repository enforces a unidirectional dependency flow:
 ```text
 app/actions -> application -> domain -> infra
 ```
+
+This dependency diagram is the current repository mapping; behavior-boundary enforcement and architectural intent are governed by `.ai-rules/backend-architecture-principles.md`.
 
 Rules:
 

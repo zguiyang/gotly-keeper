@@ -228,6 +228,7 @@ Decision guide:
 
 - Runtime verification and browser priority: `.ai-rules/project-tooling-and-runtime-rules.md`
 - Architecture and action/use-case boundaries: `.ai-rules/project-architecture-rules.md`
+- Backend behavior boundaries and test-layer alignment baseline: `.ai-rules/backend-architecture-principles.md`
 - Client component and form boundaries: `.ai-rules/react-client-state-and-forms-rules.md`
 - Worktree execution protocol: `.ai-rules/phase-execution-protocol.md`
 

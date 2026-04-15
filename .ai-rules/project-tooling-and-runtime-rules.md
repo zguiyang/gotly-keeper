@@ -139,18 +139,19 @@ Before running commands or implementing code:
 
 1. Confirm whether the task touches dependency management, scripts, runtime inspection, or service startup.
 2. If yes, read this file alongside the project architecture and boundary rules.
-3. Use `pnpm` for package and script operations.
-4. Run `package.json` script commands in the user's local environment through the available approval mechanism instead of trying them in the sandbox first.
-5. Do not start services without user approval.
-6. Choose tools by need and uncertainty; do not run broad tool chains by default.
-7. Prefer skills first, then MCP, then Context7 when additional guidance is needed.
-8. For browser work, follow the browser priority order defined in Section 4.
-9. For Next.js debugging and validation, prefer actual browser/page verification over custom scripts, except for pure JavaScript utilities or delivered CLI/script artifacts.
-10. For test-suite versus browser-verification decisions, follow `.ai-rules/testing-and-integration-rules.md`.
-11. Follow `.ai-rules/project-governance-rules.md` for placement of AI workflow guards and local AI workspace material.
-12. Do not treat local AI workspace files as repository deliverables.
-13. Start coding only after `ai-bootstrap-check` passes.
-14. Before commit/PR, run `bash .ai-rules/guards/check-rules-integrity.sh --staged`.
+3. If backend/server behavior is touched, read `.ai-rules/backend-architecture-principles.md` first and use it as behavior-boundary baseline.
+4. Use `pnpm` for package and script operations.
+5. Run `package.json` script commands in the user's local environment through the available approval mechanism instead of trying them in the sandbox first.
+6. Do not start services without user approval.
+7. Choose tools by need and uncertainty; do not run broad tool chains by default.
+8. Prefer skills first, then MCP, then Context7 when additional guidance is needed.
+9. For browser work, follow the browser priority order defined in Section 4.
+10. For Next.js debugging and validation, prefer actual browser/page verification over custom scripts, except for pure JavaScript utilities or delivered CLI/script artifacts.
+11. For test-suite versus browser-verification decisions, follow `.ai-rules/testing-and-integration-rules.md`.
+12. Follow `.ai-rules/project-governance-rules.md` for placement of AI workflow guards and local AI workspace material.
+13. Do not treat local AI workspace files as repository deliverables.
+14. Start coding only after `ai-bootstrap-check` passes.
+15. Before commit/PR, run `bash .ai-rules/guards/check-rules-integrity.sh --staged`.
 
 ## 10. Guard Scripts
 

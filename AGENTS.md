@@ -72,6 +72,7 @@ How to use skills:
 
 Before editing code:
 - identify the umbrella rule file and relevant topic files in `.ai-rules`
+- if the task touches `server/**`, read `.ai-rules/backend-architecture-principles.md` first as the backend behavior-boundary baseline
 - identify whether a local skill applies
 - identify whether official Next.js docs or MCP runtime inspection is needed
 - identify whether `.ai-rules/project-tooling-and-runtime-rules.md` applies to the task

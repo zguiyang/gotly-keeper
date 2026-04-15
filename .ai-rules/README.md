@@ -9,10 +9,11 @@ Use this file as a routing table, not as a second rule body.
 1. `AGENTS.md`
 2. this file
 3. the governance mother documents
-4. the project-specific architecture rule
-5. only the topic files relevant to the task
-6. execution protocols and guards only when needed
-7. framework, package, or MCP-backed docs when the relevant rule requires them
+4. backend behavior principles (`backend-architecture-principles.md`) for server-side work
+5. the project-specific architecture rule
+6. only the topic files relevant to the task
+7. execution protocols and guards only when needed
+8. framework, package, or MCP-backed docs when the relevant rule requires them
 
 ## Hierarchy
 
@@ -21,11 +22,13 @@ Read and apply rules in this order:
 1. **Governance mother documents**
    - `.ai-rules/project-governance-rules.md`
    - `.ai-rules/universal-development-boundary-rules.md`
-2. **Project-specific architecture**
+2. **Backend behavior principles (server-side umbrella)**
+   - `.ai-rules/backend-architecture-principles.md`
+3. **Project-specific architecture**
    - `.ai-rules/project-architecture-rules.md`
-3. **Type/topic rules**
+4. **Type/topic rules**
    - frontend, actions, forms, AI SDK, testing, commits, tooling
-4. **Execution layer**
+5. **Execution layer**
    - protocols, lessons, and guard scripts
 
 Meaning:
@@ -46,6 +49,10 @@ Meaning:
 ### Core architecture
 
 - `.ai-rules/project-architecture-rules.md`
+
+### Backend umbrella principles
+
+- `.ai-rules/backend-architecture-principles.md`
 
 ### Focused boundaries
 
@@ -77,6 +84,7 @@ Meaning:
 - repository-specific architecture and directory mapping: read `project-architecture-rules.md`
 - repository surfaces, file placement, local workspaces, project-vs-AI boundary: read `project-governance-rules.md`
 - turning ideas into layered implementations with clear ownership and reuse boundaries: read `universal-development-boundary-rules.md`
+- server-side behavior boundaries, contracts, and architecture enforcement baseline: read `backend-architecture-principles.md`
 - rendering, route handlers, server/client boundaries, and framework entry behavior: read `project-architecture-rules.md`
 - components, hooks, client adapters, client forms, and validation: read `react-client-state-and-forms-rules.md`
 - AI SDK, models, agents, streaming: read `ai-sdk-rules.md`
