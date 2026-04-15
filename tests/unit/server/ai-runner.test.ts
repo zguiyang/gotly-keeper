@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
+import { describe, it, expect, vi } from 'vitest'
 import { z } from 'zod'
 
 import { serverEnv } from '@/server/env'
@@ -7,7 +6,7 @@ import {
   interpretAssetInputWithAi,
   runAiGeneration,
   summarizeWithAi,
-} from '../ai-runner'
+} from '../../../server/ai/ai-runner'
 
 function withAiProviderDisabled<T>(run: () => Promise<T>): Promise<T> {
   const original = { ...serverEnv.aiGateway }
@@ -31,9 +30,9 @@ describe('ai-runner', () => {
         userPrompt: 'test-user',
       })
 
-      assert.equal(result.success, false)
+      expect(result.success).toBe(false)
       if (!result.success) {
-        assert.equal(result.error.type, 'provider')
+        expect(result.error.type).toBe('provider')
       }
     })
   })
@@ -46,7 +45,7 @@ describe('ai-runner', () => {
         'test-system',
         (text) => text
       )
-      assert.deepEqual(result, { success: false, fallback: true })
+      expect(result).toEqual({ success: false, fallback: true })
     })
   })
 
@@ -58,7 +57,7 @@ describe('ai-runner', () => {
         { text: 'sample' },
         100
       )
-      assert.deepEqual(result, { success: false, fallback: true })
+      expect(result).toEqual({ success: false, fallback: true })
     })
   })
 })

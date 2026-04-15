@@ -10,11 +10,7 @@ This version has breaking changes. APIs, conventions, and file structure may dif
 
 `AGENTS.md` is the entry document for AI agents.
 
-It should not duplicate the full project rules. Its job is to tell an agent:
-- which documents define the project rules
-- which MCP services are available
-- which local skills exist
-- what to read before changing code
+It should stay minimal and point to canonical rule files.
 
 ## Read Order
 
@@ -22,7 +18,7 @@ Start in this order:
 
 1. Read `AGENTS.md`.
 2. Read `.ai-rules/README.md`.
-3. Read the governance mother documents and the relevant type rules in `.ai-rules/`.
+3. Read the relevant `.ai-rules/*.md` files routed by `.ai-rules/README.md`.
 4. Read the relevant docs in `node_modules/next/dist/docs/` before changing Next.js behavior.
 
 ## Instruction Priority
@@ -52,26 +48,7 @@ Use `.ai-rules/README.md` as the index and routing table.
 
 Rules:
 - Treat `.ai-rules/` as the source of truth for implementation rules.
-- Read `.ai-rules/project-governance-rules.md` when the task touches repository structure, file placement, scripts, templates, local workspaces, or project-vs-AI boundaries.
-- Read `.ai-rules/universal-development-boundary-rules.md` when the task touches code organization, layering, ownership, reuse, or module boundaries.
-- Read `.ai-rules/project-architecture-rules.md` for repository-specific architecture, runtime boundaries, and directory mapping.
-- Then read only the topic files relevant to the current task.
 - Do not restate full rules in `AGENTS.md`; update the rule file instead.
-
-## Project Organization
-
-Agents should follow the actual repository structure and the conventions defined in `.ai-rules`.
-
-Primary directory responsibilities:
-- `app/` for routes, layouts, pages, and optional `app/api/**/route.ts` files
-- `components/` for reusable UI
-- `server/` for server-only business logic grouped by domain
-- `lib/` for lightweight shared helpers such as `cn` and other generic utilities
-- `shared/` for cross-runtime shared types, schemas, constants, and utilities that are intentionally reused by both server and client
-
-These are responsibility anchors, not a complete or fixed directory list.
-
-New directories such as `hooks/`, `types/`, or `styles/` may be added as the project evolves without requiring `AGENTS.md` updates, as long as they do not conflict with the architectural rules in `.ai-rules/`.
 
 ## MCP Services
 
@@ -80,7 +57,6 @@ Use MCP when it improves correctness, documentation accuracy, or runtime verific
 Rules:
 - Prefer relevant local skills first.
 - Use runtime-aware MCP tools when code inspection alone is insufficient.
-- Prefer official docs and runtime-aware tools over memory for framework behavior.
 - Follow `.ai-rules/project-tooling-and-runtime-rules.md` for tool-selection details.
 
 ## Local Skills
@@ -91,7 +67,6 @@ How to use skills:
 - Match the task to the relevant skill.
 - Read that skill's `SKILL.md` before implementing.
 - Use the smallest relevant set of skills for the task.
-- Use `.ai-rules/README.md` and the skill metadata available in the environment to route to the smallest relevant skill set.
 
 ## Editing Rule
 

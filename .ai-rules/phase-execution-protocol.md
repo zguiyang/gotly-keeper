@@ -151,4 +151,5 @@ cd .worktrees/${phase_id}
 ## 7. Related Rules
 
 - Layered architecture boundaries: `.ai-rules/project-architecture-rules.md`
-- Test minimum contract: `.ai-rules/testing-and-integration-rules.md` Section 12.6
+- Testing and verification decision rules: `.ai-rules/testing-and-integration-rules.md`
+- Repository asset and local workspace governance: `.ai-rules/project-governance-rules.md`

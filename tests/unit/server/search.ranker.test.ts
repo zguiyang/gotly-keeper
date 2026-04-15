@@ -1,13 +1,12 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
-import { mergeSearchResults } from '../search.ranker'
-import type { SemanticCandidate, KeywordCandidate } from '../search.types'
+import { describe, it, expect } from 'vitest'
+import { mergeSearchResults } from '../../../server/search/search.ranker'
+import type { SemanticCandidate, KeywordCandidate } from '../../../server/search/search.types'
 
 describe('search.ranker', () => {
   describe('mergeSearchResults', () => {
     it('returns empty results when both inputs are empty', () => {
       const ranked = mergeSearchResults([], [], 5)
-      assert.deepEqual(ranked, [])
+      expect(ranked).toEqual([])
     })
 
     it('returns keyword-only results when semantic is empty', () => {
@@ -30,8 +29,8 @@ describe('search.ranker', () => {
       ]
 
       const ranked = mergeSearchResults([], keywordCandidates, 5)
-      assert.equal(ranked.length, 1)
-      assert.equal(ranked[0].source, 'keyword')
+      expect(ranked.length).toBe(1)
+      expect(ranked[0].source).toBe('keyword')
     })
 
     it('returns semantic results when keyword is empty', () => {
@@ -54,8 +53,8 @@ describe('search.ranker', () => {
       ]
 
       const ranked = mergeSearchResults(semanticResults, [], 5)
-      assert.equal(ranked.length, 1)
-      assert.equal(ranked[0].source, 'semantic')
+      expect(ranked.length).toBe(1)
+      expect(ranked[0].source).toBe('semantic')
     })
 
     it('merges results from both sources', () => {
@@ -96,8 +95,8 @@ describe('search.ranker', () => {
       ]
 
       const ranked = mergeSearchResults(semanticResults, keywordCandidates, 5)
-      assert.equal(ranked.length, 1)
-      assert.equal(ranked[0].source, 'merged')
+      expect(ranked.length).toBe(1)
+      expect(ranked[0].source).toBe('merged')
     })
 
     it('limits results to specified limit', () => {
@@ -150,7 +149,7 @@ describe('search.ranker', () => {
       ]
 
       const ranked = mergeSearchResults(semanticResults, [], 2)
-      assert.equal(ranked.length, 2)
+      expect(ranked.length).toBe(2)
     })
 
     it('sorts by score descending', () => {
@@ -188,8 +187,8 @@ describe('search.ranker', () => {
       ]
 
       const ranked = mergeSearchResults(semanticResults, [], 5)
-      assert.equal(ranked[0].asset.id, '2')
-      assert.equal(ranked[1].asset.id, '1')
+      expect(ranked[0].asset.id).toBe('2')
+      expect(ranked[1].asset.id).toBe('1')
     })
   })
 })
