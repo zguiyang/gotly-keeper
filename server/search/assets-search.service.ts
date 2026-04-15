@@ -5,9 +5,9 @@ import type { SearchAssetsOptions } from './search.types'
 import { searchByEmbedding } from './semantic-search.service'
 import { searchByKeyword } from './keyword-search.service'
 import { mergeSearchResults } from './search.ranker'
-import { parseAssetSearchTimeHint } from '@/server/assets/assets.time'
-import { matchesAssetSearchTimeHint } from '@/server/assets/assets.search-time'
-import { logAssetSearchPath } from '@/server/assets/assets.search-logging'
+import { parseSearchTimeHint } from './search.time-hint'
+import { matchesSearchTimeHint } from './search.time-match'
+import { logSearchPath } from './search.logging'
 import { normalizeSearchText } from './search.query-parser'
 import {
   ASSET_LIST_LIMIT_MIN,
@@ -32,7 +32,7 @@ export async function searchAssets({
   const trimmed = query.trim()
   if (!trimmed) return []
 
-  const timeRangeHint = parseAssetSearchTimeHint(timeHint)
+  const timeRangeHint = parseSearchTimeHint(timeHint)
   const timeFilter =
     timeRangeHint && typeHint === 'todo'
       ? { rangeHint: timeRangeHint, timeHint }
@@ -53,7 +53,7 @@ export async function searchAssets({
     ).filter(
       (result) =>
         !timeFilter ||
-        matchesAssetSearchTimeHint(result.asset, timeFilter.rangeHint, timeFilter.timeHint)
+        matchesSearchTimeHint(result.asset, timeFilter.rangeHint, timeFilter.timeHint)
     )
   } catch (error) {
     semanticFailed = true
@@ -78,7 +78,7 @@ export async function searchAssets({
   const filteredKeywordCandidates = keywordCandidates.filter(
     (candidate) =>
       !timeFilter ||
-      matchesAssetSearchTimeHint(
+      matchesSearchTimeHint(
         candidate.asset,
         timeFilter.rangeHint,
         timeFilter.timeHint
@@ -93,7 +93,7 @@ export async function searchAssets({
 
   const results = ranked.map((r) => r.asset)
 
-  logAssetSearchPath({
+  logSearchPath({
     query: trimmed,
     typeHint,
     timeHint,
