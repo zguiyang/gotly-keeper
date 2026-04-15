@@ -185,19 +185,16 @@ server/test-utils/
 Use `pnpm` scripts for running tests:
 
 ```bash
-pnpm test:domain          # Run domain and server-local logic tests
-pnpm test:application     # Run isolated application/use-case tests
-pnpm test:actions         # Run action and boundary contract tests
-pnpm test:critical        # Run all critical local tests
+pnpm test              # Run all tests
+pnpm test:unit         # Run unit tests (Vitest workspace: unit-node)
+pnpm test:integration  # Run integration tests
+pnpm test:watch        # Run tests in watch mode
+pnpm test:coverage     # Run tests with coverage
 ```
 
 These are `package.json` scripts. Follow `.ai-rules/project-tooling-and-runtime-rules.md` and run them through the approved local execution path instead of the sandbox-first path.
 
-Tests require the `server-only` alias workaround:
-
-```bash
-node --require ./scripts/register-server-only-alias.cjs --import tsx --test <test-files>
-```
+Vitest is configured with workspace projects in `vitest.config.ts`. The test infrastructure is centralized in the `tests/` directory.
 
 ### 11.4 Test Fixtures and Mocks Rules
 
