@@ -15,7 +15,8 @@
     "test:domain": "node --require ./scripts/register-server-only-alias.cjs --import tsx --test 'server/notes/__tests__/*.test.ts' 'server/todos/__tests__/*.test.ts' 'server/bookmarks/__tests__/*.test.ts' 'server/search/__tests__/*.test.ts' 'server/ai/__tests__/*.test.ts'",
     "test:application": "node --require ./scripts/register-server-only-alias.cjs --import tsx --test 'server/application/__tests__/*.test.ts'",
     "test:actions": "node --require ./scripts/register-server-only-alias.cjs --import tsx --test 'server/actions/__tests__/*.test.ts' 'app/workspace/__tests__/*.test.ts'",
-    "test:critical": "node --require ./scripts/register-server-only-alias.cjs --import tsx --test 'server/notes/__tests__/*.test.ts' 'server/todos/__tests__/*.test.ts' 'server/bookmarks/__tests__/*.test.ts' 'server/search/__tests__/*.test.ts' 'server/ai/__tests__/*.test.ts' 'server/actions/__tests__/*.test.ts' 'app/workspace/__tests__/*.test.ts'"
+    "test:critical": "node --require ./scripts/register-server-only-alias.cjs --import tsx --test 'server/notes/__tests__/*.test.ts' 'server/todos/__tests__/*.test.ts' 'server/bookmarks/__tests__/*.test.ts' 'server/search/__tests__/*.test.ts' 'server/ai/__tests__/*.test.ts' 'server/actions/__tests__/*.test.ts' 'app/workspace/__tests__/*.test.ts'",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts"
   },
   "dependencies": {
     "@ai-sdk/alibaba": "^1.0.17",
@@ -53,6 +54,7 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/browser-playwright": "^4.1.4",
     "@vitest/coverage-v8": "^4.1.4",
     "@vitest/ui": "^4.1.4",
     "babel-plugin-react-compiler": "1.0.0",
@@ -60,6 +62,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
     "jsdom": "^29.0.2",
+    "playwright": "^1.59.1",
     "shadcn": "^4.2.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
