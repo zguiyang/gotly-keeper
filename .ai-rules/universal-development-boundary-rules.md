@@ -413,6 +413,26 @@ The fallback must NOT:
 
 All split decisions must be verifiable by `.ai-rules/guards/check-import-boundaries.sh`.
 
-## 14. One-Sentence Summary
+## 14. Module Split Decision Rule
+
+Module split is a governance decision, not a file-count formula.
+
+Do not use fixed numeric thresholds as mandatory split triggers.
+
+When deciding whether to split a module, evaluate these three dimensions first:
+
+- maintainability: can a developer locate and change behavior with low cognitive load?
+- simplicity: is the current structure still understandable without hidden coupling?
+- extensibility: can new capabilities be added without broad cross-module edits?
+
+Use module size (files/functions) only as a signal, never as the final verdict.
+
+Split when responsibility boundaries are mixed, ownership is ambiguous, or changes repeatedly require unrelated edits.
+
+Do not over-split when cohesion is high and change paths remain clear.
+
+There is no perfect split. Choose the structure that best balances maintainability, simplicity, and extensibility under current business needs.
+
+## 15. One-Sentence Summary
 
 For any idea, AI must first determine responsibility, ownership, boundary, and reuse level; keep business logic cohesive, shared logic truly shared, infrastructure generic, entry points thin, and cross-boundary collaboration explicit.
