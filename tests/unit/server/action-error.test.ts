@@ -5,7 +5,6 @@ import {
   getActionErrorMessage,
   isActionError,
   normalizeActionError,
-  type NormalizedActionError,
 } from '../../../server/actions/action-error'
 
 describe('action-error', () => {

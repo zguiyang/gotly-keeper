@@ -3,8 +3,6 @@ import {
   getAssetDateGroup,
   formatAssetRelativeTime,
   getTodoGroupKey,
-  type AssetDateGroup,
-  type TodoGroupKey,
 } from '../../../shared/assets/asset-time-display'
 import type { AssetListItem } from '../../../shared/assets/assets.types'
 

@@ -25,8 +25,6 @@ export default function RootLayout({
       <body
         className="font-inter font-manrope min-h-full flex flex-col antialiased"
       >
-        {/* TODO: Global ThemeProvider */}
-        {/* TODO: Global Context Providers (e.g., User, Theme, etc.) */}
         {children}
         <Toaster />
       </body>
