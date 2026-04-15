@@ -3,12 +3,10 @@ import 'server-only'
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
-import { getAiProvider } from '@/server/lib/ai/ai-provider'
+import { getAiProvider } from '../../lib/ai/ai-provider'
+import { TODO_REVIEW_LIMIT, TODO_REVIEW_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
 import { listIncompleteTodoAssets } from '@/server/services/assets/assets.service'
-import { TODO_REVIEW_LIMIT, TODO_REVIEW_MODEL_TIMEOUT_MS } from '@/server/lib/config/constants'
 import type { AssetListItem, TodoReviewResult, TodoReviewSource } from '@/shared/assets/assets.types'
-
-export { TODO_REVIEW_LIMIT }
 
 export type TodoReviewPromptItem = {
   id: string
@@ -18,9 +16,7 @@ export type TodoReviewPromptItem = {
   createdAt: string
 }
 
-export function buildTodoReviewPromptInput(
-  todos: AssetListItem[]
-): TodoReviewPromptItem[] {
+function buildTodoReviewPromptInput(todos: AssetListItem[]): TodoReviewPromptItem[] {
   return todos.slice(0, TODO_REVIEW_LIMIT).map((todo) => ({
     id: todo.id,
     text: todo.originalText,
@@ -37,7 +33,7 @@ const todoReviewOutputSchema = z.object({
   sourceAssetIds: z.array(z.string().min(1)).min(1).max(10),
 })
 
-export type TodoReviewOutput = z.infer<typeof todoReviewOutputSchema>
+type TodoReviewOutput = z.infer<typeof todoReviewOutputSchema>
 
 function getFallbackTodoReview(todos: AssetListItem[]): TodoReviewOutput {
   return {
@@ -93,7 +89,9 @@ Rules:
 - Return sourceAssetIds that refer only to provided todo ids.
 - If there are no todos, say there is nothing pending.`
 
-export async function reviewUnfinishedTodos(userId: string): Promise<TodoReviewResult> {
+export async function reviewWorkspaceUnfinishedTodosInternal(
+  userId: string
+): Promise<TodoReviewResult> {
   const todos = await listIncompleteTodoAssets(userId, TODO_REVIEW_LIMIT)
 
   if (todos.length === 0) {

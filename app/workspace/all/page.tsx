@@ -1,11 +1,11 @@
 import { AllClient } from '@/components/workspace/all-client'
-import { requireWorkspaceUserOrRedirect } from '@/server/modules/auth/workspace-session'
-import { listAssets } from '@/server/modules/assets/assets.service'
+import { requireWorkspaceUserAccess } from '@/server/modules/auth/workspace-session'
+import { listWorkspaceAssets } from '@/server/modules/assets/assets.service'
 
 export default async function AllPage() {
-  const user = await requireWorkspaceUserOrRedirect()
+  const user = await requireWorkspaceUserAccess()
 
-  const assets = await listAssets({ userId: user.id })
+  const assets = await listWorkspaceAssets({ userId: user.id })
 
   return <AllClient assets={assets} />
 }

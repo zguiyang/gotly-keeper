@@ -3,21 +3,19 @@ import 'server-only'
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
-import { getAiProvider } from '@/server/lib/ai/ai-provider'
+import { getAiProvider } from '../../lib/ai/ai-provider'
+import { BOOKMARK_SUMMARY_LIMIT, BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
 import { listLinkAssets } from '@/server/services/assets/assets.service'
-import { BOOKMARK_SUMMARY_LIMIT, BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS } from '@/server/lib/config/constants'
 import type { AssetListItem, BookmarkSummaryResult, BookmarkSummarySource } from '@/shared/assets/assets.types'
 
-export { BOOKMARK_SUMMARY_LIMIT }
-
-export type BookmarkSummaryPromptItem = {
+type BookmarkSummaryPromptItem = {
   id: string
   text: string
   url: string | null
   createdAt: string
 }
 
-export function buildBookmarkSummaryPromptInput(
+function buildBookmarkSummaryPromptInput(
   bookmarks: AssetListItem[]
 ): BookmarkSummaryPromptItem[] {
   return bookmarks.slice(0, BOOKMARK_SUMMARY_LIMIT).map((bookmark) => ({
@@ -35,7 +33,7 @@ const bookmarkSummaryOutputSchema = z.object({
   sourceAssetIds: z.array(z.string().min(1)).min(1).max(10),
 })
 
-export type BookmarkSummaryOutput = z.infer<typeof bookmarkSummaryOutputSchema>
+type BookmarkSummaryOutput = z.infer<typeof bookmarkSummaryOutputSchema>
 
 function getFallbackBookmarkSummary(bookmarks: AssetListItem[]): BookmarkSummaryOutput {
   return {
@@ -92,7 +90,7 @@ Rules:
 - Return sourceAssetIds that refer only to provided bookmark ids.
 - If there are no bookmarks, say there is nothing to summarize.`
 
-export async function summarizeRecentBookmarks(
+export async function summarizeWorkspaceRecentBookmarksInternal(
   userId: string
 ): Promise<BookmarkSummaryResult> {
   const bookmarks = await listLinkAssets(userId, BOOKMARK_SUMMARY_LIMIT)

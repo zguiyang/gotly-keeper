@@ -2,36 +2,36 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { ActionError, ACTION_ERROR_CODES } from '@/server/modules/actions/action-error'
-import { runServerAction } from '@/server/modules/actions/run-server-action'
-import { requireUser } from '@/server/modules/auth/session'
+import { ModuleActionError, MODULE_ACTION_ERROR_CODES } from '@/server/modules/actions/action-error'
+import { executeModuleAction } from '@/server/modules/actions/run-server-action'
+import { requireSignedInUser } from '@/server/modules/auth/session'
 import {
-  createWorkspaceAssetUseCase,
-  setTodoCompletionUseCase,
-  reviewUnfinishedTodosUseCase,
-  summarizeRecentNotesUseCase,
-  summarizeRecentBookmarksUseCase,
-  WorkspaceApplicationError,
-  WORKSPACE_APPLICATION_ERROR_CODES,
+  createWorkspaceAsset,
+  setWorkspaceTodoCompletion,
+  reviewWorkspaceUnfinishedTodos,
+  summarizeWorkspaceRecentNotes,
+  summarizeWorkspaceRecentBookmarks,
+  WorkspaceModuleError,
+  WORKSPACE_MODULE_ERROR_CODES,
 } from '@/server/modules/workspace'
 import { type AssetListItem, type WorkspaceAssetActionResult } from '@/shared/assets/assets.types'
 
 export async function createWorkspaceAssetAction(
   input: unknown
 ): Promise<WorkspaceAssetActionResult> {
-  return runServerAction('workspace.createAsset', async () => {
-    const user = await requireUser()
+  return executeModuleAction('workspace.createAsset', async () => {
+    const user = await requireSignedInUser()
 
     if (typeof input !== 'string') {
-      throw new ActionError('先输入一句内容。', ACTION_ERROR_CODES.EMPTY_INPUT)
+      throw new ModuleActionError('先输入一句内容。', MODULE_ACTION_ERROR_CODES.EMPTY_INPUT)
     }
 
     const trimmed = input.trim()
     if (!trimmed) {
-      throw new ActionError('先输入一句内容。', ACTION_ERROR_CODES.EMPTY_INPUT)
+      throw new ModuleActionError('先输入一句内容。', MODULE_ACTION_ERROR_CODES.EMPTY_INPUT)
     }
 
-    const result = await createWorkspaceAssetUseCase({ userId: user.id, text: trimmed })
+    const result = await createWorkspaceAsset({ userId: user.id, text: trimmed })
 
     revalidatePath('/workspace')
     return result
@@ -48,13 +48,13 @@ function parseTodoCompletionInput(input: unknown): {
     !('assetId' in input) ||
     !('completed' in input)
   ) {
-    throw new ActionError('待办状态更新失败，请重试。', ACTION_ERROR_CODES.INVALID_TODO_COMPLETION_INPUT)
+    throw new ModuleActionError('待办状态更新失败，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_TODO_COMPLETION_INPUT)
   }
 
   const { assetId, completed } = input
 
   if (typeof assetId !== 'string' || !assetId.trim() || typeof completed !== 'boolean') {
-    throw new ActionError('待办状态更新失败，请重试。', ACTION_ERROR_CODES.INVALID_TODO_COMPLETION_INPUT)
+    throw new ModuleActionError('待办状态更新失败，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_TODO_COMPLETION_INPUT)
   }
 
   return { assetId: assetId.trim(), completed }
@@ -63,12 +63,12 @@ function parseTodoCompletionInput(input: unknown): {
 export async function setTodoCompletionAction(
   input: unknown
 ): Promise<AssetListItem> {
-  return runServerAction('workspace.setTodoCompletion', async () => {
-    const user = await requireUser()
+  return executeModuleAction('workspace.setTodoCompletion', async () => {
+    const user = await requireSignedInUser()
     const parsed = parseTodoCompletionInput(input)
 
     try {
-      const result = await setTodoCompletionUseCase({
+      const result = await setWorkspaceTodoCompletion({
         userId: user.id,
         assetId: parsed.assetId,
         completed: parsed.completed,
@@ -81,12 +81,12 @@ export async function setTodoCompletionAction(
       return result
     } catch (error) {
       if (
-        error instanceof WorkspaceApplicationError &&
-        error.code === WORKSPACE_APPLICATION_ERROR_CODES.TODO_NOT_FOUND
+        error instanceof WorkspaceModuleError &&
+        error.code === WORKSPACE_MODULE_ERROR_CODES.TODO_NOT_FOUND
       ) {
-        throw new ActionError(
+        throw new ModuleActionError(
           error.publicMessage,
-          ACTION_ERROR_CODES.TODO_NOT_FOUND
+          MODULE_ACTION_ERROR_CODES.TODO_NOT_FOUND
         )
       }
       throw error
@@ -95,25 +95,25 @@ export async function setTodoCompletionAction(
 }
 
 export async function reviewUnfinishedTodosAction(): Promise<WorkspaceAssetActionResult> {
-  return runServerAction('workspace.reviewUnfinishedTodos', async () => {
-    const user = await requireUser()
-    const review = await reviewUnfinishedTodosUseCase({ userId: user.id })
+  return executeModuleAction('workspace.reviewUnfinishedTodos', async () => {
+    const user = await requireSignedInUser()
+    const review = await reviewWorkspaceUnfinishedTodos({ userId: user.id })
     return { kind: 'todo-review', review }
   })
 }
 
 export async function summarizeRecentNotesAction(): Promise<WorkspaceAssetActionResult> {
-  return runServerAction('workspace.summarizeRecentNotes', async () => {
-    const user = await requireUser()
-    const summary = await summarizeRecentNotesUseCase({ userId: user.id })
+  return executeModuleAction('workspace.summarizeRecentNotes', async () => {
+    const user = await requireSignedInUser()
+    const summary = await summarizeWorkspaceRecentNotes({ userId: user.id })
     return { kind: 'note-summary', summary }
   })
 }
 
 export async function summarizeRecentBookmarksAction(): Promise<WorkspaceAssetActionResult> {
-  return runServerAction('workspace.summarizeRecentBookmarks', async () => {
-    const user = await requireUser()
-    const summary = await summarizeRecentBookmarksUseCase({ userId: user.id })
+  return executeModuleAction('workspace.summarizeRecentBookmarks', async () => {
+    const user = await requireSignedInUser()
+    const summary = await summarizeWorkspaceRecentBookmarks({ userId: user.id })
     return { kind: 'bookmark-summary', summary }
   })
 }

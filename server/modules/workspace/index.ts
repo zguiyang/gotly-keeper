@@ -1,12 +1,110 @@
-export {
-  createWorkspaceAssetUseCase,
-  setTodoCompletionUseCase,
-  reviewUnfinishedTodosUseCase,
-  summarizeRecentNotesUseCase,
-  summarizeRecentBookmarksUseCase,
-} from '@/server/services/workspace'
+import 'server-only'
 
-export {
-  WorkspaceApplicationError,
-  WORKSPACE_APPLICATION_ERROR_CODES,
-} from '@/server/services/workspace/workspace.application-error'
+import { ASSET_SEARCH_LIMIT_DEFAULT } from '../../lib/config/constants'
+import { createAsset, setTodoCompletion } from '@/server/services/assets/assets.service'
+import { searchAssets } from '@/server/services/search'
+import { reviewWorkspaceUnfinishedTodosInternal } from './todos.review'
+import { summarizeWorkspaceRecentBookmarksInternal } from './bookmarks.summary'
+import { summarizeWorkspaceRecentNotesInternal } from './notes.summary'
+import type {
+  AssetListItem,
+  BookmarkSummaryResult,
+  NoteSummaryResult,
+  TodoReviewResult,
+  WorkspaceAssetActionResult,
+} from '@/shared/assets/assets.types'
+
+export const WORKSPACE_MODULE_ERROR_CODES = {
+  TODO_NOT_FOUND: 'TODO_NOT_FOUND',
+} as const
+
+export type WorkspaceModuleErrorCode =
+  (typeof WORKSPACE_MODULE_ERROR_CODES)[keyof typeof WORKSPACE_MODULE_ERROR_CODES]
+
+export class WorkspaceModuleError extends Error {
+  constructor(
+    public readonly publicMessage: string,
+    public readonly code: WorkspaceModuleErrorCode = WORKSPACE_MODULE_ERROR_CODES.TODO_NOT_FOUND
+  ) {
+    super(publicMessage)
+    this.name = 'WorkspaceModuleError'
+  }
+}
+
+export async function createWorkspaceAsset(input: {
+  userId: string
+  text: string
+}): Promise<WorkspaceAssetActionResult> {
+  const result = await createAsset({ userId: input.userId, text: input.text })
+
+  if (result.kind === 'search') {
+    const results = await searchAssets({
+      userId: input.userId,
+      query: result.query || input.text,
+      typeHint: result.typeHint,
+      timeHint: result.timeHint,
+      completionHint: result.completionHint,
+      limit: ASSET_SEARCH_LIMIT_DEFAULT,
+    })
+
+    return {
+      kind: 'query',
+      query: result.query || input.text,
+      results,
+    }
+  }
+
+  if (result.kind === 'summary') {
+    if (result.summaryTarget === 'unfinished_todos') {
+      const review = await reviewWorkspaceUnfinishedTodosInternal(input.userId)
+      return { kind: 'todo-review', review }
+    }
+    if (result.summaryTarget === 'recent_notes') {
+      const summary = await summarizeWorkspaceRecentNotesInternal(input.userId)
+      return { kind: 'note-summary', summary }
+    }
+    const summary = await summarizeWorkspaceRecentBookmarksInternal(input.userId)
+    return { kind: 'bookmark-summary', summary }
+  }
+
+  return { kind: 'created', asset: result.asset }
+}
+
+export async function setWorkspaceTodoCompletion(input: {
+  userId: string
+  assetId: string
+  completed: boolean
+}): Promise<AssetListItem> {
+  const updated = await setTodoCompletion({
+    userId: input.userId,
+    assetId: input.assetId,
+    completed: input.completed,
+  })
+
+  if (!updated) {
+    throw new WorkspaceModuleError(
+      '没有找到这条待办，或你没有权限更新它。',
+      WORKSPACE_MODULE_ERROR_CODES.TODO_NOT_FOUND
+    )
+  }
+
+  return updated
+}
+
+export async function reviewWorkspaceUnfinishedTodos(input: {
+  userId: string
+}): Promise<TodoReviewResult> {
+  return reviewWorkspaceUnfinishedTodosInternal(input.userId)
+}
+
+export async function summarizeWorkspaceRecentNotes(input: {
+  userId: string
+}): Promise<NoteSummaryResult> {
+  return summarizeWorkspaceRecentNotesInternal(input.userId)
+}
+
+export async function summarizeWorkspaceRecentBookmarks(input: {
+  userId: string
+}): Promise<BookmarkSummaryResult> {
+  return summarizeWorkspaceRecentBookmarksInternal(input.userId)
+}

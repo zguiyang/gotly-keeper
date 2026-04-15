@@ -2,6 +2,7 @@
 # check-import-boundaries.sh
 # Server layering guard for final architecture:
 # modules -> services -> lib
+# plus boundary API ownership checks for modules
 
 set -euo pipefail
 
@@ -46,6 +47,11 @@ main() {
     failures=$((failures + 1))
   fi
   if ! check_violation "^server/modules/.*:" "@/server/modules/" "server/modules/** importing from @/server/modules/** is forbidden"; then
+    failures=$((failures + 1))
+  fi
+
+  # Rule 2.1: modules must own their exported API (no passthrough re-export from services)
+  if ! check_violation "^server/modules/.*:" "^export[[:space:]].*from[[:space:]]+['\"]@/server/services/" "server/modules/** passthrough re-export from @/server/services/** is forbidden"; then
     failures=$((failures + 1))
   fi
 

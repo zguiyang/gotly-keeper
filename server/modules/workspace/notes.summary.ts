@@ -3,22 +3,18 @@ import 'server-only'
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
-import { getAiProvider } from '@/server/lib/ai/ai-provider'
+import { getAiProvider } from '../../lib/ai/ai-provider'
+import { NOTE_SUMMARY_LIMIT, NOTE_SUMMARY_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
 import { listNoteAssets } from '@/server/services/assets/assets.service'
-import { NOTE_SUMMARY_LIMIT, NOTE_SUMMARY_MODEL_TIMEOUT_MS } from '@/server/lib/config/constants'
 import type { AssetListItem, NoteSummaryResult, NoteSummarySource } from '@/shared/assets/assets.types'
 
-export { NOTE_SUMMARY_LIMIT }
-
-export type NoteSummaryPromptItem = {
+type NoteSummaryPromptItem = {
   id: string
   text: string
   createdAt: string
 }
 
-export function buildNoteSummaryPromptInput(
-  notes: AssetListItem[]
-): NoteSummaryPromptItem[] {
+function buildNoteSummaryPromptInput(notes: AssetListItem[]): NoteSummaryPromptItem[] {
   return notes.slice(0, NOTE_SUMMARY_LIMIT).map((note) => ({
     id: note.id,
     text: note.originalText,
@@ -33,7 +29,7 @@ const noteSummaryOutputSchema = z.object({
   sourceAssetIds: z.array(z.string().min(1)).min(1).max(10),
 })
 
-export type NoteSummaryOutput = z.infer<typeof noteSummaryOutputSchema>
+type NoteSummaryOutput = z.infer<typeof noteSummaryOutputSchema>
 
 function getFallbackNoteSummary(notes: AssetListItem[]): NoteSummaryOutput {
   return {
@@ -88,7 +84,9 @@ Rules:
 - Return sourceAssetIds that refer only to provided note ids.
 - If there are no notes, say there is nothing to summarize.`
 
-export async function summarizeRecentNotes(userId: string): Promise<NoteSummaryResult> {
+export async function summarizeWorkspaceRecentNotesInternal(
+  userId: string
+): Promise<NoteSummaryResult> {
   const notes = await listNoteAssets(userId, NOTE_SUMMARY_LIMIT)
 
   if (notes.length === 0) {

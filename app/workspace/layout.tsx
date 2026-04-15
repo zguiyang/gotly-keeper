@@ -1,13 +1,13 @@
 import { Sidebar } from '@/components/workspace/sidebar'
 import { TopAppBar } from '@/components/workspace/top-app-bar'
-import { requireWorkspaceUserOrRedirect } from '@/server/modules/auth/workspace-session'
+import { requireWorkspaceUserAccess } from '@/server/modules/auth/workspace-session'
 
 export default async function WorkspaceLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const user = await requireWorkspaceUserOrRedirect()
+  const user = await requireWorkspaceUserAccess()
 
   return (
     <>

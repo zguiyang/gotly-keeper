@@ -1,11 +1,11 @@
 import { NotesClient } from '@/components/workspace/notes-client'
-import { requireWorkspaceUserOrRedirect } from '@/server/modules/auth/workspace-session'
-import { listNoteAssets } from '@/server/modules/assets/assets.service'
+import { requireWorkspaceUserAccess } from '@/server/modules/auth/workspace-session'
+import { listWorkspaceNoteAssets } from '@/server/modules/assets/assets.service'
 
 export default async function NotesPage() {
-  const user = await requireWorkspaceUserOrRedirect()
+  const user = await requireWorkspaceUserAccess()
 
-  const notes = await listNoteAssets(user.id)
+  const notes = await listWorkspaceNoteAssets(user.id)
 
   return <NotesClient notes={notes} />
 }
