@@ -1,5 +1,4 @@
-import { describe, it } from 'node:test'
-import assert from 'node:assert'
+import { describe, it, expect } from 'vitest'
 
 describe.skip('callAction (client-side - requires DOM/sonner mocking infra)', () => {
   describe('resolveErrorMessage fallback consistency', () => {
@@ -11,7 +10,7 @@ describe.skip('callAction (client-side - requires DOM/sonner mocking infra)', ()
 
   describe('SYNOPSIS: fallback resolution behavior verified via manual inspection', () => {
     it('callAction uses resolveErrorMessage() which checks: 1) options.error 2) error.message 3) default fallback', () => {
-      assert.ok(true, 'Manual verification: both toast.promise error handler and try/catch use resolveErrorMessage() with same fallback priority')
+      expect(true).toBe(true)
     })
   })
 })
