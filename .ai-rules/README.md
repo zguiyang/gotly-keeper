@@ -34,6 +34,7 @@ Meaning:
 - project architecture defines how those principles map to this repository
 - topic rules add narrow repository-specific constraints only
 - execution-layer files define workflow mechanics only
+- mother documents must stay principle-level and must not contain repository path patterns or file placement matrices
 
 ## Rule Map
 
