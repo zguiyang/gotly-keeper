@@ -5,9 +5,9 @@ import { randomUUID } from 'node:crypto'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 
-import { db } from '../../lib/db'
-import * as schema from '../../lib/db/schema'
-import { serverEnv } from '../../lib/env'
+import { db } from '../db'
+import * as schema from '../db/schema'
+import { serverEnv } from '../env'
 
 const DICEBEAR_AVATAR_URL = 'https://api.dicebear.com/9.x/bottts-neutral/png'
 
