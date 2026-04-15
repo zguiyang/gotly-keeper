@@ -62,8 +62,10 @@ Meaning:
 
 - `.ai-rules/phase-execution-protocol.md`
 - `.ai-rules/scripts/create-ai-worktree.sh` for standardized phase worktree setup with rule baseline lock
+- `.ai-rules/scripts/sync-phase-artifacts.sh` for syncing phase artifacts from worktree to primary local workspace
 - `.ai-rules/scripts/ai-bootstrap-check.sh` for worktree bootstrap and baseline drift checks
 - `.ai-rules/guards/check-phase-doc-protocol.sh` for optional phase document validation
+- `.ai-rules/guards/check-phase-artifact-sync.sh` for blocking unsynced phase artifacts in worktree mode
 - `.ai-rules/guards/check-import-boundaries.sh` for optional architecture boundary validation
 - `.ai-rules/guards/check-rules-integrity.sh` for protected governance file change detection
 - `.ai-rules/templates/phase-task-report.template.md` for mandatory per-phase task reporting

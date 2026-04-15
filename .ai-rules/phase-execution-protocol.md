@@ -117,6 +117,7 @@ git fetch --all --prune
 git rebase origin/main
 pnpm lint
 bash .ai-rules/guards/check-import-boundaries.sh
+bash .ai-rules/guards/check-phase-artifact-sync.sh --phase-id ${phase_id}
 ```
 
 **Fail-Fast**: If any check fails, STOP immediately.
@@ -175,6 +176,23 @@ bash .ai-rules/scripts/create-ai-worktree.sh ${phase_id} ${branch_type}
 cd .worktrees/${phase_id}
 bash .ai-rules/scripts/ai-bootstrap-check.sh --worktree . --strict
 ```
+
+## 5.1 Artifact Sync Rule (Worktree → Primary Workspace)
+
+In worktree mode, phase reports are still required but remain local-only artifacts.
+
+To avoid report divergence across multiple worktrees:
+
+1. Write phase artifacts in the current worktree at `docs/superpowers/plans/artifacts/`.
+2. Before handoff, gate transition, or session end, sync artifacts to the primary workspace path with:
+
+```bash
+bash .ai-rules/scripts/sync-phase-artifacts.sh --phase-id ${phase_id}
+```
+
+3. Never stage or commit synced artifacts under `docs/`.
+
+This keeps audit artifacts discoverable in one local place while preserving workspace-exclusion rules.
 
 ## 6. Parallel Execution
 
