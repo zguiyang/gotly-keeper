@@ -4,6 +4,7 @@ import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
 import { listNoteAssets } from '@/server/services/assets/assets.service'
+import { nowIso, dayjs } from '@/shared/time/dayjs'
 
 import { getAiProvider } from '../../lib/ai/ai-provider'
 import { NOTE_SUMMARY_LIMIT, NOTE_SUMMARY_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
@@ -20,7 +21,7 @@ function buildNoteSummaryPromptInput(notes: AssetListItem[]): NoteSummaryPromptI
   return notes.slice(0, NOTE_SUMMARY_LIMIT).map((note) => ({
     id: note.id,
     text: note.originalText,
-    createdAt: new Date(note.createdAt).toISOString(),
+    createdAt: dayjs(note.createdAt).toISOString(),
   }))
 }
 
@@ -73,7 +74,7 @@ function normalizeNoteSummaryOutput(
     keyPoints: output.keyPoints,
     sourceAssetIds: finalSourceIds,
     sources: mapSummarySources(notes, finalSourceIds),
-    generatedAt: new Date(),
+    generatedAt: dayjs().toDate(),
   }
 }
 
@@ -106,7 +107,7 @@ export async function summarizeWorkspaceRecentNotesInternal(
       output: Output.object({ schema: noteSummaryOutputSchema }),
       system: NOTE_SUMMARY_SYSTEM_PROMPT,
       prompt: JSON.stringify({
-        currentTime: new Date().toISOString(),
+        currentTime: nowIso(),
         notes: buildNoteSummaryPromptInput(notes),
       }),
       temperature: 0,

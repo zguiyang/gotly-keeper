@@ -3,6 +3,7 @@ import 'server-only'
 import { interpretAssetInputWithAi } from '@/server/lib/ai/ai-runner'
 import { aiAssetInputSchema, type AiAssetInput } from '@/server/lib/ai/ai-schema'
 import { ASSET_INTERPRETER_SYSTEM_PROMPT, buildAssetInterpreterPrompt } from '@/server/lib/ai/ai.prompts'
+import { dayjs } from '@/shared/time/dayjs'
 
 import {
   classifyAssetInput,
@@ -117,9 +118,8 @@ function normalizeAiTime(
   dueAtIso: string | null
 ) {
   const parsedFromText = parseAssetTimeText(aiTimeText || originalText)
-  const parsedDueAt = dueAtIso ? new Date(dueAtIso) : null
-  const safeAiDueAt =
-    parsedDueAt && !Number.isNaN(parsedDueAt.getTime()) ? parsedDueAt : null
+  const parsedDueAt = dueAtIso ? dayjs(dueAtIso) : null
+  const safeAiDueAt = parsedDueAt?.isValid() ? parsedDueAt.toDate() : null
 
   return {
     timeText: aiTimeText ?? parsedFromText.timeText,

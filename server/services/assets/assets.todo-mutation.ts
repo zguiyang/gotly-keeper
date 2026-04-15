@@ -5,6 +5,7 @@ import { and, eq } from 'drizzle-orm'
 import { db } from '@/server/lib/db'
 import { assets } from '@/server/lib/db/schema'
 import { type AssetListItem } from '@/shared/assets/assets.types'
+import { now } from '@/shared/time/dayjs'
 
 import { toAssetListItem } from './assets.mapper'
 
@@ -22,8 +23,8 @@ export async function setTodoCompletion({
   const [updated] = await db
     .update(assets)
     .set({
-      completedAt: completed ? new Date() : null,
-      updatedAt: new Date(),
+      completedAt: completed ? now() : null,
+      updatedAt: now(),
     })
     .where(
       and(

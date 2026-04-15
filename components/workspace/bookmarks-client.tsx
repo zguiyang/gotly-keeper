@@ -3,6 +3,7 @@
 import { Share2, Trash2, Bookmark, ExternalLink } from 'lucide-react'
 
 import { type AssetListItem } from '@/shared/assets/assets.types'
+import { formatBookmarkTime } from '@/shared/time/formatters'
 
 function getHostname(url: string | null) {
   if (!url) return 'saved link'
@@ -12,17 +13,6 @@ function getHostname(url: string | null) {
   } catch {
     return 'saved link'
   }
-}
-
-function formatDate(date: Date): string {
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-
-  if (days === 0) return '今天收藏'
-  if (days === 1) return '昨天收藏'
-  if (days < 7) return `${days}天前收藏`
-  return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }) + '收藏'
 }
 
 function BookmarkItem({ item }: { item: AssetListItem }) {
@@ -35,7 +25,7 @@ function BookmarkItem({ item }: { item: AssetListItem }) {
               {getHostname(item.url)}
             </span>
             <span className="text-xs text-on-surface-variant/60 hidden sm:block">
-              {formatDate(item.createdAt)}
+              {formatBookmarkTime(item.createdAt)}
             </span>
           </div>
           {item.url ? (
@@ -55,7 +45,7 @@ function BookmarkItem({ item }: { item: AssetListItem }) {
           <p className="text-on-surface-variant text-sm leading-relaxed max-w-3xl line-clamp-2 sm:line-clamp-3 lg:line-clamp-none">
             {item.excerpt}
           </p>
-          <span className="text-xs text-on-surface-variant/60 sm:hidden">{formatDate(item.createdAt)}</span>
+          <span className="text-xs text-on-surface-variant/60 sm:hidden">{formatBookmarkTime(item.createdAt)}</span>
         </div>
         <div className="flex items-center space-x-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity lg:opacity-100">
           <button

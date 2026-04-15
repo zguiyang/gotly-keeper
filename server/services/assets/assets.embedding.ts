@@ -5,6 +5,7 @@ import {
 } from '@/server/lib/config/constants'
 import { db } from '@/server/lib/db'
 import { assetEmbeddings, type Asset } from '@/server/lib/db/schema'
+import { now } from '@/shared/time/dayjs'
 
 import { ASSET_EMBEDDING_DIMENSIONS } from './assets.embedding-config'
 import { getAssetEmbeddingModel } from './assets.embedding-provider'
@@ -54,7 +55,7 @@ export async function createAssetEmbedding(asset: Asset) {
       set: {
         embedding,
         embeddedText: value,
-        updatedAt: new Date(),
+        updatedAt: now(),
       },
     })
     .returning()

@@ -5,6 +5,7 @@ import {
   type NoteSummaryResult,
   type TodoReviewResult,
 } from '@/shared/assets/assets.types'
+import { formatAbsoluteTime } from '@/shared/time/formatters'
 
 export function RecentItem({
   icon: Icon,
@@ -52,15 +53,6 @@ export function RecentItem({
   )
 }
 
-export function formatAssetTime(date: Date): string {
-  return date.toLocaleString('zh-CN', {
-    month: 'numeric',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
 export function WorkspaceQueryResultsPanel({
   query,
   results,
@@ -95,7 +87,7 @@ export function WorkspaceQueryResultsPanel({
                 iconColor={presentation.iconColor}
                 title={asset.title}
                 excerpt={asset.excerpt}
-                time={formatAssetTime(new Date(asset.createdAt))}
+                time={formatAbsoluteTime(asset.createdAt)}
                 type={presentation.label}
                 timeText={asset.timeText}
               />

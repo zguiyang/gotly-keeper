@@ -1,4 +1,5 @@
 import { ASIA_SHANGHAI_TIME_ZONE } from '@/server/lib/config/time'
+import { nowIso, formatShanghaiTime } from '@/shared/time/dayjs'
 
 export const ASSET_INTERPRETER_SYSTEM_PROMPT = `You are a workspace input classifier for a personal productivity app called Gotly.
 
@@ -35,19 +36,10 @@ Return a confidence score between 0 and 1:
 - Below 0.5: Too uncertain, will fallback to rule-based classifier`
 
 export function buildAssetInterpreterPrompt(trimmed: string, now = new Date()): string {
-  const localDateTime = new Intl.DateTimeFormat('zh-CN', {
-    timeZone: ASIA_SHANGHAI_TIME_ZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).format(now)
+  const localDateTime = formatShanghaiTime(now)
 
   return [
-    `Current server timestamp: ${now.toISOString()}`,
+    `Current server timestamp: ${nowIso(now)}`,
     `Current date and time in ${ASIA_SHANGHAI_TIME_ZONE}: ${localDateTime}`,
     `User input: ${JSON.stringify(trimmed)}`,
   ].join('\n')
@@ -64,7 +56,7 @@ Rules:
 
 export function buildNoteSummaryPromptInput(notes: { id: string; title: string; originalText: string }[]): object {
   return {
-    currentTime: new Date().toISOString(),
+    currentTime: nowIso(),
     notes,
   }
 }
@@ -81,7 +73,7 @@ Rules:
 
 export function buildBookmarkSummaryPromptInput(bookmarks: { id: string; title: string; url: string | null; originalText: string }[]): object {
   return {
-    currentTime: new Date().toISOString(),
+    currentTime: nowIso(),
     bookmarks,
   }
 }
@@ -98,7 +90,7 @@ Rules:
 
 export function buildTodoReviewPromptInput(todos: { id: string; title: string; originalText: string; timeText: string | null; dueAt: Date | null }[]): object {
   return {
-    currentTime: new Date().toISOString(),
+    currentTime: nowIso(),
     todos,
   }
 }

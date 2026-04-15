@@ -4,6 +4,7 @@ import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
 import { listIncompleteTodoAssets } from '@/server/services/assets/assets.service'
+import { nowIso, dayjs } from '@/shared/time/dayjs'
 
 import { getAiProvider } from '../../lib/ai/ai-provider'
 import { TODO_REVIEW_LIMIT, TODO_REVIEW_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
@@ -23,8 +24,8 @@ function buildTodoReviewPromptInput(todos: AssetListItem[]): TodoReviewPromptIte
     id: todo.id,
     text: todo.originalText,
     timeText: todo.timeText,
-    dueAt: todo.dueAt ? new Date(todo.dueAt).toISOString() : null,
-    createdAt: new Date(todo.createdAt).toISOString(),
+    dueAt: todo.dueAt ? dayjs(todo.dueAt).toISOString() : null,
+    createdAt: dayjs(todo.createdAt).toISOString(),
   }))
 }
 
@@ -78,7 +79,7 @@ function normalizeTodoReviewOutput(
     nextActions: output.nextActions,
     sourceAssetIds: finalSourceIds,
     sources: mapReviewSources(todos, finalSourceIds),
-    generatedAt: new Date(),
+    generatedAt: dayjs().toDate(),
   }
 }
 
@@ -111,7 +112,7 @@ export async function reviewWorkspaceUnfinishedTodosInternal(
       output: Output.object({ schema: todoReviewOutputSchema }),
       system: TODO_REVIEW_SYSTEM_PROMPT,
       prompt: JSON.stringify({
-        currentTime: new Date().toISOString(),
+        currentTime: nowIso(),
         todos: buildTodoReviewPromptInput(todos),
       }),
       temperature: 0,

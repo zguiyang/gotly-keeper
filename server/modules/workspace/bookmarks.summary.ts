@@ -4,6 +4,7 @@ import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
 import { listLinkAssets } from '@/server/services/assets/assets.service'
+import { nowIso, dayjs } from '@/shared/time/dayjs'
 
 import { getAiProvider } from '../../lib/ai/ai-provider'
 import { BOOKMARK_SUMMARY_LIMIT, BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
@@ -24,7 +25,7 @@ function buildBookmarkSummaryPromptInput(
     id: bookmark.id,
     text: bookmark.originalText,
     url: bookmark.url,
-    createdAt: new Date(bookmark.createdAt).toISOString(),
+    createdAt: dayjs(bookmark.createdAt).toISOString(),
   }))
 }
 
@@ -78,7 +79,7 @@ function normalizeBookmarkSummaryOutput(
     keyPoints: output.keyPoints,
     sourceAssetIds: finalSourceIds,
     sources: mapSummarySources(bookmarks, finalSourceIds),
-    generatedAt: new Date(),
+    generatedAt: dayjs().toDate(),
   }
 }
 
@@ -112,7 +113,7 @@ export async function summarizeWorkspaceRecentBookmarksInternal(
       output: Output.object({ schema: bookmarkSummaryOutputSchema }),
       system: BOOKMARK_SUMMARY_SYSTEM_PROMPT,
       prompt: JSON.stringify({
-        currentTime: new Date().toISOString(),
+        currentTime: nowIso(),
         bookmarks: buildBookmarkSummaryPromptInput(bookmarks),
       }),
       temperature: 0,

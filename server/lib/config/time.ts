@@ -1,6 +1,6 @@
 import 'server-only'
 
-export const ASIA_SHANGHAI_TIME_ZONE = 'Asia/Shanghai'
+export { ASIA_SHANGHAI_TIME_ZONE } from '@/shared/time/dayjs'
 export const ASIA_SHANGHAI_OFFSET_MS = 8 * 60 * 60 * 1000
 
 export type AssetTimeRangeHint = {

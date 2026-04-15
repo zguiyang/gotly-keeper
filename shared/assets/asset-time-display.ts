@@ -1,3 +1,5 @@
+import { dayjs } from '../time/dayjs'
+
 import { type AssetListItem } from './assets.types'
 
 export type AssetDateGroup = 'today' | 'yesterday' | 'older'
@@ -15,20 +17,19 @@ export function getAssetDateGroup(date: Date, now?: Date): AssetDateGroup {
 }
 
 export function formatAssetRelativeTime(date: Date, locale?: string, now?: Date): string {
-  const current = now ?? new Date()
-  const diff = current.getTime() - date.getTime()
-  const seconds = Math.floor(diff / 1000)
-  const minutes = Math.floor(seconds / 60)
-  const hours = Math.floor(minutes / 60)
-  const days = Math.floor(hours / 24)
+  const current = now ? dayjs(now) : dayjs()
+  const d = dayjs(date)
 
+  const days = current.diff(d, 'day')
   if (days > 7) {
-    return date.toLocaleDateString(locale ?? 'zh-CN', { month: 'short', day: 'numeric' })
+    return d.locale(locale ?? 'zh-CN').format('M月D日')
   }
   if (days > 1) return `${days}天前`
   if (days === 1) return '昨天'
+  const hours = current.diff(d, 'hour')
   if (hours > 1) return `${hours}小时前`
   if (hours === 1) return '1小时前'
+  const minutes = current.diff(d, 'minute')
   if (minutes > 1) return `${minutes}分钟前`
   return '刚刚'
 }
