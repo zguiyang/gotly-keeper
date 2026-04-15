@@ -34,3 +34,7 @@ pnpm test:coverage
 ## Notes
 
 - Legacy `server/**/__tests__` is excluded from Vitest run
+- End-to-end validation follows a mixed model:
+  - AI-driven browser flow execution (spec-driven) is the default for daily flow checks
+  - A small scripted E2E smoke suite remains required for CI/release-critical paths
+- Source of truth for this policy: `.ai-rules/testing-and-integration-rules.md` (Section 14)
