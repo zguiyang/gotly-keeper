@@ -16,18 +16,10 @@ These rules define repository-specific boundaries for AI SDK usage. They do not 
 
 Before writing or changing AI SDK code:
 
-1. Read the local `ai-sdk` skill in `.agents/skills/ai-sdk/SKILL.md`.
-2. Read the relevant bundled docs in `node_modules/ai/docs/`.
-3. Read package source or types in `node_modules/ai/src/`, `node_modules/ai/dist/`, or the relevant `node_modules/.pnpm/@ai-sdk+*/` package when API details are unclear.
-4. Prefer the installed package docs and types over memory because AI SDK APIs are version-sensitive.
-
-Good starting points:
-
-- `node_modules/ai/docs/02-getting-started/02-nextjs-app-router.mdx`
-- `node_modules/ai/docs/02-getting-started/09-coding-agents.mdx`
-- `node_modules/ai/docs/03-ai-sdk-core/`
-- `node_modules/ai/docs/03-agents/`
-- `node_modules/ai/docs/07-reference/`
+1. Read the local `ai-sdk` skill.
+2. Read the installed AI SDK docs in `node_modules/ai/docs/`.
+3. Read installed package types or source when the API surface is still unclear.
+4. Prefer installed docs and types over memory because AI SDK APIs are version-sensitive.
 
 ## 3. Dependency Baseline
 

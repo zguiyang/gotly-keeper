@@ -78,16 +78,7 @@ Rules:
 3. Keep route files thin and test domain logic below the route layer when possible.
 4. When pages render data from server-side logic, prefer testing the underlying server behavior directly in service-layer tests instead of routing internal page data through HTTP just for testability.
 
-### 5.1 Next.js Runtime Debugging Preference
-
-For debugging and manual verification of Next.js behavior, prefer the real running application over custom scripts.
-
-Rules:
-
-1. Use browser-backed verification as the first choice for user flows, route rendering, Server Actions, hydration behavior, console errors, and network-visible failures.
-2. Use Next.js runtime diagnostics as supporting evidence when they clarify what the browser shows.
-3. Avoid writing ad hoc scripts to simulate Next.js behavior when a real page interaction can verify the same claim.
-4. Script-level verification is appropriate when the subject is a pure JavaScript utility, a database migration check, or a delivered CLI/maintenance script such as a seed or backfill command.
+For runtime verification preference and browser-first Next.js debugging, follow `.ai-rules/project-tooling-and-runtime-rules.md`.
 
 ## 6. Service-Layer Integration Testing Rule
 
@@ -185,11 +176,11 @@ Before adding or changing tests:
 4. confirm whether real infrastructure is required for the integration being tested
 5. keep the testing surface minimal and aligned with the current stage of the project
 
-## 12. Phase 6 Test Architecture Upgrade (2026-04-14)
+## 12. Current Test Architecture
 
 ### 12.1 Test Layer Structure
 
-This repository now follows a three-layer test architecture:
+This repository currently follows a three-layer test architecture:
 
 | Layer | Location | Purpose |
 |-------|----------|---------|
@@ -238,7 +229,7 @@ node --require ./scripts/register-server-only-alias.cjs --import tsx --test <tes
 - Creating domain-specific mocks that duplicate `test-utils/` mocks
 - Hardcoding test data instead of using factories
 
-### 12.5 Exit Criteria for New Features
+### 12.5 Feature Test Expectations
 
 New features must include:
 
@@ -247,7 +238,7 @@ New features must include:
 3. Action contract tests for server actions
 4. Updates to the relevant test runner or `test:critical` when the feature belongs in the critical path
 
-### 12.6 Test Minimum Contract (Enforced)
+### 12.6 Minimum Test Contract
 
 Every new feature MUST include minimum contract tests based on which layers it touches:
 
@@ -258,7 +249,7 @@ Every new feature MUST include minimum contract tests based on which layers it t
 | `app/actions` | +1 action contract test |
 | `infra` (DB/Redis) | +1 integration test with real infra |
 
-**Rule**: Tests must be added in the same PR as the feature they test.
+Tests should be added in the same PR as the feature they protect unless the user explicitly chooses a staged follow-up.
 
 ## 13. Worktree Execution Protocol
 

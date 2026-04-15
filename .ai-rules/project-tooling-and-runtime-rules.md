@@ -146,20 +146,9 @@ bash .ai-rules/guards/check-import-boundaries.sh
 
 Use them directly when auditing AI workflow artifacts or architecture boundaries. Do not expose them through `package.json`.
 
-## 11. Constants and Config Governance
-
-When adding or modifying constants:
-
-1. **Identify the correct layer**: Server-only constants → `server/config/`, frontend UI config → `config/`, cross-runtime constants → `shared/constants/`.
-2. **Ensure unique canonical source**: Each constant has exactly one definition.
-3. **Import from canonical source**: All files must import from the centralized location, not define their own copies.
-4. **No magic numbers**: Extract repeated inline numeric values into named constants.
-5. **Avoid component-level constants**: Do not define business constants inside `components/` unless they are purely presentational.
-
-## 12. Phase Execution Protocol Reference
+## 11. Phase Execution Protocol Reference
 
 For all phase plan execution rules (Preflight Gate, Start Gate, Sync Gate, Fail-Fast, PR-only merge), see:
 
 - `.ai-rules/phase-execution-protocol.md`
 - `.ai-rules/project-architecture-rules.md`
-- `.ai-rules/phase-execution-lessons-learned.md` (explanatory lessons, non-normative)

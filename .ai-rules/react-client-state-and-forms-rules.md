@@ -1,11 +1,16 @@
-# React Client State and Forms Rules
+# Frontend Client Boundary and Forms Rules
 
 ## 1. Scope
 
-These rules define how AI agents should use client-side React hooks, form state, and validation libraries in this repository.
+These rules define how AI agents should organize frontend rendering, client-side orchestration, form state, and validation in this repository.
 
 Use this file when the task touches:
 
+- reusable Client Components
+- client-side hooks
+- `client/actions/`
+- `client/feedback/`
+- frontend config
 - interactive Client Components
 - local UI state and side effects
 - non-trivial forms
@@ -14,7 +19,79 @@ Use this file when the task touches:
 - `@tanstack/react-form`
 - `zod`
 
-## 2. Dependency Baseline
+These rules are repository-specific boundaries. Library usage details belong to skills and official package docs.
+
+## 2. Frontend Dependency Direction
+
+The frontend follows this dependency direction:
+
+```text
+components -> hooks -> client/actions -> app server actions
+```
+
+Rules:
+
+1. Keep rendering closest to `components/`.
+2. Keep client-side orchestration and state transitions in `hooks/`.
+3. Keep `client/actions/` as thin adapters around server actions.
+4. Do not let components import `app/**/actions` directly.
+5. Do not let frontend directories become hidden business-logic layers.
+
+## 3. Layer Responsibilities
+
+### 3.1 `components/`
+
+Allowed:
+
+- JSX markup and styling
+- prop composition
+- event binding that delegates to hooks
+- small presentational UI state
+
+Forbidden:
+
+- direct imports from `app/**/actions`
+- deep state machine logic
+- business orchestration
+- server-only imports
+
+### 3.2 `hooks/`
+
+Allowed:
+
+- state transitions
+- async orchestration
+- optimistic UI behavior
+- coordination with `client/actions/`
+
+Forbidden:
+
+- JSX rendering
+- imports from `components/`
+- direct infrastructure access
+
+### 3.3 `client/actions/`
+
+Allowed:
+
+- thin wrappers around server actions
+- request/result adaptation for client usage
+- type re-exports when helpful
+
+Forbidden:
+
+- business logic branching
+- direct database or server-only dependency access
+
+### 3.4 `client/feedback/`
+
+Use this layer for client-only toast, notice, and feedback wrappers.
+
+### 3.5 `config/`
+
+Use this layer for frontend UI configuration such as navigation, tabs, display modes, and view-level constants.
+
+## 4. Dependency Baseline
 
 The current repository includes these app dependencies:
 
@@ -33,7 +110,7 @@ Current reminder:
 
 - `@tanstack/zod-form-adapter` is not currently listed in `package.json`, so do not assume adapter-based Zod integration is available by default.
 
-## 3. Client and Server Boundary Rule
+## 5. Client and Server Boundary Rule
 
 These libraries are not interchangeable across Next.js boundaries.
 
@@ -44,7 +121,23 @@ Rules:
 3. `zod` may be used on both server and client, but validation logic must still respect data sensitivity and runtime boundaries.
 4. If a form submits privileged or persistent data, validate again on the server even when client-side validation exists.
 
-## 4. Ahooks Usage Rules
+## 6. Component and Hook Organization Rules
+
+Rules:
+
+1. Place hooks in `hooks/<domain>/` directories such as `hooks/workspace/`.
+2. Each hook should have one focused responsibility.
+3. State machines and async submit flows belong in hooks, not components.
+4. Keep components focused on presentation and event delegation.
+5. When a hook grows beyond one responsibility, split it.
+
+Good hook naming:
+
+- `use-workspace-action-state`
+- `use-workspace-submit`
+- `use-todo-completion`
+
+## 7. Ahooks Usage Rules
 
 Use `ahooks` when it materially improves interactive client code.
 
@@ -62,7 +155,7 @@ Rules:
 3. Do not use `ahooks` as the default data-fetching layer for server-rendered page data.
 4. Do not use client-side hooks to replace direct server-side data access for initial page rendering.
 
-## 5. TanStack Form Rules
+## 8. TanStack Form Rules
 
 Use `@tanstack/react-form` for non-trivial client-side forms that benefit from headless composition and strong TypeScript inference.
 
@@ -82,7 +175,7 @@ Rules:
 4. Do not put domain validation rules only in client form code when the server also depends on them.
 5. Prefer field-level subscriptions and localized state reads over broad top-level subscriptions that rerender the whole form.
 
-## 6. Zod Schema Rules
+## 9. Zod Schema Rules
 
 Use `zod` as the default schema and validation library when typed runtime validation is needed.
 
@@ -99,7 +192,7 @@ Preferred naming:
 - `*.schema.ts` for validation schemas
 - `*.types.ts` only when the file exists primarily for shared type declarations
 
-## 7. Placement and Composition Rules
+## 10. Placement and Composition Rules
 
 When adding new code related to these libraries:
 
@@ -109,7 +202,15 @@ When adding new code related to these libraries:
 4. Keep shared validators and cross-domain parsing helpers in `shared/` or domain-local schema files.
 5. Do not let Client Components become the only place where business rules are enforced.
 
-## 8. AI Implementation Checklist
+## 11. Migration Pattern
+
+1. Find direct imports from `app/**/actions` in components.
+2. Extract orchestration logic into `hooks/<domain>/`.
+3. Add thin adapters in `client/actions/` when the client needs a stable action boundary.
+4. Keep feedback wrappers in `client/feedback/`.
+5. Remove transitional re-exports after migration.
+
+## 12. AI Implementation Checklist
 
 Before generating code that uses these libraries:
 
@@ -121,21 +222,3 @@ Before generating code that uses these libraries:
    - `ahooks`
    - `tanstack-form`
    - `zod`
-
-## 9. Custom Hooks Organization Rules
-
-Custom hooks should be organized by domain and responsibility.
-
-Rules:
-
-1. Place hooks in `hooks/<domain>/` directories (e.g., `hooks/workspace/`).
-2. Each hook should have a single, focused responsibility.
-3. Prefer composability: small, focused hooks that combine into larger behaviors.
-4. State machine and async orchestration logic belongs in hooks, not in components.
-5. Hooks should not render UI; delegate UI to components.
-6. When a hook grows beyond its original intent, split it into smaller focused hooks.
-
-Good hook naming:
-- `use-workspace-action-state` - manages action state machine
-- `use-workspace-submit` - handles submit flow orchestration
-- `use-todo-completion` - handles todo toggle with optimistic updates
