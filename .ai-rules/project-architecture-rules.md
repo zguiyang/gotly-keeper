@@ -67,7 +67,7 @@ Rules:
 - avoid embedding orchestration or business rules
 - do not define business constants here
 
-See `.ai-rules/frontend-boundary-rules.md` for detailed component/hook/client-action boundaries.
+See `.ai-rules/react-client-state-and-forms-rules.md` for detailed client-side component, hook, and form boundaries.
 
 ### 4.3 `client/`
 
@@ -128,10 +128,9 @@ Rules:
 - use `server/application/<domain>/` for use-cases
 - use `<action>.use-case.ts` naming
 - keep orchestration, cross-domain coordination, and error translation here
+- define use-case input/output types in `<domain>.types.ts` when they do not already belong in `shared/`
 - do not depend on `app/`
 - do not call framework runtime APIs from this layer
-
-See `.ai-rules/action-application-boundary-rules.md`.
 
 #### 4.7.2 `server/<domain>/`
 
@@ -232,15 +231,29 @@ They may:
 - invalidate cache
 - delegate orchestration to use-cases
 
-They must not become the home for deep business logic.
+They must not:
+
+- call domain services directly when a use-case layer exists for that flow
+- contain deep business branching
+- import from `@/app`
+- become the home for deep business logic
 
 Use-cases in `server/application/<domain>/`:
 
 - own orchestration
 - coordinate domain services
 - translate errors
+- own cross-domain coordination when needed
 - must not call framework runtime APIs
 - must not depend on `app/`
+- must not access request/session context directly
+- must not contain UI rendering logic
+
+Typical flow:
+
+```text
+app/**/actions.ts -> server/application/<domain>/*.use-case.ts -> server/<domain>/*
+```
 
 ### 6.5 Infrastructure Access
 
@@ -261,8 +274,8 @@ When placing code in this repository:
 
 Examples:
 
-- component orchestration question -> `frontend-boundary-rules.md`
-- action/use-case boundary question -> `action-application-boundary-rules.md`
+- component, hook, client adapter, or form boundary question -> `react-client-state-and-forms-rules.md`
+- action/use-case boundary question -> this file
 - repository placement question -> this file plus `project-governance-rules.md`
 
 ## 8. Evolution Rules
@@ -278,5 +291,4 @@ As the project grows:
 
 - `.ai-rules/project-governance-rules.md`
 - `.ai-rules/universal-development-boundary-rules.md`
-- `.ai-rules/frontend-boundary-rules.md`
-- `.ai-rules/action-application-boundary-rules.md`
+- `.ai-rules/react-client-state-and-forms-rules.md`

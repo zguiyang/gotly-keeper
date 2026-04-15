@@ -69,6 +69,9 @@ Rules:
 3. Do not write ad hoc scripts to test Next.js behavior when the same claim can be verified through the browser and the running app.
 4. Direct script execution is appropriate when the script or CLI is itself the delivered artifact, such as a migration helper, backfill command, seed command, one-off maintenance command, or a pure JavaScript utility whose behavior is independent of Next.js runtime rendering.
 5. Static checks such as `pnpm lint`, TypeScript checks, and migration checks remain useful, but they do not replace browser-backed verification for user-visible Next.js behavior.
+6. When the target behavior depends on `app/**/actions.ts`, `server/application/**/*.use-case.ts`, or a real user-visible business result, prefer real-page browser verification over isolated local tests for final proof.
+
+For verification-method selection, follow `.ai-rules/testing-and-integration-rules.md`.
 
 ## 5. Need-Based Tool Selection Rule
 
@@ -130,8 +133,9 @@ Before running commands or implementing code:
 7. Prefer skills first, then MCP, then Context7 when additional guidance is needed.
 8. For browser work, follow the browser priority order defined in Section 4.
 9. For Next.js debugging and validation, prefer actual browser/page verification over custom scripts, except for pure JavaScript utilities or delivered CLI/script artifacts.
-10. Follow `.ai-rules/project-governance-rules.md` for placement of AI workflow guards and local AI workspace material.
-11. Do not treat local AI workspace files as repository deliverables.
+10. For test-suite versus browser-verification decisions, follow `.ai-rules/testing-and-integration-rules.md`.
+11. Follow `.ai-rules/project-governance-rules.md` for placement of AI workflow guards and local AI workspace material.
+12. Do not treat local AI workspace files as repository deliverables.
 
 ## 10. Guard Scripts
 
@@ -146,20 +150,9 @@ bash .ai-rules/guards/check-import-boundaries.sh
 
 Use them directly when auditing AI workflow artifacts or architecture boundaries. Do not expose them through `package.json`.
 
-## 11. Constants and Config Governance
-
-When adding or modifying constants:
-
-1. **Identify the correct layer**: Server-only constants → `server/config/`, frontend UI config → `config/`, cross-runtime constants → `shared/constants/`.
-2. **Ensure unique canonical source**: Each constant has exactly one definition.
-3. **Import from canonical source**: All files must import from the centralized location, not define their own copies.
-4. **No magic numbers**: Extract repeated inline numeric values into named constants.
-5. **Avoid component-level constants**: Do not define business constants inside `components/` unless they are purely presentational.
-
-## 12. Phase Execution Protocol Reference
+## 11. Phase Execution Protocol Reference
 
 For all phase plan execution rules (Preflight Gate, Start Gate, Sync Gate, Fail-Fast, PR-only merge), see:
 
 - `.ai-rules/phase-execution-protocol.md`
 - `.ai-rules/project-architecture-rules.md`
-- `.ai-rules/phase-execution-lessons-learned.md` (explanatory lessons, non-normative)
