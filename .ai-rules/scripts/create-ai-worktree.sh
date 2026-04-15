@@ -90,9 +90,12 @@ EOF
 echo "==> Running bootstrap check..."
 bash .ai-rules/scripts/ai-bootstrap-check.sh --worktree "$WORKTREE_PATH"
 
+mkdir -p "$WORKTREE_PATH/docs/superpowers/plans/artifacts"
+mkdir -p "docs/superpowers/plans/artifacts"
+
 echo ""
 echo "PASS: worktree ready"
 echo "  branch:   ${BRANCH_NAME}"
 echo "  path:     ${WORKTREE_PATH}"
 echo "  baseline: ${BASELINE_MAIN_SHA}"
-
+echo "  artifact sync: bash .ai-rules/scripts/sync-phase-artifacts.sh --phase-id ${PHASE_ID}"
