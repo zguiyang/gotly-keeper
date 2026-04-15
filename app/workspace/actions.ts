@@ -2,11 +2,18 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { ActionError, ACTION_ERROR_CODES } from '@/server/actions/action-error'
-import { runServerAction } from '@/server/actions/run-server-action'
-import { requireUser } from '@/server/auth/session'
-import { createWorkspaceAssetUseCase, setTodoCompletionUseCase, reviewUnfinishedTodosUseCase, summarizeRecentNotesUseCase, summarizeRecentBookmarksUseCase } from '@/server/application/workspace'
-import { WorkspaceApplicationError, WORKSPACE_APPLICATION_ERROR_CODES } from '@/server/application/workspace/workspace.application-error'
+import { ActionError, ACTION_ERROR_CODES } from '@/server/modules/actions/action-error'
+import { runServerAction } from '@/server/modules/actions/run-server-action'
+import { requireUser } from '@/server/modules/auth/session'
+import {
+  createWorkspaceAssetUseCase,
+  setTodoCompletionUseCase,
+  reviewUnfinishedTodosUseCase,
+  summarizeRecentNotesUseCase,
+  summarizeRecentBookmarksUseCase,
+  WorkspaceApplicationError,
+  WORKSPACE_APPLICATION_ERROR_CODES,
+} from '@/server/modules/workspace'
 import { type AssetListItem, type WorkspaceAssetActionResult } from '@/shared/assets/assets.types'
 
 export async function createWorkspaceAssetAction(

@@ -1,6 +1,6 @@
 import { AllClient } from '@/components/workspace/all-client'
-import { requireWorkspaceUserOrRedirect } from '@/server/auth/workspace-session'
-import { listAssets } from '@/server/assets/assets.service'
+import { requireWorkspaceUserOrRedirect } from '@/server/modules/auth/workspace-session'
+import { listAssets } from '@/server/modules/assets/assets.service'
 
 export default async function AllPage() {
   const user = await requireWorkspaceUserOrRedirect()
