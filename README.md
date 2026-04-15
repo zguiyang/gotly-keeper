@@ -120,6 +120,7 @@ server/                 # Server-side business logic and infrastructure
   test-utils/           # Shared server test support
 shared/                 # Cross-runtime shared types, schemas, constants, helpers
 scripts/                # Project runtime, maintenance, and test scripts
+tests/                  # Centralized unit/integration/e2e tests
 .ai-rules/              # Repository governance and implementation rules for AI
 ```
 

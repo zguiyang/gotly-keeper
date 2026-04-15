@@ -1,0 +1,21 @@
+name: Test Layout Guard
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  forbid-legacy-test-layout:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Forbid __tests__ directories in source tree
+        run: |
+          if rg --glob '!node_modules/**' --glob '!.worktrees/**' "__tests__" app server client components hooks shared; then
+            echo "Found forbidden __tests__ usage in source tree. Place tests under root tests/."
+            exit 1
+          fi
+          echo "OK: no legacy __tests__ usage in source tree."
