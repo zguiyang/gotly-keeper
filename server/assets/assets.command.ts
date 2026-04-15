@@ -5,7 +5,7 @@ import { assets } from '@/server/db/schema'
 import { interpretAssetInput } from './assets.interpreter'
 import { scheduleAssetEmbeddingBestEffort } from './assets.embedding-scheduler'
 import { toAssetListItem } from './assets.mapper'
-import { type AssetListItem } from './assets.query'
+import { type AssetListItem } from '@/shared/assets/assets.types'
 import { type AssetSummaryTarget } from './assets.summary-intent.pure'
 
 export type AssetSummaryCommand = {
