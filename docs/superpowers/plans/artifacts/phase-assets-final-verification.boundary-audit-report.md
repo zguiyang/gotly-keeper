@@ -22,7 +22,7 @@ All import boundaries are clean. No reverse dependencies detected. No frozen fil
 |---|---|---|---|
 | Asset Query/List | assets.query | `server/assets/assets.query.ts` | ✅ EXISTS |
 | Asset Search | search | `server/search/assets-search.service.ts` | ✅ EXISTS |
-| Asset Semantic Embedding | assets.embedding | `server/assets/assets.embedding.service.ts` | ✅ EXISTS |
+| Asset Semantic Embedding | assets.embedding | `server/assets/assets.embedding.ts` | ✅ EXISTS |
 | Semantic Search Service | search | `server/search/semantic-search.service.ts` | ✅ EXISTS |
 | Todo Mutation | assets.mutation | `server/assets/assets.todo-mutation.ts` | ✅ EXISTS |
 | Notes Summary | notes.summary | `server/notes/notes.summary.service.ts` | ✅ EXISTS |
@@ -59,8 +59,8 @@ All import boundaries are clean. No reverse dependencies detected. No frozen fil
 | `server/application/*` | `server/notes/notes.summary.service.ts` | domain → domain | ✅ |
 | `server/application/*` | `server/todos/todos.review.service.ts` | domain → domain | ✅ |
 | `server/application/*` | `server/bookmarks/bookmarks.summary.service.ts` | domain → domain | ✅ |
-| `server/search/assets-search.service.ts` | `server/assets/assets.embedding.service.ts` | search → assets.embedding | ✅ |
-| `server/search/semantic-search.service.ts` | `server/assets/assets.embedding.service.ts` | search → assets.embedding | ✅ |
+| `server/search/assets-search.service.ts` | `server/assets/assets.embedding.ts` | search → assets.embedding | ✅ |
+| `server/search/semantic-search.service.ts` | `server/assets/assets.embedding.ts` | search → assets.embedding | ✅ |
 
 ### No Reverse Dependencies Detected
 

@@ -23,9 +23,9 @@ merge_strategy: local-first-pr-fallback
 | Preflight Gate | `PASSED` | Initial reports created |
 | Start Gate | `PASSED` | Branch is refactor/phase-assets-freeze-legacy; base-ok |
 | Sync Gate | `PASSED` | Rebase success; lint passed (4 warnings); import boundaries passed |
-| PR Submission Gate | `PENDING` | Not yet submitted |
-| Local Merge Gate | `PENDING` | Not yet attempted |
-| PR Fallback Merge Gate | `PENDING` | Not yet needed |
+| PR Submission Gate | `PASSED` | PR `#12` created |
+| Local Merge Gate | `PASSED` | Merged into `main` |
+| PR Fallback Merge Gate | `N/A` | Not needed |
 
 ## Write Set Completion
 
@@ -41,12 +41,12 @@ merge_strategy: local-first-pr-fallback
 
 ## PR and Merge Record
 
-- PR URL: TBD
-- Local merge attempted: no
-- Local merge result: N/A
+- PR URL: #12
+- Local merge attempted: yes
+- Local merge result: success
 - Fallback PR merge attempted: no
-- Fallback PR merge result: N/A
-- Final integration status (main): not merged
+- Fallback PR merge result: n/a
+- Final integration status (main): merged
 
 ## Verification Record
 
