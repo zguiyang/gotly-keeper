@@ -183,6 +183,17 @@ Rules:
 3. Do not expose these scripts through `package.json`.
 4. Keep these scripts focused on repository governance and rule compliance rather than application runtime behavior.
 
+### 5.3 `.ai-rules/scripts/`
+
+This directory contains AI governance execution scripts.
+
+Rules:
+
+1. Put AI workflow bootstrap/setup scripts here.
+2. Use these scripts to standardize session entry, worktree setup, and baseline checks.
+3. Do not place these scripts in root `scripts/`; governance scripts belong to `.ai-rules/scripts/`.
+4. Do not expose these scripts through `package.json`.
+
 ## 6. Local AI Workspace Rules
 
 ### 6.1 `docs/` and `prd/`
