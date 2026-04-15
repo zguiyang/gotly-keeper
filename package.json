@@ -12,10 +12,11 @@
     "db:studio": "drizzle-kit studio",
     "db:check": "drizzle-kit check",
     "assets:backfill-embeddings": "node --require ./scripts/register-server-only-alias.cjs --import tsx scripts/backfill-asset-embeddings.ts",
-    "test:domain": "node --require ./scripts/register-server-only-alias.cjs --import tsx --test 'server/notes/__tests__/*.test.ts' 'server/todos/__tests__/*.test.ts' 'server/bookmarks/__tests__/*.test.ts' 'server/search/__tests__/*.test.ts' 'server/ai/__tests__/*.test.ts'",
-    "test:application": "node --require ./scripts/register-server-only-alias.cjs --import tsx --test 'server/application/__tests__/*.test.ts'",
-    "test:actions": "node --require ./scripts/register-server-only-alias.cjs --import tsx --test 'server/actions/__tests__/*.test.ts' 'app/workspace/__tests__/*.test.ts'",
-    "test:critical": "node --require ./scripts/register-server-only-alias.cjs --import tsx --test 'server/notes/__tests__/*.test.ts' 'server/todos/__tests__/*.test.ts' 'server/bookmarks/__tests__/*.test.ts' 'server/search/__tests__/*.test.ts' 'server/ai/__tests__/*.test.ts' 'server/actions/__tests__/*.test.ts' 'app/workspace/__tests__/*.test.ts'",
+    "test": "vitest --run",
+    "test:unit": "vitest --run --project unit-node",
+    "test:integration": "vitest --run --project integration",
+    "test:watch": "vitest",
+    "test:coverage": "vitest --run --coverage",
     "test:e2e": "vitest run --config vitest.e2e.config.ts"
   },
   "dependencies": {
