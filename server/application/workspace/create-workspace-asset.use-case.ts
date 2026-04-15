@@ -1,7 +1,8 @@
 import 'server-only'
 
 import { ASSET_SEARCH_LIMIT_DEFAULT } from '@/server/config/constants'
-import { createAsset, searchAssets } from '@/server/assets/assets.service'
+import { createAsset } from '@/server/assets/assets.service'
+import { searchAssets } from '@/server/search'
 import { reviewUnfinishedTodos } from '@/server/todos/todos.review.service'
 import { summarizeRecentNotes } from '@/server/notes/notes.summary.service'
 import { summarizeRecentBookmarks } from '@/server/bookmarks/bookmarks.summary.service'

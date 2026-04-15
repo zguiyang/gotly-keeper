@@ -9,7 +9,6 @@ import {
   listNoteAssets,
   listRecentAssets,
   listTodoAssets,
-  searchAssets,
 } from './assets.query'
 import { createAsset, type AssetSummaryCommand } from './assets.command'
 import { setTodoCompletion } from './assets.todo-mutation'
@@ -24,7 +23,6 @@ export {
   listNoteAssets,
   listRecentAssets,
   listTodoAssets,
-  searchAssets,
   setTodoCompletion,
   toAssetListItem,
 }

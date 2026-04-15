@@ -3,7 +3,7 @@ import 'server-only'
 import { db } from '@/server/db'
 import { assets } from '@/server/db/schema'
 import { interpretAssetInput } from './assets.interpreter'
-import { scheduleAssetEmbeddingBestEffort } from './assets.embedding-scheduler'
+import { createAssetEmbeddingBestEffort } from './assets.embedding'
 import { toAssetListItem } from './assets.mapper'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 import { type AssetSummaryTarget } from './assets.summary-intent.pure'
@@ -63,9 +63,9 @@ export async function createAsset(input: {
         timeText: command.timeText,
         dueAt: command.dueAt,
       })
-        .returning()
+      .returning()
 
-    scheduleAssetEmbeddingBestEffort(created)
+    createAssetEmbeddingBestEffort(created)
 
     return { kind: 'created', asset: toAssetListItem(created) }
   }
@@ -84,7 +84,7 @@ export async function createAsset(input: {
       })
         .returning()
 
-    scheduleAssetEmbeddingBestEffort(created)
+    createAssetEmbeddingBestEffort(created)
 
     return { kind: 'created', asset: toAssetListItem(created) }
   }
@@ -100,9 +100,9 @@ export async function createAsset(input: {
       timeText: command.timeText,
       dueAt: command.dueAt,
     })
-    .returning()
+      .returning()
 
-  scheduleAssetEmbeddingBestEffort(created)
+  createAssetEmbeddingBestEffort(created)
 
   return { kind: 'created', asset: toAssetListItem(created) }
 }

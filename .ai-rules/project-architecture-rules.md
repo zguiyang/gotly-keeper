@@ -287,7 +287,79 @@ As the project grows:
 - avoid inventing layers that the project does not yet need
 - prefer stable ownership over fashionable abstractions
 
-## 9. Related Rules
+## 9. Domain-Specific Owner Constraints
+
+This section defines explicit ownership rules for specific domains to prevent structural drift.
+
+### 9.1 Assets Domain
+
+Owner: `server/assets/`
+
+Owns:
+- asset CRUD operations (query, command, mutation)
+- asset data access patterns
+- asset embedding configuration and scheduling
+- asset-to-domain coordination (todos, notes, bookmarks)
+
+Allowed dependencies (assets may import from):
+- `server/db/` - database access
+- `server/config/` - server-side constants
+- `shared/assets/` - shared types and schemas
+- `server/application/` - use-case orchestration (only via exposed interfaces)
+
+Forbidden dependencies (assets must NOT import from):
+- `server/search/` - search is a downstream consumer, not an upstream dependency
+- `app/**` - app is an upstream consumer
+- `server/application/**` - application layer should call assets, not vice versa
+
+### 9.2 Search Domain
+
+Owner: `server/search/`
+
+Owns:
+- search query parsing and normalization
+- keyword and semantic search implementation
+- search result ranking and merging
+- search-specific time hint parsing
+
+Allowed dependencies (search may import from):
+- `server/assets/` - assets are upstream data sources (embedding config, provider)
+- `server/config/` - server-side constants
+- `shared/assets/` - shared types for assets
+
+Forbidden dependencies (search must NOT import from):
+- `app/**` - app is an upstream consumer
+- `server/application/**` - use-cases should orchestrate search, not be imported by it
+- `server/todos/`, `server/notes/`, `server/bookmarks/` - domain-specific imports belong in application layer
+
+### 9.3 Summary Services (notes.summary.service, todos.review.service, bookmarks.summary.service)
+
+These services coordinate domain-specific asset listing. They are owned by their respective domains.
+
+Owner: `server/<domain>/<domain>.summary.service.ts`
+
+Allowed dependencies:
+- `server/assets/` - to list assets of a specific type
+
+Forbidden dependencies:
+- `server/search/` - search is not a data source for summary operations
+- `app/**` - app is an upstream consumer
+
+### 9.4 Split Decision Protocol
+
+When a capability crosses domain boundaries (e.g., search needs to understand asset structure):
+
+1. Define a shared interface/type in `shared/` if the contract is truly cross-domain
+2. Keep the implementation in the owning domain
+3. Downstream consumers import from the owning domain's interface, not its implementation details
+4. If assets needs search capability, this indicates a layering violation - search should be orchestrated via application layer
+
+Fallback condition:
+- If immediate refactoring is not feasible, create a temporary interface in `shared/` that bridges the gap
+- Document the violation in code comments with `TODO: resolve boundary violation`
+- Schedule the violation for resolution in next refactoring phase
+
+## 10. Related Rules
 
 - `.ai-rules/project-governance-rules.md`
 - `.ai-rules/universal-development-boundary-rules.md`

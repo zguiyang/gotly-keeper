@@ -370,6 +370,49 @@ The target is:
 - easy change
 - simple, centralized, and predictable structure
 
-## 13. One-Sentence Summary
+## 13. Split Decision Protocol
+
+When implementation requires crossing established boundaries:
+
+### 13.1 Decision Requirements
+
+Before creating cross-boundary dependencies, AI must document:
+1. Why the boundary crossing is necessary
+2. Which direction the dependency flows (who owns what)
+3. What the fallback strategy is if the split is not immediately resolvable
+
+### 13.2 Allowable Cross-Boundary Patterns
+
+Allowed:
+- `app/**` (actions) -> `server/application/**` (use-cases)
+- `server/application/**` -> `server/<domain>/**` (domain services)
+- `server/<domain>/**` -> `server/infra/**` (infrastructure)
+- `search` -> `assets` (search as consumer of asset data)
+- Summary services importing from `server/assets/`
+
+Forbidden:
+- `server/<domain>/**` -> `server/search/**` (search is not an upstream data source)
+- `server/**` -> `app/**` (reverse of data flow)
+- `domain` -> `app` (domain logic should not depend on presentation)
+
+### 13.3 Fallback Conditions
+
+If a split decision cannot be immediately implemented:
+
+1. Create a minimal interface in `shared/` to bridge the gap
+2. Document the violation with `TODO: resolve boundary violation in next phase`
+3. Add the violation to the guard's temporary allow-list with expiration comment
+4. Schedule the violation for mandatory resolution
+
+The fallback must NOT:
+- Use global "allow all" patterns
+- Leave violations permanently unresolved
+- Create shortcuts that normalize boundary breaks
+
+### 13.4 Guard Compliance
+
+All split decisions must be verifiable by `.ai-rules/guards/check-import-boundaries.sh`.
+
+## 14. One-Sentence Summary
 
 For any idea, AI must first determine responsibility, ownership, boundary, and reuse level; keep business logic cohesive, shared logic truly shared, infrastructure generic, entry points thin, and cross-boundary collaboration explicit.

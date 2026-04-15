@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   valuesMock: vi.fn(),
   returningMock: vi.fn(),
   interpretAssetInputMock: vi.fn(),
-  scheduleAssetEmbeddingBestEffortMock: vi.fn(),
+  createAssetEmbeddingBestEffortMock: vi.fn(),
   toAssetListItemMock: vi.fn(),
 }))
 
@@ -24,8 +24,8 @@ vi.mock('../../../../server/assets/assets.interpreter', () => ({
   interpretAssetInput: mocks.interpretAssetInputMock,
 }))
 
-vi.mock('../../../../server/assets/assets.embedding-scheduler', () => ({
-  scheduleAssetEmbeddingBestEffort: mocks.scheduleAssetEmbeddingBestEffortMock,
+vi.mock('../../../../server/assets/assets.embedding', () => ({
+  createAssetEmbeddingBestEffort: mocks.createAssetEmbeddingBestEffortMock,
 }))
 
 vi.mock('../../../../server/assets/assets.mapper', () => ({
@@ -62,7 +62,7 @@ describe('assets.command', () => {
         query: '总结今天',
       })
       expect(mocks.insertMock).not.toHaveBeenCalled()
-      expect(mocks.scheduleAssetEmbeddingBestEffortMock).not.toHaveBeenCalled()
+      expect(mocks.createAssetEmbeddingBestEffortMock).not.toHaveBeenCalled()
     })
 
     it('returns search command without DB write', async () => {
@@ -121,7 +121,7 @@ describe('assets.command', () => {
           url: 'https://example.com',
         })
       )
-      expect(mocks.scheduleAssetEmbeddingBestEffortMock).toHaveBeenCalledWith(created)
+      expect(mocks.createAssetEmbeddingBestEffortMock).toHaveBeenCalledWith(created)
       expect(result).toEqual({ kind: 'created', asset: mapped })
     })
 

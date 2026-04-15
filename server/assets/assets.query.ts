@@ -4,7 +4,6 @@ import { and, desc, eq, sql } from 'drizzle-orm'
 
 import { db } from '@/server/db'
 import { assets } from '@/server/db/schema'
-import { searchAssets as performAssetSearch } from '@/server/search/assets-search.service'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 import { ASSET_LIST_LIMIT_MIN, ASSET_LIST_LIMIT_DEFAULT, ASSET_LIST_LIMIT_MAX, ASSET_RECENT_LIMIT_DEFAULT, ASSET_RECENT_LIMIT_MAX } from '@/server/config/constants'
 import { toAssetListItem } from './assets.mapper'
@@ -21,19 +20,6 @@ type ListAssetsOptions = {
 
 function clampAssetListLimit(limit = ASSET_LIST_LIMIT_DEFAULT) {
   return Math.min(Math.max(ASSET_LIST_LIMIT_MIN, limit), ASSET_LIST_LIMIT_MAX)
-}
-
-export async function searchAssets(
-  options: {
-    userId: string
-    query: string
-    typeHint?: AssetType | null
-    timeHint?: string | null
-    completionHint?: 'complete' | 'incomplete' | null
-    limit?: number
-  }
-): Promise<AssetListItem[]> {
-  return performAssetSearch(options)
 }
 
 export async function listAssets({
