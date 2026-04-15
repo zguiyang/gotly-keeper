@@ -62,6 +62,9 @@ Meaning:
 - `.ai-rules/phase-execution-protocol.md`
 - `.ai-rules/guards/check-phase-doc-protocol.sh` for optional phase document validation
 - `.ai-rules/guards/check-import-boundaries.sh` for optional architecture boundary validation
+- `.ai-rules/templates/phase-task-report.template.md` for mandatory per-phase task reporting
+- `.ai-rules/templates/phase-failure-report.template.md` for fail-fast failure reporting
+- `.ai-rules/templates/phase-plan-minimal.template.md` for new phase document bootstrap
 
 ## Task Routing
 

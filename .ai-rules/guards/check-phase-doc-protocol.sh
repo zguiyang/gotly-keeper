@@ -1,22 +1,49 @@
 #!/bin/bash
 # check-phase-doc-protocol.sh
-# Validates that a phase plan document contains required protocol fields
+# Validates phase plan documents against protocol requirements.
+# Supports:
+# - Legacy plans (PR-only)
+# - Current plans (local-first-pr-fallback)
 
 set -e
 
-PROTOCOL_FIELDS=(
+LEGACY_FIELDS=(
   "phase_id"
   "depends_on"
   "parallel_safe"
   "merge_strategy"
 )
 
-PROTOCOL_RULES=(
+LEGACY_RULES=(
   "Preflight Gate"
   "Start Gate"
   "Sync Gate"
   "Fail-Fast"
   "PR-only"
+)
+
+V2_FIELDS=(
+  "phase_id"
+  "depends_on"
+  "parallel_safe"
+  "branch_type"
+  "branch_naming_rule"
+  "merge_strategy: local-first-pr-fallback"
+  "task_report_path"
+  "failure_report_path"
+  "artifact_dir"
+  "task_report_template"
+  "failure_report_template"
+)
+
+V2_RULES=(
+  "Preflight Gate"
+  "Start Gate"
+  "Sync Gate"
+  "PR Submission Gate"
+  "Local Merge Gate"
+  "PR Fallback Merge Gate"
+  "Fail-Fast"
 )
 
 check_field() {
@@ -41,44 +68,88 @@ check_rule() {
   return 0
 }
 
+validate_plan() {
+  local phase_plan="$1"
+  local mode="$2"
+  local failures=0
+
+  if [ "$mode" = "v2" ]; then
+    echo "Checking phase plan (v2): $phase_plan"
+    for field in "${V2_FIELDS[@]}"; do
+      if ! check_field "$phase_plan" "$field"; then
+        failures=$((failures + 1))
+      fi
+    done
+    for rule in "${V2_RULES[@]}"; do
+      if ! check_rule "$phase_plan" "$rule"; then
+        failures=$((failures + 1))
+      fi
+    done
+
+    if ! grep -q "Must submit PR for every executed phase" "$phase_plan"; then
+      echo "FAIL: Missing PR submission rule in $phase_plan"
+      failures=$((failures + 1))
+    fi
+  else
+    echo "Checking phase plan (legacy): $phase_plan"
+    for field in "${LEGACY_FIELDS[@]}"; do
+      if ! check_field "$phase_plan" "$field"; then
+        failures=$((failures + 1))
+      fi
+    done
+    for rule in "${LEGACY_RULES[@]}"; do
+      if ! check_rule "$phase_plan" "$rule"; then
+        failures=$((failures + 1))
+      fi
+    done
+    echo "WARN: Legacy protocol detected in $phase_plan (allowed for completed historical plans)."
+  fi
+
+  return $failures
+}
+
 main() {
-  local phase_plan=""
+  local phase_plans=()
+  local checked=0
 
   shopt -s nullglob
 
   for f in docs/superpowers/plans/*.md; do
     if grep -q "phase_id" "$f" && grep -q "depends_on" "$f" && grep -q "parallel_safe" "$f"; then
-      phase_plan="$f"
-      break
+      phase_plans+=("$f")
     fi
   done
 
-  if [ -z "$phase_plan" ]; then
+  if [ ${#phase_plans[@]} -eq 0 ]; then
     echo "FAIL: No phase plan document found"
     exit 1
   fi
 
-  echo "Checking phase plan: $phase_plan"
-
   local failures=0
 
-  for field in "${PROTOCOL_FIELDS[@]}"; do
-    if ! check_field "$phase_plan" "$field"; then
-      failures=$((failures + 1))
+  for phase_plan in "${phase_plans[@]}"; do
+    checked=$((checked + 1))
+    if grep -q "merge_strategy: local-first-pr-fallback" "$phase_plan"; then
+      if validate_plan "$phase_plan" "v2"; then
+        rc=0
+      else
+        rc=$?
+      fi
+    else
+      if validate_plan "$phase_plan" "legacy"; then
+        rc=0
+      else
+        rc=$?
+      fi
     fi
-  done
-
-  for rule in "${PROTOCOL_RULES[@]}"; do
-    if ! check_rule "$phase_plan" "$rule"; then
-      failures=$((failures + 1))
-    fi
+    failures=$((failures + rc))
   done
 
   if [ $failures -eq 0 ]; then
-    echo "PASS: Phase plan protocol validation passed"
+    echo "PASS: Phase plan protocol validation passed ($checked files checked)"
     exit 0
   else
-    echo "FAIL: Phase plan protocol validation failed with $failures errors"
+    echo "FAIL: Phase plan protocol validation failed with $failures errors across $checked files"
     exit 1
   fi
 }

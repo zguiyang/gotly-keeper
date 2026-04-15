@@ -8,6 +8,9 @@ This protocol applies to all phase plans in `docs/superpowers/plans/` and any fe
 
 `docs/superpowers/plans/` is an ignored local AI workspace. Phase plans and generated artifacts in this directory are execution aids and must not be staged or committed.
 
+Plan writing requirement:
+- Write phase plans from a novice-AI perspective (zero hidden context), using explicit, step-by-step, unambiguous instructions so execution does not depend on implicit assumptions.
+
 ## 2. Phase Plan Metadata
 
 Every phase plan document MUST include:
@@ -17,10 +20,15 @@ phase_id: <unique-phase-identifier>
 depends_on: [<phase-id>, ...]  # or [] if no dependencies
 parallel_safe: true|false
 base_branch_rule: Must start from latest main
-branch_naming_rule: feat/${phase_id}
+branch_type: feat|fix|refactor|ui|chore
+branch_naming_rule: ${branch_type}/${phase_id}
 worktree_naming_rule: .worktrees/${phase_id}
+task_report_path: docs/superpowers/plans/artifacts/${phase_id}.task-report.md
 failure_report_path: docs/superpowers/plans/artifacts/${phase_id}-failure-report.md
-merge_strategy: PR-only
+merge_strategy: local-first-pr-fallback
+pr_submission_rule: Must submit PR for every executed phase
+task_report_template: .ai-rules/templates/phase-task-report.template.md
+failure_report_template: .ai-rules/templates/phase-failure-report.template.md
 artifact_dir: docs/superpowers/plans/artifacts
 verification_report_path: docs/superpowers/plans/artifacts/${phase_id}.verification-report.md
 ```
@@ -35,8 +43,13 @@ Naming rule:
 - Use `${phase_id}` as the filename prefix (same semantic identity as branch/worktree).
 - Avoid ambiguous generic names like `phaseX-verification-report.md` for new plans.
 
-Minimum artifact set for each phase:
+Mandatory artifact for each execution (success/failure):
+- `${phase_id}.task-report.md`
+
+Failure artifact (required when any gate/merge/verification step fails):
 - `${phase_id}-failure-report.md`
+
+Verification artifact (recommended, phase-specific):
 - `${phase_id}.verification-report.md`
 
 Optional artifacts (as needed by phase scope):
@@ -88,7 +101,7 @@ This is an execution-precondition failure, not a runtime test failure.
 **Purpose**: Verify isolated workspace is set up correctly.
 
 ```bash
-git branch --show-current  # Should be feat/${phase_id}
+git branch --show-current  # Should be ${branch_type}/${phase_id}
 git merge-base --is-ancestor origin/main HEAD && echo "base-ok"
 ```
 
@@ -107,14 +120,33 @@ bash .ai-rules/guards/check-import-boundaries.sh
 
 **Fail-Fast**: If any check fails, STOP immediately.
 
-### 3.4 PR Merge Gate
+### 3.4 PR Submission Gate (Mandatory)
 
 ```bash
-gh pr create --base main --head feat/${phase_id}
+gh pr create --base main --head ${branch_type}/${phase_id}
+```
+
+**Required**: Every executed phase must have a corresponding PR record for review/audit.
+
+### 3.5 Local Merge Gate (Primary)
+
+```bash
+git fetch --all --prune
+git checkout main && git pull --ff-only
+git merge --no-ff ${branch_type}/${phase_id}
+git push origin main
+```
+
+**Primary path**: Always try local merge first.
+
+### 3.6 PR Fallback Merge Gate (When Local Merge Fails)
+
+```bash
 gh pr merge --squash --auto
 ```
 
-**Required**: PR-only merge (no direct merge to main).
+If local merge fails, merge through PR.
+If PR merge also fails, STOP immediately and notify user.
 
 ## 4. Fail-Fast Rule
 
@@ -122,15 +154,18 @@ Applies to all gates. On failure:
 1. Stop all execution immediately
 2. Generate failure report at `${failure_report_path}`
 3. Wait for user confirmation before resuming
+4. Record user-facing failure notice in `${phase_id}.task-report.md`
 
 ## 4.1 Task 0 Requirement (Bootstrap)
 
 Each phase plan SHOULD include `Task 0`:
-- Create failure-report template
+- Decide `branch_type` from scope (`feat|fix|refactor|ui|chore`)
+- Create phase task-report from `.ai-rules/templates/phase-task-report.template.md`
+- Prepare failure-report from `.ai-rules/templates/phase-failure-report.template.md`
 - Run Preflight dependency check
 - Continue only when Preflight passes
 
-Reason: ensures failure logging and stop behavior are standardized before implementation begins.
+Reason: ensures task reporting, failure logging, and stop behavior are standardized before implementation begins.
 
 ## 5. Worktree Setup
 
@@ -153,3 +188,9 @@ cd .worktrees/${phase_id}
 - Layered architecture boundaries: `.ai-rules/project-architecture-rules.md`
 - Testing and verification decision rules: `.ai-rules/testing-and-integration-rules.md`
 - Repository asset and local workspace governance: `.ai-rules/project-governance-rules.md`
+
+## 8. Compatibility Note
+
+Existing completed historical phase plans may still use `merge_strategy: PR-only`.
+Do not retroactively edit historical completed plans just to match this protocol version.
+For all new plans and reruns, use this document as the required standard.
