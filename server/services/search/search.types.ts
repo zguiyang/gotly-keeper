@@ -1,6 +1,6 @@
 import type { Asset } from '@/server/lib/db/schema'
-import type { AssetListItem } from '@/shared/assets/assets.types'
 import type { AssetSummaryTarget } from '@/server/services/assets/assets.summary-intent.pure'
+import type { AssetListItem } from '@/shared/assets/assets.types'
 
 export type AssetType = Asset['type']
 

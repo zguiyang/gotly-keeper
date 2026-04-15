@@ -3,9 +3,11 @@ import 'server-only'
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
+import { listNoteAssets } from '@/server/services/assets/assets.service'
+
 import { getAiProvider } from '../../lib/ai/ai-provider'
 import { NOTE_SUMMARY_LIMIT, NOTE_SUMMARY_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
-import { listNoteAssets } from '@/server/services/assets/assets.service'
+
 import type { AssetListItem, NoteSummaryResult, NoteSummarySource } from '@/shared/assets/assets.types'
 
 type NoteSummaryPromptItem = {

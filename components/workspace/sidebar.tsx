@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+
 import { workspaceNavItems, isWorkspaceNavItemActive } from "@/config/workspace/nav"
 
 export function Sidebar() {

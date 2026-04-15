@@ -2,10 +2,11 @@ import 'server-only'
 
 import { db } from '@/server/lib/db'
 import { assets } from '@/server/lib/db/schema'
-import { interpretAssetInput } from './assets.interpreter'
-import { createAssetEmbeddingBestEffort } from './assets.embedding'
-import { toAssetListItem } from './assets.mapper'
 import { type AssetListItem } from '@/shared/assets/assets.types'
+
+import { createAssetEmbeddingBestEffort } from './assets.embedding'
+import { interpretAssetInput } from './assets.interpreter'
+import { toAssetListItem } from './assets.mapper'
 import { type AssetSummaryTarget } from './assets.summary-intent.pure'
 
 export type AssetSummaryCommand = {

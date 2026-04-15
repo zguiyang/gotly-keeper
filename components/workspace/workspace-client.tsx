@@ -1,9 +1,12 @@
 'use client'
 
-import { useState } from 'react'
 import { Sparkles } from 'lucide-react'
+import { useState } from 'react'
 
+import { assetTypePresentation } from '@/config/ui/asset-presentation'
+import { useWorkspaceSubmit } from '@/hooks/workspace/use-workspace-submit'
 import { type AssetListItem } from '@/shared/assets/assets.types'
+
 import {
   RecentItem,
   formatAssetTime,
@@ -12,8 +15,6 @@ import {
   WorkspaceQueryResultsPanel,
   WorkspaceTodoReviewPanel,
 } from './workspace-result-panels'
-import { assetTypePresentation } from '@/config/ui/asset-presentation'
-import { useWorkspaceSubmit } from '@/hooks/workspace/use-workspace-submit'
 
 function QuickActionChips({
   onChipClick,

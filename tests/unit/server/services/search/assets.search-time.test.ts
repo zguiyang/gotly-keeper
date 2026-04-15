@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+
 import { matchesSearchTimeHint } from '@/server/services/search/search.time-match.pure'
 
 describe('assets.search-time', () => {

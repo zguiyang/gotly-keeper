@@ -1,6 +1,7 @@
-import type { AssetListItem } from '@/shared/assets/assets.types'
-import type { KeywordCandidate, RankResult, SemanticCandidate } from './search.types'
 import { SEMANTIC_BASE_SCORE, SEMANTIC_DISTANCE_PENALTY } from '@/server/lib/config/constants'
+
+import type { KeywordCandidate, RankResult, SemanticCandidate } from './search.types'
+import type { AssetListItem } from '@/shared/assets/assets.types'
 
 export function mergeSearchResults(
   semanticResults: SemanticCandidate[],

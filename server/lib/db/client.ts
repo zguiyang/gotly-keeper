@@ -1,10 +1,11 @@
 import 'server-only'
 
 import chalk from 'chalk'
-import { Pool } from 'pg'
 import { drizzle } from 'drizzle-orm/node-postgres'
+import { Pool } from 'pg'
 
 import { serverEnv } from '@/server/lib/env'
+
 import * as schema from './schema'
 
 const globalForPool = globalThis as unknown as {

@@ -3,9 +3,11 @@ import 'server-only'
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
+import { listLinkAssets } from '@/server/services/assets/assets.service'
+
 import { getAiProvider } from '../../lib/ai/ai-provider'
 import { BOOKMARK_SUMMARY_LIMIT, BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
-import { listLinkAssets } from '@/server/services/assets/assets.service'
+
 import type { AssetListItem, BookmarkSummaryResult, BookmarkSummarySource } from '@/shared/assets/assets.types'
 
 type BookmarkSummaryPromptItem = {

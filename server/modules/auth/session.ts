@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 
 import { ModuleActionError, MODULE_ACTION_ERROR_CODES } from '../actions/action-error'
+
 import { auth, type AuthSession } from './auth'
 
 export type CurrentUser = AuthSession['user']

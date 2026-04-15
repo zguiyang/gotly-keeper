@@ -1,4 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import {
+  ASSET_LIST_LIMIT_MAX,
+  ASSET_RECENT_LIMIT_MAX,
+} from '@/server/lib/config/constants'
 import {
   listAssets,
   listIncompleteTodoAssets,
@@ -7,10 +12,6 @@ import {
   listRecentAssets,
   listTodoAssets,
 } from '@/server/services/assets/assets.query'
-import {
-  ASSET_LIST_LIMIT_MAX,
-  ASSET_RECENT_LIMIT_MAX,
-} from '@/server/lib/config/constants'
 
 const mocks = vi.hoisted(() => ({
   selectMock: vi.fn(),

@@ -2,11 +2,13 @@ import 'server-only'
 
 import { generateText, Output } from 'ai'
 
+import { ASSET_INPUT_MODEL_TIMEOUT_MS } from '@/server/lib/config/constants'
+
 import { getAiProvider } from './ai-provider'
 import { parseAiError } from './ai.errors'
+
 import type { AiResult } from './ai.types'
 import type { ZodSchema } from 'zod'
-import { ASSET_INPUT_MODEL_TIMEOUT_MS } from '@/server/lib/config/constants'
 
 type GenerateOptions<T> = {
   schema: ZodSchema<T>

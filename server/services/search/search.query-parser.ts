@@ -1,4 +1,3 @@
-import type { AssetType } from './search.types'
 import {
   KEYWORD_TERM_MIN_LENGTH,
   KEYWORD_TERM_MAX_COUNT,
@@ -8,6 +7,8 @@ import {
   KEYWORD_TIME_HINT_BONUS,
   KEYWORD_TYPE_HINT_SCORE,
 } from '@/server/lib/config/constants'
+
+import type { AssetType } from './search.types'
 
 const QUERY_FILLERS = [
   '帮我',

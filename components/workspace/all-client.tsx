@@ -1,17 +1,17 @@
 'use client'
 
-import { useState } from 'react'
 import {
   MoreVertical,
 } from 'lucide-react'
+import { useState } from 'react'
 
-import { type AssetListItem } from '@/shared/assets/assets.types'
+import { assetTypePresentation } from '@/config/ui/asset-presentation'
+import { filterTabs, emptyFilterMessages } from '@/config/workspace/filters'
 import {
   getAssetDateGroup,
   formatAssetRelativeTime,
 } from '@/shared/assets/asset-time-display'
-import { filterTabs, emptyFilterMessages } from '@/config/workspace/filters'
-import { assetTypePresentation } from '@/config/ui/asset-presentation'
+import { type AssetListItem } from '@/shared/assets/assets.types'
 
 type AssetType = 'note' | 'link' | 'todo'
 

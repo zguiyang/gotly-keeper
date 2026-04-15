@@ -2,10 +2,11 @@ import 'server-only'
 
 import { and, desc, eq, sql } from 'drizzle-orm'
 
+import { ASSET_LIST_LIMIT_MIN, ASSET_LIST_LIMIT_DEFAULT, ASSET_LIST_LIMIT_MAX, ASSET_RECENT_LIMIT_DEFAULT, ASSET_RECENT_LIMIT_MAX } from '@/server/lib/config/constants'
 import { db } from '@/server/lib/db'
 import { assets } from '@/server/lib/db/schema'
 import { type AssetListItem } from '@/shared/assets/assets.types'
-import { ASSET_LIST_LIMIT_MIN, ASSET_LIST_LIMIT_DEFAULT, ASSET_LIST_LIMIT_MAX, ASSET_RECENT_LIMIT_DEFAULT, ASSET_RECENT_LIMIT_MAX } from '@/server/lib/config/constants'
+
 import { toAssetListItem } from './assets.mapper'
 
 export { type AssetListItem }

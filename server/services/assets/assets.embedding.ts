@@ -1,12 +1,13 @@
 import 'server-only'
 
-import { db } from '@/server/lib/db'
-import { assetEmbeddings, type Asset } from '@/server/lib/db/schema'
 import {
   ASSET_EMBEDDING_TIMEOUT_MS,
 } from '@/server/lib/config/constants'
-import { getAssetEmbeddingModel } from './assets.embedding-provider'
+import { db } from '@/server/lib/db'
+import { assetEmbeddings, type Asset } from '@/server/lib/db/schema'
+
 import { ASSET_EMBEDDING_DIMENSIONS } from './assets.embedding-config'
+import { getAssetEmbeddingModel } from './assets.embedding-provider'
 
 function getAssetEmbeddingText(asset: Asset) {
   return [asset.originalText, asset.url, asset.timeText]

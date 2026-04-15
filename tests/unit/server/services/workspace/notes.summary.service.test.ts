@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { buildNoteSummaryPromptInput } from '@/server/services/workspace/notes.summary.service'
+
 import type { AssetListItem } from '@/shared/assets/assets.types'
+
+import { buildNoteSummaryPromptInput } from '@/server/services/workspace/notes.summary.service'
 
 describe('notes.summary.service', () => {
   describe('buildNoteSummaryPromptInput', () => {

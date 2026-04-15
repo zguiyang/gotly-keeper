@@ -1,7 +1,9 @@
 import 'server-only'
 
+import { interpretAssetInputWithAi } from '@/server/lib/ai/ai-runner'
 import { aiAssetInputSchema, type AiAssetInput } from '@/server/lib/ai/ai-schema'
 import { ASSET_INTERPRETER_SYSTEM_PROMPT, buildAssetInterpreterPrompt } from '@/server/lib/ai/ai.prompts'
+
 import {
   classifyAssetInput,
   extractUrl,
@@ -14,7 +16,6 @@ import {
   type AssetSummaryTarget,
 } from './assets.summary-intent.pure'
 import { parseAssetTimeText } from './assets.time'
-import { interpretAssetInputWithAi } from '@/server/lib/ai/ai-runner'
 
 export type AssetInputCommand =
   | {

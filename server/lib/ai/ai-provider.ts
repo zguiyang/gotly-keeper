@@ -3,6 +3,7 @@ import 'server-only'
 import { createAlibaba } from '@ai-sdk/alibaba'
 
 import { serverEnv } from '@/server/lib/env'
+
 import type { AiProvider } from './ai.types'
 
 export function getAiProvider(): AiProvider {

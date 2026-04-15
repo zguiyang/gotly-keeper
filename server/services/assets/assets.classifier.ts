@@ -1,6 +1,6 @@
-export type AssetInputType = 'note' | 'link' | 'todo'
-
 import { parseAssetTimeText } from './assets.time'
+
+export type AssetInputType = 'note' | 'link' | 'todo'
 
 export type AssetClassification = {
   kind: 'asset'

@@ -1,5 +1,6 @@
-import type { AiTimeoutError, AiSchemaError, AiProviderError } from './ai.types'
 import { isAiTimeoutError, isAiSchemaError, isAiProviderError } from './ai.errors'
+
+import type { AiTimeoutError, AiSchemaError, AiProviderError } from './ai.types'
 
 export type AiFallbackStrategy =
   | 'timeout'

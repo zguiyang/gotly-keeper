@@ -1,9 +1,10 @@
 "use client"
 
-import Image from "next/image"
 import { Bell, Settings, Search, Menu } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { workspaceNavItems, isWorkspaceNavItemActive } from "@/config/workspace/nav"
 

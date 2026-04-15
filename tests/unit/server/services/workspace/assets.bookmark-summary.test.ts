@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+
 import { buildBookmarkSummaryPromptInput } from '@/server/services/workspace/bookmarks.summary.service'
 
 describe('assets.bookmark-summary', () => {

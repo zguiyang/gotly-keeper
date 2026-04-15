@@ -2,14 +2,16 @@ import 'server-only'
 
 import { and, desc, eq, sql, type SQL } from 'drizzle-orm'
 
-import { db } from '@/server/lib/db'
-import { assets, type Asset } from '@/server/lib/db/schema'
-import type { KeywordCandidate, SearchAssetsOptions } from './search.types'
-import { scoreAssetForQuery } from './search.query-parser'
 import {
   ASSET_LIST_LIMIT_MIN,
   ASSET_LIST_LIMIT_MAX,
 } from '@/server/lib/config/constants'
+import { db } from '@/server/lib/db'
+import { assets, type Asset } from '@/server/lib/db/schema'
+
+import { scoreAssetForQuery } from './search.query-parser'
+
+import type { KeywordCandidate, SearchAssetsOptions } from './search.types'
 
 type KeywordSearchOptions = Omit<SearchAssetsOptions, 'query' | 'timeHint'> & {
   terms: string[]

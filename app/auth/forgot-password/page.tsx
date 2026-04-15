@@ -1,9 +1,10 @@
-import Link from "next/link";
 import { Mail, ArrowLeft } from "lucide-react";
-import { AuthShell } from "@/components/auth/auth-shell";
-import { AuthNavbar } from "@/components/auth/auth-navbar";
+import Link from "next/link";
+
 import { AuthField } from "@/components/auth/auth-field";
 import { AuthPageFooter } from "@/components/auth/auth-footer";
+import { AuthNavbar } from "@/components/auth/auth-navbar";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 export default function ForgotPasswordPage() {
   return (

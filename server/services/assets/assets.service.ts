@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { createAsset, type AssetSummaryCommand } from './assets.command'
 import { toAssetListItem } from './assets.mapper'
 import {
   type AssetListItem,
@@ -10,7 +11,6 @@ import {
   listRecentAssets,
   listTodoAssets,
 } from './assets.query'
-import { createAsset, type AssetSummaryCommand } from './assets.command'
 import { setTodoCompletion } from './assets.todo-mutation'
 
 export {

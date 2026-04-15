@@ -4,8 +4,9 @@ import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/server/lib/db'
 import { assets } from '@/server/lib/db/schema'
-import { toAssetListItem } from './assets.mapper'
 import { type AssetListItem } from '@/shared/assets/assets.types'
+
+import { toAssetListItem } from './assets.mapper'
 
 type SetTodoCompletionInput = {
   userId: string

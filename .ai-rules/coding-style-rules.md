@@ -146,3 +146,17 @@ Before submitting changes, verify:
 2. Use architecture rules for ownership and placement decisions.
 3. Use testing rules for verification strategy.
 4. If conflicts appear, follow instruction priority from `AGENTS.md`.
+
+## 13. Enforcement Workflow
+
+Use these commands as the default style enforcement flow:
+
+1. Check style violations: `pnpm lint`
+2. Apply safe auto-fixes: `pnpm lint --fix`
+3. Re-verify clean state: `pnpm lint`
+
+Execution notes:
+
+1. Treat `pnpm lint` pass as the baseline gate for style compliance.
+2. Run `pnpm lint --fix` first for import ordering and type import/export normalization.
+3. If typed lint rules are enabled, keep non-project local template folders ignored in ESLint when they are outside `tsconfig` scope (for this repo: `.agents/**`).

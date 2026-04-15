@@ -1,12 +1,12 @@
 'use client'
 
-import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import * as React from 'react'
 
-import { authClient } from '@/lib/auth-client'
 import { AuthField } from '@/components/auth/auth-field'
 import { Button } from '@/components/ui/button'
+import { authClient } from '@/lib/auth-client'
 
 export function SignInForm() {
   const router = useRouter()

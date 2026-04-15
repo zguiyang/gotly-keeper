@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { AuthShell } from "@/components/auth/auth-shell";
-import { AuthNavbar } from "@/components/auth/auth-navbar";
+
 import { AuthCard } from "@/components/auth/auth-card";
 import { AuthDivider } from "@/components/auth/auth-divider";
 import { AuthPageFooter } from "@/components/auth/auth-footer";
-import { Button } from "@/components/ui/button";
+import { AuthNavbar } from "@/components/auth/auth-navbar";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { SignInForm } from "@/components/auth/sign-in-form";
+import { Button } from "@/components/ui/button";
 
 export default function SignInPage() {
   return (

@@ -3,9 +3,11 @@ import 'server-only'
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
+import { listIncompleteTodoAssets } from '@/server/services/assets/assets.service'
+
 import { getAiProvider } from '../../lib/ai/ai-provider'
 import { TODO_REVIEW_LIMIT, TODO_REVIEW_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
-import { listIncompleteTodoAssets } from '@/server/services/assets/assets.service'
+
 import type { AssetListItem, TodoReviewResult, TodoReviewSource } from '@/shared/assets/assets.types'
 
 export type TodoReviewPromptItem = {

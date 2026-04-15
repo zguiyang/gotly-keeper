@@ -1,13 +1,13 @@
 'use client'
 
-import * as React from 'react'
+import { ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowRight } from 'lucide-react'
+import * as React from 'react'
 
-import { authClient } from '@/lib/auth-client'
 import { AuthField } from '@/components/auth/auth-field'
 import { Button } from '@/components/ui/button'
+import { authClient } from '@/lib/auth-client'
 
 export function SignUpForm() {
   const router = useRouter()

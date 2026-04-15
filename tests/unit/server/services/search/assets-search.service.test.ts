@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+
 import { searchAssets } from '@/server/services/search/assets-search.service'
-import * as semanticSearch from '@/server/services/search/semantic-search.service'
 import * as keywordSearch from '@/server/services/search/keyword-search.service'
 import * as searchRanker from '@/server/services/search/search.ranker'
-import type { AssetListItem } from '@/shared/assets/assets.types'
+import * as semanticSearch from '@/server/services/search/semantic-search.service'
+
 import type { Asset } from '@/server/lib/db/schema'
 import type { SemanticCandidate } from '@/server/services/search/search.types'
+import type { AssetListItem } from '@/shared/assets/assets.types'
 
 vi.mock('@/server/services/search/semantic-search.service')
 vi.mock('@/server/services/search/keyword-search.service')

@@ -1,7 +1,8 @@
-import Link from "next/link";
 import { CheckCircle } from "lucide-react";
-import { AuthShell } from "@/components/auth/auth-shell";
+import Link from "next/link";
+
 import { AuthNavbar } from "@/components/auth/auth-navbar";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 export default function ResetLinkSentPage() {
   return (

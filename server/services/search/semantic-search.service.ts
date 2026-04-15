@@ -3,12 +3,6 @@ import 'server-only'
 import { and, desc, eq, isNull, sql } from 'drizzle-orm'
 import { cosineDistance } from 'drizzle-orm/sql/functions'
 
-import { db } from '@/server/lib/db'
-import {
-  assetEmbeddings,
-  assets,
-  type Asset,
-} from '@/server/lib/db/schema'
 import {
   ASSET_EMBEDDING_CANDIDATE_MULTIPLIER,
   ASSET_EMBEDDING_MAX_COSINE_DISTANCE,
@@ -18,9 +12,16 @@ import {
   ASSET_SEARCH_LIMIT_DEFAULT,
   ASSET_SEARCH_LIMIT_MAX,
 } from '@/server/lib/config/constants'
-import { getAssetEmbeddingModel } from '@/server/services/assets/assets.embedding-provider'
-import { ASSET_EMBEDDING_DIMENSIONS } from '@/server/services/assets/assets.embedding-config'
+import { db } from '@/server/lib/db'
+import {
+  assetEmbeddings,
+  assets,
+  type Asset,
+} from '@/server/lib/db/schema'
 import { createAssetEmbeddingBestEffort } from '@/server/services/assets/assets.embedding'
+import { ASSET_EMBEDDING_DIMENSIONS } from '@/server/services/assets/assets.embedding-config'
+import { getAssetEmbeddingModel } from '@/server/services/assets/assets.embedding-provider'
+
 import type { SemanticCandidate } from './search.types'
 
 type SemanticSearchOptions = {

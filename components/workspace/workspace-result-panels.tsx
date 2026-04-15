@@ -1,10 +1,10 @@
+import { assetTypePresentation } from '@/config/ui/asset-presentation'
 import {
   type AssetListItem,
   type BookmarkSummaryResult,
   type NoteSummaryResult,
   type TodoReviewResult,
 } from '@/shared/assets/assets.types'
-import { assetTypePresentation } from '@/config/ui/asset-presentation'
 
 export function RecentItem({
   icon: Icon,

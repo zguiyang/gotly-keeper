@@ -1,13 +1,13 @@
 'use client'
 
+import { Check, Circle, Clock, MoreHorizontal } from 'lucide-react'
 import { useState } from 'react'
 
-import { Check, Circle, Clock, MoreHorizontal } from 'lucide-react'
 
-import { type AssetListItem } from '@/shared/assets/assets.types'
-import { getTodoGroupKey } from '@/shared/assets/asset-time-display'
-import { groupLabels } from '@/shared/constants/assets'
 import { useTodoCompletion } from '@/hooks/workspace/use-todo-completion'
+import { getTodoGroupKey } from '@/shared/assets/asset-time-display'
+import { type AssetListItem } from '@/shared/assets/assets.types'
+import { groupLabels } from '@/shared/constants/assets'
 
 function SectionHeader({ label, count }: { label: string; count: number }) {
   return (

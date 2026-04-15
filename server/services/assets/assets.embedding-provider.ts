@@ -3,6 +3,7 @@ import 'server-only'
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 
 import { serverEnv } from '@/server/lib/env'
+
 import { ASSET_EMBEDDING_DIMENSIONS } from './assets.embedding-config'
 
 export function getAssetEmbeddingModel() {
