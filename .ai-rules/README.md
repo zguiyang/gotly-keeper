@@ -24,11 +24,13 @@ Read and apply rules in this order:
    - `.ai-rules/universal-development-boundary-rules.md`
 2. **Backend behavior principles (server-side umbrella)**
    - `.ai-rules/backend-architecture-principles.md`
-3. **Project-specific architecture**
+3. **Frontend behavior principles (client-side umbrella)**
+   - `.ai-rules/frontend-architecture-principles.md`
+4. **Project-specific architecture**
    - `.ai-rules/project-architecture-rules.md`
-4. **Type/topic rules**
+5. **Type/topic rules**
    - frontend, actions, forms, AI SDK, testing, commits, tooling
-5. **Execution layer**
+6. **Execution layer**
    - protocols, lessons, and guard scripts
 
 Meaning:
@@ -53,6 +55,10 @@ Meaning:
 ### Backend umbrella principles
 
 - `.ai-rules/backend-architecture-principles.md`
+
+### Frontend umbrella principles
+
+- `.ai-rules/frontend-architecture-principles.md`
 
 ### Focused boundaries
 
@@ -85,6 +91,7 @@ Meaning:
 - repository surfaces, file placement, local workspaces, project-vs-AI boundary: read `project-governance-rules.md`
 - turning ideas into layered implementations with clear ownership and reuse boundaries: read `universal-development-boundary-rules.md`
 - server-side behavior boundaries, contracts, and architecture enforcement baseline: read `backend-architecture-principles.md`
+- frontend behavior boundaries and unit-type enforcement baseline: read `frontend-architecture-principles.md`
 - rendering, route handlers, server/client boundaries, and framework entry behavior: read `project-architecture-rules.md`
 - components, hooks, client adapters, client forms, and validation: read `react-client-state-and-forms-rules.md`
 - AI SDK, models, agents, streaming: read `ai-sdk-rules.md`

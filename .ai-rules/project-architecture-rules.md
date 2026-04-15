@@ -17,13 +17,15 @@ Read these first:
 - `.ai-rules/project-governance-rules.md`
 - `.ai-rules/universal-development-boundary-rules.md`
 - `.ai-rules/backend-architecture-principles.md`
+- `.ai-rules/frontend-architecture-principles.md`
 
 Use framework-specific skills and docs for framework behavior details.
 
 When directory-level mapping in this file conflicts with behavior-boundary rules, follow:
 
-1. `backend-architecture-principles.md` for behavioral boundaries and dependency intent
-2. this file for repository-specific placement and implementation mapping
+1. `backend-architecture-principles.md` for server-side behavioral boundaries and dependency intent
+2. `frontend-architecture-principles.md` for client-side behavioral boundaries and dependency intent
+3. this file for repository-specific placement and implementation mapping
 
 ## 3. Repository Architecture Intent
 
