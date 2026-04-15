@@ -1,6 +1,14 @@
 import 'server-only'
 
-import { createAsset, setTodoCompletion } from '@/server/services/assets/assets.service'
+import {
+  createAsset,
+  listAssets,
+  listLinkAssets,
+  listNoteAssets,
+  listRecentAssets,
+  listTodoAssets,
+  setTodoCompletion,
+} from '@/server/services/assets/assets.service'
 import { searchAssets } from '@/server/services/search'
 
 import { ASSET_SEARCH_LIMIT_DEFAULT } from '../../lib/config/constants'
@@ -92,6 +100,44 @@ export async function setWorkspaceTodoCompletion(input: {
   }
 
   return updated
+}
+
+type AssetType = 'note' | 'link' | 'todo'
+
+export async function listWorkspaceAssets(input: {
+  userId: string
+  type?: AssetType
+  limit?: number
+}): Promise<AssetListItem[]> {
+  return listAssets(input)
+}
+
+export async function listWorkspaceLinkAssets(
+  userId: string,
+  limit?: number
+): Promise<AssetListItem[]> {
+  return listLinkAssets(userId, limit)
+}
+
+export async function listWorkspaceNoteAssets(
+  userId: string,
+  limit?: number
+): Promise<AssetListItem[]> {
+  return listNoteAssets(userId, limit)
+}
+
+export async function listWorkspaceRecentAssets(
+  userId: string,
+  limit?: number
+): Promise<AssetListItem[]> {
+  return listRecentAssets(userId, limit)
+}
+
+export async function listWorkspaceTodoAssets(
+  userId: string,
+  limit?: number
+): Promise<AssetListItem[]> {
+  return listTodoAssets(userId, limit)
 }
 
 export async function reviewWorkspaceUnfinishedTodos(input: {

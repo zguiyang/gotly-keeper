@@ -1,6 +1,6 @@
 import { NotesClient } from '@/components/workspace/notes-client'
-import { listWorkspaceNoteAssets } from '@/server/modules/assets/assets.service'
 import { requireWorkspaceUserAccess } from '@/server/modules/auth/workspace-session'
+import { listWorkspaceNoteAssets } from '@/server/modules/workspace'
 
 export default async function NotesPage() {
   const user = await requireWorkspaceUserAccess()

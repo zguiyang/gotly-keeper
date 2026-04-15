@@ -1,6 +1,6 @@
 import { AllClient } from '@/components/workspace/all-client'
-import { listWorkspaceAssets } from '@/server/modules/assets/assets.service'
 import { requireWorkspaceUserAccess } from '@/server/modules/auth/workspace-session'
+import { listWorkspaceAssets } from '@/server/modules/workspace'
 
 export default async function AllPage() {
   const user = await requireWorkspaceUserAccess()

@@ -6,10 +6,10 @@ import { useState } from 'react'
 import { assetTypePresentation } from '@/config/ui/asset-presentation'
 import { useWorkspaceSubmit } from '@/hooks/workspace/use-workspace-submit'
 import { type AssetListItem } from '@/shared/assets/assets.types'
+import { formatAbsoluteTime } from '@/shared/time/formatters'
 
 import {
   RecentItem,
-  formatAssetTime,
   WorkspaceBookmarkSummaryPanel,
   WorkspaceNoteSummaryPanel,
   WorkspaceQueryResultsPanel,
@@ -196,7 +196,7 @@ export function WorkspaceClient({
                   iconColor={presentation.iconColor}
                   title={asset.title}
                   excerpt={asset.excerpt}
-                  time={formatAssetTime(new Date(asset.createdAt))}
+                  time={formatAbsoluteTime(asset.createdAt)}
                   type={presentation.label}
                   timeText={asset.timeText}
                 />

@@ -98,10 +98,18 @@ describe('search.time-hint', () => {
       expect(result.rangeHint).not.toBeNull()
     })
 
-    it('parses weekday correctly', () => {
+    it.each([
+      { input: '周一' },
+      { input: '周二' },
+      { input: '周三' },
+      { input: '周四' },
+      { input: '周五' },
+      { input: '周六' },
+      { input: '周日' },
+    ])('parses weekday $input correctly', ({ input }) => {
       const now = new Date('2026-04-15T10:00:00.000Z')
-      const result = parseSearchTimeText('周一', now)
-      expect(result.timeText).toBe('周一')
+      const result = parseSearchTimeText(input, now)
+      expect(result.timeText).toBe(input)
       expect(result.dueAt).not.toBeNull()
     })
   })
