@@ -13,6 +13,19 @@ Use this file when the task touches:
 - implementation and review workflows that require skills, MCP services, tools, or package/framework documentation
 - written proposal, planning, or execution-plan artifacts
 
+## 1.1 Development Session Bootstrap Rule
+
+Before any code implementation or refactor work:
+
+1. Run `bash .ai-rules/scripts/ai-bootstrap-check.sh`.
+2. If baseline metadata is missing in an existing workspace, run:
+   `bash .ai-rules/scripts/ai-bootstrap-check.sh --init-baseline`.
+3. For phase/parallel development, create workspace only via:
+   `bash .ai-rules/scripts/create-ai-worktree.sh <phase_id> [branch_type]`.
+4. If bootstrap fails due to stale rules baseline, sync with latest `main` before coding.
+5. Do not start implementation when bootstrap check fails.
+6. For explicitly approved governance edits, use `--allow-rules-drift` (or `ALLOW_RULE_DRIFT=1`) and record approval context in task/PR notes.
+
 ## 2. Package Manager and Command Runner Rule
 
 `pnpm` is the only approved dependency manager and project command runner in this repository.
@@ -136,6 +149,8 @@ Before running commands or implementing code:
 10. For test-suite versus browser-verification decisions, follow `.ai-rules/testing-and-integration-rules.md`.
 11. Follow `.ai-rules/project-governance-rules.md` for placement of AI workflow guards and local AI workspace material.
 12. Do not treat local AI workspace files as repository deliverables.
+13. Start coding only after `ai-bootstrap-check` passes.
+14. Before commit/PR, run `bash .ai-rules/guards/check-rules-integrity.sh --staged`.
 
 ## 10. Guard Scripts
 
@@ -146,6 +161,7 @@ Examples:
 ```bash
 bash .ai-rules/guards/check-phase-doc-protocol.sh
 bash .ai-rules/guards/check-import-boundaries.sh
+bash .ai-rules/guards/check-rules-integrity.sh --staged
 ```
 
 Use them directly when auditing AI workflow artifacts or architecture boundaries. Do not expose them through `package.json`.

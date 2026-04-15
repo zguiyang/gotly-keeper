@@ -103,6 +103,7 @@ This is an execution-precondition failure, not a runtime test failure.
 ```bash
 git branch --show-current  # Should be ${branch_type}/${phase_id}
 git merge-base --is-ancestor origin/main HEAD && echo "base-ok"
+bash .ai-rules/scripts/ai-bootstrap-check.sh
 ```
 
 **Fail-Fast**: If baseline check fails, STOP immediately.
@@ -170,10 +171,9 @@ Reason: ensures task reporting, failure logging, and stop behavior are standardi
 ## 5. Worktree Setup
 
 ```bash
-git fetch --all --prune
-git checkout main && git pull --ff-only
-git worktree add .worktrees/${phase_id} -b feat/${phase_id}
+bash .ai-rules/scripts/create-ai-worktree.sh ${phase_id} ${branch_type}
 cd .worktrees/${phase_id}
+bash .ai-rules/scripts/ai-bootstrap-check.sh --worktree . --strict
 ```
 
 ## 6. Parallel Execution

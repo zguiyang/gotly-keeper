@@ -61,8 +61,11 @@ Meaning:
 ### Execution protocol
 
 - `.ai-rules/phase-execution-protocol.md`
+- `.ai-rules/scripts/create-ai-worktree.sh` for standardized phase worktree setup with rule baseline lock
+- `.ai-rules/scripts/ai-bootstrap-check.sh` for worktree bootstrap and baseline drift checks
 - `.ai-rules/guards/check-phase-doc-protocol.sh` for optional phase document validation
 - `.ai-rules/guards/check-import-boundaries.sh` for optional architecture boundary validation
+- `.ai-rules/guards/check-rules-integrity.sh` for protected governance file change detection
 - `.ai-rules/templates/phase-task-report.template.md` for mandatory per-phase task reporting
 - `.ai-rules/templates/phase-failure-report.template.md` for fail-fast failure reporting
 - `.ai-rules/templates/phase-plan-minimal.template.md` for new phase document bootstrap
@@ -79,3 +82,6 @@ Meaning:
 - tests and verification strategy: read `testing-and-integration-rules.md` (`test suites = isolated logic`, `browser verification = real business outcomes`)
 - staging and commits: read `git-commit-rules.md`
 - phase execution gates and artifacts: read `phase-execution-protocol.md`
+- any coding session bootstrap (required): run `bash .ai-rules/scripts/ai-bootstrap-check.sh` before implementation
+- parallel phase workspace bootstrap: run `bash .ai-rules/scripts/create-ai-worktree.sh <phase_id> [branch_type]`
+- worktree readiness and rule baseline check: run `bash .ai-rules/scripts/ai-bootstrap-check.sh --worktree .worktrees/<phase_id>`
