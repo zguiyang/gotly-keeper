@@ -29,7 +29,7 @@ Read and apply rules in this order:
 4. **Project-specific architecture**
    - `.ai-rules/project-architecture-rules.md`
 5. **Type/topic rules**
-   - frontend, actions, forms, AI SDK, testing, commits, tooling
+   - frontend, actions, forms, style, AI SDK, testing, commits, tooling
 6. **Execution layer**
    - protocols, lessons, and guard scripts
 
@@ -66,6 +66,7 @@ Meaning:
 
 ### Implementation topics
 
+- `.ai-rules/coding-style-rules.md`
 - `.ai-rules/ai-sdk-rules.md`
 - `.ai-rules/project-tooling-and-runtime-rules.md`
 - `.ai-rules/testing-and-integration-rules.md`
@@ -94,6 +95,7 @@ Meaning:
 - frontend behavior boundaries and unit-type enforcement baseline: read `frontend-architecture-principles.md`
 - rendering, route handlers, server/client boundaries, and framework entry behavior: read `project-architecture-rules.md`
 - components, hooks, client adapters, client forms, and validation: read `react-client-state-and-forms-rules.md`
+- coding style, naming, imports/exports, formatting conventions: read `coding-style-rules.md`
 - AI SDK, models, agents, streaming: read `ai-sdk-rules.md`
 - tooling, scripts, services, MCP, browser inspection: read `project-tooling-and-runtime-rules.md`
 - tests and verification strategy: read `testing-and-integration-rules.md` (`test suites = isolated logic`, `browser verification = real business outcomes`)
