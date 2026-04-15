@@ -230,3 +230,64 @@ Decision guide:
 - Architecture and action/use-case boundaries: `.ai-rules/project-architecture-rules.md`
 - Client component and form boundaries: `.ai-rules/react-client-state-and-forms-rules.md`
 - Worktree execution protocol: `.ai-rules/phase-execution-protocol.md`
+
+## 14. AI-Driven E2E Execution Policy
+
+This repository allows end-to-end verification through AI-driven browser execution (for example, AI operating Playwright-capable browser tools) based on flow specifications instead of hand-written test scripts for every scenario.
+
+The intent is to combine delivery speed with reliable regression protection.
+
+### 14.1 Primary Model
+
+Use a mixed model:
+
+1. AI-driven browser flow execution for most day-to-day end-to-end validation.
+2. A small durable scripted E2E smoke suite for release/CI gates.
+
+Do not require engineers to hand-write script-based E2E for every flow when a flow-spec-driven AI execution path is sufficient.
+
+### 14.2 What AI-Driven Flow Execution Is For
+
+AI-driven browser flow execution is the default for:
+
+- exploratory verification of business flows
+- fast validation during active development
+- scenario variation checks (different roles, data shapes, or edge paths)
+- confirming user-visible outcomes on the real page
+
+### 14.3 What Must Stay Scripted
+
+Keep a minimal scripted smoke suite for critical production paths where reproducibility in CI is mandatory.
+
+At minimum, include business-critical gates such as:
+
+- authentication and session continuity
+- one core creation/edit flow
+- one core read/search/discovery flow
+- one high-risk permission/guardrail flow
+
+The exact flows may evolve by product risk, but the smoke suite must stay intentionally small and high-value.
+
+### 14.4 Flow Specification Requirement
+
+When using AI-driven E2E execution, the scenario source of truth must be a written flow specification.
+
+A valid flow specification should define:
+
+1. preconditions (environment, account role, required seed data)
+2. ordered user steps
+3. expected visible checkpoints
+4. failure capture expectations (screenshot, console/network clues, or final error state)
+
+Without a clear flow specification, AI-driven E2E results are not considered stable evidence.
+
+### 14.5 Evidence and Repeatability Rule
+
+AI-driven E2E runs must produce lightweight evidence suitable for review:
+
+- scenario identifier or title
+- run timestamp
+- pass/fail outcome
+- failure artifacts when failed
+
+Passing AI runs are useful confidence signals, but they do not replace the minimal scripted smoke gate required for CI reliability.
