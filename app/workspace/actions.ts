@@ -6,6 +6,7 @@ import { ActionError, ACTION_ERROR_CODES } from '@/server/actions/action-error'
 import { runServerAction } from '@/server/actions/run-server-action'
 import { requireUser } from '@/server/auth/session'
 import { createWorkspaceAssetUseCase, setTodoCompletionUseCase, reviewUnfinishedTodosUseCase, summarizeRecentNotesUseCase, summarizeRecentBookmarksUseCase } from '@/server/application/workspace'
+import { WorkspaceApplicationError, WORKSPACE_APPLICATION_ERROR_CODES } from '@/server/application/workspace/workspace.application-error'
 import { type AssetListItem, type WorkspaceAssetActionResult } from '@/shared/assets/assets.types'
 
 export async function createWorkspaceAssetAction(
@@ -59,17 +60,30 @@ export async function setTodoCompletionAction(
     const user = await requireUser()
     const parsed = parseTodoCompletionInput(input)
 
-    const result = await setTodoCompletionUseCase({
-      userId: user.id,
-      assetId: parsed.assetId,
-      completed: parsed.completed,
-    })
+    try {
+      const result = await setTodoCompletionUseCase({
+        userId: user.id,
+        assetId: parsed.assetId,
+        completed: parsed.completed,
+      })
 
-    revalidatePath('/workspace')
-    revalidatePath('/workspace/all')
-    revalidatePath('/workspace/todos')
+      revalidatePath('/workspace')
+      revalidatePath('/workspace/all')
+      revalidatePath('/workspace/todos')
 
-    return result
+      return result
+    } catch (error) {
+      if (
+        error instanceof WorkspaceApplicationError &&
+        error.code === WORKSPACE_APPLICATION_ERROR_CODES.TODO_NOT_FOUND
+      ) {
+        throw new ActionError(
+          error.publicMessage,
+          ACTION_ERROR_CODES.TODO_NOT_FOUND
+        )
+      }
+      throw error
+    }
   })
 }
 
