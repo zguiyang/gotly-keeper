@@ -114,6 +114,7 @@ Includes:
 - cache access
 - AI and model calls
 - external APIs and providers
+- third-party SDK/client instance creation and provider configuration
 
 Allowed:
 

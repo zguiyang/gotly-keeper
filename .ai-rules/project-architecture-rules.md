@@ -126,6 +126,7 @@ Rules:
 - keep app-facing use-case entrypoints and orchestration in `server/modules/`
 - keep reusable domain capabilities in `server/services/`
 - keep infrastructure and technical integration in `server/lib/`
+- keep third-party SDK/client instance creation and provider configuration in `server/lib/` only
 
 #### 4.7.1 `server/modules/`
 
@@ -138,6 +139,7 @@ Rules:
 - delegate reusable domain capabilities to `server/services/**`
 - do not depend on `app/`
 - may import from `server/lib/**` when the integration is boundary-owned by the module (for example auth/session or module-level AI execution policy)
+- must not create or configure third-party SDK/provider/database/cache/auth clients; consume capabilities from `server/lib/**` instead
 - module exports must be module-owned: only export values/types/functions declared inside the same module directory
 - do not passthrough re-export from other modules or layers (`export ... from` pointing to outside this module directory), including services/lib/shared/app
 
@@ -151,6 +153,7 @@ Rules:
 - may depend on `server/lib/**`
 - may depend on other `server/services/**` modules when direction stays domain-safe
 - must not import `server/modules/**`
+- must not create or configure third-party SDK/provider/database/cache/auth clients; consume capabilities from `server/lib/**` instead
 
 #### 4.7.3 `server/lib/`
 
@@ -158,6 +161,7 @@ Owns technical infrastructure setup and integration details:
 - `server/lib/db/**`
 - `server/lib/cache/**`
 - `server/lib/ai/**`
+- `server/lib/auth/**`
 - `server/lib/config/**`
 - `server/lib/env.ts`
 
