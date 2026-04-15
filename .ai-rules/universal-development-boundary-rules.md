@@ -370,48 +370,42 @@ The target is:
 - easy change
 - simple, centralized, and predictable structure
 
-## 13. Split Decision Protocol
+## 13. Boundary Exception Protocol
 
-When implementation requires crossing established boundaries:
+When implementation appears to require crossing established boundaries:
 
 ### 13.1 Decision Requirements
 
-Before creating cross-boundary dependencies, AI must document:
+Before creating any exception, the executor must document:
 1. Why the boundary crossing is necessary
 2. Which direction the dependency flows (who owns what)
-3. What the fallback strategy is if the split is not immediately resolvable
+3. What the rollback or convergence plan is
 
-### 13.2 Allowable Cross-Boundary Patterns
+### 13.2 Allowable Pattern Requirements
 
-Allowed:
-- `app/**` (actions) -> `server/application/**` (use-cases)
-- `server/application/**` -> `server/<domain>/**` (domain services)
-- `server/<domain>/**` -> `server/infra/**` (infrastructure)
-- `search` -> `assets` (search as consumer of asset data)
-- Summary services importing from `server/assets/`
+A boundary exception is only acceptable when all conditions are met:
+- ownership remains explicit
+- dependency direction remains consistent with layer intent
+- the exception does not expose private internals of another module
+- the exception is time-bounded and reversible
 
-Forbidden:
-- `server/<domain>/**` -> `server/search/**` (search is not an upstream data source)
-- `server/**` -> `app/**` (reverse of data flow)
-- `domain` -> `app` (domain logic should not depend on presentation)
+### 13.3 Temporary Fallback Conditions
 
-### 13.3 Fallback Conditions
+If a clean split cannot be completed immediately:
 
-If a split decision cannot be immediately implemented:
-
-1. Create a minimal interface in `shared/` to bridge the gap
-2. Document the violation with `TODO: resolve boundary violation in next phase`
-3. Add the violation to the guard's temporary allow-list with expiration comment
-4. Schedule the violation for mandatory resolution
+1. Introduce a minimal, explicit interface at the boundary
+2. Mark the exception with a clear convergence TODO and owner
+3. Record expiration criteria for removing the exception
+4. Schedule mandatory resolution in the next execution window
 
 The fallback must NOT:
-- Use global "allow all" patterns
-- Leave violations permanently unresolved
-- Create shortcuts that normalize boundary breaks
+- use broad "allow all" patterns
+- leave exceptions permanently unresolved
+- normalize shortcut dependencies as standard design
 
-### 13.4 Guard Compliance
+### 13.4 Verification Requirement
 
-All split decisions must be verifiable by `.ai-rules/guards/check-import-boundaries.sh`.
+All exception decisions must be verifiable by project-level boundary checks.
 
 ## 14. Module Split Decision Rule
 
