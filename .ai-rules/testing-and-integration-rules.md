@@ -120,17 +120,17 @@ When both test-suite verification and browser verification are possible:
 
 Preferred placement:
 
-- `e2e/` for browser-level end-to-end tests when durable browser automation is added
-- `server/<domain>/__tests__/` for server-side local logic and domain/service verification
-- `server/application/__tests__/` or domain-local application test folders for isolated use-case tests when they materially help protect local orchestration logic
-- `server/actions/__tests__/` or `app/**/__tests__/` for action-contract or boundary-shape tests when needed
-- colocated component test files or focused test folders for interactive components when needed
+- `tests/e2e/**` for durable browser-level end-to-end tests
+- `tests/unit/server/**` for server-side local logic and domain/service verification
+- `tests/unit/app/**` for action-contract and boundary-shape tests
+- `tests/unit/components/**` for interactive component local behavior verification
+- `tests/integration/**` for integration-level verification that is still scriptable and deterministic
 
 Rules:
 
 1. Keep test placement aligned with `.ai-rules/project-architecture-rules.md`.
 2. Prefer testing `server/` modules directly once that layer exists.
-3. Do not centralize unrelated domain tests into one large generic test directory when domain-local placement is clearer.
+3. Keep all new automated tests under root `tests/` and do not introduce `__tests__/` directories in project source trees.
 4. Do not create tests whose only purpose is to mimic a real browser flow badly; use a real browser when the claim is flow-level.
 
 ## 9. Test Data and Environment Isolation Rule
@@ -163,9 +163,9 @@ This repository currently follows a mixed verification model:
 
 | Verification Target | Typical Location | Purpose |
 |-------|----------|---------|
-| Domain and server-local logic | `server/<domain>/__tests__/*.test.ts` | Protect local service and helper behavior |
-| Application-local orchestration | `server/application/__tests__/*.test.ts` or a domain-local application test folder | Protect isolated orchestration branches when useful |
-| Action or boundary contracts | `server/actions/__tests__/*.test.ts`, `app/**/__tests__/*.test.ts` | Protect boundary shaping and action-facing contracts |
+| Domain and server-local logic | `tests/unit/server/**/*.test.ts` | Protect local service and helper behavior |
+| Application-local orchestration | `tests/unit/server/**/*.test.ts` | Protect isolated orchestration branches when useful |
+| Action or boundary contracts | `tests/unit/app/**/*.test.ts` | Protect boundary shaping and action-facing contracts |
 | Real business outcomes | browser-based verification against the running app | Prove real user-visible flow correctness |
 
 ### 11.2 Test Infrastructure
@@ -186,7 +186,7 @@ Use `pnpm` scripts for running tests:
 
 ```bash
 pnpm test              # Run all tests
-pnpm test:unit         # Run unit tests (Vitest workspace: unit-node)
+pnpm test:unit         # Run unit tests under tests/unit
 pnpm test:integration  # Run integration tests
 pnpm test:watch        # Run tests in watch mode
 pnpm test:coverage     # Run tests with coverage
@@ -194,7 +194,7 @@ pnpm test:coverage     # Run tests with coverage
 
 These are `package.json` scripts. Follow `.ai-rules/project-tooling-and-runtime-rules.md` and run them through the approved local execution path instead of the sandbox-first path.
 
-Vitest is configured with workspace projects in `vitest.config.ts`. The test infrastructure is centralized in the `tests/` directory.
+Vitest is configured via a single config in `vitest.config.ts`, with `tests/**/*.{test,spec}.{ts,tsx}` as include. The test infrastructure is centralized in the `tests/` directory.
 
 ### 11.4 Test Fixtures and Mocks Rules
 
