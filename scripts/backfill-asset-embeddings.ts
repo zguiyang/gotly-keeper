@@ -1,6 +1,6 @@
 import 'dotenv/config'
 
-import { backfillMissingAssetEmbeddings } from '@/server/assets/assets.embedding.service'
+import { backfillMissingAssetEmbeddings } from '@/server/search/semantic-search.service'
 import { pool } from '@/server/db/client'
 
 async function main() {

@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { buildAssetSearchPathLog } from '../../../server/assets/assets.search-logging.pure'
+import { buildSearchPathLog } from '../../../server/search/search.logging.pure'
 
 describe('assets.search-logging', () => {
   it('builds a sanitized asset search path log payload', () => {
-    const payload = buildAssetSearchPathLog({
+    const payload = buildSearchPathLog({
       query: '我上次收藏的 AI 文章在哪',
       typeHint: 'link',
       timeHint: '这周',
