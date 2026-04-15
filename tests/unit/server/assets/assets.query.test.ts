@@ -6,7 +6,6 @@ import {
   listNoteAssets,
   listRecentAssets,
   listTodoAssets,
-  searchAssets,
 } from '../../../../server/assets/assets.query'
 import {
   ASSET_LIST_LIMIT_MAX,
@@ -19,7 +18,6 @@ const mocks = vi.hoisted(() => ({
   whereMock: vi.fn(),
   orderByMock: vi.fn(),
   limitMock: vi.fn(),
-  performAssetSearchMock: vi.fn(),
   toAssetListItemMock: vi.fn(),
 }))
 
@@ -39,10 +37,6 @@ vi.mock('@/server/db/schema', () => ({
   },
 }))
 
-vi.mock('../../../../server/search/assets-search.service', () => ({
-  searchAssets: mocks.performAssetSearchMock,
-}))
-
 vi.mock('../../../../server/assets/assets.mapper', () => ({
   toAssetListItem: mocks.toAssetListItemMock,
 }))
@@ -56,26 +50,6 @@ describe('assets.query', () => {
     mocks.orderByMock.mockReturnValue({ limit: mocks.limitMock })
     mocks.limitMock.mockResolvedValue([])
     mocks.toAssetListItemMock.mockImplementation((row) => ({ id: row.id }))
-  })
-
-  describe('searchAssets', () => {
-    it('delegates to search service with same options', async () => {
-      const expected = [{ id: 'a1' }]
-      const options = {
-        userId: 'u1',
-        query: 'test',
-        typeHint: 'todo' as const,
-        timeHint: '今天',
-        completionHint: 'incomplete' as const,
-        limit: 5,
-      }
-      mocks.performAssetSearchMock.mockResolvedValue(expected)
-
-      const result = await searchAssets(options)
-
-      expect(mocks.performAssetSearchMock).toHaveBeenCalledWith(options)
-      expect(result).toEqual(expected)
-    })
   })
 
   describe('listAssets', () => {
