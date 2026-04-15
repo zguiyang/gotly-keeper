@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ActionError, ACTION_ERROR_CODES } from '@/server/actions/action-error'
+import { WorkspaceApplicationError, WORKSPACE_APPLICATION_ERROR_CODES } from '@/server/application/workspace/workspace.application-error'
 
 const {
   revalidatePathMock,
@@ -111,6 +113,26 @@ describe('workspace server actions', () => {
       '待办状态更新失败，请重试。'
     )
     expect(setTodoCompletionUseCaseMock).not.toHaveBeenCalled()
+  })
+
+  it('setTodoCompletionAction maps WorkspaceApplicationError(TODO_NOT_FOUND) to ActionError(TODO_NOT_FOUND)', async () => {
+    setTodoCompletionUseCaseMock.mockRejectedValue(
+      new WorkspaceApplicationError(
+        '没有找到这条待办，或你没有权限更新它。',
+        WORKSPACE_APPLICATION_ERROR_CODES.TODO_NOT_FOUND
+      )
+    )
+
+    await expect(
+      setTodoCompletionAction({ assetId: 'nonexistent', completed: true })
+    ).rejects.toThrow(ActionError)
+
+    await expect(
+      setTodoCompletionAction({ assetId: 'nonexistent', completed: true })
+    ).rejects.toMatchObject({
+      code: ACTION_ERROR_CODES.TODO_NOT_FOUND,
+      publicMessage: '没有找到这条待办，或你没有权限更新它。',
+    })
   })
 
   it('summary actions delegate to use-cases with authenticated user', async () => {
