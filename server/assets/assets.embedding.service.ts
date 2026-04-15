@@ -1,3 +1,14 @@
+/**
+ * @deprecated This file is FROZEN. It is the canonical embedding service,
+ * but future changes should consider consolidating into a unified search module.
+ * 
+ * Canonical owner: server/assets/assets.embedding.service.ts (this file)
+ * 
+ * This file is the canonical owner for embedding functionality.
+ * It is marked deprecated to signal it should not be extended directly.
+ * New embedding features should be evaluated for placement in server/search/.
+ */
+
 import 'server-only'
 
 import { embed } from 'ai'

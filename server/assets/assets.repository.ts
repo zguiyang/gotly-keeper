@@ -1,3 +1,14 @@
+/**
+ * @deprecated This file is FROZEN. It is the canonical repository for assets,
+ * but future changes should consider consolidating into a unified data access layer.
+ * 
+ * Canonical owner: server/assets/assets.repository.ts (this file)
+ * 
+ * This file is the canonical owner for asset data access.
+ * It is marked deprecated to signal it should not be extended directly.
+ * New repository features should be evaluated for placement in a shared data layer.
+ */
+
 import 'server-only'
 
 import { db } from '@/server/db'
