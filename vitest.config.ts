@@ -1,8 +1,17 @@
 import { defineConfig, configDefaults } from 'vitest/config'
 import tsconfigPaths from 'vite-tsconfig-paths'
+import { fileURLToPath } from 'node:url'
+import path from 'node:path'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
+  plugins: [tsconfigPaths({ projects: ['.'], loose: true })],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, '.'),
+    },
+  },
   test: {
     passWithNoTests: true,
     include: ['tests/**/*.{test,spec}.{ts,tsx}'],
@@ -25,6 +34,11 @@ export default defineConfig({
             './tests/setup/test-alias.ts',
             './tests/setup/node.setup.ts',
           ],
+          resolve: {
+            alias: {
+              '@': path.resolve(__dirname, '.'),
+            },
+          },
           coverage: {
             provider: 'v8',
             include: ['tests/**/*'],
