@@ -137,6 +137,7 @@ Rules:
 - delegate workflows to `server/services/**`
 - do not depend on `app/`
 - do not import from `server/lib/**` directly
+- do not passthrough re-export from `server/services/**` (`export ... from`); expose module-owned declarations instead
 
 #### 4.7.2 `server/services/`
 

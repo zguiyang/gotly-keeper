@@ -262,6 +262,17 @@ Presentation modules may structure and render.
 
 They must not silently absorb orchestration or business rules.
 
+### 5.6 Boundary Modules Must Export Their Own API
+
+Boundary modules (entry modules, adapters, gateways, and composition-facing facades) must expose a boundary-owned API surface.
+
+Rules:
+
+1. Do not use passthrough re-exports from downstream layers as boundary API (`export ... from 'downstream-module'`).
+2. A boundary module may call downstream modules, but it must export via boundary-owned declarations (local functions, local constants, local types, or local wrappers).
+3. Keep boundary contracts explicit so the boundary remains the stable owner of its public API.
+4. This rule is technology-agnostic and applies across backend, frontend, and shared boundary modules.
+
 ## 6. Placement Rules
 
 When introducing new code, AI must decide placement in this order:
