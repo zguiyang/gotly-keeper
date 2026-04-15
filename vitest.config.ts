@@ -30,7 +30,6 @@ export default defineConfig({
       'components/**/__tests__/*.test.ts',
     ],
     environment: 'node',
-    environmentMatchGlobs: [['tests/unit/components/**', 'jsdom']],
     setupFiles: ['./tests/setup/test-alias.ts', './tests/setup/node.setup.ts'],
     coverage: {
       provider: 'v8',
