@@ -119,44 +119,44 @@ Rules:
 
 ### 4.7 `server/`
 
-Owns server-side business logic and infrastructure-facing code.
+Owns server-side business logic and infrastructure-facing code through three layers.
 
 Rules:
 
-- group server logic by domain
-- keep database, Redis, queue, email, and other privileged capabilities in server-owned modules
-- prefer domain-oriented entry points over scattered server logic
+- keep business entrypoints in `server/modules/`
+- keep orchestration and domain workflows in `server/services/`
+- keep infrastructure and technical integration in `server/lib/`
 
-#### 4.7.1 `server/application/`
+#### 4.7.1 `server/modules/`
 
-Owns use-case orchestration.
+Owns business-facing module entrypoints consumed by `app/**`.
 
 Rules:
 
-- use `server/application/<domain>/` for use-cases
-- use `<action>.use-case.ts` naming
-- keep orchestration, cross-domain coordination, and error translation here
-- define use-case input/output types in `<domain>.types.ts` when they do not already belong in `shared/`
+- keep entry APIs explicit and thin
+- delegate workflows to `server/services/**`
 - do not depend on `app/`
-- do not call framework runtime APIs from this layer
+- do not import from `server/lib/**` directly
 
-#### 4.7.2 `server/<domain>/`
+#### 4.7.2 `server/services/`
 
-Owns domain services and domain-specific server capabilities.
+Owns orchestration, use-cases, and domain-level workflow services.
 
 Rules:
 
-- use domain-oriented modules such as `<domain>.service.ts`
-- keep business semantics here
-- do not reach upward into route or app-layer code
+- use domain-oriented modules such as `<action>.use-case.ts` and `*.service.ts`
+- keep business semantics and process policies here
+- may depend on `server/lib/**`
+- must not import `server/modules/**`
 
-#### 4.7.3 `server/config/`
+#### 4.7.3 `server/lib/`
 
-Owns server-side constants and config values.
-
-#### 4.7.4 `server/db/`, `server/cache/`, and other infra-facing modules
-
-Own infrastructure setup and technical integration details.
+Owns technical infrastructure setup and integration details:
+- `server/lib/db/**`
+- `server/lib/cache/**`
+- `server/lib/ai/**`
+- `server/lib/config/**`
+- `server/lib/env.ts`
 
 ### 4.8 `shared/`
 
@@ -173,24 +173,23 @@ Rules:
 This repository enforces a unidirectional dependency flow:
 
 ```text
-app/actions -> application -> domain -> infra
+app/actions -> modules -> services -> lib
 ```
 
 This dependency diagram is the current repository mapping; behavior-boundary enforcement and architectural intent are governed by `.ai-rules/backend-architecture-principles.md`.
 
 Rules:
 
-- `app/**/actions.ts` may call `server/application/**`
-- `server/application/**` may call `server/<domain>/**`
-- domain modules may rely on infra-facing modules
+- `app/**` may call `server/modules/**`
+- `server/modules/**` may call `server/services/**`
+- `server/services/**` may call `server/lib/**`
 - reverse dependencies are forbidden
 
 Forbidden patterns:
 
 - `server/**` importing `app/**`
-- `server/application/**` importing `app/**`
-- domain modules importing application modules
-- infra modules importing domain or application modules
+- `server/services/**` importing `server/modules/**`
+- `server/lib/**` importing `server/services/**` or `server/modules/**`
 
 ## 6. Repository Runtime and Entry Rules
 
@@ -229,7 +228,7 @@ Rules:
 
 If a module is intended for server-only use, protect it explicitly with `import 'server-only'`.
 
-### 6.4 Server Actions and Use-Cases
+### 6.4 Server Actions and Service Use-Cases
 
 Server actions in `app/**/actions.ts` remain thin entry points.
 
@@ -248,7 +247,7 @@ They must not:
 - import from `@/app`
 - become the home for deep business logic
 
-Use-cases in `server/application/<domain>/`:
+Use-cases in `server/services/<domain>/`:
 
 - own orchestration
 - coordinate domain services
@@ -262,7 +261,7 @@ Use-cases in `server/application/<domain>/`:
 Typical flow:
 
 ```text
-app/**/actions.ts -> server/application/<domain>/*.use-case.ts -> server/<domain>/*
+app/**/actions.ts -> server/modules/<domain> -> server/services/<domain>/*.use-case.ts -> server/lib/*
 ```
 
 ### 6.5 Infrastructure Access
@@ -303,7 +302,7 @@ This section defines explicit ownership rules for specific domains to prevent st
 
 ### 9.1 Assets Domain
 
-Owner: `server/assets/`
+Owner: `server/services/assets/`
 
 Owns:
 - asset CRUD operations (query, command, mutation)
@@ -312,19 +311,19 @@ Owns:
 - asset-to-domain coordination (todos, notes, bookmarks)
 
 Allowed dependencies (assets may import from):
-- `server/db/` - database access
-- `server/config/` - server-side constants
+- `server/lib/db/` - database access
+- `server/lib/config/` - server-side constants
 - `shared/assets/` - shared types and schemas
-- `server/application/` - use-case orchestration (only via exposed interfaces)
+- `server/services/workspace/` - workflow orchestration (via explicit interfaces)
 
 Forbidden dependencies (assets must NOT import from):
-- `server/search/` - search is a downstream consumer, not an upstream dependency
+- `server/services/search/` - search is a downstream consumer, not an upstream dependency
 - `app/**` - app is an upstream consumer
-- `server/application/**` - application layer should call assets, not vice versa
+- `server/modules/**` - entry layer should call services, not vice versa
 
 ### 9.2 Search Domain
 
-Owner: `server/search/`
+Owner: `server/services/search/`
 
 Owns:
 - search query parsing and normalization
@@ -333,26 +332,26 @@ Owns:
 - search-specific time hint parsing
 
 Allowed dependencies (search may import from):
-- `server/assets/` - assets are upstream data sources (embedding config, provider)
-- `server/config/` - server-side constants
+- `server/services/assets/` - assets are upstream data sources (embedding config, provider)
+- `server/lib/config/` - server-side constants
 - `shared/assets/` - shared types for assets
 
 Forbidden dependencies (search must NOT import from):
 - `app/**` - app is an upstream consumer
-- `server/application/**` - use-cases should orchestrate search, not be imported by it
-- `server/todos/`, `server/notes/`, `server/bookmarks/` - domain-specific imports belong in application layer
+- `server/modules/**` - entry layer is upstream
+- `server/services/workspace/*.service.ts` - summary/review belongs in workspace orchestration
 
 ### 9.3 Summary Services (notes.summary.service, todos.review.service, bookmarks.summary.service)
 
 These services coordinate domain-specific asset listing. They are owned by their respective domains.
 
-Owner: `server/<domain>/<domain>.summary.service.ts`
+Owner: `server/services/workspace/*.summary.service.ts` and `server/services/workspace/*.review.service.ts`
 
 Allowed dependencies:
-- `server/assets/` - to list assets of a specific type
+- `server/services/assets/` - to list assets of a specific type
 
 Forbidden dependencies:
-- `server/search/` - search is not a data source for summary operations
+- `server/services/search/` - search is not a data source for summary operations
 - `app/**` - app is an upstream consumer
 
 ### 9.4 Split Decision Protocol
@@ -362,7 +361,7 @@ When a capability crosses domain boundaries (e.g., search needs to understand as
 1. Define a shared interface/type in `shared/` if the contract is truly cross-domain
 2. Keep the implementation in the owning domain
 3. Downstream consumers import from the owning domain's interface, not its implementation details
-4. If assets needs search capability, this indicates a layering violation - search should be orchestrated via application layer
+4. If assets needs search capability, this indicates a layering violation - search should be orchestrated via `server/services/workspace`
 
 Fallback condition:
 - If immediate refactoring is not feasible, create a temporary interface in `shared/` that bridges the gap
