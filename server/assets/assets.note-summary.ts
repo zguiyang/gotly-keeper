@@ -1,3 +1,14 @@
+/**
+ * @deprecated This file is FROZEN and will be removed in a future phase.
+ * 
+ * Canonical owner: server/notes/notes.summary.service.ts
+ * 
+ * DO NOT modify this file for bug fixes or enhancements.
+ * All changes MUST be made to the canonical owner file only.
+ * 
+ * This file exists solely for backward compatibility during migration.
+ */
+
 import 'server-only'
 
 import { generateText, Output } from 'ai'
