@@ -82,7 +82,7 @@ Rules:
 3. Do not write ad hoc scripts to test Next.js behavior when the same claim can be verified through the browser and the running app.
 4. Direct script execution is appropriate when the script or CLI is itself the delivered artifact, such as a migration helper, backfill command, seed command, one-off maintenance command, or a pure JavaScript utility whose behavior is independent of Next.js runtime rendering.
 5. Static checks such as `pnpm lint`, TypeScript checks, and migration checks remain useful, but they do not replace browser-backed verification for user-visible Next.js behavior.
-6. When the target behavior depends on `app/**/actions.ts`, `server/application/**/*.use-case.ts`, or a real user-visible business result, prefer real-page browser verification over isolated local tests for final proof.
+6. When the target behavior depends on `app/**/actions.ts`, `server/modules/**` orchestration, or a real user-visible business result, prefer real-page browser verification over isolated local tests for final proof.
 
 For verification-method selection, follow `.ai-rules/testing-and-integration-rules.md`.
 

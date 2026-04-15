@@ -123,31 +123,33 @@ Owns server-side business logic and infrastructure-facing code through three lay
 
 Rules:
 
-- keep business entrypoints in `server/modules/`
-- keep orchestration and domain workflows in `server/services/`
+- keep app-facing use-case entrypoints and orchestration in `server/modules/`
+- keep reusable domain capabilities in `server/services/`
 - keep infrastructure and technical integration in `server/lib/`
 
 #### 4.7.1 `server/modules/`
 
-Owns business-facing module entrypoints consumed by `app/**`.
+Owns app-facing module APIs consumed by `app/**`, including use-case orchestration.
 
 Rules:
 
-- keep entry APIs explicit and thin
-- delegate workflows to `server/services/**`
+- keep module APIs explicit and boundary-owned
+- own use-case orchestration and flow composition for module-facing business capabilities
+- delegate reusable domain capabilities to `server/services/**`
 - do not depend on `app/`
-- do not import from `server/lib/**` directly
-- do not passthrough re-export from `server/services/**` (`export ... from`); expose module-owned declarations instead
+- may import from `server/lib/**` when the integration is boundary-owned by the module (for example auth/session or module-level AI execution policy)
+- module exports must be module-owned: only export values/types/functions declared inside the same module directory
+- do not passthrough re-export from other modules or layers (`export ... from` pointing to outside this module directory), including services/lib/shared/app
 
 #### 4.7.2 `server/services/`
 
-Owns orchestration, use-cases, and domain-level workflow services.
+Owns reusable domain services and capability units used by modules.
 
 Rules:
 
-- use domain-oriented modules such as `<action>.use-case.ts` and `*.service.ts`
-- keep business semantics and process policies here
+- keep reusable domain semantics, data operations, and domain-specific capability composition here
 - may depend on `server/lib/**`
+- may depend on other `server/services/**` modules when direction stays domain-safe
 - must not import `server/modules/**`
 
 #### 4.7.3 `server/lib/`
@@ -175,6 +177,7 @@ This repository enforces a unidirectional dependency flow:
 
 ```text
 app/actions -> modules -> services -> lib
+                      \---------> lib
 ```
 
 This dependency diagram is the current repository mapping; behavior-boundary enforcement and architectural intent are governed by `.ai-rules/backend-architecture-principles.md`.
@@ -183,6 +186,7 @@ Rules:
 
 - `app/**` may call `server/modules/**`
 - `server/modules/**` may call `server/services/**`
+- `server/modules/**` may call `server/lib/**` for module-owned boundary integrations
 - `server/services/**` may call `server/lib/**`
 - reverse dependencies are forbidden
 
@@ -229,7 +233,7 @@ Rules:
 
 If a module is intended for server-only use, protect it explicitly with `import 'server-only'`.
 
-### 6.4 Server Actions and Service Use-Cases
+### 6.4 Server Actions and Module Use-Cases
 
 Server actions in `app/**/actions.ts` remain thin entry points.
 
@@ -239,30 +243,30 @@ They may:
 - authenticate
 - invoke action wrappers
 - invalidate cache
-- delegate orchestration to use-cases
+- delegate orchestration to module use-cases
 
 They must not:
 
-- call domain services directly when a use-case layer exists for that flow
+- call deep domain capability units directly when a module use-case layer exists for that flow
 - contain deep business branching
 - import from `@/app`
 - become the home for deep business logic
 
-Use-cases in `server/services/<domain>/`:
+Use-cases in `server/modules/<domain>/`:
 
 - own orchestration
-- coordinate domain services
+- coordinate domain services and module-local flow units
 - translate errors
 - own cross-domain coordination when needed
-- must not call framework runtime APIs
+- may call framework runtime APIs when that behavior is boundary-owned (for example auth/session/runtime entry coupling)
 - must not depend on `app/`
-- must not access request/session context directly
+- keep request/session context reads in dedicated boundary modules (for example `server/modules/auth/**`), and pass identity/context into domain modules explicitly
 - must not contain UI rendering logic
 
 Typical flow:
 
 ```text
-app/**/actions.ts -> server/modules/<domain> -> server/services/<domain>/*.use-case.ts -> server/lib/*
+app/**/actions.ts -> server/modules/<domain> -> server/services/<domain>/* -> server/lib/*
 ```
 
 ### 6.5 Infrastructure Access
@@ -315,7 +319,6 @@ Allowed dependencies (assets may import from):
 - `server/lib/db/` - database access
 - `server/lib/config/` - server-side constants
 - `shared/assets/` - shared types and schemas
-- `server/services/workspace/` - workflow orchestration (via explicit interfaces)
 
 Forbidden dependencies (assets must NOT import from):
 - `server/services/search/` - search is a downstream consumer, not an upstream dependency
@@ -340,13 +343,13 @@ Allowed dependencies (search may import from):
 Forbidden dependencies (search must NOT import from):
 - `app/**` - app is an upstream consumer
 - `server/modules/**` - entry layer is upstream
-- `server/services/workspace/*.service.ts` - summary/review belongs in workspace orchestration
+- `server/modules/workspace/*.ts` - summary/review orchestration belongs in workspace module layer
 
-### 9.3 Summary Services (notes.summary.service, todos.review.service, bookmarks.summary.service)
+### 9.3 Summary Modules (`notes.summary.ts`, `todos.review.ts`, `bookmarks.summary.ts`)
 
-These services coordinate domain-specific asset listing. They are owned by their respective domains.
+These module-level flow units coordinate domain-specific asset listing and model summarization/review.
 
-Owner: `server/services/workspace/*.summary.service.ts` and `server/services/workspace/*.review.service.ts`
+Owner: `server/modules/workspace/*.summary.ts` and `server/modules/workspace/*.review.ts`
 
 Allowed dependencies:
 - `server/services/assets/` - to list assets of a specific type
@@ -362,7 +365,7 @@ When a capability crosses domain boundaries (e.g., search needs to understand as
 1. Define a shared interface/type in `shared/` if the contract is truly cross-domain
 2. Keep the implementation in the owning domain
 3. Downstream consumers import from the owning domain's interface, not its implementation details
-4. If assets needs search capability, this indicates a layering violation - search should be orchestrated via `server/services/workspace`
+4. If assets needs search capability, this indicates a layering violation - search should be orchestrated via `server/modules/workspace`
 
 Fallback condition:
 - If immediate refactoring is not feasible, create a temporary interface in `shared/` that bridges the gap

@@ -1,7 +1,8 @@
 #!/bin/bash
 # check-import-boundaries.sh
 # Server layering guard for final architecture:
-# modules -> services -> lib
+# modules -> services/lib
+# services -> lib
 # plus boundary API ownership checks for modules
 
 set -euo pipefail
@@ -41,22 +42,28 @@ main() {
   if ! check_violation "^server/.*:" " from ['\"]app/" "server/** importing from app/** is forbidden"; then
     failures=$((failures + 1))
   fi
-
-  # Rule 2: modules -> services only (no direct lib, no modules->modules coupling)
-  if ! check_violation "^server/modules/.*:" "@/server/lib/" "server/modules/** importing from @/server/lib/** is forbidden"; then
+  if ! check_violation "^server/.*:" "from ['\"][.]{1,2}/.*app/" "server/** relative importing from app/** is forbidden"; then
     failures=$((failures + 1))
   fi
+
+  # Rule 2: modules should not couple to other modules through alias imports
   if ! check_violation "^server/modules/.*:" "@/server/modules/" "server/modules/** importing from @/server/modules/** is forbidden"; then
     failures=$((failures + 1))
   fi
 
-  # Rule 2.1: modules must own their exported API (no passthrough re-export from services)
-  if ! check_violation "^server/modules/.*:" "^export[[:space:]].*from[[:space:]]+['\"]@/server/services/" "server/modules/** passthrough re-export from @/server/services/** is forbidden"; then
+  # Rule 2.1: modules must own their exported API (no passthrough re-export from outside module directory)
+  if ! check_violation "^server/modules/.*:" "^export[[:space:]].*from[[:space:]]+['\"]@/" "server/modules/** re-export via @/ alias is forbidden; export only module-local declarations"; then
+    failures=$((failures + 1))
+  fi
+  if ! check_violation "^server/modules/.*:" "^export[[:space:]].*from[[:space:]]+['\"]\\.\\./" "server/modules/** re-export via ../ is forbidden; do not export outside current module directory"; then
     failures=$((failures + 1))
   fi
 
-  # Rule 3: services -> lib only (no reverse to modules)
+  # Rule 3: services may not import modules (no reverse dependency)
   if ! check_violation "^server/services/.*:" "@/server/modules/" "server/services/** importing from @/server/modules/** is forbidden"; then
+    failures=$((failures + 1))
+  fi
+  if ! check_violation "^server/services/.*:" "from ['\"][.]{1,2}/.*modules/" "server/services/** relative importing from modules/** is forbidden"; then
     failures=$((failures + 1))
   fi
 
@@ -64,7 +71,13 @@ main() {
   if ! check_violation "^server/lib/.*:" "@/server/modules/" "server/lib/** importing from @/server/modules/** is forbidden"; then
     failures=$((failures + 1))
   fi
+  if ! check_violation "^server/lib/.*:" "from ['\"][.]{1,2}/.*modules/" "server/lib/** relative importing from modules/** is forbidden"; then
+    failures=$((failures + 1))
+  fi
   if ! check_violation "^server/lib/.*:" "@/server/services/" "server/lib/** importing from @/server/services/** is forbidden"; then
+    failures=$((failures + 1))
+  fi
+  if ! check_violation "^server/lib/.*:" "from ['\"][.]{1,2}/.*services/" "server/lib/** relative importing from services/** is forbidden"; then
     failures=$((failures + 1))
   fi
 

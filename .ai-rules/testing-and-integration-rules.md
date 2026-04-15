@@ -78,7 +78,7 @@ Good fits:
 
 - user-triggered business flows
 - `app/**/actions.ts`
-- `server/services/**/*.use-case.ts`
+- `server/modules/**/*.ts` (module-owned use-case orchestration)
 - flows that cross page, action, use-case, and domain boundaries
 - redirects
 - permission-sensitive behavior
@@ -90,7 +90,7 @@ Good fits:
 Rules:
 
 1. Prefer browser verification when the claim involves real business results rather than only local logic.
-2. Treat `app/**/actions.ts -> server/modules/** -> server/services/**/*.use-case.ts -> server/lib/**` as business-flow infrastructure that should be proven through the real page when validating the final behavior.
+2. Treat `app/**/actions.ts -> server/modules/** -> server/services/** -> server/lib/**` (and module-owned direct `server/lib/**` boundary integrations) as business-flow infrastructure that should be proven through the real page when validating the final behavior.
 3. Use browser verification for changes whose correctness depends on the full request, orchestration, and rendering path.
 4. Do not replace browser verification with isolated tests when the task is to prove that the real flow works end to end for the user.
 
