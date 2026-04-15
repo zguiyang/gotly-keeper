@@ -100,23 +100,22 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Directory Structure
 
 ```
-app/                    # Next.js App Router routes, layouts, pages
-  workspace/            # Workspace routes (启动台, 笔记, 待办, 书签, 知识库)
-  auth/                 # Authentication routes
-components/             # Reusable React components
-  workspace/            # Workspace-specific components
-  ui/                   # shadcn/ui components
-config/                 # Frontend UI configuration constants
-  workspace/            # Workspace nav and filter configs
-  ui/                  # UI presentation configs
-lib/                    # Lightweight shared helpers (cn, etc.)
-server/                 # Server-only business logic
-  assets/               # Asset CRUD, search, summarization
-  auth/                 # Authentication
-  db/                   # Database connection and schema
-  actions/              # Server actions
-  config/              # Server-side constants (time, limits, timeouts)
-shared/                 # Cross-runtime types, schemas, constants
+app/                    # Next.js App Router routes and route entry files
+client/                 # Client-side action adapters and feedback helpers
+components/             # Reusable UI components
+config/                 # Frontend UI configuration
+hooks/                  # Client-side interaction and orchestration hooks
+lib/                    # Lightweight shared helpers
+server/                 # Server-side business logic and infrastructure
+  application/          # Use-case orchestration layer
+  actions/              # Action-layer helpers and tests
+  <domain>/             # Domain services by business area
+  config/               # Server-side constants and config
+  db/                   # Database access and schema wiring
+  test-utils/           # Shared server test support
+shared/                 # Cross-runtime shared types, schemas, constants, helpers
+scripts/                # Project runtime, maintenance, and test scripts
+.ai-rules/              # Repository governance and implementation rules for AI
 ```
 
 ## Workspace Routes
@@ -131,15 +130,11 @@ shared/                 # Cross-runtime types, schemas, constants
 
 ## Documentation Policy
 
-Documentation in this project follows **code as source of truth**. When code and docs conflict, code wins. PRD documents are periodically synchronized to reflect implemented behavior.
+Documentation in this project follows **code as source of truth**. When code and docs conflict, code wins.
 
-## Phase Execution
+Repository rules live in `.ai-rules/`.
 
-This project uses a structured phase-based execution model for refactoring and feature work.
-
-**Protocol**: All phase plans follow Preflight → Start Gate → Development → Sync Gate → PR-only merge workflow.
-
-See `.ai-rules/phase-execution-protocol.md` for detailed execution protocol.
+Local planning material may exist in ignored local workspaces such as `docs/` and `prd/`, but those locations are not repository source-of-truth documents.
 
 ## Tech Stack
 

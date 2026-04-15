@@ -6,6 +6,8 @@
 
 This protocol applies to all phase plans in `docs/superpowers/plans/` and any feature/hotfix work following the phase model.
 
+`docs/superpowers/plans/` is an ignored local AI workspace. Phase plans and generated artifacts in this directory are execution aids and must not be staged or committed.
+
 ## 2. Phase Plan Metadata
 
 Every phase plan document MUST include:
@@ -43,6 +45,16 @@ Optional artifacts (as needed by phase scope):
 - `${phase_id}.boundary-audit-report.md`
 - `${phase_id}.release-readiness-report.md`
 - `${phase_id}.final-refactor-summary.md`
+
+## 2.2 Protocol Guard
+
+The phase document protocol guard lives with the rule files, not in project runtime scripts:
+
+```bash
+bash .ai-rules/guards/check-phase-doc-protocol.sh
+```
+
+Use it when creating or reviewing a phase plan document. Do not add this guard to `package.json`; it validates AI workflow documents, not application code.
 
 ## 3. Execution Gates
 
@@ -90,7 +102,7 @@ git merge-base --is-ancestor origin/main HEAD && echo "base-ok"
 git fetch --all --prune
 git rebase origin/main
 pnpm lint
-pnpm run guard:all
+bash .ai-rules/guards/check-import-boundaries.sh
 ```
 
 **Fail-Fast**: If any check fails, STOP immediately.
@@ -138,5 +150,5 @@ cd .worktrees/${phase_id}
 
 ## 7. Related Rules
 
-- Layered architecture boundaries: `.ai-rules/nextjs-fullstack-project-rules.md` Section 9
+- Layered architecture boundaries: `.ai-rules/project-architecture-rules.md`
 - Test minimum contract: `.ai-rules/testing-and-integration-rules.md` Section 12.6

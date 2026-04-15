@@ -35,14 +35,17 @@ The repository currently includes:
 
 - `ai`
 - `@ai-sdk/react`
+- `@ai-sdk/alibaba`
+- `@ai-sdk/openai-compatible`
 - `zod`
 
 Rules:
 
 1. Use `ai` for server-side AI SDK core operations such as `generateText`, `streamText`, agents, tools, Gateway provider access, and response helpers.
 2. Use `@ai-sdk/react` only in intentional Client Components for AI SDK UI hooks such as `useChat`, `useCompletion`, and `experimental_useObject`.
-3. Do not add provider-specific packages such as `@ai-sdk/openai` unless direct provider access is required and the same change adds the dependency.
-4. Do not assume optional AI SDK companion packages such as `@ai-sdk/devtools` are installed. Verify `package.json` before importing them.
+3. Prefer already-installed provider packages before adding new provider dependencies.
+4. Do not add more provider-specific packages unless the same change requires them and updates `package.json`.
+5. Do not assume optional AI SDK companion packages such as `@ai-sdk/devtools` are installed. Verify `package.json` before importing them.
 
 ## 4. Environment Rule
 
@@ -76,7 +79,7 @@ Rules:
 
 1. Keep the route handler thin: parse, validate, authenticate or authorize when needed, call server-side AI logic, and return the stream or response.
 2. Do not use internal AI route handlers as the data layer for ordinary Server Component rendering.
-3. Apply the API route rules in `.ai-rules/nextjs-runtime-and-boundaries-rules.md` for input validation, auth, safe errors, and response shaping.
+3. Apply the route-handler and boundary rules in `.ai-rules/project-architecture-rules.md` for input validation, auth, safe errors, and response shaping.
 
 ## 7. Verification Rule
 

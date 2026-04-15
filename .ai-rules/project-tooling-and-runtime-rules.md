@@ -112,18 +112,17 @@ Substantial proposals, implementation plans, execution plans, and handoff-orient
 
 Rules:
 
-1. When a plan or proposal is intended to guide later execution, review, or handoff to another AI agent or person, create or update a Markdown file in an appropriate repository location.
-2. Prefer existing documentation and planning locations such as `docs/` or `docs/superpowers/plans/` when they match the work.
-3. If no existing location fits, choose a clear, narrowly named Markdown file path rather than adding a new planning hierarchy by default.
-4. Keep chat summaries concise and point to the file that contains the durable plan or proposal.
-5. Short tactical notes, quick status updates, and ordinary implementation explanations do not need a dedicated file unless the user asks for one or the content is needed as a durable handoff artifact.
+1. When a plan or proposal is intended to guide later execution, review, or handoff to another AI agent or person, create or update a Markdown file in the correct layer.
+2. Follow `.ai-rules/project-governance-rules.md` for placement and promotion rules.
+3. Keep chat summaries concise and point to the durable artifact when one exists.
+4. Short tactical notes, quick status updates, and ordinary implementation explanations do not need a dedicated file unless the user asks for one or the content is needed as a durable handoff artifact.
 
 ## 9. Operational Checklist
 
 Before running commands or implementing code:
 
 1. Confirm whether the task touches dependency management, scripts, runtime inspection, or service startup.
-2. If yes, read this file alongside the architecture and boundary rules.
+2. If yes, read this file alongside the project architecture and boundary rules.
 3. Use `pnpm` for package and script operations.
 4. Run `package.json` script commands in the user's local environment through the available approval mechanism instead of trying them in the sandbox first.
 5. Do not start services without user approval.
@@ -131,9 +130,23 @@ Before running commands or implementing code:
 7. Prefer skills first, then MCP, then Context7 when additional guidance is needed.
 8. For browser work, follow the browser priority order defined in Section 4.
 9. For Next.js debugging and validation, prefer actual browser/page verification over custom scripts, except for pure JavaScript utilities or delivered CLI/script artifacts.
-10. For substantial proposals or execution plans, write the durable artifact to an appropriate repository file.
+10. Follow `.ai-rules/project-governance-rules.md` for placement of AI workflow guards and local AI workspace material.
+11. Do not treat local AI workspace files as repository deliverables.
 
-## 10. Constants and Config Governance
+## 10. Guard Scripts
+
+Rule-validation scripts live under `.ai-rules/guards/`.
+
+Examples:
+
+```bash
+bash .ai-rules/guards/check-phase-doc-protocol.sh
+bash .ai-rules/guards/check-import-boundaries.sh
+```
+
+Use them directly when auditing AI workflow artifacts or architecture boundaries. Do not expose them through `package.json`.
+
+## 11. Constants and Config Governance
 
 When adding or modifying constants:
 
@@ -143,10 +156,10 @@ When adding or modifying constants:
 4. **No magic numbers**: Extract repeated inline numeric values into named constants.
 5. **Avoid component-level constants**: Do not define business constants inside `components/` unless they are purely presentational.
 
-## 11. Phase Execution Protocol Reference
+## 12. Phase Execution Protocol Reference
 
 For all phase plan execution rules (Preflight Gate, Start Gate, Sync Gate, Fail-Fast, PR-only merge), see:
 
 - `.ai-rules/phase-execution-protocol.md`
-- `.ai-rules/nextjs-fullstack-project-rules.md` Section 9
-- `docs/architecture/phase-execution-lessons-learned.md` (explanatory lessons, non-normative)
+- `.ai-rules/project-architecture-rules.md`
+- `.ai-rules/phase-execution-lessons-learned.md` (explanatory lessons, non-normative)

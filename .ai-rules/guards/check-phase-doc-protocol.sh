@@ -8,19 +8,21 @@ PROTOCOL_FIELDS=(
   "phase_id"
   "depends_on"
   "parallel_safe"
+  "merge_strategy"
 )
 
 PROTOCOL_RULES=(
-  "Rule 0"
+  "Preflight Gate"
   "Start Gate"
   "Sync Gate"
   "Fail-Fast"
+  "PR-only"
 )
 
 check_field() {
   local file="$1"
   local field="$2"
-  
+
   if ! grep -q "$field" "$file"; then
     echo "FAIL: Missing '$field' in $file"
     return 1
@@ -31,7 +33,7 @@ check_field() {
 check_rule() {
   local file="$1"
   local rule="$2"
-  
+
   if ! grep -q "$rule" "$file"; then
     echo "FAIL: Missing '$rule' in $file"
     return 1
@@ -41,36 +43,37 @@ check_rule() {
 
 main() {
   local phase_plan=""
-  
-  # Find the phase plan document (look for phase_id with or without backticks)
+
+  shopt -s nullglob
+
   for f in docs/superpowers/plans/*.md; do
     if grep -q "phase_id" "$f" && grep -q "depends_on" "$f" && grep -q "parallel_safe" "$f"; then
       phase_plan="$f"
       break
     fi
   done
-  
+
   if [ -z "$phase_plan" ]; then
     echo "FAIL: No phase plan document found"
     exit 1
   fi
-  
+
   echo "Checking phase plan: $phase_plan"
-  
+
   local failures=0
-  
+
   for field in "${PROTOCOL_FIELDS[@]}"; do
     if ! check_field "$phase_plan" "$field"; then
       failures=$((failures + 1))
     fi
   done
-  
+
   for rule in "${PROTOCOL_RULES[@]}"; do
     if ! check_rule "$phase_plan" "$rule"; then
       failures=$((failures + 1))
     fi
   done
-  
+
   if [ $failures -eq 0 ]; then
     echo "PASS: Phase plan protocol validation passed"
     exit 0

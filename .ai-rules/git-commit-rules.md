@@ -111,3 +111,13 @@ When an AI agent prepares commits, it must:
 5. keep messages concise unless the change is important enough to justify extra detail
 
 If the working tree contains unrelated changes that should not be bundled together, the agent must keep them in separate commits.
+
+## 11. Local Workspace Exclusion
+
+Before proposing or creating commits, follow `.ai-rules/project-governance-rules.md` for local workspace exclusions and repository-asset boundaries.
+
+In practice:
+
+1. Do not stage local AI workspace files.
+2. Do not use force-add to bypass ignored local workspace rules.
+3. Verify that the staged set matches the intended repository deliverable.

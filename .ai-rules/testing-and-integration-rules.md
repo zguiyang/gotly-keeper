@@ -143,7 +143,7 @@ Preferred placement:
 
 Rules:
 
-1. Keep test placement aligned with the architecture defined in `.ai-rules/nextjs-fullstack-project-rules.md`.
+1. Keep test placement aligned with the architecture defined in `.ai-rules/project-architecture-rules.md`.
 2. Prefer testing `server/` modules directly once that layer exists.
 3. Do not centralize unrelated domain tests into one large generic test directory when domain-local placement is clearer.
 
@@ -194,7 +194,7 @@ This repository now follows a three-layer test architecture:
 | Layer | Location | Purpose |
 |-------|----------|---------|
 | Domain | `server/<domain>/__tests__/*.test.ts` | Unit tests for domain services |
-| Application | `server/application/<domain>/__tests__/*.test.ts` | Integration tests for use-cases |
+| Application | `server/application/__tests__/*.test.ts` or a domain-local application test folder | Integration tests for use-cases |
 | Action Contract | `server/actions/__tests__/*.test.ts`, `app/**/__tests__/*.test.ts` | Server action contract tests |
 
 ### 12.2 Test Infrastructure
@@ -214,10 +214,10 @@ server/test-utils/
 Use `pnpm` scripts for running tests:
 
 ```bash
-pnpm run test:domain      # Run domain layer tests
-pnpm run test:application # Run application layer tests
-pnpm run test:actions     # Run action contract tests
-pnpm run test:critical    # Run all critical tests
+pnpm test:domain          # Run domain layer tests
+pnpm test:application     # Run application layer tests
+pnpm test:actions         # Run action contract tests
+pnpm test:critical        # Run all critical tests
 ```
 
 Tests require the `server-only` alias workaround:
@@ -245,7 +245,7 @@ New features must include:
 1. Domain unit tests (happy path + 1 failure/degradation branch)
 2. Integration tests for application-layer use-cases
 3. Action contract tests for server actions
-4. Updated `test:critical` coverage
+4. Updates to the relevant test runner or `test:critical` when the feature belongs in the critical path
 
 ### 12.6 Test Minimum Contract (Enforced)
 
@@ -262,11 +262,4 @@ Every new feature MUST include minimum contract tests based on which layers it t
 
 ## 13. Worktree Execution Protocol
 
-When executing phase plans:
-
-1. **Preflight**: Verify dependencies (Phase 5 merged to main)
-2. **Worktree**: Create isolated worktree with `feat/<phase-id>` branch
-3. **Start Gate**: Verify branch baseline includes `origin/main`
-4. **Baseline**: Record existing test state
-5. **Sync Gate**: Rebase on `origin/main` before merge
-6. **Merge**: PR-only merge to `main` (no direct merge)
+When executing phase plans, follow `.ai-rules/phase-execution-protocol.md` for gates, worktree setup, and merge behavior.
