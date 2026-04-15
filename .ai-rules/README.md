@@ -72,6 +72,6 @@ Meaning:
 - components, hooks, client adapters, client forms, and validation: read `react-client-state-and-forms-rules.md`
 - AI SDK, models, agents, streaming: read `ai-sdk-rules.md`
 - tooling, scripts, services, MCP, browser inspection: read `project-tooling-and-runtime-rules.md`
-- tests and verification strategy: read `testing-and-integration-rules.md`
+- tests and verification strategy: read `testing-and-integration-rules.md` (`test suites = isolated logic`, `browser verification = real business outcomes`)
 - staging and commits: read `git-commit-rules.md`
 - phase execution gates and artifacts: read `phase-execution-protocol.md`

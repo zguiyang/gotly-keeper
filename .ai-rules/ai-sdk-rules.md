@@ -80,3 +80,4 @@ For AI SDK changes:
 1. Run static verification such as `pnpm lint` or a narrower TypeScript check when available.
 2. For streaming UI behavior, use browser-backed verification when a dev server is already running or the user approves starting one.
 3. Do not make live model calls in tests by default. Prefer mocks or controlled fakes unless the user explicitly asks for live integration verification.
+4. For choosing between isolated tests and browser-based verification, follow `.ai-rules/testing-and-integration-rules.md`.
