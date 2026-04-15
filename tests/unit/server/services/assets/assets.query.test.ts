@@ -6,11 +6,11 @@ import {
   listNoteAssets,
   listRecentAssets,
   listTodoAssets,
-} from '../../../../server/assets/assets.query'
+} from '@/server/services/assets/assets.query'
 import {
   ASSET_LIST_LIMIT_MAX,
   ASSET_RECENT_LIMIT_MAX,
-} from '@/server/config/constants'
+} from '@/server/lib/config/constants'
 
 const mocks = vi.hoisted(() => ({
   selectMock: vi.fn(),
@@ -21,13 +21,13 @@ const mocks = vi.hoisted(() => ({
   toAssetListItemMock: vi.fn(),
 }))
 
-vi.mock('@/server/db', () => ({
+vi.mock('@/server/lib/db', () => ({
   db: {
     select: mocks.selectMock,
   },
 }))
 
-vi.mock('@/server/db/schema', () => ({
+vi.mock('@/server/lib/db/schema', () => ({
   assets: {
     userId: Symbol('userId'),
     type: Symbol('type'),
@@ -37,7 +37,7 @@ vi.mock('@/server/db/schema', () => ({
   },
 }))
 
-vi.mock('../../../../server/assets/assets.mapper', () => ({
+vi.mock('@/server/services/assets/assets.mapper', () => ({
   toAssetListItem: mocks.toAssetListItemMock,
 }))
 

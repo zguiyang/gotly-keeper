@@ -4,8 +4,8 @@ import {
   getAiFallbackMessage,
   isRetryableError,
   shouldRetryAiCall,
-} from '../../../server/ai/ai.fallback-policy'
-import { AiTimeoutError, AiSchemaError, AiProviderError } from '../../../server/ai/ai.types'
+} from '@/server/lib/ai/ai.fallback-policy'
+import { AiTimeoutError, AiSchemaError, AiProviderError } from '@/server/lib/ai/ai.types'
 
 describe('ai.fallback-policy', () => {
   describe('determineAiFallbackStrategy', () => {

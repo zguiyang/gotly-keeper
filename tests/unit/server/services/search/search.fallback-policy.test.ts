@@ -3,7 +3,7 @@ import {
   determineSearchFallbackStrategy,
   shouldFallbackToKeyword,
   createSearchFallbackMessage,
-} from '../../../server/search/search.fallback-policy'
+} from '@/server/services/search/search.fallback-policy'
 
 describe('search.fallback-policy', () => {
   describe('determineSearchFallbackStrategy', () => {

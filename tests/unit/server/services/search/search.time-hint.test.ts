@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseSearchTimeHint, parseSearchTimeText } from '../../../../server/search/search.time-hint.pure'
+import { parseSearchTimeHint, parseSearchTimeText } from '@/server/services/search/search.time-hint.pure'
 
 describe('search.time-hint', () => {
   describe('parseSearchTimeHint', () => {

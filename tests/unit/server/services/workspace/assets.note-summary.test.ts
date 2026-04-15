@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildNoteSummaryPromptInput } from '../../../server/notes/notes.summary.service'
+import { buildNoteSummaryPromptInput } from '@/server/services/workspace/notes.summary.service'
 
 describe('assets.note-summary', () => {
   it('buildNoteSummaryPromptInput keeps bounded note records', () => {

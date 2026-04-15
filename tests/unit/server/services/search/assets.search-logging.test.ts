@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildSearchPathLog } from '../../../server/search/search.logging.pure'
+import { buildSearchPathLog } from '@/server/services/search/search.logging.pure'
 
 describe('assets.search-logging', () => {
   it('builds a sanitized asset search path log payload', () => {

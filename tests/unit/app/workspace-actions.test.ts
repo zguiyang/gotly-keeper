@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ActionError, ACTION_ERROR_CODES } from '@/server/actions/action-error'
-import { WorkspaceApplicationError, WORKSPACE_APPLICATION_ERROR_CODES } from '@/server/application/workspace/workspace.application-error'
+import { ActionError, ACTION_ERROR_CODES } from '@/server/modules/actions/action-error'
+import { WorkspaceApplicationError, WORKSPACE_APPLICATION_ERROR_CODES } from '@/server/services/workspace/workspace.application-error'
 
 const {
   revalidatePathMock,
@@ -26,20 +26,22 @@ vi.mock('next/cache', () => ({
   revalidatePath: revalidatePathMock,
 }))
 
-vi.mock('@/server/auth/session', () => ({
+vi.mock('@/server/modules/auth/session', () => ({
   requireUser: requireUserMock,
 }))
 
-vi.mock('@/server/actions/run-server-action', () => ({
+vi.mock('@/server/modules/actions/run-server-action', () => ({
   runServerAction: runServerActionMock,
 }))
 
-vi.mock('@/server/application/workspace', () => ({
+vi.mock('@/server/modules/workspace', () => ({
   createWorkspaceAssetUseCase: createWorkspaceAssetUseCaseMock,
   setTodoCompletionUseCase: setTodoCompletionUseCaseMock,
   reviewUnfinishedTodosUseCase: reviewUnfinishedTodosUseCaseMock,
   summarizeRecentNotesUseCase: summarizeRecentNotesUseCaseMock,
   summarizeRecentBookmarksUseCase: summarizeRecentBookmarksUseCaseMock,
+  WorkspaceApplicationError,
+  WORKSPACE_APPLICATION_ERROR_CODES,
 }))
 
 import {
