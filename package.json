@@ -13,8 +13,8 @@
     "db:check": "drizzle-kit check",
     "assets:backfill-embeddings": "node --require ./scripts/register-server-only-alias.cjs --import tsx scripts/backfill-asset-embeddings.ts",
     "test": "vitest --run",
-    "test:unit": "vitest --run --project unit-node",
-    "test:integration": "vitest --run --project integration",
+    "test:unit": "vitest --run tests/unit",
+    "test:integration": "vitest --run tests/integration",
     "test:watch": "vitest",
     "test:coverage": "vitest --run --coverage",
     "test:e2e": "vitest run --config vitest.e2e.config.ts"

@@ -7,14 +7,14 @@ import {
   applyWorkspaceActionResult,
   clearWorkspaceResultPanels,
   type WorkspaceActionState,
-} from '../../components/workspace/workspace-action-state'
+} from '../../../components/workspace/workspace-action-state'
 import type {
   AssetListItem,
   AssetQueryResult,
   TodoReviewResult,
   NoteSummaryResult,
   BookmarkSummaryResult,
-} from '../../shared/assets/assets.types'
+} from '../../../shared/assets/assets.types'
 
 const mockAssetListItem: AssetListItem = {
   id: '1',

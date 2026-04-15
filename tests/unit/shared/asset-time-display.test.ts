@@ -5,8 +5,8 @@ import {
   getTodoGroupKey,
   type AssetDateGroup,
   type TodoGroupKey,
-} from '../../shared/assets/asset-time-display'
-import type { AssetListItem } from '../../shared/assets/assets.types'
+} from '../../../shared/assets/asset-time-display'
+import type { AssetListItem } from '../../../shared/assets/assets.types'
 
 const HOUR = 60 * 60 * 1000
 const DAY = 24 * HOUR
