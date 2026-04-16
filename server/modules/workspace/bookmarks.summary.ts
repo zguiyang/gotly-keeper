@@ -3,6 +3,7 @@ import 'server-only'
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
+import { renderPrompt } from '@/server/lib/prompt-template'
 import { listLinkAssets } from '@/server/services/assets/assets.service'
 import { nowIso, dayjs } from '@/shared/time/dayjs'
 
@@ -83,16 +84,6 @@ function normalizeBookmarkSummaryOutput(
   }
 }
 
-const BOOKMARK_SUMMARY_SYSTEM_PROMPT = `You generate a short Chinese summary for a user's recent saved bookmarks.
-
-Rules:
-- Use only the provided bookmark records.
-- Use only saved text and URL. Do not claim to have read the linked pages.
-- Do not invent page titles, page contents, facts, projects, deadlines, or context.
-- Keep the tone concise and practical.
-- Return sourceAssetIds that refer only to provided bookmark ids.
-- If there are no bookmarks, say there is nothing to summarize.`
-
 export async function summarizeWorkspaceRecentBookmarksInternal(
   userId: string
 ): Promise<BookmarkSummaryResult> {
@@ -108,14 +99,21 @@ export async function summarizeWorkspaceRecentBookmarksInternal(
   }
 
   try {
+    const [systemPrompt, userPrompt] = await Promise.all([
+      renderPrompt('workspace/bookmark-summary.system', {}),
+      renderPrompt('workspace/bookmark-summary.user', {
+        payloadJson: JSON.stringify({
+          currentTime: nowIso(),
+          bookmarks: buildBookmarkSummaryPromptInput(bookmarks),
+        }),
+      }),
+    ])
+
     const result = await generateText({
       model,
       output: Output.object({ schema: bookmarkSummaryOutputSchema }),
-      system: BOOKMARK_SUMMARY_SYSTEM_PROMPT,
-      prompt: JSON.stringify({
-        currentTime: nowIso(),
-        bookmarks: buildBookmarkSummaryPromptInput(bookmarks),
-      }),
+      system: systemPrompt,
+      prompt: userPrompt,
       temperature: 0,
       maxRetries: 1,
       timeout: BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS,

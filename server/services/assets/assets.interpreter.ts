@@ -1,8 +1,8 @@
 import 'server-only'
 
-import { interpretAssetInputWithAi } from '@/server/lib/ai/ai-runner'
+import { runAiGeneration } from '@/server/lib/ai/ai-runner'
 import { aiAssetInputSchema, type AiAssetInput } from '@/server/lib/ai/ai-schema'
-import { ASSET_INTERPRETER_SYSTEM_PROMPT, buildAssetInterpreterPrompt } from '@/server/lib/ai/ai.prompts'
+import { buildAssetInterpreterPrompt } from '@/server/lib/ai/ai.prompts'
 import { dayjs } from '@/shared/time/dayjs'
 
 import {
@@ -248,12 +248,13 @@ export async function interpretAssetInput(
 
   const deterministicUrl = extractUrl(trimmed)
 
-  const result = await interpretAssetInputWithAi(
-    trimmed,
-    aiAssetInputSchema,
-    ASSET_INTERPRETER_SYSTEM_PROMPT,
-    buildAssetInterpreterPrompt
-  )
+  const fullPrompt = await buildAssetInterpreterPrompt(trimmed)
+
+  const result = await runAiGeneration({
+    schema: aiAssetInputSchema,
+    systemPrompt: '',
+    userPrompt: fullPrompt,
+  })
 
   if (!result.success) {
     return interpretWithRuleFallback(trimmed)

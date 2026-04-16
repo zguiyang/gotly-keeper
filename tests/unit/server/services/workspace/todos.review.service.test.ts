@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
 
+import { buildTodoReviewPromptInput } from '@/server/modules/workspace/todos.review'
+
 import type { AssetListItem } from '@/shared/assets/assets.types'
 
-import { buildTodoReviewPromptInput } from '@/server/modules/workspace/todos.review'
 
 describe('todos.review.service', () => {
   describe('buildTodoReviewPromptInput', () => {
