@@ -65,6 +65,144 @@ export const verifications = pgTable('verifications', {
 
 export const ASSET_EMBEDDING_DIMENSIONS = 1024
 
+export const notes = pgTable(
+  'notes',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    originalText: text('original_text').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('notes_user_created_at_idx').on(table.userId, table.createdAt),
+  ]
+)
+
+export const noteEmbeddings = pgTable(
+  'note_embeddings',
+  {
+    id: text('id').primaryKey(),
+    noteId: text('note_id')
+      .notNull()
+      .references(() => notes.id, { onDelete: 'cascade' }),
+    embedding: vector('embedding', { dimensions: ASSET_EMBEDDING_DIMENSIONS }).notNull(),
+    embeddedText: text('embedded_text').notNull(),
+    modelName: text('model_name').notNull(),
+    dimensions: integer('dimensions').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('note_embeddings_note_model_dimensions_idx').on(
+      table.noteId,
+      table.modelName,
+      table.dimensions
+    ),
+    index('note_embeddings_note_id_idx').on(table.noteId),
+    index('note_embeddings_embedding_hnsw_cosine_idx').using(
+      'hnsw',
+      table.embedding.op('vector_cosine_ops')
+    ),
+  ]
+)
+
+export const todos = pgTable(
+  'todos',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    originalText: text('original_text').notNull(),
+    timeText: text('time_text'),
+    dueAt: timestamp('due_at'),
+    completedAt: timestamp('completed_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('todos_user_created_at_idx').on(table.userId, table.createdAt),
+    index('todos_user_completed_at_idx').on(table.userId, table.completedAt),
+  ]
+)
+
+export const todoEmbeddings = pgTable(
+  'todo_embeddings',
+  {
+    id: text('id').primaryKey(),
+    todoId: text('todo_id')
+      .notNull()
+      .references(() => todos.id, { onDelete: 'cascade' }),
+    embedding: vector('embedding', { dimensions: ASSET_EMBEDDING_DIMENSIONS }).notNull(),
+    embeddedText: text('embedded_text').notNull(),
+    modelName: text('model_name').notNull(),
+    dimensions: integer('dimensions').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('todo_embeddings_todo_model_dimensions_idx').on(
+      table.todoId,
+      table.modelName,
+      table.dimensions
+    ),
+    index('todo_embeddings_todo_id_idx').on(table.todoId),
+    index('todo_embeddings_embedding_hnsw_cosine_idx').using(
+      'hnsw',
+      table.embedding.op('vector_cosine_ops')
+    ),
+  ]
+)
+
+export const bookmarks = pgTable(
+  'bookmarks',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    originalText: text('original_text').notNull(),
+    url: text('url'),
+    bookmarkMeta: jsonb('bookmark_meta').$type<BookmarkMeta>(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('bookmarks_user_created_at_idx').on(table.userId, table.createdAt),
+  ]
+)
+
+export const bookmarkEmbeddings = pgTable(
+  'bookmark_embeddings',
+  {
+    id: text('id').primaryKey(),
+    bookmarkId: text('bookmark_id')
+      .notNull()
+      .references(() => bookmarks.id, { onDelete: 'cascade' }),
+    embedding: vector('embedding', { dimensions: ASSET_EMBEDDING_DIMENSIONS }).notNull(),
+    embeddedText: text('embedded_text').notNull(),
+    modelName: text('model_name').notNull(),
+    dimensions: integer('dimensions').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('bookmark_embeddings_bookmark_model_dimensions_idx').on(
+      table.bookmarkId,
+      table.modelName,
+      table.dimensions
+    ),
+    index('bookmark_embeddings_bookmark_id_idx').on(table.bookmarkId),
+    index('bookmark_embeddings_embedding_hnsw_cosine_idx').using(
+      'hnsw',
+      table.embedding.op('vector_cosine_ops')
+    ),
+  ]
+)
+
 export const assets = pgTable(
   'assets',
   {
@@ -97,6 +235,15 @@ export type Account = typeof accounts.$inferSelect
 export type Verification = typeof verifications.$inferSelect
 export type Asset = typeof assets.$inferSelect
 export type NewAsset = typeof assets.$inferInsert
+export type Note = typeof notes.$inferSelect
+export type NewNote = typeof notes.$inferInsert
+export type NoteListItem = typeof notes.$inferSelect
+export type Todo = typeof todos.$inferSelect
+export type NewTodo = typeof todos.$inferInsert
+export type TodoListItem = typeof todos.$inferSelect
+export type Bookmark = typeof bookmarks.$inferSelect
+export type NewBookmark = typeof bookmarks.$inferInsert
+export type BookmarkListItem = typeof bookmarks.$inferSelect
 
 export const assetEmbeddings = pgTable(
   'asset_embeddings',
