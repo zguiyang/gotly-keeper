@@ -43,6 +43,13 @@
       "when": 1776254510990,
       "tag": "0005_rich_stranger",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776329983280,
+      "tag": "0006_confused_storm",
+      "breakpoints": true
     }
   ]
 }

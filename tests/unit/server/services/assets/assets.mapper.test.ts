@@ -16,6 +16,7 @@ describe('assets.mapper', () => {
         timeText: '今天',
         dueAt: new Date('2026-04-20'),
         completedAt: null,
+        bookmarkMeta: null,
         createdAt: new Date('2026-04-15'),
         updatedAt: new Date('2026-04-15'),
       }
@@ -44,6 +45,7 @@ describe('assets.mapper', () => {
         timeText: null,
         dueAt: null,
         completedAt: new Date('2026-04-14'),
+        bookmarkMeta: null,
         createdAt: new Date('2026-04-13'),
         updatedAt: new Date('2026-04-14'),
       }
@@ -63,6 +65,7 @@ describe('assets.mapper', () => {
         timeText: null,
         dueAt: null,
         completedAt: null,
+        bookmarkMeta: null,
         createdAt: new Date('2026-04-15'),
         updatedAt: new Date('2026-04-15'),
       }

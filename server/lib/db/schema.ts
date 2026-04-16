@@ -1,5 +1,7 @@
 import { sql } from 'drizzle-orm'
-import { boolean, check, index, integer, pgTable, text, timestamp, uniqueIndex, vector } from 'drizzle-orm/pg-core'
+import { boolean, check, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, vector } from 'drizzle-orm/pg-core'
+
+import type { BookmarkMeta } from '@/shared/assets/bookmark-meta.types'
 
 export const users = pgTable(
   'users',
@@ -76,6 +78,7 @@ export const assets = pgTable(
     timeText: text('time_text'),
     dueAt: timestamp('due_at'),
     completedAt: timestamp('completed_at'),
+    bookmarkMeta: jsonb('bookmark_meta').$type<BookmarkMeta>(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
