@@ -24,6 +24,8 @@ export default defineConfig({
       ...configDefaults.exclude,
       '**/node_modules/**',
       '**/.next/**',
+      '**/.worktrees/**',
+      '.worktrees/**',
       '**/dist/**',
       'tests/e2e/**',
       'server/**/__tests__/*.test.ts',
@@ -35,7 +37,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['tests/**/*'],
-      exclude: ['**/__tests__/**', '**/*.d.ts', '**/*.mock.ts', 'node_modules/**'],
+      exclude: ['**/__tests__/**', '**/*.d.ts', '**/*.mock.ts', 'node_modules/**', '.worktrees/**'],
     },
   },
 })
