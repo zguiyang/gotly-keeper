@@ -4,13 +4,14 @@ import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
 import { renderPrompt } from '@/server/lib/prompt-template'
-import { listIncompleteTodoAssets } from '@/server/services/assets/assets.service'
+import { listIncompleteTodos } from '@/server/services/todos'
 import { nowIso, dayjs } from '@/shared/time/dayjs'
 
 import { getAiProvider } from '../../lib/ai/ai-provider'
 import { TODO_REVIEW_LIMIT, TODO_REVIEW_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
 
 import type { AssetListItem, TodoReviewResult, TodoReviewSource } from '@/shared/assets/assets.types'
+import type { TodoListItem } from '@/server/services/todos'
 
 export type TodoReviewPromptItem = {
   id: string
@@ -18,6 +19,22 @@ export type TodoReviewPromptItem = {
   timeText: string | null
   dueAt: string | null
   createdAt: string
+}
+
+function toAssetListItem(todo: TodoListItem): AssetListItem {
+  return {
+    id: todo.id,
+    originalText: todo.originalText,
+    title: todo.title,
+    excerpt: todo.excerpt,
+    type: 'todo',
+    url: null,
+    timeText: todo.timeText,
+    dueAt: todo.dueAt,
+    completed: todo.completed,
+    bookmarkMeta: null,
+    createdAt: todo.createdAt,
+  }
 }
 
 export function buildTodoReviewPromptInput(todos: AssetListItem[]): TodoReviewPromptItem[] {
@@ -87,7 +104,8 @@ function normalizeTodoReviewOutput(
 export async function reviewWorkspaceUnfinishedTodosInternal(
   userId: string
 ): Promise<TodoReviewResult> {
-  const todos = await listIncompleteTodoAssets(userId, TODO_REVIEW_LIMIT)
+  const todoItems = await listIncompleteTodos(userId, TODO_REVIEW_LIMIT)
+  const todos = todoItems.map(toAssetListItem)
 
   if (todos.length === 0) {
     return normalizeTodoReviewOutput(getFallbackTodoReview(todos), todos)

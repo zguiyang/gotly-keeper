@@ -203,38 +203,11 @@ export const bookmarkEmbeddings = pgTable(
   ]
 )
 
-export const assets = pgTable(
-  'assets',
-  {
-    id: text('id').primaryKey(),
-    userId: text('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    originalText: text('original_text').notNull(),
-    type: text('type', { enum: ['note', 'link', 'todo'] }).notNull(),
-    url: text('url'),
-    timeText: text('time_text'),
-    dueAt: timestamp('due_at'),
-    completedAt: timestamp('completed_at'),
-    bookmarkMeta: jsonb('bookmark_meta').$type<BookmarkMeta>(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
-  },
-  (table) => [
-    check('assets_type_check', sql`${table.type} in ('note', 'link', 'todo')`),
-    index('assets_user_created_at_idx').on(table.userId, table.createdAt),
-    index('assets_user_type_created_at_idx').on(table.userId, table.type, table.createdAt),
-    index('assets_user_completed_at_idx').on(table.userId, table.completedAt),
-  ]
-)
-
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 export type Session = typeof sessions.$inferSelect
 export type Account = typeof accounts.$inferSelect
 export type Verification = typeof verifications.$inferSelect
-export type Asset = typeof assets.$inferSelect
-export type NewAsset = typeof assets.$inferInsert
 export type Note = typeof notes.$inferSelect
 export type NewNote = typeof notes.$inferInsert
 export type NoteListItem = typeof notes.$inferSelect
@@ -244,34 +217,3 @@ export type TodoListItem = typeof todos.$inferSelect
 export type Bookmark = typeof bookmarks.$inferSelect
 export type NewBookmark = typeof bookmarks.$inferInsert
 export type BookmarkListItem = typeof bookmarks.$inferSelect
-
-export const assetEmbeddings = pgTable(
-  'asset_embeddings',
-  {
-    id: text('id').primaryKey(),
-    assetId: text('asset_id')
-      .notNull()
-      .references(() => assets.id, { onDelete: 'cascade' }),
-    embedding: vector('embedding', { dimensions: ASSET_EMBEDDING_DIMENSIONS }).notNull(),
-    embeddedText: text('embedded_text').notNull(),
-    modelName: text('model_name').notNull(),
-    dimensions: integer('dimensions').notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
-  },
-  (table) => [
-    uniqueIndex('asset_embeddings_asset_model_dimensions_idx').on(
-      table.assetId,
-      table.modelName,
-      table.dimensions
-    ),
-    index('asset_embeddings_asset_id_idx').on(table.assetId),
-    index('asset_embeddings_embedding_hnsw_cosine_idx').using(
-      'hnsw',
-      table.embedding.op('vector_cosine_ops')
-    ),
-  ]
-)
-
-export type AssetEmbedding = typeof assetEmbeddings.$inferSelect
-export type NewAssetEmbedding = typeof assetEmbeddings.$inferInsert
