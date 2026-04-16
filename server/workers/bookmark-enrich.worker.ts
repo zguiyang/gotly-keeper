@@ -3,9 +3,12 @@ import 'server-only'
 import { z } from 'zod'
 
 import { runAiGeneration } from '@/server/lib/ai'
+import { writeBookmarkEnrichResult } from '@/server/modules/workspace/bookmark-enrich.module'
+import { dequeueBookmarkEnrichTask } from '@/server/services/bookmark/bookmark-queue.service'
 
 import type { BookmarkEnrichResult, BookmarkEnrichTask } from '@/server/services/bookmark/bookmark-enrich.contract'
 import type { BookmarkEnrichedType } from '@/shared/assets/bookmark-meta.types'
+import { BaseWorker } from './base.worker'
 
 const BOOKMARK_ENRICH_FETCH_TIMEOUT_MS = 8_000
 const BOOKMARK_ENRICH_MAX_INPUT_LENGTH = 8_000
@@ -218,3 +221,21 @@ export async function runBookmarkEnrichWorker(task: BookmarkEnrichTask): Promise
   }
 }
 
+export class BookmarkEnrichWorker extends BaseWorker<BookmarkEnrichTask> {
+  constructor() {
+    super('bookmark-enrich')
+  }
+
+  protected async dequeueTask(): Promise<BookmarkEnrichTask | null> {
+    return dequeueBookmarkEnrichTask(5)
+  }
+
+  protected async handleTask(task: BookmarkEnrichTask): Promise<void> {
+    const result = await runBookmarkEnrichWorker(task)
+    await writeBookmarkEnrichResult({
+      userId: task.userId,
+      bookmarkId: task.bookmarkId,
+      result,
+    })
+  }
+}

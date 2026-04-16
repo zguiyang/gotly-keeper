@@ -1,25 +1,16 @@
 import 'dotenv/config'
 
-import { selectWorkerRunners } from '@/server/workers/worker-registry'
+import { BookmarkEnrichWorker } from '@/server/workers/bookmark-enrich.worker'
 
 async function main() {
-  const selectedRunners = selectWorkerRunners(process.env.WORKERS)
+  const workers = [new BookmarkEnrichWorker()]
 
-  if (selectedRunners.length === 0) {
-    console.error(
-      '[workers] no worker selected. set WORKERS=bookmark-enrich or leave it empty to run all.'
-    )
-    process.exit(1)
-  }
-
-  console.info(
-    `[workers] starting ${selectedRunners.length} worker(s): ${selectedRunners.map((runner) => runner.name).join(', ')}`
-  )
+  console.info(`[workers] starting ${workers.length} worker(s): ${workers.map((worker) => worker.name).join(', ')}`)
 
   await Promise.all(
-    selectedRunners.map(async (runner) => {
-      console.info(`[workers] ${runner.name} started`)
-      await runner.start()
+    workers.map(async (worker) => {
+      console.info(`[workers] ${worker.name} started`)
+      await worker.start()
     })
   )
 }
