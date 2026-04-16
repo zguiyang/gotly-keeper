@@ -1,3 +1,5 @@
+import 'dotenv/config'
+
 import { selectWorkerRunners } from '@/server/workers/worker-registry'
 
 async function main() {
@@ -26,4 +28,3 @@ void main().catch((error) => {
   console.error('[workers] failed to start workers', error)
   process.exit(1)
 })
-
