@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-import { setTodoCompletionUseCase } from '@/server/services/workspace/set-todo-completion.use-case'
-import { WorkspaceApplicationError, WORKSPACE_APPLICATION_ERROR_CODES } from '@/server/services/workspace/workspace.application-error'
+import { setWorkspaceTodoCompletion, WorkspaceModuleError, WORKSPACE_MODULE_ERROR_CODES } from '@/server/modules/workspace'
 
 const setTodoCompletionMock = vi.hoisted(() => vi.fn())
 
@@ -9,7 +8,7 @@ vi.mock('@/server/services/assets/assets.service', () => ({
   setTodoCompletion: setTodoCompletionMock,
 }))
 
-describe('setTodoCompletionUseCase', () => {
+describe('setWorkspaceTodoCompletion', () => {
   beforeEach(() => {
     setTodoCompletionMock.mockReset()
   })
@@ -29,7 +28,7 @@ describe('setTodoCompletionUseCase', () => {
     }
     setTodoCompletionMock.mockResolvedValue(mockAsset)
 
-    const result = await setTodoCompletionUseCase({
+    const result = await setWorkspaceTodoCompletion({
       userId: 'user_123',
       assetId: 'asset_1',
       completed: true,
@@ -43,26 +42,26 @@ describe('setTodoCompletionUseCase', () => {
     })
   })
 
-  it('throws WorkspaceApplicationError(TODO_NOT_FOUND) when setTodoCompletion returns null', async () => {
+  it('throws WorkspaceModuleError(TODO_NOT_FOUND) when setTodoCompletion returns null', async () => {
     setTodoCompletionMock.mockResolvedValue(null)
 
     await expect(
-      setTodoCompletionUseCase({
+      setWorkspaceTodoCompletion({
         userId: 'user_123',
         assetId: 'nonexistent',
         completed: true,
       })
-    ).rejects.toThrow(WorkspaceApplicationError)
+    ).rejects.toThrow(WorkspaceModuleError)
 
     await expect(
-      setTodoCompletionUseCase({
+      setWorkspaceTodoCompletion({
         userId: 'user_123',
         assetId: 'nonexistent',
         completed: true,
       })
     ).rejects.toMatchObject({
       publicMessage: '没有找到这条待办，或你没有权限更新它。',
-      code: WORKSPACE_APPLICATION_ERROR_CODES.TODO_NOT_FOUND,
+      code: WORKSPACE_MODULE_ERROR_CODES.TODO_NOT_FOUND,
     })
   })
 })

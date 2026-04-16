@@ -7,29 +7,40 @@ import {
   summarizeRecentBookmarksAction,
   summarizeRecentNotesAction,
 } from '@/app/workspace/actions'
-import { ActionError, ACTION_ERROR_CODES } from '@/server/modules/actions/action-error'
-
-import { WorkspaceApplicationError, WORKSPACE_APPLICATION_ERROR_CODES } from '@/server/services/workspace/workspace.application-error'
+import { ModuleActionError, MODULE_ACTION_ERROR_CODES } from '@/server/modules/actions/action-error'
 
 
 const {
   revalidatePathMock,
-  requireUserMock,
-  runServerActionMock,
-  createWorkspaceAssetUseCaseMock,
-  setTodoCompletionUseCaseMock,
-  reviewUnfinishedTodosUseCaseMock,
-  summarizeRecentNotesUseCaseMock,
-  summarizeRecentBookmarksUseCaseMock,
+  requireSignedInUserMock,
+  executeModuleActionMock,
+  createWorkspaceAssetMock,
+  setWorkspaceTodoCompletionMock,
+  reviewWorkspaceUnfinishedTodosMock,
+  summarizeWorkspaceRecentNotesMock,
+  summarizeWorkspaceRecentBookmarksMock,
+  WorkspaceModuleErrorMock,
+  WORKSPACE_MODULE_ERROR_CODES_MOCK,
 } = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
-  requireUserMock: vi.fn(),
-  runServerActionMock: vi.fn(),
-  createWorkspaceAssetUseCaseMock: vi.fn(),
-  setTodoCompletionUseCaseMock: vi.fn(),
-  reviewUnfinishedTodosUseCaseMock: vi.fn(),
-  summarizeRecentNotesUseCaseMock: vi.fn(),
-  summarizeRecentBookmarksUseCaseMock: vi.fn(),
+  requireSignedInUserMock: vi.fn(),
+  executeModuleActionMock: vi.fn(),
+  createWorkspaceAssetMock: vi.fn(),
+  setWorkspaceTodoCompletionMock: vi.fn(),
+  reviewWorkspaceUnfinishedTodosMock: vi.fn(),
+  summarizeWorkspaceRecentNotesMock: vi.fn(),
+  summarizeWorkspaceRecentBookmarksMock: vi.fn(),
+  WorkspaceModuleErrorMock: class WorkspaceModuleError extends Error {
+    constructor(publicMessage: string, code = 'TODO_NOT_FOUND') {
+      super(publicMessage)
+      this.name = 'WorkspaceModuleError'
+      ;(this as { publicMessage: string }).publicMessage = publicMessage
+      ;(this as { code: string }).code = code
+    }
+  },
+  WORKSPACE_MODULE_ERROR_CODES_MOCK: {
+    TODO_NOT_FOUND: 'TODO_NOT_FOUND',
+  },
 }))
 
 vi.mock('next/cache', () => ({
@@ -37,48 +48,48 @@ vi.mock('next/cache', () => ({
 }))
 
 vi.mock('@/server/modules/auth/session', () => ({
-  requireUser: requireUserMock,
+  requireSignedInUser: requireSignedInUserMock,
 }))
 
 vi.mock('@/server/modules/actions/run-server-action', () => ({
-  runServerAction: runServerActionMock,
+  executeModuleAction: executeModuleActionMock,
 }))
 
 vi.mock('@/server/modules/workspace', () => ({
-  createWorkspaceAssetUseCase: createWorkspaceAssetUseCaseMock,
-  setTodoCompletionUseCase: setTodoCompletionUseCaseMock,
-  reviewUnfinishedTodosUseCase: reviewUnfinishedTodosUseCaseMock,
-  summarizeRecentNotesUseCase: summarizeRecentNotesUseCaseMock,
-  summarizeRecentBookmarksUseCase: summarizeRecentBookmarksUseCaseMock,
-  WorkspaceApplicationError,
-  WORKSPACE_APPLICATION_ERROR_CODES,
+  createWorkspaceAsset: createWorkspaceAssetMock,
+  setWorkspaceTodoCompletion: setWorkspaceTodoCompletionMock,
+  reviewWorkspaceUnfinishedTodos: reviewWorkspaceUnfinishedTodosMock,
+  summarizeWorkspaceRecentNotes: summarizeWorkspaceRecentNotesMock,
+  summarizeWorkspaceRecentBookmarks: summarizeWorkspaceRecentBookmarksMock,
+  WorkspaceModuleError: WorkspaceModuleErrorMock,
+  WORKSPACE_MODULE_ERROR_CODES: WORKSPACE_MODULE_ERROR_CODES_MOCK,
 }))
 
 describe('workspace server actions', () => {
   beforeEach(() => {
     revalidatePathMock.mockReset()
-    requireUserMock.mockReset()
-    runServerActionMock.mockReset()
-    createWorkspaceAssetUseCaseMock.mockReset()
-    setTodoCompletionUseCaseMock.mockReset()
-    reviewUnfinishedTodosUseCaseMock.mockReset()
-    summarizeRecentNotesUseCaseMock.mockReset()
-    summarizeRecentBookmarksUseCaseMock.mockReset()
+    requireSignedInUserMock.mockReset()
+    executeModuleActionMock.mockReset()
+    createWorkspaceAssetMock.mockReset()
+    setWorkspaceTodoCompletionMock.mockReset()
+    reviewWorkspaceUnfinishedTodosMock.mockReset()
+    summarizeWorkspaceRecentNotesMock.mockReset()
+    summarizeWorkspaceRecentBookmarksMock.mockReset()
 
-    requireUserMock.mockResolvedValue({ id: 'user_123' })
-    runServerActionMock.mockImplementation(async (_action: string, handler: () => Promise<unknown>) => {
+    requireSignedInUserMock.mockResolvedValue({ id: 'user_123' })
+    executeModuleActionMock.mockImplementation(async (_action: string, handler: () => Promise<unknown>) => {
       return handler()
     })
   })
 
   it('createWorkspaceAssetAction trims input and revalidates workspace path', async () => {
     const expected = { kind: 'created', asset: { id: 'asset_1' } }
-    createWorkspaceAssetUseCaseMock.mockResolvedValue(expected)
+    createWorkspaceAssetMock.mockResolvedValue(expected)
 
     const result = await createWorkspaceAssetAction('  hello world  ')
 
     expect(result).toEqual(expected)
-    expect(createWorkspaceAssetUseCaseMock).toHaveBeenCalledWith({
+    expect(createWorkspaceAssetMock).toHaveBeenCalledWith({
       userId: 'user_123',
       text: 'hello world',
     })
@@ -88,12 +99,12 @@ describe('workspace server actions', () => {
   it('createWorkspaceAssetAction rejects empty or non-string input', async () => {
     await expect(createWorkspaceAssetAction('   ')).rejects.toThrow('先输入一句内容。')
     await expect(createWorkspaceAssetAction({})).rejects.toThrow('先输入一句内容。')
-    expect(createWorkspaceAssetUseCaseMock).not.toHaveBeenCalled()
+    expect(createWorkspaceAssetMock).not.toHaveBeenCalled()
   })
 
   it('setTodoCompletionAction validates payload, trims assetId, and revalidates all paths', async () => {
     const expected = { id: 'todo_1', type: 'todo', originalText: 'task' }
-    setTodoCompletionUseCaseMock.mockResolvedValue(expected)
+    setWorkspaceTodoCompletionMock.mockResolvedValue(expected)
 
     const result = await setTodoCompletionAction({
       assetId: '  todo_1  ',
@@ -101,7 +112,7 @@ describe('workspace server actions', () => {
     })
 
     expect(result).toEqual(expected)
-    expect(setTodoCompletionUseCaseMock).toHaveBeenCalledWith({
+    expect(setWorkspaceTodoCompletionMock).toHaveBeenCalledWith({
       userId: 'user_123',
       assetId: 'todo_1',
       completed: true,
@@ -116,33 +127,33 @@ describe('workspace server actions', () => {
     await expect(setTodoCompletionAction({ assetId: 'id', completed: 'yes' })).rejects.toThrow(
       '待办状态更新失败，请重试。'
     )
-    expect(setTodoCompletionUseCaseMock).not.toHaveBeenCalled()
+    expect(setWorkspaceTodoCompletionMock).not.toHaveBeenCalled()
   })
 
-  it('setTodoCompletionAction maps WorkspaceApplicationError(TODO_NOT_FOUND) to ActionError(TODO_NOT_FOUND)', async () => {
-    setTodoCompletionUseCaseMock.mockRejectedValue(
-      new WorkspaceApplicationError(
+  it('setTodoCompletionAction maps WorkspaceModuleError(TODO_NOT_FOUND) to ModuleActionError(TODO_NOT_FOUND)', async () => {
+    setWorkspaceTodoCompletionMock.mockRejectedValue(
+      new WorkspaceModuleErrorMock(
         '没有找到这条待办，或你没有权限更新它。',
-        WORKSPACE_APPLICATION_ERROR_CODES.TODO_NOT_FOUND
+        WORKSPACE_MODULE_ERROR_CODES_MOCK.TODO_NOT_FOUND
       )
     )
 
     await expect(
       setTodoCompletionAction({ assetId: 'nonexistent', completed: true })
-    ).rejects.toThrow(ActionError)
+    ).rejects.toThrow(ModuleActionError)
 
     await expect(
       setTodoCompletionAction({ assetId: 'nonexistent', completed: true })
     ).rejects.toMatchObject({
-      code: ACTION_ERROR_CODES.TODO_NOT_FOUND,
+      code: MODULE_ACTION_ERROR_CODES.TODO_NOT_FOUND,
       publicMessage: '没有找到这条待办，或你没有权限更新它。',
     })
   })
 
   it('summary actions delegate to use-cases with authenticated user', async () => {
-    reviewUnfinishedTodosUseCaseMock.mockResolvedValue({ text: 'todo review' })
-    summarizeRecentNotesUseCaseMock.mockResolvedValue({ text: 'note summary' })
-    summarizeRecentBookmarksUseCaseMock.mockResolvedValue({ text: 'bookmark summary' })
+    reviewWorkspaceUnfinishedTodosMock.mockResolvedValue({ text: 'todo review' })
+    summarizeWorkspaceRecentNotesMock.mockResolvedValue({ text: 'note summary' })
+    summarizeWorkspaceRecentBookmarksMock.mockResolvedValue({ text: 'bookmark summary' })
 
     await expect(reviewUnfinishedTodosAction()).resolves.toEqual({
       kind: 'todo-review',
@@ -157,8 +168,8 @@ describe('workspace server actions', () => {
       summary: { text: 'bookmark summary' },
     })
 
-    expect(reviewUnfinishedTodosUseCaseMock).toHaveBeenCalledWith({ userId: 'user_123' })
-    expect(summarizeRecentNotesUseCaseMock).toHaveBeenCalledWith({ userId: 'user_123' })
-    expect(summarizeRecentBookmarksUseCaseMock).toHaveBeenCalledWith({ userId: 'user_123' })
+    expect(reviewWorkspaceUnfinishedTodosMock).toHaveBeenCalledWith({ userId: 'user_123' })
+    expect(summarizeWorkspaceRecentNotesMock).toHaveBeenCalledWith({ userId: 'user_123' })
+    expect(summarizeWorkspaceRecentBookmarksMock).toHaveBeenCalledWith({ userId: 'user_123' })
   })
 })

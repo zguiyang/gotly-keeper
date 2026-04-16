@@ -18,7 +18,7 @@ type BookmarkSummaryPromptItem = {
   createdAt: string
 }
 
-function buildBookmarkSummaryPromptInput(
+export function buildBookmarkSummaryPromptInput(
   bookmarks: AssetListItem[]
 ): BookmarkSummaryPromptItem[] {
   return bookmarks.slice(0, BOOKMARK_SUMMARY_LIMIT).map((bookmark) => ({
