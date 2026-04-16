@@ -4,18 +4,35 @@ import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
 import { renderPrompt } from '@/server/lib/prompt-template'
-import { listNoteAssets } from '@/server/services/assets/assets.service'
+import { listNotes } from '@/server/services/notes'
 import { nowIso, dayjs } from '@/shared/time/dayjs'
 
 import { getAiProvider } from '../../lib/ai/ai-provider'
 import { NOTE_SUMMARY_LIMIT, NOTE_SUMMARY_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
 
 import type { AssetListItem, NoteSummaryResult, NoteSummarySource } from '@/shared/assets/assets.types'
+import type { NoteListItem } from '@/server/services/notes'
 
 type NoteSummaryPromptItem = {
   id: string
   text: string
   createdAt: string
+}
+
+function toAssetListItem(note: NoteListItem): AssetListItem {
+  return {
+    id: note.id,
+    originalText: note.originalText,
+    title: note.title,
+    excerpt: note.excerpt,
+    type: 'note',
+    url: null,
+    timeText: null,
+    dueAt: null,
+    completed: false,
+    bookmarkMeta: null,
+    createdAt: note.createdAt,
+  }
 }
 
 export function buildNoteSummaryPromptInput(notes: AssetListItem[]): NoteSummaryPromptItem[] {
@@ -82,7 +99,8 @@ function normalizeNoteSummaryOutput(
 export async function summarizeWorkspaceRecentNotesInternal(
   userId: string
 ): Promise<NoteSummaryResult> {
-  const notes = await listNoteAssets(userId, NOTE_SUMMARY_LIMIT)
+  const noteItems = await listNotes({ userId, limit: NOTE_SUMMARY_LIMIT })
+  const notes = noteItems.map(toAssetListItem)
 
   if (notes.length === 0) {
     return normalizeNoteSummaryOutput(getFallbackNoteSummary(notes), notes)

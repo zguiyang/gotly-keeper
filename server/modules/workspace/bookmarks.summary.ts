@@ -4,19 +4,36 @@ import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
 import { renderPrompt } from '@/server/lib/prompt-template'
-import { listLinkAssets } from '@/server/services/assets/assets.service'
+import { listBookmarks } from '@/server/services/bookmarks'
 import { nowIso, dayjs } from '@/shared/time/dayjs'
 
 import { getAiProvider } from '../../lib/ai/ai-provider'
 import { BOOKMARK_SUMMARY_LIMIT, BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
 
 import type { AssetListItem, BookmarkSummaryResult, BookmarkSummarySource } from '@/shared/assets/assets.types'
+import type { BookmarkListItem } from '@/server/services/bookmarks'
 
 type BookmarkSummaryPromptItem = {
   id: string
   text: string
   url: string | null
   createdAt: string
+}
+
+function toAssetListItem(bookmark: BookmarkListItem): AssetListItem {
+  return {
+    id: bookmark.id,
+    originalText: bookmark.originalText,
+    title: bookmark.title,
+    excerpt: bookmark.excerpt,
+    type: 'link',
+    url: bookmark.url,
+    timeText: null,
+    dueAt: null,
+    completed: false,
+    bookmarkMeta: bookmark.bookmarkMeta,
+    createdAt: bookmark.createdAt,
+  }
 }
 
 export function buildBookmarkSummaryPromptInput(
@@ -87,7 +104,8 @@ function normalizeBookmarkSummaryOutput(
 export async function summarizeWorkspaceRecentBookmarksInternal(
   userId: string
 ): Promise<BookmarkSummaryResult> {
-  const bookmarks = await listLinkAssets(userId, BOOKMARK_SUMMARY_LIMIT)
+  const bookmarkItems = await listBookmarks({ userId, limit: BOOKMARK_SUMMARY_LIMIT })
+  const bookmarks = bookmarkItems.map(toAssetListItem)
 
   if (bookmarks.length === 0) {
     return normalizeBookmarkSummaryOutput(getFallbackBookmarkSummary(bookmarks), bookmarks)

@@ -1,23 +1,8 @@
 import 'server-only'
 
-// [Phase C] Future imports - uncomment when new services are available
-// import { createNote, listNotes, type NoteListItem } from '@/server/services/notes'
-// import { createTodo, listTodos, setTodoCompletion, type TodoListItem } from '@/server/services/todos'
-// import { createBookmark, listBookmarks, type BookmarkListItem } from '@/server/services/bookmarks'
-
-// [Phase C] Legacy imports - to be replaced in Phase D
-import {
-  createAsset,
-  listAssets,
-  listLinkAssets,
-  listNoteAssets,
-  listRecentAssets,
-  listTodoAssets,
-  setTodoCompletion,
-} from '@/server/services/assets/assets.service'
-import { searchAssets } from '@/server/services/search'
-
-import { ASSET_SEARCH_LIMIT_DEFAULT } from '../../lib/config/constants'
+import { createNote, listNotes, toNoteListItem, type NoteListItem } from '@/server/services/notes'
+import { createTodo, listTodos, setTodoCompletion, toTodoListItem, type TodoListItem } from '@/server/services/todos'
+import { createBookmark, listBookmarks, toBookmarkListItem, type BookmarkListItem } from '@/server/services/bookmarks'
 
 import { summarizeWorkspaceRecentBookmarksInternal } from './bookmarks.summary'
 import {
@@ -35,8 +20,6 @@ import type {
   WorkspaceAssetActionResult,
 } from '@/shared/assets/assets.types'
 
-// [Phase C] WorkspaceAssetItem - aggregation type for /workspace/all
-// Represents items from all three domains (notes, todos, bookmarks)
 export type WorkspaceAssetItem = AssetListItem
 
 export const WORKSPACE_MODULE_ERROR_CODES = {
@@ -56,58 +39,124 @@ export class WorkspaceModuleError extends Error {
   }
 }
 
+const URL_REGEX = /https?:\/\/[^\s]+/g
+const TODO_KEYWORDS = ['记得', '提醒', '待办', '要', '处理', '发', '提交', '整理', '预订', '回复']
+
+function extractUrl(text: string): string | null {
+  const matches = text.match(URL_REGEX)
+  return matches ? matches[0] : null
+}
+
+function hasTodoIntent(text: string): boolean {
+  return TODO_KEYWORDS.some((kw) => text.includes(kw))
+}
+
+type AssetInputClassification =
+  | { kind: 'note' }
+  | { kind: 'link'; url: string }
+  | { kind: 'todo' }
+
+function classifyAssetInput(text: string): AssetInputClassification {
+  const url = extractUrl(text)
+  if (url) {
+    return { kind: 'link', url }
+  }
+
+  if (hasTodoIntent(text)) {
+    return { kind: 'todo' }
+  }
+
+  return { kind: 'note' }
+}
+
+function toAssetListItemFromNote(note: NoteListItem): AssetListItem {
+  return {
+    id: note.id,
+    originalText: note.originalText,
+    title: note.title,
+    excerpt: note.excerpt,
+    type: 'note',
+    url: null,
+    timeText: null,
+    dueAt: null,
+    completed: false,
+    bookmarkMeta: null,
+    createdAt: note.createdAt,
+  }
+}
+
+function toAssetListItemFromTodo(todo: TodoListItem): AssetListItem {
+  return {
+    id: todo.id,
+    originalText: todo.originalText,
+    title: todo.title,
+    excerpt: todo.excerpt,
+    type: 'todo',
+    url: null,
+    timeText: todo.timeText,
+    dueAt: todo.dueAt,
+    completed: todo.completed,
+    bookmarkMeta: null,
+    createdAt: todo.createdAt,
+  }
+}
+
+function toAssetListItemFromBookmark(bookmark: BookmarkListItem): AssetListItem {
+  return {
+    id: bookmark.id,
+    originalText: bookmark.originalText,
+    title: bookmark.title,
+    excerpt: bookmark.excerpt,
+    type: 'link',
+    url: bookmark.url,
+    timeText: null,
+    dueAt: null,
+    completed: false,
+    bookmarkMeta: bookmark.bookmarkMeta,
+    createdAt: bookmark.createdAt,
+  }
+}
+
 export async function createWorkspaceAsset(input: {
   userId: string
   text: string
 }): Promise<WorkspaceAssetActionResult> {
-  // [Phase C] TODO: Replace with domain-specific service calls
-  // - For notes: use notes.mutation.createNote()
-  // - For todos: use todos.mutation.createTodo()
-  // - For bookmarks: use bookmarks.mutation.createBookmark()
-  // Determine type from text parsing and call appropriate service
-  const result = await createAsset({ userId: input.userId, text: input.text })
+  const classification = classifyAssetInput(input.text)
 
-  if (result.kind === 'search') {
-    const results = await searchAssets({
+  if (classification.kind === 'link') {
+    const bookmark = await createBookmark({
       userId: input.userId,
-      query: result.query || input.text,
-      typeHint: result.typeHint,
-      timeHint: result.timeHint,
-      completionHint: result.completionHint,
-      limit: ASSET_SEARCH_LIMIT_DEFAULT,
+      text: input.text,
+      url: classification.url,
     })
 
-    return {
-      kind: 'query',
-      query: result.query || input.text,
-      results,
-    }
-  }
-
-  if (result.kind === 'summary') {
-    if (result.summaryTarget === 'unfinished_todos') {
-      const review = await reviewWorkspaceUnfinishedTodosInternal(input.userId)
-      return { kind: 'todo-review', review }
-    }
-    if (result.summaryTarget === 'recent_notes') {
-      const summary = await summarizeWorkspaceRecentNotesInternal(input.userId)
-      return { kind: 'note-summary', summary }
-    }
-    const summary = await summarizeWorkspaceRecentBookmarksInternal(input.userId)
-    return { kind: 'bookmark-summary', summary }
-  }
-
-  if (result.kind === 'created' && result.asset.type === 'link' && result.asset.url) {
-    result.asset.bookmarkMeta = buildPendingBookmarkMetaForResponse()
+    const asset = toAssetListItemFromBookmark(bookmark)
+    asset.bookmarkMeta = buildPendingBookmarkMetaForResponse()
 
     void scheduleBookmarkEnrichTask({
-      bookmarkId: result.asset.id,
+      bookmarkId: asset.id,
       userId: input.userId,
-      url: result.asset.url,
+      url: asset.url!,
     })
+
+    return { kind: 'created', asset }
   }
 
-  return { kind: 'created', asset: result.asset }
+  if (classification.kind === 'todo') {
+    const todo = await createTodo({
+      userId: input.userId,
+      text: input.text,
+    })
+
+    return { kind: 'created', asset: toAssetListItemFromTodo(todo) }
+  }
+
+  const note = await createNote({
+    userId: input.userId,
+    text: input.text,
+  })
+
+  return { kind: 'created', asset: toAssetListItemFromNote(note) }
 }
 
 export async function setWorkspaceTodoCompletion(input: {
@@ -115,10 +164,9 @@ export async function setWorkspaceTodoCompletion(input: {
   assetId: string
   completed: boolean
 }): Promise<AssetListItem> {
-  // [Phase C] TODO: Replace with todos.mutation.setTodoCompletion()
   const updated = await setTodoCompletion({
     userId: input.userId,
-    assetId: input.assetId,
+    todoId: input.assetId,
     completed: input.completed,
   })
 
@@ -129,7 +177,7 @@ export async function setWorkspaceTodoCompletion(input: {
     )
   }
 
-  return updated
+  return toAssetListItemFromTodo(updated)
 }
 
 type AssetType = 'note' | 'link' | 'todo'
@@ -139,48 +187,69 @@ export async function listWorkspaceAssets(input: {
   type?: AssetType
   limit?: number
 }): Promise<AssetListItem[]> {
-  // [Phase C] TODO: Replace with aggregation from three services
-  // - notes.query.listNotes() for type='note'
-  // - todos.query.listTodos() for type='todo'
-  // - bookmarks.query.listBookmarks() for type='link'
-  // - Aggregate all three for undefined type
-  return listAssets(input)
+  const limit = input.limit ?? 50
+
+  if (input.type === 'note') {
+    const notes = await listNotes({ userId: input.userId, limit })
+    return notes.map(toAssetListItemFromNote)
+  }
+
+  if (input.type === 'link') {
+    const bookmarks = await listBookmarks({ userId: input.userId, limit })
+    return bookmarks.map(toAssetListItemFromBookmark)
+  }
+
+  if (input.type === 'todo') {
+    const todos = await listTodos({ userId: input.userId, limit })
+    return todos.map(toAssetListItemFromTodo)
+  }
+
+  const [notes, bookmarks, todos] = await Promise.all([
+    listNotes({ userId: input.userId, limit }),
+    listBookmarks({ userId: input.userId, limit }),
+    listTodos({ userId: input.userId, limit }),
+  ])
+
+  const items: AssetListItem[] = [
+    ...notes.map(toAssetListItemFromNote),
+    ...bookmarks.map(toAssetListItemFromBookmark),
+    ...todos.map(toAssetListItemFromTodo),
+  ]
+
+  items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+
+  return items.slice(0, limit)
 }
 
 export async function listWorkspaceLinkAssets(
   userId: string,
   limit?: number
 ): Promise<AssetListItem[]> {
-  // [Phase C] TODO: Replace with bookmarks.query.listBookmarks()
-  return listLinkAssets(userId, limit)
+  const bookmarks = await listBookmarks({ userId, limit: limit ?? 50 })
+  return bookmarks.map(toAssetListItemFromBookmark)
 }
 
 export async function listWorkspaceNoteAssets(
   userId: string,
   limit?: number
 ): Promise<AssetListItem[]> {
-  // [Phase C] TODO: Replace with notes.query.listNotes()
-  return listNoteAssets(userId, limit)
+  const notes = await listNotes({ userId, limit: limit ?? 50 })
+  return notes.map(toAssetListItemFromNote)
 }
 
 export async function listWorkspaceRecentAssets(
   userId: string,
   limit?: number
 ): Promise<AssetListItem[]> {
-  // [Phase C] TODO: Replace with aggregation from three services
-  // - notes.query.listRecentNotes()
-  // - todos.query.listRecentTodos()
-  // - bookmarks.query.listRecentBookmarks()
-  // - Merge and sort by createdAt
-  return listRecentAssets(userId, limit)
+  return listWorkspaceAssets({ userId, limit: limit ?? 6 })
 }
 
 export async function listWorkspaceTodoAssets(
   userId: string,
   limit?: number
 ): Promise<AssetListItem[]> {
-  // [Phase C] TODO: Replace with todos.query.listTodos()
-  return listTodoAssets(userId, limit)
+  const todos = await listTodos({ userId, limit: limit ?? 50 })
+  return todos.map(toAssetListItemFromTodo)
 }
 
 export async function reviewWorkspaceUnfinishedTodos(input: {

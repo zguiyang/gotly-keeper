@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { updateAssetBookmarkMeta } from '@/server/services/assets'
+import { updateBookmarkEnrichment } from '@/server/services/bookmarks'
 import { enqueueBookmarkEnrichTask } from '@/server/services/bookmark/bookmark-queue.service'
 import { checkUrlSafety } from '@/server/services/bookmark/url-safety'
 
@@ -90,8 +90,8 @@ export async function scheduleBookmarkEnrichTask(input: {
   url: string
 }): Promise<void> {
   try {
-    await updateAssetBookmarkMeta({
-      assetId: input.bookmarkId,
+    await updateBookmarkEnrichment({
+      bookmarkId: input.bookmarkId,
       userId: input.userId,
       bookmarkMeta: createPendingBookmarkMeta(),
     })
@@ -103,8 +103,8 @@ export async function scheduleBookmarkEnrichTask(input: {
           ? createSkippedPrivateUrlMeta()
           : createFailedBookmarkMeta('INVALID_URL', safety.reason)
 
-      await updateAssetBookmarkMeta({
-        assetId: input.bookmarkId,
+      await updateBookmarkEnrichment({
+        bookmarkId: input.bookmarkId,
         userId: input.userId,
         bookmarkMeta: errorMeta,
       })
@@ -114,8 +114,8 @@ export async function scheduleBookmarkEnrichTask(input: {
     const task = createBookmarkEnrichTask(input)
     await enqueueBookmarkEnrichTask(task)
   } catch (error) {
-    await updateAssetBookmarkMeta({
-      assetId: input.bookmarkId,
+    await updateBookmarkEnrichment({
+      bookmarkId: input.bookmarkId,
       userId: input.userId,
       bookmarkMeta: createFailedBookmarkMeta(
         'ENQUEUE_FAILED',
@@ -137,8 +137,8 @@ export async function writeBookmarkEnrichResult(input: {
       input.result.error?.message ?? 'unknown worker failure'
     )
 
-  await updateAssetBookmarkMeta({
-    assetId: input.bookmarkId,
+  await updateBookmarkEnrichment({
+    bookmarkId: input.bookmarkId,
     userId: input.userId,
     bookmarkMeta,
   })
