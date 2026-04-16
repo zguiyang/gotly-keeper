@@ -3,6 +3,7 @@ import 'server-only'
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
+import { renderPrompt } from '@/server/lib/prompt-template'
 import { listIncompleteTodoAssets } from '@/server/services/assets/assets.service'
 import { nowIso, dayjs } from '@/shared/time/dayjs'
 
@@ -83,15 +84,6 @@ function normalizeTodoReviewOutput(
   }
 }
 
-const TODO_REVIEW_SYSTEM_PROMPT = `You generate a short Chinese review for a user's unfinished todos.
-
-Rules:
-- Use only the provided todo records.
-- Do not invent tasks, deadlines, or context.
-- Keep the tone concise and practical.
-- Return sourceAssetIds that refer only to provided todo ids.
-- If there are no todos, say there is nothing pending.`
-
 export async function reviewWorkspaceUnfinishedTodosInternal(
   userId: string
 ): Promise<TodoReviewResult> {
@@ -107,14 +99,21 @@ export async function reviewWorkspaceUnfinishedTodosInternal(
   }
 
   try {
+    const [systemPrompt, userPrompt] = await Promise.all([
+      renderPrompt('workspace/todo-review.system', {}),
+      renderPrompt('workspace/todo-review.user', {
+        payloadJson: JSON.stringify({
+          currentTime: nowIso(),
+          todos: buildTodoReviewPromptInput(todos),
+        }),
+      }),
+    ])
+
     const result = await generateText({
       model,
       output: Output.object({ schema: todoReviewOutputSchema }),
-      system: TODO_REVIEW_SYSTEM_PROMPT,
-      prompt: JSON.stringify({
-        currentTime: nowIso(),
-        todos: buildTodoReviewPromptInput(todos),
-      }),
+      system: systemPrompt,
+      prompt: userPrompt,
       temperature: 0,
       maxRetries: 1,
       timeout: TODO_REVIEW_MODEL_TIMEOUT_MS,

@@ -3,6 +3,7 @@ import 'server-only'
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
+import { renderPrompt } from '@/server/lib/prompt-template'
 import { listNoteAssets } from '@/server/services/assets/assets.service'
 import { nowIso, dayjs } from '@/shared/time/dayjs'
 
@@ -78,15 +79,6 @@ function normalizeNoteSummaryOutput(
   }
 }
 
-const NOTE_SUMMARY_SYSTEM_PROMPT = `You generate a short Chinese summary for a user's recent notes.
-
-Rules:
-- Use only the provided note records.
-- Do not invent facts, projects, deadlines, or context.
-- Keep the tone concise and practical.
-- Return sourceAssetIds that refer only to provided note ids.
-- If there are no notes, say there is nothing to summarize.`
-
 export async function summarizeWorkspaceRecentNotesInternal(
   userId: string
 ): Promise<NoteSummaryResult> {
@@ -102,14 +94,21 @@ export async function summarizeWorkspaceRecentNotesInternal(
   }
 
   try {
+    const [systemPrompt, userPrompt] = await Promise.all([
+      renderPrompt('workspace/note-summary.system', {}),
+      renderPrompt('workspace/note-summary.user', {
+        payloadJson: JSON.stringify({
+          currentTime: nowIso(),
+          notes: buildNoteSummaryPromptInput(notes),
+        }),
+      }),
+    ])
+
     const result = await generateText({
       model,
       output: Output.object({ schema: noteSummaryOutputSchema }),
-      system: NOTE_SUMMARY_SYSTEM_PROMPT,
-      prompt: JSON.stringify({
-        currentTime: nowIso(),
-        notes: buildNoteSummaryPromptInput(notes),
-      }),
+      system: systemPrompt,
+      prompt: userPrompt,
       temperature: 0,
       maxRetries: 1,
       timeout: NOTE_SUMMARY_MODEL_TIMEOUT_MS,
