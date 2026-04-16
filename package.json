@@ -12,7 +12,6 @@
     "db:studio": "drizzle-kit studio",
     "db:check": "drizzle-kit check",
     "assets:backfill-embeddings": "node --require ./scripts/register-server-only-alias.cjs --import tsx scripts/backfill-asset-embeddings.ts",
-    "worker:bookmark-enrich": "node --require ./scripts/register-server-only-alias.cjs --import tsx scripts/run-bookmark-enrich-runner.ts",
     "worker:start": "node --require ./scripts/register-server-only-alias.cjs --import tsx scripts/run-workers.ts",
     "test": "vitest --run",
     "test:unit": "vitest --run tests/unit",
