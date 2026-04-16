@@ -1,3 +1,5 @@
+import type { BookmarkMeta } from './bookmark-meta.types'
+
 export type AssetListItem = {
   id: string
   originalText: string
@@ -8,6 +10,7 @@ export type AssetListItem = {
   timeText: string | null
   dueAt: Date | null
   completed: boolean
+  bookmarkMeta?: BookmarkMeta | null
   createdAt: Date
 }
 

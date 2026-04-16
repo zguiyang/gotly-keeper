@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { updateAssetBookmarkMeta } from './assets.bookmark-meta-mutation'
 import { createAsset, type AssetSummaryCommand } from './assets.command'
 import { toAssetListItem } from './assets.mapper'
 import {
@@ -24,5 +25,6 @@ export {
   listRecentAssets,
   listTodoAssets,
   setTodoCompletion,
+  updateAssetBookmarkMeta,
   toAssetListItem,
 }
