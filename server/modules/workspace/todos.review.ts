@@ -19,7 +19,7 @@ export type TodoReviewPromptItem = {
   createdAt: string
 }
 
-function buildTodoReviewPromptInput(todos: AssetListItem[]): TodoReviewPromptItem[] {
+export function buildTodoReviewPromptInput(todos: AssetListItem[]): TodoReviewPromptItem[] {
   return todos.slice(0, TODO_REVIEW_LIMIT).map((todo) => ({
     id: todo.id,
     text: todo.originalText,

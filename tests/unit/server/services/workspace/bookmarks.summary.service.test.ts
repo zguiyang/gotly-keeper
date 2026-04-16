@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
 
-import { buildBookmarkSummaryPromptInput } from '@/server/services/workspace/bookmarks.summary.service'
+import { buildBookmarkSummaryPromptInput } from '@/server/modules/workspace/bookmarks.summary'
 
 describe('bookmarks.summary.service', () => {
   describe('buildBookmarkSummaryPromptInput', () => {

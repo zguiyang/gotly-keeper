@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 
-import { buildTodoReviewPromptInput } from '@/server/services/workspace/todos.review.service'
+import { buildTodoReviewPromptInput } from '@/server/modules/workspace/todos.review'
 
 describe('assets.todo-review', () => {
   it('buildTodoReviewPromptInput keeps bounded source records', () => {

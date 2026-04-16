@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 
-import { buildBookmarkSummaryPromptInput } from '@/server/services/workspace/bookmarks.summary.service'
+import { buildBookmarkSummaryPromptInput } from '@/server/modules/workspace/bookmarks.summary'
 
 describe('assets.bookmark-summary', () => {
   it('buildBookmarkSummaryPromptInput keeps bounded bookmark records', () => {

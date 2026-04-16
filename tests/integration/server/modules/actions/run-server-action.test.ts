@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
-import { ActionError, ACTION_ERROR_CODES } from '@/server/modules/actions/action-error'
-import { runServerAction } from '@/server/modules/actions/run-server-action'
+import { ModuleActionError, MODULE_ACTION_ERROR_CODES } from '@/server/modules/actions/action-error'
+import { executeModuleAction } from '@/server/modules/actions/run-server-action'
 
-describe('runServerAction', () => {
+describe('executeModuleAction', () => {
   const mockConsoleInfo = vi.fn()
   const mockConsoleError = vi.fn()
 
@@ -18,7 +18,7 @@ describe('runServerAction', () => {
       console.info = mockConsoleInfo
 
       try {
-        await runServerAction('testAction', async () => {
+        await executeModuleAction('testAction', async () => {
           return 'result'
         })
 
@@ -36,7 +36,7 @@ describe('runServerAction', () => {
     })
 
     it('returns the result from the handler', async () => {
-      const result = await runServerAction('testAction', async () => {
+      const result = await executeModuleAction('testAction', async () => {
         return { success: true }
       })
       expect(result).toEqual({ success: true })
@@ -49,10 +49,10 @@ describe('runServerAction', () => {
       console.error = mockConsoleError
 
       try {
-        const actionError = new ActionError('用户未登录', ACTION_ERROR_CODES.UNAUTHENTICATED)
+        const actionError = new ModuleActionError('用户未登录', MODULE_ACTION_ERROR_CODES.UNAUTHENTICATED)
 
         await expect(
-          runServerAction('testAction', async () => {
+          executeModuleAction('testAction', async () => {
             throw actionError
           })
         ).rejects.toThrow('用户未登录')
@@ -66,10 +66,10 @@ describe('runServerAction', () => {
       console.error = mockConsoleError
 
       try {
-        const actionError = new ActionError('无权限', ACTION_ERROR_CODES.UNAUTHENTICATED)
+        const actionError = new ModuleActionError('无权限', MODULE_ACTION_ERROR_CODES.UNAUTHENTICATED)
 
         await expect(
-          runServerAction('authAction', async () => {
+          executeModuleAction('authAction', async () => {
             throw actionError
           })
         ).rejects.toThrow()
@@ -82,9 +82,9 @@ describe('runServerAction', () => {
         expect(logData.requestId).toBeTruthy()
         expect(typeof logData.durationMs).toBe('number')
         expect(logData.status).toBe('error')
-        expect(logData.errorCode).toBe(ACTION_ERROR_CODES.UNAUTHENTICATED)
+        expect(logData.errorCode).toBe(MODULE_ACTION_ERROR_CODES.UNAUTHENTICATED)
         expect(logData.errorMessage).toBe('无权限')
-        expect(logData.errorName).toBe('ActionError')
+        expect(logData.errorName).toBe('ModuleActionError')
       } finally {
         console.error = originalError
       }
@@ -96,7 +96,7 @@ describe('runServerAction', () => {
 
       try {
         await expect(
-          runServerAction('unknownError', async () => {
+          executeModuleAction('unknownError', async () => {
             throw new Error('internal error details')
           })
         ).rejects.toThrow('操作失败，请重试。')
@@ -104,7 +104,7 @@ describe('runServerAction', () => {
         const logCall = mockConsoleError.mock.calls[0]
         const logData = logCall[1]
 
-        expect(logData.errorCode).toBe(ACTION_ERROR_CODES.UNKNOWN_ACTION_ERROR)
+        expect(logData.errorCode).toBe(MODULE_ACTION_ERROR_CODES.UNKNOWN_ACTION_ERROR)
         expect(logData.errorMessage).toBe('操作失败，请重试。')
         expect(logData.errorName).toBe('Error')
       } finally {

@@ -17,7 +17,7 @@ type NoteSummaryPromptItem = {
   createdAt: string
 }
 
-function buildNoteSummaryPromptInput(notes: AssetListItem[]): NoteSummaryPromptItem[] {
+export function buildNoteSummaryPromptInput(notes: AssetListItem[]): NoteSummaryPromptItem[] {
   return notes.slice(0, NOTE_SUMMARY_LIMIT).map((note) => ({
     id: note.id,
     text: note.originalText,
