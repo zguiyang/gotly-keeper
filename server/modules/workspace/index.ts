@@ -1,5 +1,11 @@
 import 'server-only'
 
+// [Phase C] Future imports - uncomment when new services are available
+// import { createNote, listNotes, type NoteListItem } from '@/server/services/notes'
+// import { createTodo, listTodos, setTodoCompletion, type TodoListItem } from '@/server/services/todos'
+// import { createBookmark, listBookmarks, type BookmarkListItem } from '@/server/services/bookmarks'
+
+// [Phase C] Legacy imports - to be replaced in Phase D
 import {
   createAsset,
   listAssets,
@@ -29,6 +35,10 @@ import type {
   WorkspaceAssetActionResult,
 } from '@/shared/assets/assets.types'
 
+// [Phase C] WorkspaceAssetItem - aggregation type for /workspace/all
+// Represents items from all three domains (notes, todos, bookmarks)
+export type WorkspaceAssetItem = AssetListItem
+
 export const WORKSPACE_MODULE_ERROR_CODES = {
   TODO_NOT_FOUND: 'TODO_NOT_FOUND',
 } as const
@@ -50,6 +60,11 @@ export async function createWorkspaceAsset(input: {
   userId: string
   text: string
 }): Promise<WorkspaceAssetActionResult> {
+  // [Phase C] TODO: Replace with domain-specific service calls
+  // - For notes: use notes.mutation.createNote()
+  // - For todos: use todos.mutation.createTodo()
+  // - For bookmarks: use bookmarks.mutation.createBookmark()
+  // Determine type from text parsing and call appropriate service
   const result = await createAsset({ userId: input.userId, text: input.text })
 
   if (result.kind === 'search') {
@@ -100,6 +115,7 @@ export async function setWorkspaceTodoCompletion(input: {
   assetId: string
   completed: boolean
 }): Promise<AssetListItem> {
+  // [Phase C] TODO: Replace with todos.mutation.setTodoCompletion()
   const updated = await setTodoCompletion({
     userId: input.userId,
     assetId: input.assetId,
@@ -123,6 +139,11 @@ export async function listWorkspaceAssets(input: {
   type?: AssetType
   limit?: number
 }): Promise<AssetListItem[]> {
+  // [Phase C] TODO: Replace with aggregation from three services
+  // - notes.query.listNotes() for type='note'
+  // - todos.query.listTodos() for type='todo'
+  // - bookmarks.query.listBookmarks() for type='link'
+  // - Aggregate all three for undefined type
   return listAssets(input)
 }
 
@@ -130,6 +151,7 @@ export async function listWorkspaceLinkAssets(
   userId: string,
   limit?: number
 ): Promise<AssetListItem[]> {
+  // [Phase C] TODO: Replace with bookmarks.query.listBookmarks()
   return listLinkAssets(userId, limit)
 }
 
@@ -137,6 +159,7 @@ export async function listWorkspaceNoteAssets(
   userId: string,
   limit?: number
 ): Promise<AssetListItem[]> {
+  // [Phase C] TODO: Replace with notes.query.listNotes()
   return listNoteAssets(userId, limit)
 }
 
@@ -144,6 +167,11 @@ export async function listWorkspaceRecentAssets(
   userId: string,
   limit?: number
 ): Promise<AssetListItem[]> {
+  // [Phase C] TODO: Replace with aggregation from three services
+  // - notes.query.listRecentNotes()
+  // - todos.query.listRecentTodos()
+  // - bookmarks.query.listRecentBookmarks()
+  // - Merge and sort by createdAt
   return listRecentAssets(userId, limit)
 }
 
@@ -151,6 +179,7 @@ export async function listWorkspaceTodoAssets(
   userId: string,
   limit?: number
 ): Promise<AssetListItem[]> {
+  // [Phase C] TODO: Replace with todos.query.listTodos()
   return listTodoAssets(userId, limit)
 }
 
