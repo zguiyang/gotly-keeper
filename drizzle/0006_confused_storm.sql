@@ -1,1 +1,1 @@
-ALTER TABLE "assets" ADD COLUMN "bookmark_meta" jsonb;
+ALTER TABLE "assets" ADD COLUMN IF NOT EXISTS "bookmark_meta" jsonb;

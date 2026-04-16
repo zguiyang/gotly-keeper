@@ -1,13 +1,29 @@
 import 'server-only'
 
 import { type Asset } from '@/server/lib/db/schema'
+import { type BookmarkMeta } from '@/shared/assets/bookmark-meta.types'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 
-export function toAssetListItem(asset: Asset): AssetListItem {
-  const bookmarkTitle = asset.type === 'link' ? asset.bookmarkMeta?.title : null
+type AssetListRow = Pick<
+  Asset,
+  | 'id'
+  | 'originalText'
+  | 'type'
+  | 'url'
+  | 'timeText'
+  | 'dueAt'
+  | 'completedAt'
+  | 'createdAt'
+> & {
+  bookmarkMeta?: BookmarkMeta | null
+}
+
+export function toAssetListItem(asset: AssetListRow): AssetListItem {
+  const bookmarkMeta = asset.bookmarkMeta ?? null
+  const bookmarkTitle = asset.type === 'link' ? bookmarkMeta?.title : null
   const bookmarkExcerpt =
     asset.type === 'link'
-      ? (asset.bookmarkMeta?.description ?? asset.bookmarkMeta?.contentSummary)
+      ? (bookmarkMeta?.description ?? bookmarkMeta?.contentSummary)
       : null
 
   return {
@@ -20,7 +36,7 @@ export function toAssetListItem(asset: Asset): AssetListItem {
     timeText: asset.timeText,
     dueAt: asset.dueAt,
     completed: asset.completedAt !== null,
-    bookmarkMeta: asset.bookmarkMeta ?? null,
+    bookmarkMeta,
     createdAt: asset.createdAt,
   }
 }

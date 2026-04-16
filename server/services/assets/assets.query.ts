@@ -19,6 +19,27 @@ type ListAssetsOptions = {
   limit?: number
 }
 
+const ASSET_LEGACY_SELECT_COLUMNS = {
+  id: assets.id,
+  userId: assets.userId,
+  originalText: assets.originalText,
+  type: assets.type,
+  url: assets.url,
+  timeText: assets.timeText,
+  dueAt: assets.dueAt,
+  completedAt: assets.completedAt,
+  createdAt: assets.createdAt,
+  updatedAt: assets.updatedAt,
+}
+
+function isMissingBookmarkMetaColumnError(error: unknown) {
+  const errorWithCause = error as { cause?: { code?: string; message?: string } } | null
+  return (
+    errorWithCause?.cause?.code === '42703' &&
+    errorWithCause?.cause?.message?.includes('bookmark_meta') === true
+  )
+}
+
 function clampAssetListLimit(limit = ASSET_LIST_LIMIT_DEFAULT) {
   return Math.min(Math.max(ASSET_LIST_LIMIT_MIN, limit), ASSET_LIST_LIMIT_MAX)
 }
@@ -32,12 +53,26 @@ export async function listAssets({
     ? and(eq(assets.userId, userId), eq(assets.type, type))
     : eq(assets.userId, userId)
 
-  const rows = await db
-    .select()
-    .from(assets)
-    .where(conditions)
-    .orderBy(desc(assets.createdAt))
-    .limit(clampAssetListLimit(limit))
+  const clampedLimit = clampAssetListLimit(limit)
+  let rows: Parameters<typeof toAssetListItem>[0][]
+  try {
+    rows = await db
+      .select()
+      .from(assets)
+      .where(conditions)
+      .orderBy(desc(assets.createdAt))
+      .limit(clampedLimit)
+  } catch (error) {
+    if (!isMissingBookmarkMetaColumnError(error)) {
+      throw error
+    }
+    rows = await db
+      .select(ASSET_LEGACY_SELECT_COLUMNS)
+      .from(assets)
+      .where(conditions)
+      .orderBy(desc(assets.createdAt))
+      .limit(clampedLimit)
+  }
 
   return rows.map(toAssetListItem)
 }
@@ -58,18 +93,31 @@ export async function listIncompleteTodoAssets(
   userId: string,
   limit = 10
 ): Promise<AssetListItem[]> {
-  const rows = await db
-    .select()
-    .from(assets)
-    .where(
-      and(
-        eq(assets.userId, userId),
-        eq(assets.type, 'todo'),
-        sql`${assets.completedAt} is null`
-      )
-    )
-    .orderBy(sql`${assets.dueAt} asc nulls last`, desc(assets.createdAt))
-    .limit(clampAssetListLimit(limit))
+  const conditions = and(
+    eq(assets.userId, userId),
+    eq(assets.type, 'todo'),
+    sql`${assets.completedAt} is null`
+  )
+  const clampedLimit = clampAssetListLimit(limit)
+  let rows: Parameters<typeof toAssetListItem>[0][]
+  try {
+    rows = await db
+      .select()
+      .from(assets)
+      .where(conditions)
+      .orderBy(sql`${assets.dueAt} asc nulls last`, desc(assets.createdAt))
+      .limit(clampedLimit)
+  } catch (error) {
+    if (!isMissingBookmarkMetaColumnError(error)) {
+      throw error
+    }
+    rows = await db
+      .select(ASSET_LEGACY_SELECT_COLUMNS)
+      .from(assets)
+      .where(conditions)
+      .orderBy(sql`${assets.dueAt} asc nulls last`, desc(assets.createdAt))
+      .limit(clampedLimit)
+  }
 
   return rows.map(toAssetListItem)
 }
@@ -77,12 +125,25 @@ export async function listIncompleteTodoAssets(
 export async function listRecentAssets(userId: string, limit = ASSET_RECENT_LIMIT_DEFAULT): Promise<AssetListItem[]> {
   const clampedLimit = Math.min(Math.max(ASSET_LIST_LIMIT_MIN, limit), ASSET_RECENT_LIMIT_MAX)
 
-  const rows = await db
-    .select()
-    .from(assets)
-    .where(eq(assets.userId, userId))
-    .orderBy(desc(assets.createdAt))
-    .limit(clampedLimit)
+  let rows: Parameters<typeof toAssetListItem>[0][]
+  try {
+    rows = await db
+      .select()
+      .from(assets)
+      .where(eq(assets.userId, userId))
+      .orderBy(desc(assets.createdAt))
+      .limit(clampedLimit)
+  } catch (error) {
+    if (!isMissingBookmarkMetaColumnError(error)) {
+      throw error
+    }
+    rows = await db
+      .select(ASSET_LEGACY_SELECT_COLUMNS)
+      .from(assets)
+      .where(eq(assets.userId, userId))
+      .orderBy(desc(assets.createdAt))
+      .limit(clampedLimit)
+  }
 
   return rows.map(toAssetListItem)
 }
