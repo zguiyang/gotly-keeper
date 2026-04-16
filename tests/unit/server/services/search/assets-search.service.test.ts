@@ -28,6 +28,7 @@ const makeSemanticAsset = (overrides: Partial<Asset> = {}): SemanticCandidate =>
     timeText: null,
     dueAt: null,
     completedAt: null,
+    bookmarkMeta: null,
     createdAt: now,
     updatedAt: now,
     ...overrides,
@@ -45,6 +46,7 @@ const makeAsset = (overrides: Partial<AssetListItem> = {}): AssetListItem => ({
   timeText: null,
   dueAt: null,
   completed: false,
+  bookmarkMeta: null,
   createdAt: new Date('2026-04-15T10:00:00.000Z'),
   ...overrides,
 })

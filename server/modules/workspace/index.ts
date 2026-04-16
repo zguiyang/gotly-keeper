@@ -14,6 +14,10 @@ import { searchAssets } from '@/server/services/search'
 import { ASSET_SEARCH_LIMIT_DEFAULT } from '../../lib/config/constants'
 
 import { summarizeWorkspaceRecentBookmarksInternal } from './bookmarks.summary'
+import {
+  buildPendingBookmarkMetaForResponse,
+  scheduleBookmarkEnrichTask,
+} from './bookmark-enrich.module'
 import { summarizeWorkspaceRecentNotesInternal } from './notes.summary'
 import { reviewWorkspaceUnfinishedTodosInternal } from './todos.review'
 
@@ -76,6 +80,16 @@ export async function createWorkspaceAsset(input: {
     }
     const summary = await summarizeWorkspaceRecentBookmarksInternal(input.userId)
     return { kind: 'bookmark-summary', summary }
+  }
+
+  if (result.kind === 'created' && result.asset.type === 'link' && result.asset.url) {
+    result.asset.bookmarkMeta = buildPendingBookmarkMetaForResponse()
+
+    void scheduleBookmarkEnrichTask({
+      bookmarkId: result.asset.id,
+      userId: input.userId,
+      url: result.asset.url,
+    })
   }
 
   return { kind: 'created', asset: result.asset }
