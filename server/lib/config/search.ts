@@ -16,6 +16,15 @@ export const ASSET_SEARCH_LIMIT_MAX = 20
 export const ASSET_RECENT_LIMIT_DEFAULT = 6
 export const ASSET_RECENT_LIMIT_MAX = 20
 
+export const NOTE_LIST_LIMIT_DEFAULT = 50
+export const NOTE_LIST_LIMIT_MAX = 100
+
+export const TODO_LIST_LIMIT_DEFAULT = 50
+export const TODO_LIST_LIMIT_MAX = 100
+
+export const BOOKMARK_LIST_LIMIT_DEFAULT = 50
+export const BOOKMARK_LIST_LIMIT_MAX = 100
+
 export const SEMANTIC_BASE_SCORE = 10
 export const SEMANTIC_DISTANCE_PENALTY = 10
 
