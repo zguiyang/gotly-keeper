@@ -4,7 +4,7 @@ import { setWorkspaceTodoCompletion, WorkspaceModuleError, WORKSPACE_MODULE_ERRO
 
 const setTodoCompletionMock = vi.hoisted(() => vi.fn())
 
-vi.mock('@/server/services/assets/assets.service', () => ({
+vi.mock('@/server/services/todos', () => ({
   setTodoCompletion: setTodoCompletionMock,
 }))
 
@@ -24,6 +24,7 @@ describe('setWorkspaceTodoCompletion', () => {
       timeText: null,
       dueAt: null,
       completed: true,
+      bookmarkMeta: null,
       createdAt: new Date(),
     }
     setTodoCompletionMock.mockResolvedValue(mockAsset)
@@ -37,7 +38,7 @@ describe('setWorkspaceTodoCompletion', () => {
     expect(result).toEqual(mockAsset)
     expect(setTodoCompletionMock).toHaveBeenCalledWith({
       userId: 'user_123',
-      assetId: 'asset_1',
+      todoId: 'asset_1',
       completed: true,
     })
   })
