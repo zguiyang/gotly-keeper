@@ -23,24 +23,28 @@ import {
 export function useWorkspaceSubmit() {
   const [state, setState] = useState<WorkspaceActionState>(createInitialWorkspaceActionState)
 
-  const submit = useCallback(
-    async (input: unknown): Promise<WorkspaceAssetActionResult | null> => {
+  const runAction = useCallback(
+    async ({
+      action,
+      toast,
+      fallbackError,
+    }: {
+      action: () => Promise<WorkspaceAssetActionResult>
+      toast: {
+        loading: string
+        success: string
+        error: string
+      }
+      fallbackError: string
+    }): Promise<WorkspaceAssetActionResult | null> => {
       setState((prev) => toSubmitting(prev))
 
       try {
-        const result = await callAction<WorkspaceAssetActionResult>(
-          () => createWorkspaceAsset(input),
-          {
-            loading: '正在处理...',
-            success: '处理成功',
-            error: '处理失败，请重试',
-          }
-        )
-
+        const result = await callAction<WorkspaceAssetActionResult>(action, toast)
         setState((prev) => applyWorkspaceActionResult(prev, result))
         return result
       } catch (error) {
-        const message = error instanceof Error ? error.message : '处理失败，请重试。'
+        const message = error instanceof Error ? error.message : fallbackError
         setState((prev) => toError(prev, message))
         return null
       }
@@ -48,65 +52,55 @@ export function useWorkspaceSubmit() {
     []
   )
 
+  const submit = useCallback(
+    (input: unknown): Promise<WorkspaceAssetActionResult | null> =>
+      runAction({
+        action: () => createWorkspaceAsset(input),
+        toast: {
+          loading: '正在处理...',
+          success: '处理成功',
+          error: '处理失败，请重试',
+        },
+        fallbackError: '处理失败，请重试。',
+      }),
+    [runAction]
+  )
+
   const reviewTodos = useCallback(async () => {
-    setState((prev) => toSubmitting(prev))
-
-    try {
-      const result = await callAction<WorkspaceAssetActionResult>(
-        () => reviewUnfinishedTodos(),
-        {
-          loading: '正在复盘待办...',
-          success: '复盘完成',
-          error: '复盘失败，请重试',
-        }
-      )
-
-      setState((prev) => applyWorkspaceActionResult(prev, result))
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '复盘失败，请重试。'
-      setState((prev) => toError(prev, message))
-    }
-  }, [])
+    await runAction({
+      action: () => reviewUnfinishedTodos(),
+      toast: {
+        loading: '正在复盘待办...',
+        success: '复盘完成',
+        error: '复盘失败，请重试',
+      },
+      fallbackError: '复盘失败，请重试。',
+    })
+  }, [runAction])
 
   const summarizeNotes = useCallback(async () => {
-    setState((prev) => toSubmitting(prev))
-
-    try {
-      const result = await callAction<WorkspaceAssetActionResult>(
-        () => summarizeRecentNotes(),
-        {
-          loading: '正在生成笔记摘要...',
-          success: '摘要生成成功',
-          error: '摘要生成失败，请重试',
-        }
-      )
-
-      setState((prev) => applyWorkspaceActionResult(prev, result))
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '摘要生成失败，请重试。'
-      setState((prev) => toError(prev, message))
-    }
-  }, [])
+    await runAction({
+      action: () => summarizeRecentNotes(),
+      toast: {
+        loading: '正在生成笔记摘要...',
+        success: '摘要生成成功',
+        error: '摘要生成失败，请重试',
+      },
+      fallbackError: '摘要生成失败，请重试。',
+    })
+  }, [runAction])
 
   const summarizeBookmarks = useCallback(async () => {
-    setState((prev) => toSubmitting(prev))
-
-    try {
-      const result = await callAction<WorkspaceAssetActionResult>(
-        () => summarizeRecentBookmarks(),
-        {
-          loading: '正在生成书签摘要...',
-          success: '书签摘要生成成功',
-          error: '书签摘要生成失败，请重试',
-        }
-      )
-
-      setState((prev) => applyWorkspaceActionResult(prev, result))
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '书签摘要生成失败，请重试。'
-      setState((prev) => toError(prev, message))
-    }
-  }, [])
+    await runAction({
+      action: () => summarizeRecentBookmarks(),
+      toast: {
+        loading: '正在生成书签摘要...',
+        success: '书签摘要生成成功',
+        error: '书签摘要生成失败，请重试',
+      },
+      fallbackError: '书签摘要生成失败，请重试。',
+    })
+  }, [runAction])
 
   const clearPanels = useCallback(() => {
     setState((prev) => clearWorkspaceResultPanels(prev))
