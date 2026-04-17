@@ -7,8 +7,8 @@ import { renderPrompt } from '@/server/lib/prompt-template'
 import { listBookmarks } from '@/server/services/bookmarks'
 import { nowIso, dayjs } from '@/shared/time/dayjs'
 
-import { getAiProvider } from '../../lib/ai/ai-provider'
-import { BOOKMARK_SUMMARY_LIMIT, BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
+import { getAiProvider } from '@/server/lib/ai'
+import { BOOKMARK_SUMMARY_LIMIT, BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS } from '@/server/lib/config/ai'
 
 import type { AssetListItem, BookmarkSummaryResult, BookmarkSummarySource } from '@/shared/assets/assets.types'
 import type { BookmarkListItem } from '@/server/services/bookmarks'

@@ -1,6 +1,5 @@
 import 'server-only'
 
-import type { BookmarkMeta } from '@/shared/assets/bookmark-meta.types'
 import type { Bookmark } from './bookmarks.schema'
 import type { BookmarkListItem } from './bookmarks.types'
 
