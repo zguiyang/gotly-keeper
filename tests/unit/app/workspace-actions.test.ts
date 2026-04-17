@@ -34,8 +34,8 @@ const {
     constructor(publicMessage: string, code = 'TODO_NOT_FOUND') {
       super(publicMessage)
       this.name = 'WorkspaceModuleError'
-      ;(this as { publicMessage: string }).publicMessage = publicMessage
-      ;(this as { code: string }).code = code
+      ;(this as unknown as { publicMessage: string }).publicMessage = publicMessage
+      ;(this as unknown as { code: string }).code = code
     }
   },
   WORKSPACE_MODULE_ERROR_CODES_MOCK: {
