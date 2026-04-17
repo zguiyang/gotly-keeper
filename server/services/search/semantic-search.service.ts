@@ -1,35 +1,164 @@
 import 'server-only'
 
-import { and, desc, eq, isNull, sql } from 'drizzle-orm'
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
+import { and, eq, isNull, sql } from 'drizzle-orm'
 import { cosineDistance } from 'drizzle-orm/sql/functions'
 
 import {
+  ASSET_EMBEDDING_CANDIDATE_LIMIT_MAX,
   ASSET_EMBEDDING_CANDIDATE_MULTIPLIER,
   ASSET_EMBEDDING_MAX_COSINE_DISTANCE,
   ASSET_EMBEDDING_TIMEOUT_MS,
-  ASSET_EMBEDDING_CANDIDATE_LIMIT_MAX,
   ASSET_LIST_LIMIT_MIN,
   ASSET_SEARCH_LIMIT_DEFAULT,
   ASSET_SEARCH_LIMIT_MAX,
 } from '@/server/lib/config/constants'
 import { db } from '@/server/lib/db'
 import {
-  assetEmbeddings,
-  assets,
-  type Asset,
+  ASSET_EMBEDDING_DIMENSIONS,
+  bookmarkEmbeddings,
+  bookmarks,
+  noteEmbeddings,
+  notes,
+  todoEmbeddings,
+  todos,
 } from '@/server/lib/db/schema'
-import { createAssetEmbeddingBestEffort } from '@/server/services/assets/assets.embedding'
-import { ASSET_EMBEDDING_DIMENSIONS } from '@/server/services/assets/assets.embedding-config'
-import { getAssetEmbeddingModel } from '@/server/services/assets/assets.embedding-provider'
+import { serverEnv } from '@/server/lib/env'
+import { now } from '@/shared/time/dayjs'
 
-import type { SemanticCandidate } from './search.types'
+import type { AssetType, SemanticCandidate } from './search.types'
+import type { AssetListItem } from '@/shared/assets/assets.types'
+
 
 type SemanticSearchOptions = {
   userId: string
   query: string
-  typeHint?: Asset['type'] | null
+  typeHint?: AssetType | null
   completionHint?: 'complete' | 'incomplete' | null
   limit?: number
+}
+
+type EmbeddableAsset = {
+  id: string
+  type: AssetType
+  originalText: string
+  url: string | null
+  timeText: string | null
+}
+
+function getAssetEmbeddingModel() {
+  const { apiKey, url, embeddingModelName, embeddingDimensions } = serverEnv.aiGateway
+  if (!apiKey || !url || !embeddingModelName || !embeddingDimensions) return null
+
+  if (embeddingDimensions !== ASSET_EMBEDDING_DIMENSIONS) {
+    console.warn(
+      `[assets.embedding] AI_EMBEDDING_DIMENSIONS=${embeddingDimensions} does not match schema dimension ${ASSET_EMBEDDING_DIMENSIONS}`
+    )
+    return null
+  }
+
+  return createOpenAICompatible({
+    name: 'dashscope',
+    apiKey,
+    baseURL: url,
+  }).embeddingModel(embeddingModelName)
+}
+
+function getAssetEmbeddingText(asset: EmbeddableAsset) {
+  return [asset.originalText, asset.url, asset.timeText].filter(Boolean).join('\n')
+}
+
+async function embedText(value: string) {
+  const model = getAssetEmbeddingModel()
+  if (!model || !value.trim()) return null
+
+  const { embed } = await import('ai')
+  const { embedding } = await embed({
+    model,
+    value,
+    maxRetries: 1,
+    abortSignal: AbortSignal.timeout(ASSET_EMBEDDING_TIMEOUT_MS),
+    providerOptions: {
+      openaiCompatible: {
+        dimensions: ASSET_EMBEDDING_DIMENSIONS,
+      },
+    },
+  })
+
+  return { modelId: model.modelId, embedding }
+}
+
+async function createEmbeddingBestEffort(asset: EmbeddableAsset) {
+  try {
+    const value = getAssetEmbeddingText(asset)
+    const embedded = await embedText(value)
+    if (!embedded) return null
+
+    const row = {
+      id: crypto.randomUUID(),
+      embedding: embedded.embedding,
+      embeddedText: value,
+      modelName: embedded.modelId,
+      dimensions: ASSET_EMBEDDING_DIMENSIONS,
+      updatedAt: now(),
+    }
+
+    if (asset.type === 'note') {
+      const [created] = await db
+        .insert(noteEmbeddings)
+        .values({ ...row, noteId: asset.id })
+        .onConflictDoUpdate({
+          target: [noteEmbeddings.noteId, noteEmbeddings.modelName, noteEmbeddings.dimensions],
+          set: {
+            embedding: row.embedding,
+            embeddedText: row.embeddedText,
+            updatedAt: row.updatedAt,
+          },
+        })
+        .returning()
+      return created
+    }
+
+    if (asset.type === 'todo') {
+      const [created] = await db
+        .insert(todoEmbeddings)
+        .values({ ...row, todoId: asset.id })
+        .onConflictDoUpdate({
+          target: [todoEmbeddings.todoId, todoEmbeddings.modelName, todoEmbeddings.dimensions],
+          set: {
+            embedding: row.embedding,
+            embeddedText: row.embeddedText,
+            updatedAt: row.updatedAt,
+          },
+        })
+        .returning()
+      return created
+    }
+
+    const [created] = await db
+      .insert(bookmarkEmbeddings)
+      .values({ ...row, bookmarkId: asset.id })
+      .onConflictDoUpdate({
+        target: [
+          bookmarkEmbeddings.bookmarkId,
+          bookmarkEmbeddings.modelName,
+          bookmarkEmbeddings.dimensions,
+        ],
+        set: {
+          embedding: row.embedding,
+          embeddedText: row.embeddedText,
+          updatedAt: row.updatedAt,
+        },
+      })
+      .returning()
+    return created
+  } catch (error) {
+    console.warn('[assets.embedding] Failed to embed asset', {
+      assetId: asset.id,
+      error: error instanceof Error ? error.message : String(error),
+    })
+    return null
+  }
 }
 
 export async function backfillMissingAssetEmbeddings(limit = 50) {
@@ -38,31 +167,156 @@ export async function backfillMissingAssetEmbeddings(limit = 50) {
     return { attempted: 0, embedded: 0, failed: 0, skipped: true }
   }
 
-  const rows = await db
-    .select({ asset: assets })
-    .from(assets)
-    .leftJoin(
-      assetEmbeddings,
-      and(
-        eq(assetEmbeddings.assetId, assets.id),
-        eq(assetEmbeddings.modelName, model.modelId),
-        eq(assetEmbeddings.dimensions, ASSET_EMBEDDING_DIMENSIONS)
+  const clampedLimit = Math.min(Math.max(limit, 1), 100)
+
+  const [missingNotes, missingTodos, missingBookmarks] = await Promise.all([
+    db
+      .select({
+        id: notes.id,
+        originalText: notes.originalText,
+      })
+      .from(notes)
+      .leftJoin(
+        noteEmbeddings,
+        and(
+          eq(noteEmbeddings.noteId, notes.id),
+          eq(noteEmbeddings.modelName, model.modelId),
+          eq(noteEmbeddings.dimensions, ASSET_EMBEDDING_DIMENSIONS)
+        )
       )
-    )
-    .where(isNull(assetEmbeddings.id))
-    .orderBy(desc(assets.createdAt))
-    .limit(Math.min(Math.max(limit, 1), 100))
+      .where(isNull(noteEmbeddings.id))
+      .limit(clampedLimit),
+    db
+      .select({
+        id: todos.id,
+        originalText: todos.originalText,
+        timeText: todos.timeText,
+      })
+      .from(todos)
+      .leftJoin(
+        todoEmbeddings,
+        and(
+          eq(todoEmbeddings.todoId, todos.id),
+          eq(todoEmbeddings.modelName, model.modelId),
+          eq(todoEmbeddings.dimensions, ASSET_EMBEDDING_DIMENSIONS)
+        )
+      )
+      .where(isNull(todoEmbeddings.id))
+      .limit(clampedLimit),
+    db
+      .select({
+        id: bookmarks.id,
+        originalText: bookmarks.originalText,
+        url: bookmarks.url,
+      })
+      .from(bookmarks)
+      .leftJoin(
+        bookmarkEmbeddings,
+        and(
+          eq(bookmarkEmbeddings.bookmarkId, bookmarks.id),
+          eq(bookmarkEmbeddings.modelName, model.modelId),
+          eq(bookmarkEmbeddings.dimensions, ASSET_EMBEDDING_DIMENSIONS)
+        )
+      )
+      .where(isNull(bookmarkEmbeddings.id))
+      .limit(clampedLimit),
+  ])
+
+  const candidates: EmbeddableAsset[] = [
+    ...missingNotes.map((note) => ({
+      id: note.id,
+      type: 'note' as const,
+      originalText: note.originalText,
+      url: null,
+      timeText: null,
+    })),
+    ...missingTodos.map((todo) => ({
+      id: todo.id,
+      type: 'todo' as const,
+      originalText: todo.originalText,
+      url: null,
+      timeText: todo.timeText,
+    })),
+    ...missingBookmarks.map((bookmark) => ({
+      id: bookmark.id,
+      type: 'link' as const,
+      originalText: bookmark.originalText,
+      url: bookmark.url ?? null,
+      timeText: null,
+    })),
+  ].slice(0, clampedLimit)
 
   let embedded = 0
   let failed = 0
-
-  for (const row of rows) {
-    const result = await createAssetEmbeddingBestEffort(row.asset)
+  for (const asset of candidates) {
+    const result = await createEmbeddingBestEffort(asset)
     if (result) embedded += 1
     else failed += 1
   }
 
-  return { attempted: rows.length, embedded, failed, skipped: false }
+  return { attempted: candidates.length, embedded, failed, skipped: false }
+}
+
+function toNoteAssetItem(row: { id: string; originalText: string; createdAt: Date }): AssetListItem {
+  return {
+    id: row.id,
+    originalText: row.originalText,
+    title: row.originalText.slice(0, 32),
+    excerpt: row.originalText,
+    type: 'note',
+    url: null,
+    timeText: null,
+    dueAt: null,
+    completed: false,
+    createdAt: row.createdAt,
+  }
+}
+
+function toTodoAssetItem(row: {
+  id: string
+  originalText: string
+  timeText: string | null
+  dueAt: Date | null
+  completedAt: Date | null
+  createdAt: Date
+}): AssetListItem {
+  return {
+    id: row.id,
+    originalText: row.originalText,
+    title: row.originalText.slice(0, 32),
+    excerpt: row.originalText,
+    type: 'todo',
+    url: null,
+    timeText: row.timeText,
+    dueAt: row.dueAt,
+    completed: row.completedAt !== null,
+    createdAt: row.createdAt,
+  }
+}
+
+function toBookmarkAssetItem(row: {
+  id: string
+  originalText: string
+  url: string | null
+  bookmarkMeta: typeof bookmarks.$inferSelect['bookmarkMeta']
+  createdAt: Date
+}): AssetListItem {
+  return {
+    id: row.id,
+    originalText: row.originalText,
+    title: row.bookmarkMeta?.title ?? row.originalText.slice(0, 32),
+    excerpt:
+      row.bookmarkMeta?.description ??
+      row.bookmarkMeta?.contentSummary ??
+      row.originalText,
+    type: 'link',
+    url: row.url ?? null,
+    timeText: null,
+    dueAt: null,
+    completed: false,
+    bookmarkMeta: row.bookmarkMeta ?? null,
+    createdAt: row.createdAt,
+  }
 }
 
 export async function searchByEmbedding({
@@ -74,40 +328,10 @@ export async function searchByEmbedding({
 }: SemanticSearchOptions): Promise<SemanticCandidate[]> {
   const model = getAssetEmbeddingModel()
   const trimmed = query.trim()
-
   if (!model || !trimmed) return []
 
-  const { embed } = await import('ai')
-  const { embedding } = await embed({
-    model,
-    value: trimmed,
-    maxRetries: 1,
-    abortSignal: AbortSignal.timeout(ASSET_EMBEDDING_TIMEOUT_MS),
-    providerOptions: {
-      openaiCompatible: {
-        dimensions: ASSET_EMBEDDING_DIMENSIONS,
-      },
-    },
-  })
-
-  const distance = cosineDistance(assetEmbeddings.embedding, embedding)
-  const conditions = [
-    eq(assets.userId, userId),
-    eq(assetEmbeddings.modelName, model.modelId),
-    eq(assetEmbeddings.dimensions, ASSET_EMBEDDING_DIMENSIONS),
-  ]
-
-  if (typeHint) {
-    conditions.push(eq(assets.type, typeHint))
-  }
-
-  if (completionHint === 'complete') {
-    conditions.push(sql`${assets.completedAt} is not null`)
-  }
-
-  if (completionHint === 'incomplete') {
-    conditions.push(sql`${assets.completedAt} is null`)
-  }
+  const embedded = await embedText(trimmed)
+  if (!embedded) return []
 
   const clampedLimit = Math.min(Math.max(limit, ASSET_LIST_LIMIT_MIN), ASSET_SEARCH_LIMIT_MAX)
   const candidateLimit = Math.min(
@@ -115,22 +339,116 @@ export async function searchByEmbedding({
     ASSET_EMBEDDING_CANDIDATE_LIMIT_MAX
   )
 
-  const rows = await db
-    .select({
-      asset: assets,
-      distance,
-    })
-    .from(assetEmbeddings)
-    .innerJoin(assets, eq(assetEmbeddings.assetId, assets.id))
-    .where(and(...conditions))
-    .orderBy(distance)
-    .limit(candidateLimit)
+  const includeNotes = (!typeHint || typeHint === 'note') && completionHint !== 'complete'
+  const includeBookmarks = (!typeHint || typeHint === 'link') && completionHint !== 'complete'
+  const includeTodos = !typeHint || typeHint === 'todo'
 
-  return rows
-    .map((row) => ({
-      asset: row.asset,
-      distance: Number(row.distance),
-    }))
+  const tasks: Array<Promise<SemanticCandidate[]>> = []
+
+  if (includeNotes) {
+    const distance = cosineDistance(noteEmbeddings.embedding, embedded.embedding)
+    tasks.push(
+      db
+        .select({
+          id: notes.id,
+          originalText: notes.originalText,
+          createdAt: notes.createdAt,
+          distance,
+        })
+        .from(noteEmbeddings)
+        .innerJoin(notes, eq(noteEmbeddings.noteId, notes.id))
+        .where(
+          and(
+            eq(notes.userId, userId),
+            eq(noteEmbeddings.modelName, model.modelId),
+            eq(noteEmbeddings.dimensions, ASSET_EMBEDDING_DIMENSIONS)
+          )
+        )
+        .orderBy(distance)
+        .limit(candidateLimit)
+        .then((rows) =>
+          rows.map((row) => ({
+            asset: toNoteAssetItem(row),
+            distance: Number(row.distance),
+          }))
+        )
+    )
+  }
+
+  if (includeBookmarks) {
+    const distance = cosineDistance(bookmarkEmbeddings.embedding, embedded.embedding)
+    tasks.push(
+      db
+        .select({
+          id: bookmarks.id,
+          originalText: bookmarks.originalText,
+          url: bookmarks.url,
+          bookmarkMeta: bookmarks.bookmarkMeta,
+          createdAt: bookmarks.createdAt,
+          distance,
+        })
+        .from(bookmarkEmbeddings)
+        .innerJoin(bookmarks, eq(bookmarkEmbeddings.bookmarkId, bookmarks.id))
+        .where(
+          and(
+            eq(bookmarks.userId, userId),
+            eq(bookmarkEmbeddings.modelName, model.modelId),
+            eq(bookmarkEmbeddings.dimensions, ASSET_EMBEDDING_DIMENSIONS)
+          )
+        )
+        .orderBy(distance)
+        .limit(candidateLimit)
+        .then((rows) =>
+          rows.map((row) => ({
+            asset: toBookmarkAssetItem(row),
+            distance: Number(row.distance),
+          }))
+        )
+    )
+  }
+
+  if (includeTodos) {
+    const distance = cosineDistance(todoEmbeddings.embedding, embedded.embedding)
+    const conditions = [
+      eq(todos.userId, userId),
+      eq(todoEmbeddings.modelName, model.modelId),
+      eq(todoEmbeddings.dimensions, ASSET_EMBEDDING_DIMENSIONS),
+    ]
+    if (completionHint === 'complete') {
+      conditions.push(sql`${todos.completedAt} is not null`)
+    }
+    if (completionHint === 'incomplete') {
+      conditions.push(sql`${todos.completedAt} is null`)
+    }
+
+    tasks.push(
+      db
+        .select({
+          id: todos.id,
+          originalText: todos.originalText,
+          timeText: todos.timeText,
+          dueAt: todos.dueAt,
+          completedAt: todos.completedAt,
+          createdAt: todos.createdAt,
+          distance,
+        })
+        .from(todoEmbeddings)
+        .innerJoin(todos, eq(todoEmbeddings.todoId, todos.id))
+        .where(and(...conditions))
+        .orderBy(distance)
+        .limit(candidateLimit)
+        .then((rows) =>
+          rows.map((row) => ({
+            asset: toTodoAssetItem(row),
+            distance: Number(row.distance),
+          }))
+        )
+    )
+  }
+
+  return (await Promise.all(tasks))
+    .flat()
+    .sort((a, b) => a.distance - b.distance)
     .filter((row) => row.distance <= ASSET_EMBEDDING_MAX_COSINE_DISTANCE)
     .slice(0, clampedLimit)
 }

@@ -7,11 +7,13 @@ import {
   ASSET_LIST_LIMIT_MAX,
 } from '@/server/lib/config/constants'
 import { db } from '@/server/lib/db'
-import { assets, type Asset } from '@/server/lib/db/schema'
+import { bookmarks, notes, todos } from '@/server/lib/db/schema'
+
 
 import { scoreAssetForQuery } from './search.query-parser'
 
 import type { KeywordCandidate, SearchAssetsOptions } from './search.types'
+import type { AssetListItem } from '@/shared/assets/assets.types'
 
 type KeywordSearchOptions = Omit<SearchAssetsOptions, 'query' | 'timeHint'> & {
   terms: string[]
@@ -26,55 +28,121 @@ export async function searchByKeyword({
   timeRangeHint,
   limit = 100,
 }: KeywordSearchOptions): Promise<KeywordCandidate[]> {
-  const conditions: SQL[] = [eq(assets.userId, userId)]
+  const clampedLimit = Math.min(Math.max(limit, ASSET_LIST_LIMIT_MIN), ASSET_LIST_LIMIT_MAX)
+  const includeNotes = (!typeHint || typeHint === 'note') && completionHint !== 'complete'
+  const includeBookmarks = (!typeHint || typeHint === 'link') && completionHint !== 'complete'
+  const includeTodos = !typeHint || typeHint === 'todo'
 
-  if (typeHint) {
-    conditions.push(eq(assets.type, typeHint))
+  const tasks: Array<Promise<AssetListItem[]>> = []
+
+  if (includeNotes) {
+    tasks.push(
+      db
+        .select()
+        .from(notes)
+        .where(eq(notes.userId, userId))
+        .orderBy(desc(notes.createdAt))
+        .limit(clampedLimit)
+        .then((rows) =>
+          rows.map((note) => ({
+            id: note.id,
+            originalText: note.originalText,
+            title: note.originalText.slice(0, 32),
+            excerpt: note.originalText,
+            type: 'note',
+            url: null,
+            timeText: null,
+            dueAt: null,
+            completed: false,
+            createdAt: note.createdAt,
+          }))
+        )
+    )
   }
 
-  if (completionHint === 'complete') {
-    conditions.push(sql`${assets.completedAt} is not null`)
+  if (includeBookmarks) {
+    tasks.push(
+      db
+        .select()
+        .from(bookmarks)
+        .where(eq(bookmarks.userId, userId))
+        .orderBy(desc(bookmarks.createdAt))
+        .limit(clampedLimit)
+        .then((rows) =>
+          rows.map((bookmark) => ({
+            id: bookmark.id,
+            originalText: bookmark.originalText,
+            title: bookmark.bookmarkMeta?.title ?? bookmark.originalText.slice(0, 32),
+            excerpt:
+              bookmark.bookmarkMeta?.description ??
+              bookmark.bookmarkMeta?.contentSummary ??
+              bookmark.originalText,
+            type: 'link',
+            url: bookmark.url ?? null,
+            timeText: null,
+            dueAt: null,
+            completed: false,
+            bookmarkMeta: bookmark.bookmarkMeta ?? null,
+            createdAt: bookmark.createdAt,
+          }))
+        )
+    )
   }
 
-  if (completionHint === 'incomplete') {
-    conditions.push(sql`${assets.completedAt} is null`)
+  if (includeTodos) {
+    const todoConditions: SQL[] = [eq(todos.userId, userId)]
+
+    if (completionHint === 'complete') {
+      todoConditions.push(sql`${todos.completedAt} is not null`)
+    }
+
+    if (completionHint === 'incomplete') {
+      todoConditions.push(sql`${todos.completedAt} is null`)
+    }
+
+    if (timeRangeHint && typeHint === 'todo') {
+      const { startsAt, endsAt } = timeRangeHint
+      todoConditions.push(
+        and(
+          sql`${todos.dueAt} >= ${startsAt}`,
+          sql`${todos.dueAt} < ${endsAt}`
+        ) as SQL
+      )
+    }
+
+    tasks.push(
+      db
+        .select()
+        .from(todos)
+        .where(and(...todoConditions))
+        .orderBy(desc(todos.createdAt))
+        .limit(clampedLimit)
+        .then((rows) =>
+          rows.map((todo) => ({
+            id: todo.id,
+            originalText: todo.originalText,
+            title: todo.originalText.slice(0, 32),
+            excerpt: todo.originalText,
+            type: 'todo',
+            url: null,
+            timeText: todo.timeText,
+            dueAt: todo.dueAt,
+            completed: todo.completedAt !== null,
+            createdAt: todo.createdAt,
+          }))
+        )
+    )
   }
 
-  if (timeRangeHint && typeHint === 'todo') {
-    const { startsAt, endsAt } = timeRangeHint
-    const dueAtCondition = and(
-      sql`${assets.dueAt} >= ${startsAt}`,
-      sql`${assets.dueAt} < ${endsAt}`
-    ) as SQL
-    conditions.push(dueAtCondition)
-  }
+  const results = (await Promise.all(tasks))
+    .flat()
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, clampedLimit)
 
-  const rows = await db
-    .select()
-    .from(assets)
-    .where(and(...conditions))
-    .orderBy(desc(assets.createdAt))
-    .limit(Math.min(Math.max(limit, ASSET_LIST_LIMIT_MIN), ASSET_LIST_LIMIT_MAX))
-
-  return rows
+  return results
     .map((asset) => ({
-      asset: toAssetListItem(asset),
+      asset,
       score: scoreAssetForQuery(asset, '', terms),
     }))
     .filter((candidate) => candidate.score > 0)
-}
-
-function toAssetListItem(asset: Asset) {
-  return {
-    id: asset.id,
-    originalText: asset.originalText,
-    title: asset.originalText.slice(0, 32),
-    excerpt: asset.originalText,
-    type: asset.type,
-    url: asset.url,
-    timeText: asset.timeText,
-    dueAt: asset.dueAt,
-    completed: asset.completedAt !== null,
-    createdAt: asset.createdAt,
-  }
 }

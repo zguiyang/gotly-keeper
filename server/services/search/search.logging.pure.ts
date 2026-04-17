@@ -1,6 +1,6 @@
-import { type Asset } from '@/server/lib/db/schema'
+import type { AssetListItem } from '@/shared/assets/assets.types'
 
-type SearchLogHint = Asset['type'] | null | undefined
+type SearchLogHint = AssetListItem['type'] | null | undefined
 
 export type SearchPathLogInput = {
   query: string
