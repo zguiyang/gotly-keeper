@@ -3,6 +3,21 @@ import { describe, it, expect } from 'vitest'
 import { mergeSearchResults } from '@/server/services/search/search.ranker'
 
 import type { SemanticCandidate, KeywordCandidate } from '@/server/services/search/search.types'
+import type { AssetListItem } from '@/shared/assets/assets.types'
+
+const makeAsset = (overrides: Partial<AssetListItem> = {}): AssetListItem => ({
+  id: '1',
+  originalText: 'test',
+  title: 'test',
+  excerpt: 'test',
+  type: 'note',
+  url: null,
+  timeText: null,
+  dueAt: null,
+  completed: false,
+  createdAt: new Date(),
+  ...overrides,
+})
 
 describe('search.ranker', () => {
   describe('mergeSearchResults', () => {
@@ -38,19 +53,7 @@ describe('search.ranker', () => {
     it('returns semantic results when keyword is empty', () => {
       const semanticResults: SemanticCandidate[] = [
         {
-          asset: {
-            id: '1',
-            userId: 'user1',
-            originalText: 'test',
-            type: 'note',
-            url: null,
-            timeText: null,
-            dueAt: null,
-            completedAt: null,
-            bookmarkMeta: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
+          asset: makeAsset(),
           distance: 0.1,
         },
       ]
@@ -63,19 +66,7 @@ describe('search.ranker', () => {
     it('merges results from both sources', () => {
       const semanticResults: SemanticCandidate[] = [
         {
-          asset: {
-            id: '1',
-            userId: 'user1',
-            originalText: 'test',
-            type: 'note',
-            url: null,
-            timeText: null,
-            dueAt: null,
-            completedAt: null,
-            bookmarkMeta: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
+          asset: makeAsset(),
           distance: 0.1,
         },
       ]
@@ -106,51 +97,15 @@ describe('search.ranker', () => {
     it('limits results to specified limit', () => {
       const semanticResults: SemanticCandidate[] = [
         {
-          asset: {
-            id: '1',
-            userId: 'user1',
-            originalText: 'test1',
-            type: 'note',
-            url: null,
-            timeText: null,
-            dueAt: null,
-            completedAt: null,
-            bookmarkMeta: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
+          asset: makeAsset({ id: '1', originalText: 'test1', title: 'test1', excerpt: 'test1' }),
           distance: 0.1,
         },
         {
-          asset: {
-            id: '2',
-            userId: 'user1',
-            originalText: 'test2',
-            type: 'note',
-            url: null,
-            timeText: null,
-            dueAt: null,
-            completedAt: null,
-            bookmarkMeta: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
+          asset: makeAsset({ id: '2', originalText: 'test2', title: 'test2', excerpt: 'test2' }),
           distance: 0.2,
         },
         {
-          asset: {
-            id: '3',
-            userId: 'user1',
-            originalText: 'test3',
-            type: 'note',
-            url: null,
-            timeText: null,
-            dueAt: null,
-            completedAt: null,
-            bookmarkMeta: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
+          asset: makeAsset({ id: '3', originalText: 'test3', title: 'test3', excerpt: 'test3' }),
           distance: 0.3,
         },
       ]
@@ -162,35 +117,11 @@ describe('search.ranker', () => {
     it('sorts by score descending', () => {
       const semanticResults: SemanticCandidate[] = [
         {
-          asset: {
-            id: '1',
-            userId: 'user1',
-            originalText: 'low score',
-            type: 'note',
-            url: null,
-            timeText: null,
-            dueAt: null,
-            completedAt: null,
-            bookmarkMeta: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
+          asset: makeAsset({ id: '1', originalText: 'low score', title: 'low score', excerpt: 'low score' }),
           distance: 0.5,
         },
         {
-          asset: {
-            id: '2',
-            userId: 'user1',
-            originalText: 'high score',
-            type: 'note',
-            url: null,
-            timeText: null,
-            dueAt: null,
-            completedAt: null,
-            bookmarkMeta: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
+          asset: makeAsset({ id: '2', originalText: 'high score', title: 'high score', excerpt: 'high score' }),
           distance: 0.1,
         },
       ]

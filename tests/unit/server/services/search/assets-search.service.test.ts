@@ -5,7 +5,6 @@ import * as keywordSearch from '@/server/services/search/keyword-search.service'
 import * as searchRanker from '@/server/services/search/search.ranker'
 import * as semanticSearch from '@/server/services/search/semantic-search.service'
 
-import type { Asset } from '@/server/lib/db/schema'
 import type { SemanticCandidate } from '@/server/services/search/search.types'
 import type { AssetListItem } from '@/shared/assets/assets.types'
 
@@ -18,19 +17,19 @@ vi.mock('@/server/services/search/search.logging', () => ({
 
 const now = new Date('2026-04-15T10:00:00.000Z')
 
-const makeSemanticAsset = (overrides: Partial<Asset> = {}): SemanticCandidate => ({
+const makeSemanticAsset = (overrides: Partial<AssetListItem> = {}): SemanticCandidate => ({
   asset: {
     id: 'asset-1',
-    userId: 'user1',
     originalText: '测试内容',
+    title: '测试标题',
+    excerpt: '测试摘要',
     type: 'note',
     url: null,
     timeText: null,
     dueAt: null,
-    completedAt: null,
+    completed: false,
     bookmarkMeta: null,
     createdAt: now,
-    updatedAt: now,
     ...overrides,
   },
   distance: 0.1,

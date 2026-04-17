@@ -1,8 +1,9 @@
-import type { Asset } from '@/server/lib/db/schema'
-import type { AssetSummaryTarget } from '@/server/services/assets/assets.summary-intent.pure'
+import type { assetSummaryTargetSchema } from '@/server/lib/ai/ai-schema'
 import type { AssetListItem } from '@/shared/assets/assets.types'
+import type { z } from 'zod'
 
-export type AssetType = Asset['type']
+export type AssetType = AssetListItem['type']
+export type AssetSummaryTarget = z.infer<typeof assetSummaryTargetSchema>
 
 export type SearchAssetsOptions = {
   userId: string
@@ -41,7 +42,7 @@ export type KeywordCandidate = {
 }
 
 export type SemanticCandidate = {
-  asset: Asset
+  asset: AssetListItem
   distance: number
 }
 

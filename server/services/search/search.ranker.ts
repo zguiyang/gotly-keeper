@@ -14,9 +14,8 @@ export function mergeSearchResults(
   const ranked = new Map<string, { asset: AssetListItem; score: number; source: RankResult['source'] }>()
 
   for (const result of semanticResults) {
-    const asset = toAssetListItem(result.asset)
-    ranked.set(asset.id, {
-      asset,
+    ranked.set(result.asset.id, {
+      asset: result.asset,
       score: Math.max(0, SEMANTIC_BASE_SCORE - result.distance * SEMANTIC_DISTANCE_PENALTY) * semanticWeight,
       source: 'semantic',
     })
@@ -40,19 +39,4 @@ export function mergeSearchResults(
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map(({ asset, score, source }) => ({ asset, score, source }))
-}
-
-function toAssetListItem(asset: { id: string; originalText: string; type: string; url: string | null; timeText: string | null; dueAt: Date | null; completedAt: Date | null; createdAt: Date }): AssetListItem {
-  return {
-    id: asset.id,
-    originalText: asset.originalText,
-    title: asset.originalText.slice(0, 32),
-    excerpt: asset.originalText,
-    type: asset.type as AssetListItem['type'],
-    url: asset.url,
-    timeText: asset.timeText,
-    dueAt: asset.dueAt,
-    completed: asset.completedAt !== null,
-    createdAt: asset.createdAt,
-  }
 }
