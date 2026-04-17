@@ -90,4 +90,3 @@ echo ""
 echo "If this change is approved, rerun with environment override:"
 echo "  ${ALLOW_ENV_NAME}=1 bash .ai-rules/guards/check-rules-integrity.sh"
 exit 1
-

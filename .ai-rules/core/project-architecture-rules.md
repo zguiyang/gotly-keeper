@@ -14,10 +14,10 @@ This file does not restate general governance principles or framework knowledge 
 
 Read these first:
 
-- `.ai-rules/project-governance-rules.md`
-- `.ai-rules/universal-development-boundary-rules.md`
-- `.ai-rules/backend-architecture-principles.md`
-- `.ai-rules/frontend-architecture-principles.md`
+- `.ai-rules/core/project-governance-rules.md`
+- `.ai-rules/domain/universal-development-boundary-rules.md`
+- `.ai-rules/domain/backend-architecture-principles.md`
+- `.ai-rules/domain/frontend-architecture-principles.md`
 
 Use framework-specific skills and docs for framework behavior details.
 
@@ -75,7 +75,7 @@ Rules:
 - avoid embedding orchestration or business rules
 - do not define business constants here
 
-See `.ai-rules/react-client-state-and-forms-rules.md` for detailed client-side component, hook, and form boundaries.
+See `.ai-rules/domain/react-client-state-and-forms-rules.md` for detailed client-side component, hook, and form boundaries.
 
 ### 4.3 `client/`
 
@@ -184,7 +184,7 @@ app/actions -> modules -> services -> lib
                       \---------> lib
 ```
 
-This dependency diagram is the current repository mapping; behavior-boundary enforcement and architectural intent are governed by `.ai-rules/backend-architecture-principles.md`.
+This dependency diagram is the current repository mapping; behavior-boundary enforcement and architectural intent are governed by `.ai-rules/domain/backend-architecture-principles.md`.
 
 Rules:
 
@@ -199,6 +199,20 @@ Forbidden patterns:
 - `server/**` importing `app/**`
 - `server/services/**` importing `server/modules/**`
 - `server/lib/**` importing `server/services/**` or `server/modules/**`
+
+### 5.1 Critical Enforceable Constraints
+
+Constraint A (thin-entry constraint):
+
+- DO NOT place substantial business logic in `app/**/page.tsx`, `app/**/api/**/route.ts`, or `app/**/actions.ts`.
+- These files may validate/authenticate/shape payloads and call `server/modules/**` only.
+- Real example: orchestration lives in `server/modules/workspace/index.ts` instead of route/page entries.
+
+Constraint B (service direction constraint):
+
+- DO NOT import `server/modules/**` from `server/services/**/*.ts`.
+- Allowed direction is `server/modules/** -> server/services/** -> server/lib/**`.
+- Real example: `server/modules/workspace/index.ts:3` imports `@/server/services/notes` (module calls service), not the reverse.
 
 ## 6. Repository Runtime and Entry Rules
 
@@ -292,7 +306,7 @@ When placing code in this repository:
 
 Examples:
 
-- component, hook, client adapter, or form boundary question -> `react-client-state-and-forms-rules.md`
+- component, hook, client adapter, or form boundary question -> `domain/react-client-state-and-forms-rules.md`
 - action/use-case boundary question -> this file
 - repository placement question -> this file plus `project-governance-rules.md`
 
@@ -378,6 +392,6 @@ Fallback condition:
 
 ## 10. Related Rules
 
-- `.ai-rules/project-governance-rules.md`
-- `.ai-rules/universal-development-boundary-rules.md`
-- `.ai-rules/react-client-state-and-forms-rules.md`
+- `.ai-rules/core/project-governance-rules.md`
+- `.ai-rules/domain/universal-development-boundary-rules.md`
+- `.ai-rules/domain/react-client-state-and-forms-rules.md`

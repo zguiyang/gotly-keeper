@@ -200,20 +200,19 @@ Rules:
 
 In this repository, `docs/` and `prd/` are local AI workspaces.
 
-They may contain:
+Allowed uses:
 
-- plans
-- reports
-- PRDs
-- execution notes
-- analysis artifacts
+- cross-session handoff artifacts
+- large feature planning artifacts
 
 Rules:
 
-1. Files under `docs/` and `prd/` are local working artifacts by default.
-2. Files under these directories must not be staged or committed.
-3. These directories must not be treated as canonical rule sources.
-4. If a tracked file is found under these directories, remove it from the git index while preserving the local file.
+1. Do not use `docs/` or `prd/` for routine question/small-edit/feature/debug tasks.
+2. For normal tasks, keep plans in conversation or ephemeral task context.
+3. Files under these directories are local working artifacts by default.
+4. Files under these directories must not be staged or committed.
+5. These directories must not be treated as canonical rule sources.
+6. If a tracked file is found under these directories, remove it from the git index while preserving the local file.
 
 ### 6.2 Promotion Rule
 
@@ -260,8 +259,8 @@ When updating repository governance:
 
 ## 10. Related Files
 
-- `.ai-rules/README.md`
-- `.ai-rules/project-tooling-and-runtime-rules.md`
-- `.ai-rules/git-commit-rules.md`
-- `.ai-rules/project-architecture-rules.md`
+- `.ai-rules/core/README.md`
+- `.ai-rules/core/project-tooling-and-runtime-rules.md`
+- `.ai-rules/advanced-workflows/git-commit-rules.md`
+- `.ai-rules/core/project-architecture-rules.md`
 - `AGENTS.md`

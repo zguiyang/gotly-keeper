@@ -37,6 +37,14 @@ Rules:
 4. Do not let components import `app/**/actions` directly.
 5. Do not let frontend directories become hidden business-logic layers.
 
+### 2.1 Critical Enforceable Constraint
+
+- DO NOT import `app/**/actions.ts` from `components/**/*.tsx`.
+- Required flow: `components/** -> hooks/** -> client/actions/** -> app/**/actions.ts`.
+- Real examples:
+  - `hooks/workspace/use-workspace-submit.ts` holds submit orchestration.
+  - `client/actions/workspace-actions.client.ts` is the client adapter layer.
+
 ## 3. Layer Responsibilities
 
 ### 3.1 `components/`

@@ -10,16 +10,27 @@ This version has breaking changes. APIs, conventions, and file structure may dif
 
 `AGENTS.md` is the entry document for AI agents.
 
-It should stay minimal and point to canonical rule files.
+It must stay minimal, deterministic, and point to canonical rule files.
+
+## Default Workflow First
+
+Use `.ai-rules/core/default-execution-workflow.md` as the only default workflow.
+
+Strict rule:
+
+**If task is not explicitly marked as phase/subagent, always use default-execution-workflow.**
+
+Phase execution, subagent workflow, and docs/prd artifacts are non-default.
 
 ## Read Order
 
 Start in this order:
 
 1. Read `AGENTS.md`.
-2. Read `.ai-rules/README.md`.
-3. Read the relevant `.ai-rules/*.md` files routed by `.ai-rules/README.md`.
-4. Read the relevant docs in `node_modules/next/dist/docs/` before changing Next.js behavior.
+2. Read `.ai-rules/core/default-execution-workflow.md`.
+3. Read `.ai-rules/core/README.md`.
+4. Read only the minimal path-based rules for touched files.
+5. Read `node_modules/next/dist/docs/` only when changing Next.js behavior.
 
 ## Instruction Priority
 
@@ -42,41 +53,47 @@ Apply this as follows:
 
 ## Project Rule Files
 
-Project architecture and coding rules live in `.ai-rules/`.
+Rules in `.ai-rules/` are split into three layers:
 
-Use `.ai-rules/README.md` as the index and routing table.
+- `core/` for always-loaded minimal rules
+- `domain/` for path-based rules
+- `advanced-workflows/` for explicit advanced modes only
 
-Rules:
-- Treat `.ai-rules/` as the source of truth for implementation rules.
-- Do not restate full rules in `AGENTS.md`; update the rule file instead.
+Treat `.ai-rules/` as the source of truth for implementation rules.
 
-## MCP Services
+## Path-Based Minimal Loading
 
-Use MCP when it improves correctness, documentation accuracy, or runtime verification.
+Never load all rules by default.
 
-Rules:
-- Prefer relevant local skills first.
-- Use runtime-aware MCP tools when code inspection alone is insufficient.
-- Follow `.ai-rules/project-tooling-and-runtime-rules.md` for tool-selection details.
+Load by touched code area:
 
-## Local Skills
+- Any task: `.ai-rules/core/project-architecture-rules.md`, `.ai-rules/core/project-tooling-and-runtime-rules.md`, `.ai-rules/core/testing-and-integration-rules.md` as needed
+- `server/**`: `.ai-rules/domain/backend-architecture-principles.md`
+- `components/**`, `hooks/**`, `client/**`, `config/**`: `.ai-rules/domain/frontend-architecture-principles.md`
+- forms/state validation concerns: `.ai-rules/domain/react-client-state-and-forms-rules.md`
+- AI SDK concerns: `.ai-rules/domain/ai-sdk-rules.md`
+
+Do not preload unrelated domain rules.
+
+## Skills and MCP
 
 Project-local skills live in `.agents/skills/`.
 
-How to use skills:
-- Match the task to the relevant skill.
-- Read that skill's `SKILL.md` before implementing.
-- Use the smallest relevant set of skills for the task.
+Use skills and MCP only when they reduce real uncertainty for the current task.
 
-## Editing Rule
+Do not preload all skills.
 
-Before editing code:
-- identify the umbrella rule file and relevant topic files in `.ai-rules`
-- if the task touches `server/**`, read `.ai-rules/backend-architecture-principles.md` first as the backend behavior-boundary baseline
-- identify whether a local skill applies
-- identify whether official Next.js docs or MCP runtime inspection is needed
-- identify whether `.ai-rules/project-tooling-and-runtime-rules.md` applies to the task
-- verify live project details from code or config instead of relying on memory
-- read `.ai-rules/phase-execution-protocol.md` only when the task actually uses phase execution workflow
+## Docs and PRD Usage
+
+`docs/` and `prd/` are only for:
+
+- cross-session handoff
+- large feature planning
+
+For normal tasks, keep plans in conversation or ephemeral task context.
+
+## Advanced Workflow Trigger
+
+Load `.ai-rules/advanced-workflows/phase-execution-protocol.md` only when the task is explicitly marked as phase/subagent.
 
 If a rule changes, update the rule document in `.ai-rules`, not `AGENTS.md`, unless the entry workflow itself has changed.
