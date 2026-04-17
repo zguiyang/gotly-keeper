@@ -99,40 +99,62 @@ export function WorkspaceQueryResultsPanel({
   )
 }
 
-export function WorkspaceTodoReviewPanel({ review }: { review: TodoReviewResult }) {
+type SummaryPanelBaseProps<TSource extends { id: string }> = {
+  title: string
+  headline: string
+  summary: string
+  points: string[]
+  sources: TSource[]
+  renderSourceText: (source: TSource) => React.ReactNode
+  sourceTextClassName?: string
+}
+
+function SummaryPanelBase<TSource extends { id: string }>({
+  title,
+  headline,
+  summary,
+  points,
+  sources,
+  renderSourceText,
+  sourceTextClassName,
+}: SummaryPanelBaseProps<TSource>) {
+  const sourceTextClass = sourceTextClassName
+    ? `text-xs text-on-surface-variant/80 ${sourceTextClassName}`
+    : 'text-xs text-on-surface-variant/80'
+
   return (
     <section className="mb-8">
       <div className="flex items-center gap-4 mb-2">
         <h2 className="text-xs font-medium uppercase tracking-wider text-on-surface-variant">
-          待办复盘
+          {title}
         </h2>
         <div className="flex-1 h-px bg-outline-variant/20" />
       </div>
       <div className="bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-4">
         <h3 className="text-sm font-semibold text-on-surface">
-          {review.headline}
+          {headline}
         </h3>
         <p className="text-sm text-on-surface-variant mt-2 leading-relaxed">
-          {review.summary}
+          {summary}
         </p>
-        {review.nextActions.length > 0 ? (
+        {points.length > 0 ? (
           <ul className="mt-3 space-y-1">
-            {review.nextActions.map((action, index) => (
-              <li key={`${action}-${index}`} className="text-sm text-on-surface">
-                {index + 1}. {action}
+            {points.map((point, index) => (
+              <li key={`${point}-${index}`} className="text-sm text-on-surface">
+                {index + 1}. {point}
               </li>
             ))}
           </ul>
         ) : null}
-        {review.sources.length > 0 ? (
+        {sources.length > 0 ? (
           <div className="mt-4 pt-3 border-t border-outline-variant/10">
             <p className="text-xs font-medium text-on-surface-variant mb-2">
               来源
             </p>
             <div className="space-y-1">
-              {review.sources.map((source) => (
-                <p key={source.id} className="text-xs text-on-surface-variant/80">
-                  {source.timeText ? `${source.title} · ${source.timeText}` : source.title}
+              {sources.map((source) => (
+                <p key={source.id} className={sourceTextClass}>
+                  {renderSourceText(source)}
                 </p>
               ))}
             </div>
@@ -140,93 +162,49 @@ export function WorkspaceTodoReviewPanel({ review }: { review: TodoReviewResult 
         ) : null}
       </div>
     </section>
+  )
+}
+
+export function WorkspaceTodoReviewPanel({ review }: { review: TodoReviewResult }) {
+  return (
+    <SummaryPanelBase
+      title="待办复盘"
+      headline={review.headline}
+      summary={review.summary}
+      points={review.nextActions}
+      sources={review.sources}
+      renderSourceText={(source) =>
+        source.timeText ? `${source.title} · ${source.timeText}` : source.title
+      }
+    />
   )
 }
 
 export function WorkspaceNoteSummaryPanel({ summary }: { summary: NoteSummaryResult }) {
   return (
-    <section className="mb-8">
-      <div className="flex items-center gap-4 mb-2">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-on-surface-variant">
-          笔记摘要
-        </h2>
-        <div className="flex-1 h-px bg-outline-variant/20" />
-      </div>
-      <div className="bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-on-surface">
-          {summary.headline}
-        </h3>
-        <p className="text-sm text-on-surface-variant mt-2 leading-relaxed">
-          {summary.summary}
-        </p>
-        {summary.keyPoints.length > 0 ? (
-          <ul className="mt-3 space-y-1">
-            {summary.keyPoints.map((point, index) => (
-              <li key={`${point}-${index}`} className="text-sm text-on-surface">
-                {index + 1}. {point}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {summary.sources.length > 0 ? (
-          <div className="mt-4 pt-3 border-t border-outline-variant/10">
-            <p className="text-xs font-medium text-on-surface-variant mb-2">
-              来源
-            </p>
-            <div className="space-y-1">
-              {summary.sources.map((source) => (
-                <p key={source.id} className="text-xs text-on-surface-variant/80">
-                  {source.title}
-                </p>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </div>
-    </section>
+    <SummaryPanelBase
+      title="笔记摘要"
+      headline={summary.headline}
+      summary={summary.summary}
+      points={summary.keyPoints}
+      sources={summary.sources}
+      renderSourceText={(source) => source.title}
+    />
   )
 }
 
 export function WorkspaceBookmarkSummaryPanel({ summary }: { summary: BookmarkSummaryResult }) {
   return (
-    <section className="mb-8">
-      <div className="flex items-center gap-4 mb-2">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-on-surface-variant">
-          书签摘要
-        </h2>
-        <div className="flex-1 h-px bg-outline-variant/20" />
-      </div>
-      <div className="bg-surface-container-lowest border border-outline-variant/10 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-on-surface">
-          {summary.headline}
-        </h3>
-        <p className="text-sm text-on-surface-variant mt-2 leading-relaxed">
-          {summary.summary}
-        </p>
-        {summary.keyPoints.length > 0 ? (
-          <ul className="mt-3 space-y-1">
-            {summary.keyPoints.map((point, index) => (
-              <li key={`${point}-${index}`} className="text-sm text-on-surface">
-                {index + 1}. {point}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {summary.sources.length > 0 ? (
-          <div className="mt-4 pt-3 border-t border-outline-variant/10">
-            <p className="text-xs font-medium text-on-surface-variant mb-2">
-              来源
-            </p>
-            <div className="space-y-1">
-              {summary.sources.map((source) => (
-                <p key={source.id} className="text-xs text-on-surface-variant/80 break-words">
-                  {source.url ? `${source.title} · ${source.url}` : source.title}
-                </p>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </div>
-    </section>
+    <SummaryPanelBase
+      title="书签摘要"
+      headline={summary.headline}
+      summary={summary.summary}
+      points={summary.keyPoints}
+      sources={summary.sources}
+      sourceTextClassName="break-words"
+      renderSourceText={(source) =>
+        source.url ? `${source.title} · ${source.url}` : source.title
+      }
+    />
   )
 }

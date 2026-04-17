@@ -1,39 +1,24 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import * as React from 'react'
 
 import { AuthField } from '@/components/auth/auth-field'
 import { Button } from '@/components/ui/button'
+import { useAuthSubmit } from '@/hooks/auth/use-auth-submit'
 import { authClient } from '@/lib/auth-client'
 
 export function SignInForm() {
-  const router = useRouter()
-  const [error, setError] = React.useState<string | null>(null)
-  const [pending, setPending] = React.useState(false)
-
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setError(null)
-    setPending(true)
-
-    const formData = new FormData(event.currentTarget)
-    const email = String(formData.get('email') ?? '')
-    const password = String(formData.get('password') ?? '')
-
-    const result = await authClient.signIn.email({ email, password })
-
-    setPending(false)
-
-    if (result.error) {
-      setError(result.error.message ?? '登录失败，请检查邮箱和密码')
-      return
-    }
-
-    router.replace('/workspace')
-    router.refresh()
-  }
+  const { error, pending, onSubmit } = useAuthSubmit({
+    fallbackErrorMessage: '登录失败，请检查邮箱和密码',
+    parse: (formData) => ({
+      ok: true,
+      payload: {
+        email: String(formData.get('email') ?? ''),
+        password: String(formData.get('password') ?? ''),
+      },
+    }),
+    submit: (payload) => authClient.signIn.email(payload),
+  })
 
   return (
     <form className="space-y-6" onSubmit={onSubmit}>

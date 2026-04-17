@@ -2,54 +2,44 @@ import { Mail, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 import { AuthField } from "@/components/auth/auth-field";
-import { AuthPageFooter } from "@/components/auth/auth-footer";
-import { AuthNavbar } from "@/components/auth/auth-navbar";
-import { AuthShell } from "@/components/auth/auth-shell";
+import { AuthPageScaffold } from "@/components/auth/auth-page-scaffold";
 
 export default function ForgotPasswordPage() {
   return (
-    <AuthShell>
-      <AuthNavbar />
+    <AuthPageScaffold contentClassName="w-full max-w-md" mainClassName="flex flex-1 items-center justify-center px-6">
+      <div className="mb-10 text-left">
+        <h1 className="mb-3 text-4xl font-extrabold tracking-tight text-on-surface">找回密码</h1>
+        <p className="font-medium leading-relaxed text-on-surface-variant">
+          请输入你的注册邮箱，我们将为你发送验证链接
+        </p>
+      </div>
 
-      <main className="flex flex-1 items-center justify-center px-6">
-        <div className="w-full max-w-md">
-          <div className="mb-10 text-left">
-            <h1 className="mb-3 text-4xl font-extrabold tracking-tight text-on-surface">找回密码</h1>
-            <p className="font-medium leading-relaxed text-on-surface-variant">
-              请输入你的注册邮箱，我们将为你发送验证链接
-            </p>
-          </div>
+      <div className="space-y-8">
+        <AuthField
+          autoComplete="email"
+          inputClassName="py-4"
+          label="EMAIL"
+          placeholder="your@email.com"
+          prefixIcon={<Mail className="text-lg" />}
+        />
 
-          <div className="space-y-8">
-            <AuthField
-              autoComplete="email"
-              inputClassName="py-4"
-              label="EMAIL"
-              placeholder="your@email.com"
-              prefixIcon={<Mail className="text-lg" />}
-            />
+        <button
+          className="w-full rounded-full bg-gradient-to-r from-primary to-primary-container px-8 py-4 text-base font-bold text-white shadow-[0_12px_32px_-4px_rgba(0,81,177,0.06)] transition-all hover:brightness-105 active:scale-[0.98]"
+          type="submit"
+        >
+          发送验证链接
+        </button>
 
-            <button
-              className="w-full rounded-full bg-gradient-to-r from-primary to-primary-container px-8 py-4 text-base font-bold text-white shadow-[0_12px_32px_-4px_rgba(0,81,177,0.06)] transition-all hover:brightness-105 active:scale-[0.98]"
-              type="submit"
-            >
-              发送验证链接
-            </button>
-
-            <div className="flex flex-col items-center pt-4">
-              <Link
-                className="group flex items-center gap-2 text-sm font-semibold text-primary transition-opacity hover:opacity-80"
-                href="/auth/sign-in"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>返回登录</span>
-              </Link>
-            </div>
-          </div>
+        <div className="flex flex-col items-center pt-4">
+          <Link
+            className="group flex items-center gap-2 text-sm font-semibold text-primary transition-opacity hover:opacity-80"
+            href="/auth/sign-in"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>返回登录</span>
+          </Link>
         </div>
-      </main>
-
-      <AuthPageFooter />
-    </AuthShell>
+      </div>
+    </AuthPageScaffold>
   );
 }

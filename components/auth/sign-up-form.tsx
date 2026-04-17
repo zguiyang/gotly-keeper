@@ -2,53 +2,42 @@
 
 import { ArrowRight } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import * as React from 'react'
 
 import { AuthField } from '@/components/auth/auth-field'
 import { Button } from '@/components/ui/button'
+import { useAuthSubmit } from '@/hooks/auth/use-auth-submit'
 import { authClient } from '@/lib/auth-client'
 
 export function SignUpForm() {
-  const router = useRouter()
-  const [error, setError] = React.useState<string | null>(null)
-  const [pending, setPending] = React.useState(false)
+  const { error, pending, onSubmit } = useAuthSubmit({
+    fallbackErrorMessage: '注册失败，请稍后重试',
+    parse: (formData) => {
+      const name = String(formData.get('name') ?? '').trim()
+      const email = String(formData.get('email') ?? '')
+      const password = String(formData.get('password') ?? '')
+      const terms = formData.get('terms')
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setError(null)
-    setPending(true)
+      if (!terms) {
+        return {
+          ok: false,
+          error: '请同意服务协议和隐私政策',
+        }
+      }
 
-    const formData = new FormData(event.currentTarget)
-    const name = String(formData.get('name') ?? '').trim()
-    const email = String(formData.get('email') ?? '')
-    const password = String(formData.get('password') ?? '')
-    const terms = formData.get('terms')
+      if (!name) {
+        return {
+          ok: false,
+          error: '请输入昵称',
+        }
+      }
 
-    if (!terms) {
-      setError('请同意服务协议和隐私政策')
-      setPending(false)
-      return
-    }
-
-    if (!name) {
-      setError('请输入昵称')
-      setPending(false)
-      return
-    }
-
-    const result = await authClient.signUp.email({ name, email, password })
-
-    setPending(false)
-
-    if (result.error) {
-      setError(result.error.message ?? '注册失败，请稍后重试')
-      return
-    }
-
-    router.replace('/workspace')
-    router.refresh()
-  }
+      return {
+        ok: true,
+        payload: { name, email, password },
+      }
+    },
+    submit: (payload) => authClient.signUp.email(payload),
+  })
 
   return (
     <form className="space-y-6" onSubmit={onSubmit}>
