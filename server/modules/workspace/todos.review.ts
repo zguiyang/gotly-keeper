@@ -10,8 +10,8 @@ import { nowIso, dayjs } from '@/shared/time/dayjs'
 import { getAiProvider } from '../../lib/ai/ai-provider'
 import { TODO_REVIEW_LIMIT, TODO_REVIEW_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
 
-import type { AssetListItem, TodoReviewResult, TodoReviewSource } from '@/shared/assets/assets.types'
 import type { TodoListItem } from '@/server/services/todos'
+import type { AssetListItem, TodoReviewResult, TodoReviewSource } from '@/shared/assets/assets.types'
 
 export type TodoReviewPromptItem = {
   id: string
@@ -33,7 +33,11 @@ function toAssetListItem(todo: TodoListItem): AssetListItem {
     dueAt: todo.dueAt,
     completed: todo.completed,
     bookmarkMeta: null,
+    lifecycleStatus: todo.lifecycleStatus,
+    archivedAt: todo.archivedAt,
+    trashedAt: todo.trashedAt,
     createdAt: todo.createdAt,
+    updatedAt: todo.updatedAt,
   }
 }
 

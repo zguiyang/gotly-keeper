@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
-import { and, eq, isNull, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { cosineDistance } from 'drizzle-orm/sql/functions'
 
 import {
@@ -24,6 +24,7 @@ import {
   todos,
 } from '@/server/lib/db/schema'
 import { serverEnv } from '@/server/lib/env'
+import { ASSET_LIFECYCLE_STATUS } from '@/shared/assets/asset-lifecycle.types'
 import { now } from '@/shared/time/dayjs'
 
 import type { AssetType, SemanticCandidate } from './search.types'
@@ -35,6 +36,7 @@ type SemanticSearchOptions = {
   query: string
   typeHint?: AssetType | null
   completionHint?: 'complete' | 'incomplete' | null
+  includeArchived?: boolean
   limit?: number
 }
 
@@ -44,6 +46,34 @@ type EmbeddableAsset = {
   originalText: string
   url: string | null
   timeText: string | null
+}
+
+export async function deleteEmbeddingsForAsset(input: {
+  assetType: AssetType
+  assetId: string
+}): Promise<number> {
+  if (input.assetType === 'note') {
+    const deleted = await db
+      .delete(noteEmbeddings)
+      .where(eq(noteEmbeddings.noteId, input.assetId))
+      .returning({ id: noteEmbeddings.id })
+    return deleted.length
+  }
+
+  if (input.assetType === 'todo') {
+    const deleted = await db
+      .delete(todoEmbeddings)
+      .where(eq(todoEmbeddings.todoId, input.assetId))
+      .returning({ id: todoEmbeddings.id })
+    return deleted.length
+  }
+
+  const deleted = await db
+    .delete(bookmarkEmbeddings)
+    .where(eq(bookmarkEmbeddings.bookmarkId, input.assetId))
+    .returning({ id: bookmarkEmbeddings.id })
+
+  return deleted.length
 }
 
 function getAssetEmbeddingModel() {
@@ -169,6 +199,8 @@ export async function backfillMissingAssetEmbeddings(limit = 50) {
 
   const clampedLimit = Math.min(Math.max(limit, 1), 100)
 
+  const indexableStatuses = [ASSET_LIFECYCLE_STATUS.ACTIVE, ASSET_LIFECYCLE_STATUS.ARCHIVED]
+
   const [missingNotes, missingTodos, missingBookmarks] = await Promise.all([
     db
       .select({
@@ -184,7 +216,12 @@ export async function backfillMissingAssetEmbeddings(limit = 50) {
           eq(noteEmbeddings.dimensions, ASSET_EMBEDDING_DIMENSIONS)
         )
       )
-      .where(isNull(noteEmbeddings.id))
+      .where(
+        and(
+          isNull(noteEmbeddings.id),
+          inArray(notes.lifecycleStatus, indexableStatuses)
+        )
+      )
       .limit(clampedLimit),
     db
       .select({
@@ -201,7 +238,12 @@ export async function backfillMissingAssetEmbeddings(limit = 50) {
           eq(todoEmbeddings.dimensions, ASSET_EMBEDDING_DIMENSIONS)
         )
       )
-      .where(isNull(todoEmbeddings.id))
+      .where(
+        and(
+          isNull(todoEmbeddings.id),
+          inArray(todos.lifecycleStatus, indexableStatuses)
+        )
+      )
       .limit(clampedLimit),
     db
       .select({
@@ -218,7 +260,12 @@ export async function backfillMissingAssetEmbeddings(limit = 50) {
           eq(bookmarkEmbeddings.dimensions, ASSET_EMBEDDING_DIMENSIONS)
         )
       )
-      .where(isNull(bookmarkEmbeddings.id))
+      .where(
+        and(
+          isNull(bookmarkEmbeddings.id),
+          inArray(bookmarks.lifecycleStatus, indexableStatuses)
+        )
+      )
       .limit(clampedLimit),
   ])
 
@@ -324,6 +371,7 @@ export async function searchByEmbedding({
   query,
   typeHint,
   completionHint,
+  includeArchived = false,
   limit = ASSET_SEARCH_LIMIT_DEFAULT,
 }: SemanticSearchOptions): Promise<SemanticCandidate[]> {
   const model = getAssetEmbeddingModel()
@@ -342,6 +390,9 @@ export async function searchByEmbedding({
   const includeNotes = (!typeHint || typeHint === 'note') && completionHint !== 'complete'
   const includeBookmarks = (!typeHint || typeHint === 'link') && completionHint !== 'complete'
   const includeTodos = !typeHint || typeHint === 'todo'
+  const searchableStatuses = includeArchived
+    ? [ASSET_LIFECYCLE_STATUS.ACTIVE, ASSET_LIFECYCLE_STATUS.ARCHIVED]
+    : [ASSET_LIFECYCLE_STATUS.ACTIVE]
 
   const tasks: Array<Promise<SemanticCandidate[]>> = []
 
@@ -360,6 +411,9 @@ export async function searchByEmbedding({
         .where(
           and(
             eq(notes.userId, userId),
+            searchableStatuses.length === 1
+              ? eq(notes.lifecycleStatus, searchableStatuses[0])
+              : inArray(notes.lifecycleStatus, searchableStatuses),
             eq(noteEmbeddings.modelName, model.modelId),
             eq(noteEmbeddings.dimensions, ASSET_EMBEDDING_DIMENSIONS)
           )
@@ -392,6 +446,9 @@ export async function searchByEmbedding({
         .where(
           and(
             eq(bookmarks.userId, userId),
+            searchableStatuses.length === 1
+              ? eq(bookmarks.lifecycleStatus, searchableStatuses[0])
+              : inArray(bookmarks.lifecycleStatus, searchableStatuses),
             eq(bookmarkEmbeddings.modelName, model.modelId),
             eq(bookmarkEmbeddings.dimensions, ASSET_EMBEDDING_DIMENSIONS)
           )
@@ -411,6 +468,9 @@ export async function searchByEmbedding({
     const distance = cosineDistance(todoEmbeddings.embedding, embedded.embedding)
     const conditions = [
       eq(todos.userId, userId),
+      searchableStatuses.length === 1
+        ? eq(todos.lifecycleStatus, searchableStatuses[0])
+        : inArray(todos.lifecycleStatus, searchableStatuses),
       eq(todoEmbeddings.modelName, model.modelId),
       eq(todoEmbeddings.dimensions, ASSET_EMBEDDING_DIMENSIONS),
     ]

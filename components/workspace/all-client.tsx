@@ -1,12 +1,11 @@
 'use client'
 
-import {
-  MoreVertical,
-} from 'lucide-react'
 import { useState } from 'react'
 
+import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
 import { assetTypePresentation } from '@/config/ui/asset-presentation'
 import { filterTabs, emptyFilterMessages } from '@/config/workspace/filters'
+import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import {
   getAssetDateGroup,
   formatAssetRelativeTime,
@@ -45,7 +44,17 @@ function TypePill({ type }: { type: AssetType }) {
   )
 }
 
-function AssetItem({ asset }: { asset: AssetListItem }) {
+function AssetItem({
+  asset,
+  onEdit,
+  onArchive,
+  onMoveToTrash,
+}: {
+  asset: AssetListItem
+  onEdit: (asset: AssetListItem) => void
+  onArchive: (asset: AssetListItem) => void
+  onMoveToTrash: (asset: AssetListItem) => void
+}) {
   const presentation = assetTypePresentation[asset.type]
   const Icon = presentation.icon
 
@@ -88,30 +97,95 @@ function AssetItem({ asset }: { asset: AssetListItem }) {
         </span>
       </div>
       <div className="ml-2 lg:ml-6 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity">
-        <button
-          className="p-1 text-on-surface-variant hover:text-primary rounded-sm transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-          aria-label="更多操作"
-        >
-          <MoreVertical className="w-4 h-4" />
-        </button>
+        <AssetActionMenu
+          actions={[
+            { label: '编辑', onClick: () => onEdit(asset) },
+            { label: '归档', onClick: () => onArchive(asset) },
+            { label: '移入回收站', onClick: () => onMoveToTrash(asset), danger: true },
+          ]}
+        />
       </div>
     </div>
   )
 }
 
 export function AllClient({ assets }: { assets: AssetListItem[] }) {
+  const [items, setItems] = useState(assets)
   const [activeFilter, setActiveFilter] = useState<string>('all')
+  const { updateAsset, archiveAsset, moveToTrash } = useAssetMutations()
 
   const filteredAssets =
     activeFilter === 'all'
-      ? assets
-      : assets.filter((asset) => asset.type === activeFilter)
+      ? items
+      : items.filter((asset) => asset.type === activeFilter)
 
   const todayAssets = filteredAssets.filter((asset) => getAssetDateGroup(asset.createdAt) === 'today')
   const yesterdayAssets = filteredAssets.filter((asset) => getAssetDateGroup(asset.createdAt) === 'yesterday')
   const olderAssets = filteredAssets.filter((asset) => getAssetDateGroup(asset.createdAt) === 'older')
 
   const hasAnyAssets = filteredAssets.length > 0
+
+  async function handleEdit(asset: AssetListItem) {
+    const text = window.prompt('编辑内容', asset.originalText)
+    if (!text || !text.trim()) {
+      return
+    }
+
+    if (asset.type === 'note') {
+      const updated = await updateAsset({
+        assetId: asset.id,
+        assetType: 'note',
+        text: text.trim(),
+      })
+      if (updated) {
+        setItems((current) => current.map((item) => (item.id === updated.id ? updated : item)))
+      }
+      return
+    }
+
+    if (asset.type === 'todo') {
+      const updated = await updateAsset({
+        assetId: asset.id,
+        assetType: 'todo',
+        text: text.trim(),
+        timeText: asset.timeText,
+        dueAt: asset.dueAt,
+      })
+      if (updated) {
+        setItems((current) => current.map((item) => (item.id === updated.id ? updated : item)))
+      }
+      return
+    }
+
+    const url = window.prompt('编辑链接 URL', asset.url ?? '')
+    if (!url || !url.trim()) {
+      return
+    }
+
+    const updated = await updateAsset({
+      assetId: asset.id,
+      assetType: 'link',
+      text: text.trim(),
+      url: url.trim(),
+    })
+    if (updated) {
+      setItems((current) => current.map((item) => (item.id === updated.id ? updated : item)))
+    }
+  }
+
+  async function handleArchive(asset: AssetListItem) {
+    const updated = await archiveAsset(asset.id, asset.type)
+    if (updated) {
+      setItems((current) => current.filter((item) => item.id !== updated.id))
+    }
+  }
+
+  async function handleMoveToTrash(asset: AssetListItem) {
+    const updated = await moveToTrash(asset.id, asset.type)
+    if (updated) {
+      setItems((current) => current.filter((item) => item.id !== updated.id))
+    }
+  }
 
   return (
     <>
@@ -144,7 +218,13 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
           <>
             <DateDivider label="今天" />
             {todayAssets.map((asset) => (
-              <AssetItem key={asset.id} asset={asset} />
+              <AssetItem
+                key={asset.id}
+                asset={asset}
+                onEdit={handleEdit}
+                onArchive={handleArchive}
+                onMoveToTrash={handleMoveToTrash}
+              />
             ))}
           </>
         )}
@@ -153,7 +233,13 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
           <>
             <DateDivider label="昨天" />
             {yesterdayAssets.map((asset) => (
-              <AssetItem key={asset.id} asset={asset} />
+              <AssetItem
+                key={asset.id}
+                asset={asset}
+                onEdit={handleEdit}
+                onArchive={handleArchive}
+                onMoveToTrash={handleMoveToTrash}
+              />
             ))}
           </>
         )}
@@ -162,7 +248,13 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
           <>
             <DateDivider label="更早" />
             {olderAssets.map((asset) => (
-              <AssetItem key={asset.id} asset={asset} />
+              <AssetItem
+                key={asset.id}
+                asset={asset}
+                onEdit={handleEdit}
+                onArchive={handleArchive}
+                onMoveToTrash={handleMoveToTrash}
+              />
             ))}
           </>
         )}

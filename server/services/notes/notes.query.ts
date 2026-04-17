@@ -1,18 +1,45 @@
 import 'server-only'
 
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, inArray } from 'drizzle-orm'
 
 import { NOTE_LIST_LIMIT_DEFAULT, NOTE_LIST_LIMIT_MAX } from '@/server/lib/config/constants'
 import { db } from '@/server/lib/db'
-import { notes } from './notes.schema'
-import type { NoteListItem } from './notes.types'
+import {
+  ASSET_LIFECYCLE_STATUS,
+  type AssetLifecycleStatus,
+} from '@/shared/assets/asset-lifecycle.types'
+
 import { toNoteListItem } from './notes.mapper'
+import { notes } from './notes.schema'
+
+import type { NoteListItem } from './notes.types'
 
 export { type NoteListItem }
 
 type ListNotesOptions = {
   userId: string
   limit?: number
+  lifecycleStatus?: AssetLifecycleStatus
+  includeLifecycleStatuses?: AssetLifecycleStatus[]
+}
+
+type GetNoteByIdOptions = {
+  includeLifecycleStatuses?: AssetLifecycleStatus[]
+}
+
+function resolveLifecycleStatuses(input: {
+  lifecycleStatus?: AssetLifecycleStatus
+  includeLifecycleStatuses?: AssetLifecycleStatus[]
+}): AssetLifecycleStatus[] {
+  if (input.includeLifecycleStatuses?.length) {
+    return input.includeLifecycleStatuses
+  }
+
+  if (input.lifecycleStatus) {
+    return [input.lifecycleStatus]
+  }
+
+  return [ASSET_LIFECYCLE_STATUS.ACTIVE]
 }
 
 function clampNoteListLimit(limit = NOTE_LIST_LIMIT_DEFAULT) {
@@ -22,24 +49,50 @@ function clampNoteListLimit(limit = NOTE_LIST_LIMIT_DEFAULT) {
 export async function listNotes({
   userId,
   limit = NOTE_LIST_LIMIT_DEFAULT,
+  lifecycleStatus,
+  includeLifecycleStatuses,
 }: ListNotesOptions): Promise<NoteListItem[]> {
   const clampedLimit = clampNoteListLimit(limit)
+  const lifecycleStatuses = resolveLifecycleStatuses({ lifecycleStatus, includeLifecycleStatuses })
+
+  const conditions = and(
+    eq(notes.userId, userId),
+    lifecycleStatuses.length === 1
+      ? eq(notes.lifecycleStatus, lifecycleStatuses[0])
+      : inArray(notes.lifecycleStatus, lifecycleStatuses)
+  )
 
   const rows = await db
     .select()
     .from(notes)
-    .where(eq(notes.userId, userId))
+    .where(conditions)
     .orderBy(desc(notes.createdAt))
     .limit(clampedLimit)
 
   return rows.map(toNoteListItem)
 }
 
-export async function getNoteById(noteId: string, userId: string): Promise<NoteListItem | null> {
+export async function getNoteById(
+  noteId: string,
+  userId: string,
+  options?: GetNoteByIdOptions
+): Promise<NoteListItem | null> {
+  const lifecycleStatuses = resolveLifecycleStatuses({
+    includeLifecycleStatuses: options?.includeLifecycleStatuses,
+  })
+
   const [row] = await db
     .select()
     .from(notes)
-    .where(and(eq(notes.id, noteId), eq(notes.userId, userId)))
+    .where(
+      and(
+        eq(notes.id, noteId),
+        eq(notes.userId, userId),
+        lifecycleStatuses.length === 1
+          ? eq(notes.lifecycleStatus, lifecycleStatuses[0])
+          : inArray(notes.lifecycleStatus, lifecycleStatuses)
+      )
+    )
     .limit(1)
 
   return row ? toNoteListItem(row) : null

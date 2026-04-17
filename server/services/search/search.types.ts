@@ -11,6 +11,7 @@ export type SearchAssetsOptions = {
   typeHint?: AssetType | null
   timeHint?: string | null
   completionHint?: 'complete' | 'incomplete' | null
+  includeArchived?: boolean
   limit?: number
 }
 

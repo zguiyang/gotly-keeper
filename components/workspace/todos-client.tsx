@@ -1,9 +1,11 @@
 'use client'
 
-import { Check, Circle, Clock, MoreHorizontal } from 'lucide-react'
+import { Check, Circle, Clock } from 'lucide-react'
 import { useState } from 'react'
 
 
+import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
+import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useTodoCompletion } from '@/hooks/workspace/use-todo-completion'
 import { getTodoGroupKey } from '@/shared/assets/asset-time-display'
 import { type AssetListItem } from '@/shared/assets/assets.types'
@@ -25,10 +27,16 @@ function TodoItemComponent({
   item,
   pending,
   onToggle,
+  onEdit,
+  onArchive,
+  onMoveToTrash,
 }: {
   item: AssetListItem
   pending: boolean
   onToggle: (item: AssetListItem) => void
+  onEdit: (item: AssetListItem) => void
+  onArchive: (item: AssetListItem) => void
+  onMoveToTrash: (item: AssetListItem) => void
 }) {
   return (
     <div
@@ -69,13 +77,15 @@ function TodoItemComponent({
           </div>
         </div>
       </div>
-      <button
-        type="button"
-        className="p-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity hover:bg-surface-container-high rounded-sm cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-        aria-label="更多操作"
-      >
-        <MoreHorizontal className="w-4 h-4 text-on-surface-variant" />
-      </button>
+      <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity">
+        <AssetActionMenu
+          actions={[
+            { label: '编辑', onClick: () => onEdit(item), disabled: pending },
+            { label: '归档', onClick: () => onArchive(item), disabled: pending },
+            { label: '移入回收站', onClick: () => onMoveToTrash(item), disabled: pending, danger: true },
+          ]}
+        />
+      </div>
     </div>
   )
 }
@@ -85,11 +95,17 @@ function TodoSection({
   emptyMessage,
   pendingIds,
   onToggleTodo,
+  onEdit,
+  onArchive,
+  onMoveToTrash,
 }: {
   items: AssetListItem[]
   emptyMessage: string
   pendingIds: Set<string>
   onToggleTodo: (item: AssetListItem) => void
+  onEdit: (item: AssetListItem) => void
+  onArchive: (item: AssetListItem) => void
+  onMoveToTrash: (item: AssetListItem) => void
 }) {
   if (items.length === 0) {
     return (
@@ -103,7 +119,14 @@ function TodoSection({
     <div className="space-y-0">
       {items.map((item, index) => (
         <div key={item.id}>
-          <TodoItemComponent item={item} pending={pendingIds.has(item.id)} onToggle={onToggleTodo} />
+          <TodoItemComponent
+            item={item}
+            pending={pendingIds.has(item.id)}
+            onToggle={onToggleTodo}
+            onEdit={onEdit}
+            onArchive={onArchive}
+            onMoveToTrash={onMoveToTrash}
+          />
           {index < items.length - 1 && (
             <div className="h-px bg-outline-variant/10 mx-4" />
           )}
@@ -116,6 +139,7 @@ function TodoSection({
 export function TodosClient({ todos }: { todos: AssetListItem[] }) {
   const [items, setItems] = useState(todos)
 
+  const { updateAsset, archiveAsset, moveToTrash, isPending } = useAssetMutations()
   const { state, toggleCompletion } = useTodoCompletion()
 
   const grouped = {
@@ -137,6 +161,48 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
     const updated = await toggleCompletion(item.id, !item.completed)
     if (updated) {
       replaceItem(updated)
+    }
+  }
+
+  async function handleEdit(item: AssetListItem) {
+    const text = window.prompt('编辑待办内容', item.originalText)
+    if (!text || !text.trim()) {
+      return
+    }
+
+    const updated = await updateAsset({
+      assetId: item.id,
+      assetType: 'todo',
+      text: text.trim(),
+      timeText: item.timeText,
+      dueAt: item.dueAt,
+    })
+    if (updated) {
+      replaceItem(updated)
+    }
+  }
+
+  async function handleArchive(item: AssetListItem) {
+    const updated = await archiveAsset(item.id, item.type)
+    if (updated) {
+      setItems((current) => current.filter((entry) => entry.id !== updated.id))
+    }
+  }
+
+  async function handleMoveToTrash(item: AssetListItem) {
+    const updated = await moveToTrash(item.id, item.type)
+    if (updated) {
+      setItems((current) => current.filter((entry) => entry.id !== updated.id))
+    }
+  }
+
+  const pendingIds = new Set<string>()
+  if (state.pendingId) {
+    pendingIds.add(state.pendingId)
+  }
+  for (const item of items) {
+    if (isPending(item.id, 'update') || isPending(item.id, 'archive') || isPending(item.id, 'trash')) {
+      pendingIds.add(item.id)
     }
   }
 
@@ -174,7 +240,15 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
             <div>
               <SectionHeader label={groupLabels.today} count={grouped.today.length} />
               <div className="bg-surface-container-lowest rounded-lg">
-                <TodoSection items={grouped.today} emptyMessage="今天没有待办" pendingIds={state.pendingId ? new Set([state.pendingId]) : new Set()} onToggleTodo={handleToggleTodo} />
+                 <TodoSection
+                   items={grouped.today}
+                   emptyMessage="今天没有待办"
+                   pendingIds={pendingIds}
+                   onToggleTodo={handleToggleTodo}
+                   onEdit={handleEdit}
+                   onArchive={handleArchive}
+                   onMoveToTrash={handleMoveToTrash}
+                 />
               </div>
             </div>
           )}
@@ -183,7 +257,15 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
             <div>
               <SectionHeader label={groupLabels.thisWeek} count={grouped.thisWeek.length} />
               <div className="bg-surface-container-lowest rounded-lg">
-                <TodoSection items={grouped.thisWeek} emptyMessage="本周没有待办" pendingIds={state.pendingId ? new Set([state.pendingId]) : new Set()} onToggleTodo={handleToggleTodo} />
+                 <TodoSection
+                   items={grouped.thisWeek}
+                   emptyMessage="本周没有待办"
+                   pendingIds={pendingIds}
+                   onToggleTodo={handleToggleTodo}
+                   onEdit={handleEdit}
+                   onArchive={handleArchive}
+                   onMoveToTrash={handleMoveToTrash}
+                 />
               </div>
             </div>
           )}
@@ -192,7 +274,15 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
             <div>
               <SectionHeader label={groupLabels.noDate} count={grouped.noDate.length} />
               <div className="bg-surface-container-lowest rounded-lg">
-                <TodoSection items={grouped.noDate} emptyMessage="没有无截止日期的待办" pendingIds={state.pendingId ? new Set([state.pendingId]) : new Set()} onToggleTodo={handleToggleTodo} />
+                 <TodoSection
+                   items={grouped.noDate}
+                   emptyMessage="没有无截止日期的待办"
+                   pendingIds={pendingIds}
+                   onToggleTodo={handleToggleTodo}
+                   onEdit={handleEdit}
+                   onArchive={handleArchive}
+                   onMoveToTrash={handleMoveToTrash}
+                 />
               </div>
             </div>
           )}
@@ -201,7 +291,15 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
             <div>
               <SectionHeader label={groupLabels.completed} count={grouped.completed.length} />
               <div className="bg-surface-container-lowest rounded-lg">
-                <TodoSection items={grouped.completed} emptyMessage="没有已完成的待办" pendingIds={state.pendingId ? new Set([state.pendingId]) : new Set()} onToggleTodo={handleToggleTodo} />
+                 <TodoSection
+                   items={grouped.completed}
+                   emptyMessage="没有已完成的待办"
+                   pendingIds={pendingIds}
+                   onToggleTodo={handleToggleTodo}
+                   onEdit={handleEdit}
+                   onArchive={handleArchive}
+                   onMoveToTrash={handleMoveToTrash}
+                 />
               </div>
             </div>
           )}

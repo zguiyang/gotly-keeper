@@ -1,16 +1,36 @@
 'use client'
 
 import { FileText } from 'lucide-react'
+import { useState } from 'react'
 
+import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
+import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { formatAssetRelativeTime } from '@/shared/assets/asset-time-display'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 
-function NoteCard({ note }: { note: AssetListItem }) {
+function NoteCard({
+  note,
+  onEdit,
+  onArchive,
+  onMoveToTrash,
+}: {
+  note: AssetListItem
+  onEdit: (note: AssetListItem) => void
+  onArchive: (note: AssetListItem) => void
+  onMoveToTrash: (note: AssetListItem) => void
+}) {
   const hasTitle = note.title && note.title !== note.excerpt
 
   return (
     <div className="break-inside-avoid mb-4 min-h-[140px] bg-surface-container-lowest rounded-lg shadow-note-card p-4 transition-shadow duration-200 flex flex-col">
-      <div className="flex justify-end mb-2">
+      <div className="flex items-center justify-between mb-2">
+        <AssetActionMenu
+          actions={[
+            { label: '编辑', onClick: () => onEdit(note) },
+            { label: '归档', onClick: () => onArchive(note) },
+            { label: '移入回收站', onClick: () => onMoveToTrash(note), danger: true },
+          ]}
+        />
         <span className="text-[10px] text-on-surface-variant/60">
           {note.timeText || formatAssetRelativeTime(note.createdAt)}
         </span>
@@ -45,6 +65,40 @@ function EmptyState() {
 }
 
 export function NotesClient({ notes }: { notes: AssetListItem[] }) {
+  const [items, setItems] = useState(notes)
+  const { updateAsset, archiveAsset, moveToTrash } = useAssetMutations()
+
+  async function handleEdit(note: AssetListItem) {
+    const text = window.prompt('编辑笔记内容', note.originalText)
+    if (!text || !text.trim() || text.trim() === note.originalText) {
+      return
+    }
+
+    const updated = await updateAsset({
+      assetId: note.id,
+      assetType: 'note',
+      text: text.trim(),
+    })
+
+    if (updated) {
+      setItems((current) => current.map((item) => (item.id === updated.id ? updated : item)))
+    }
+  }
+
+  async function handleArchive(note: AssetListItem) {
+    const updated = await archiveAsset(note.id, note.type)
+    if (updated) {
+      setItems((current) => current.filter((item) => item.id !== updated.id))
+    }
+  }
+
+  async function handleMoveToTrash(note: AssetListItem) {
+    const updated = await moveToTrash(note.id, note.type)
+    if (updated) {
+      setItems((current) => current.filter((item) => item.id !== updated.id))
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="mb-8">
@@ -56,10 +110,16 @@ export function NotesClient({ notes }: { notes: AssetListItem[] }) {
         </p>
       </div>
 
-      {notes.length > 0 ? (
+      {items.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {notes.map((note) => (
-            <NoteCard key={note.id} note={note} />
+          {items.map((note) => (
+            <NoteCard
+              key={note.id}
+              note={note}
+              onEdit={handleEdit}
+              onArchive={handleArchive}
+              onMoveToTrash={handleMoveToTrash}
+            />
           ))}
         </div>
       ) : (

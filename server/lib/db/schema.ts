@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm'
 import { boolean, check, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, vector } from 'drizzle-orm/pg-core'
 
+import { ASSET_LIFECYCLE_STATUS } from '@/shared/assets/asset-lifecycle.types'
+
 import type { BookmarkMeta } from '@/shared/assets/bookmark-meta.types'
 
 export const users = pgTable(
@@ -73,11 +75,31 @@ export const notes = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     originalText: text('original_text').notNull(),
+    lifecycleStatus: text('lifecycle_status', {
+      enum: [
+        ASSET_LIFECYCLE_STATUS.ACTIVE,
+        ASSET_LIFECYCLE_STATUS.ARCHIVED,
+        ASSET_LIFECYCLE_STATUS.TRASHED,
+      ],
+    })
+      .default(ASSET_LIFECYCLE_STATUS.ACTIVE)
+      .notNull(),
+    archivedAt: timestamp('archived_at'),
+    trashedAt: timestamp('trashed_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
     index('notes_user_created_at_idx').on(table.userId, table.createdAt),
+    index('notes_user_lifecycle_created_at_idx').on(
+      table.userId,
+      table.lifecycleStatus,
+      table.createdAt
+    ),
+    check(
+      'notes_lifecycle_status_check',
+      sql`${table.lifecycleStatus} in ('active', 'archived', 'trashed')`
+    ),
   ]
 )
 
@@ -120,12 +142,32 @@ export const todos = pgTable(
     timeText: text('time_text'),
     dueAt: timestamp('due_at'),
     completedAt: timestamp('completed_at'),
+    lifecycleStatus: text('lifecycle_status', {
+      enum: [
+        ASSET_LIFECYCLE_STATUS.ACTIVE,
+        ASSET_LIFECYCLE_STATUS.ARCHIVED,
+        ASSET_LIFECYCLE_STATUS.TRASHED,
+      ],
+    })
+      .default(ASSET_LIFECYCLE_STATUS.ACTIVE)
+      .notNull(),
+    archivedAt: timestamp('archived_at'),
+    trashedAt: timestamp('trashed_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
     index('todos_user_created_at_idx').on(table.userId, table.createdAt),
     index('todos_user_completed_at_idx').on(table.userId, table.completedAt),
+    index('todos_user_lifecycle_created_at_idx').on(
+      table.userId,
+      table.lifecycleStatus,
+      table.createdAt
+    ),
+    check(
+      'todos_lifecycle_status_check',
+      sql`${table.lifecycleStatus} in ('active', 'archived', 'trashed')`
+    ),
   ]
 )
 
@@ -167,11 +209,31 @@ export const bookmarks = pgTable(
     originalText: text('original_text').notNull(),
     url: text('url'),
     bookmarkMeta: jsonb('bookmark_meta').$type<BookmarkMeta>(),
+    lifecycleStatus: text('lifecycle_status', {
+      enum: [
+        ASSET_LIFECYCLE_STATUS.ACTIVE,
+        ASSET_LIFECYCLE_STATUS.ARCHIVED,
+        ASSET_LIFECYCLE_STATUS.TRASHED,
+      ],
+    })
+      .default(ASSET_LIFECYCLE_STATUS.ACTIVE)
+      .notNull(),
+    archivedAt: timestamp('archived_at'),
+    trashedAt: timestamp('trashed_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
     index('bookmarks_user_created_at_idx').on(table.userId, table.createdAt),
+    index('bookmarks_user_lifecycle_created_at_idx').on(
+      table.userId,
+      table.lifecycleStatus,
+      table.createdAt
+    ),
+    check(
+      'bookmarks_lifecycle_status_check',
+      sql`${table.lifecycleStatus} in ('active', 'archived', 'trashed')`
+    ),
   ]
 )
 

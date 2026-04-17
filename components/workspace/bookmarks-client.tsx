@@ -1,7 +1,10 @@
 'use client'
 
-import { Share2, Trash2, Bookmark, ExternalLink } from 'lucide-react'
+import { Share2, Bookmark, ExternalLink } from 'lucide-react'
+import { useState } from 'react'
 
+import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
+import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 import { BOOKMARK_META_STATUS } from '@/shared/assets/bookmark-meta.types'
 import { formatBookmarkTime } from '@/shared/time/formatters'
@@ -16,7 +19,17 @@ function getHostname(url: string | null) {
   }
 }
 
-function BookmarkItem({ item }: { item: AssetListItem }) {
+function BookmarkItem({
+  item,
+  onEdit,
+  onArchive,
+  onMoveToTrash,
+}: {
+  item: AssetListItem
+  onEdit: (item: AssetListItem) => void
+  onArchive: (item: AssetListItem) => void
+  onMoveToTrash: (item: AssetListItem) => void
+}) {
   const status = item.bookmarkMeta?.status ?? null
 
   return (
@@ -77,12 +90,13 @@ function BookmarkItem({ item }: { item: AssetListItem }) {
           >
             <Share2 className="w-4 h-4" />
           </button>
-          <button
-            className="p-2 text-on-surface-variant hover:text-error transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-sm"
-            aria-label="删除收藏"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          <AssetActionMenu
+            actions={[
+              { label: '编辑', onClick: () => onEdit(item) },
+              { label: '归档', onClick: () => onArchive(item) },
+              { label: '移入回收站', onClick: () => onMoveToTrash(item), danger: true },
+            ]}
+          />
         </div>
       </div>
     </div>
@@ -94,6 +108,46 @@ function Divider() {
 }
 
 export function BookmarksClient({ bookmarks }: { bookmarks: AssetListItem[] }) {
+  const [items, setItems] = useState(bookmarks)
+  const { updateAsset, archiveAsset, moveToTrash } = useAssetMutations()
+
+  async function handleEdit(item: AssetListItem) {
+    const text = window.prompt('编辑书签标题或备注', item.originalText)
+    if (!text || !text.trim()) {
+      return
+    }
+
+    const url = window.prompt('编辑书签 URL', item.url ?? '')
+    if (!url || !url.trim()) {
+      return
+    }
+
+    const updated = await updateAsset({
+      assetId: item.id,
+      assetType: 'link',
+      text: text.trim(),
+      url: url.trim(),
+    })
+
+    if (updated) {
+      setItems((current) => current.map((entry) => (entry.id === updated.id ? updated : entry)))
+    }
+  }
+
+  async function handleArchive(item: AssetListItem) {
+    const updated = await archiveAsset(item.id, item.type)
+    if (updated) {
+      setItems((current) => current.filter((entry) => entry.id !== updated.id))
+    }
+  }
+
+  async function handleMoveToTrash(item: AssetListItem) {
+    const updated = await moveToTrash(item.id, item.type)
+    if (updated) {
+      setItems((current) => current.filter((entry) => entry.id !== updated.id))
+    }
+  }
+
   return (
     <>
       <div className="mb-10">
@@ -107,15 +161,20 @@ export function BookmarksClient({ bookmarks }: { bookmarks: AssetListItem[] }) {
 
       <div className="max-w-6xl">
         <div className="space-y-0">
-          {bookmarks.map((item, index) => (
+          {items.map((item, index) => (
             <div key={item.id}>
-              <BookmarkItem item={item} />
-              {index < bookmarks.length - 1 && <Divider />}
+              <BookmarkItem
+                item={item}
+                onEdit={handleEdit}
+                onArchive={handleArchive}
+                onMoveToTrash={handleMoveToTrash}
+              />
+              {index < items.length - 1 && <Divider />}
             </div>
           ))}
         </div>
 
-        {bookmarks.length === 0 && (
+        {items.length === 0 && (
           <div className="mt-20 text-center py-12">
             <div className="flex justify-center mb-4">
               <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center">
