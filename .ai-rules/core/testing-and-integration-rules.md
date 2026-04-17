@@ -94,7 +94,7 @@ Rules:
 3. Use browser verification for changes whose correctness depends on the full request, orchestration, and rendering path.
 4. Do not replace browser verification with isolated tests when the task is to prove that the real flow works end to end for the user.
 
-For browser tool and service-startup rules, follow `.ai-rules/project-tooling-and-runtime-rules.md`.
+For browser tool and service-startup rules, follow `.ai-rules/core/project-tooling-and-runtime-rules.md`.
 
 ## 6. Business Component Rule
 
@@ -128,7 +128,7 @@ Preferred placement:
 
 Rules:
 
-1. Keep test placement aligned with `.ai-rules/project-architecture-rules.md`.
+1. Keep test placement aligned with `.ai-rules/core/project-architecture-rules.md`.
 2. Prefer testing `server/` modules directly once that layer exists.
 3. Keep all new automated tests under root `tests/` and do not introduce `__tests__/` directories in project source trees.
 4. Do not create tests whose only purpose is to mimic a real browser flow badly; use a real browser when the claim is flow-level.
@@ -192,7 +192,7 @@ pnpm test:watch        # Run tests in watch mode
 pnpm test:coverage     # Run tests with coverage
 ```
 
-These are `package.json` scripts. Follow `.ai-rules/project-tooling-and-runtime-rules.md` and run them through the approved local execution path instead of the sandbox-first path.
+These are `package.json` scripts. Follow `.ai-rules/core/project-tooling-and-runtime-rules.md` and run them through the approved local execution path instead of the sandbox-first path.
 
 Vitest is configured via a single config in `vitest.config.ts`, with `tests/**/*.{test,spec}.{ts,tsx}` as include. The test infrastructure is centralized in the `tests/` directory.
 
@@ -226,11 +226,11 @@ Decision guide:
 
 ## 13. Related Rules
 
-- Runtime verification and browser priority: `.ai-rules/project-tooling-and-runtime-rules.md`
-- Architecture and action/use-case boundaries: `.ai-rules/project-architecture-rules.md`
-- Backend behavior boundaries and test-layer alignment baseline: `.ai-rules/backend-architecture-principles.md`
-- Client component and form boundaries: `.ai-rules/react-client-state-and-forms-rules.md`
-- Worktree execution protocol: `.ai-rules/phase-execution-protocol.md`
+- Runtime verification and browser priority: `.ai-rules/core/project-tooling-and-runtime-rules.md`
+- Architecture and action/use-case boundaries: `.ai-rules/core/project-architecture-rules.md`
+- Backend behavior boundaries and test-layer alignment baseline: `.ai-rules/domain/backend-architecture-principles.md`
+- Client component and form boundaries: `.ai-rules/domain/react-client-state-and-forms-rules.md`
+- Worktree execution protocol: `.ai-rules/advanced-workflows/phase-execution-protocol.md`
 
 ## 14. AI-Driven E2E Execution Policy
 

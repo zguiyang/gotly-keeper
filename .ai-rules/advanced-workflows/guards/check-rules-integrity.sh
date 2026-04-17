@@ -7,7 +7,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  bash .ai-rules/guards/check-rules-integrity.sh [--against <ref>] [--staged] [--allow-env <VAR_NAME>]
+  bash .ai-rules/advanced-workflows/guards/check-rules-integrity.sh [--against <ref>] [--staged] [--allow-env <VAR_NAME>]
 
 Options:
   --against <ref>      Compare against ref (default: origin/main if exists, else main, else HEAD~1)
@@ -88,5 +88,5 @@ echo "Changed files:"
 echo "$PROTECTED_CHANGES"
 echo ""
 echo "If this change is approved, rerun with environment override:"
-echo "  ${ALLOW_ENV_NAME}=1 bash .ai-rules/guards/check-rules-integrity.sh"
+echo "  ${ALLOW_ENV_NAME}=1 bash .ai-rules/advanced-workflows/guards/check-rules-integrity.sh"
 exit 1

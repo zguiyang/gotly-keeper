@@ -7,7 +7,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  bash .ai-rules/guards/check-phase-artifact-sync.sh [--phase-id <phase_id>]
+  bash .ai-rules/advanced-workflows/guards/check-phase-artifact-sync.sh [--phase-id <phase_id>]
 
 Options:
   --phase-id <phase_id>   Explicit phase_id. Defaults to branch suffix after "<type>/".
@@ -70,13 +70,13 @@ if [ -z "$PHASE_ID" ]; then
   fi
 fi
 
-SYNC_CMD=(bash .ai-rules/scripts/sync-phase-artifacts.sh --phase-id "$PHASE_ID" --dry-run)
+SYNC_CMD=(bash .ai-rules/advanced-workflows/scripts/sync-phase-artifacts.sh --phase-id "$PHASE_ID" --dry-run)
 SYNC_OUTPUT="$("${SYNC_CMD[@]}" 2>&1 || true)"
 
 if echo "$SYNC_OUTPUT" | grep -q '^PASS: artifact sync completed'; then
   echo "FAIL: unsynced phase artifacts detected for phase_id=${PHASE_ID}"
   echo "Run:"
-  echo "  bash .ai-rules/scripts/sync-phase-artifacts.sh --phase-id ${PHASE_ID}"
+  echo "  bash .ai-rules/advanced-workflows/scripts/sync-phase-artifacts.sh --phase-id ${PHASE_ID}"
   exit 1
 fi
 

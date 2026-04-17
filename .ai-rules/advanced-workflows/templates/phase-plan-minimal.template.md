@@ -12,8 +12,8 @@ task_report_path: docs/superpowers/plans/artifacts/${phase_id}.task-report.md
 failure_report_path: docs/superpowers/plans/artifacts/${phase_id}-failure-report.md
 merge_strategy: local-first-pr-fallback
 pr_submission_rule: Must submit PR for every executed phase
-task_report_template: .ai-rules/templates/phase-task-report.template.md
-failure_report_template: .ai-rules/templates/phase-failure-report.template.md
+task_report_template: .ai-rules/advanced-workflows/templates/phase-task-report.template.md
+failure_report_template: .ai-rules/advanced-workflows/templates/phase-failure-report.template.md
 artifact_dir: docs/superpowers/plans/artifacts
 verification_report_path: docs/superpowers/plans/artifacts/${phase_id}.verification-report.md
 ```
@@ -49,7 +49,7 @@ verification_report_path: docs/superpowers/plans/artifacts/${phase_id}.verificat
 - `git fetch --all --prune`
 - `git rebase origin/main`
 - `pnpm lint`
-- `bash .ai-rules/guards/check-import-boundaries.sh`
+- `bash .ai-rules/advanced-workflows/guards/check-import-boundaries.sh`
 
 ## PR Submission Gate（必须）
 

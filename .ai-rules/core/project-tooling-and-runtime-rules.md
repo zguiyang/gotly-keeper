@@ -17,11 +17,11 @@ Use this file when the task touches:
 
 Before any code implementation or refactor work:
 
-1. Run `bash .ai-rules/scripts/ai-bootstrap-check.sh`.
+1. Run `bash .ai-rules/advanced-workflows/scripts/ai-bootstrap-check.sh`.
 2. If baseline metadata is missing in an existing workspace, run:
-   `bash .ai-rules/scripts/ai-bootstrap-check.sh --init-baseline`.
+   `bash .ai-rules/advanced-workflows/scripts/ai-bootstrap-check.sh --init-baseline`.
 3. For phase/parallel development, create workspace only via:
-   `bash .ai-rules/scripts/create-ai-worktree.sh <phase_id> [branch_type]`.
+   `bash .ai-rules/advanced-workflows/scripts/create-ai-worktree.sh <phase_id> [branch_type]`.
 4. If bootstrap fails due to stale rules baseline, sync with latest `main` before coding.
 5. Do not start implementation when bootstrap check fails.
 6. For explicitly approved governance edits, use `--allow-rules-drift` (or `ALLOW_RULE_DRIFT=1`) and record approval context in task/PR notes.
@@ -84,7 +84,7 @@ Rules:
 5. Static checks such as `pnpm lint`, TypeScript checks, and migration checks remain useful, but they do not replace browser-backed verification for user-visible Next.js behavior.
 6. When the target behavior depends on `app/**/actions.ts`, `server/modules/**` orchestration, or a real user-visible business result, prefer real-page browser verification over isolated local tests for final proof.
 
-For verification-method selection, follow `.ai-rules/testing-and-integration-rules.md`.
+For verification-method selection, follow `.ai-rules/core/testing-and-integration-rules.md`.
 
 ## 5. Need-Based Tool Selection Rule
 
@@ -124,14 +124,14 @@ Before implementing unfamiliar or version-sensitive behavior:
 
 ## 8. Planning and Proposal Artifact Rule
 
-Substantial proposals, implementation plans, execution plans, and handoff-oriented analysis should be written to repository files instead of being output only in the console or chat.
+Writing plans/reports to repository files is not default behavior.
 
 Rules:
 
-1. When a plan or proposal is intended to guide later execution, review, or handoff to another AI agent or person, create or update a Markdown file in the correct layer.
-2. Follow `.ai-rules/project-governance-rules.md` for placement and promotion rules.
-3. Keep chat summaries concise and point to the durable artifact when one exists.
-4. Short tactical notes, quick status updates, and ordinary implementation explanations do not need a dedicated file unless the user asks for one or the content is needed as a durable handoff artifact.
+1. For ordinary question/small-edit/feature/debug tasks, keep planning in conversation or ephemeral task context.
+2. Create `docs/` or `prd/` artifacts only for cross-session handoff or large feature planning.
+3. Follow `.ai-rules/core/project-governance-rules.md` for placement and promotion rules.
+4. If the user explicitly requests a durable plan/report file, create it in the correct layer.
 
 ## 9. Operational Checklist
 
@@ -139,7 +139,7 @@ Before running commands or implementing code:
 
 1. Confirm whether the task touches dependency management, scripts, runtime inspection, or service startup.
 2. If yes, read this file alongside the project architecture and boundary rules.
-3. If backend/server behavior is touched, read `.ai-rules/backend-architecture-principles.md` first and use it as behavior-boundary baseline.
+3. If backend/server behavior is touched, read `.ai-rules/domain/backend-architecture-principles.md` first and use it as behavior-boundary baseline.
 4. Use `pnpm` for package and script operations.
 5. Run `package.json` script commands in the user's local environment through the available approval mechanism instead of trying them in the sandbox first.
 6. Do not start services without user approval.
@@ -147,22 +147,22 @@ Before running commands or implementing code:
 8. Prefer skills first, then MCP, then Context7 when additional guidance is needed.
 9. For browser work, follow the browser priority order defined in Section 4.
 10. For Next.js debugging and validation, prefer actual browser/page verification over custom scripts, except for pure JavaScript utilities or delivered CLI/script artifacts.
-11. For test-suite versus browser-verification decisions, follow `.ai-rules/testing-and-integration-rules.md`.
-12. Follow `.ai-rules/project-governance-rules.md` for placement of AI workflow guards and local AI workspace material.
+11. For test-suite versus browser-verification decisions, follow `.ai-rules/core/testing-and-integration-rules.md`.
+12. Follow `.ai-rules/core/project-governance-rules.md` for placement of AI workflow guards and local AI workspace material.
 13. Do not treat local AI workspace files as repository deliverables.
 14. Start coding only after `ai-bootstrap-check` passes.
-15. Before commit/PR, run `bash .ai-rules/guards/check-rules-integrity.sh --staged`.
+15. Before commit/PR, run `bash .ai-rules/advanced-workflows/guards/check-rules-integrity.sh --staged`.
 
 ## 10. Guard Scripts
 
-Rule-validation scripts live under `.ai-rules/guards/`.
+Rule-validation scripts live under `.ai-rules/advanced-workflows/guards/`.
 
 Examples:
 
 ```bash
-bash .ai-rules/guards/check-phase-doc-protocol.sh
-bash .ai-rules/guards/check-import-boundaries.sh
-bash .ai-rules/guards/check-rules-integrity.sh --staged
+bash .ai-rules/advanced-workflows/guards/check-phase-doc-protocol.sh
+bash .ai-rules/advanced-workflows/guards/check-import-boundaries.sh
+bash .ai-rules/advanced-workflows/guards/check-rules-integrity.sh --staged
 ```
 
 Use them directly when auditing AI workflow artifacts or architecture boundaries. Do not expose them through `package.json`.
@@ -171,5 +171,5 @@ Use them directly when auditing AI workflow artifacts or architecture boundaries
 
 For all phase plan execution rules (Preflight Gate, Start Gate, Sync Gate, Fail-Fast, PR-only merge), see:
 
-- `.ai-rules/phase-execution-protocol.md`
-- `.ai-rules/project-architecture-rules.md`
+- `.ai-rules/advanced-workflows/phase-execution-protocol.md`
+- `.ai-rules/core/project-architecture-rules.md`

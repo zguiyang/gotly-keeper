@@ -114,7 +114,7 @@ If the working tree contains unrelated changes that should not be bundled togeth
 
 ## 11. Local Workspace Exclusion
 
-Before proposing or creating commits, follow `.ai-rules/project-governance-rules.md` for local workspace exclusions and repository-asset boundaries.
+Before proposing or creating commits, follow `.ai-rules/core/project-governance-rules.md` for local workspace exclusions and repository-asset boundaries.
 
 In practice:
 
