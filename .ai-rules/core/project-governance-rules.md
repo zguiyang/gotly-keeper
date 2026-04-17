@@ -172,7 +172,7 @@ Use this directory for:
 - AI guard scripts
 - explanatory rule-adjacent material
 
-### 5.2 `.ai-rules/guards/`
+### 5.2 `.ai-rules/advanced-workflows/guards/`
 
 This directory contains rule-validation helpers for AI governance.
 
@@ -183,7 +183,7 @@ Rules:
 3. Do not expose these scripts through `package.json`.
 4. Keep these scripts focused on repository governance and rule compliance rather than application runtime behavior.
 
-### 5.3 `.ai-rules/scripts/`
+### 5.3 `.ai-rules/advanced-workflows/scripts/`
 
 This directory contains AI governance execution scripts.
 
@@ -191,7 +191,7 @@ Rules:
 
 1. Put AI workflow bootstrap/setup scripts here.
 2. Use these scripts to standardize session entry, worktree setup, and baseline checks.
-3. Do not place these scripts in root `scripts/`; governance scripts belong to `.ai-rules/scripts/`.
+3. Do not place these scripts in root `scripts/`; governance scripts belong to `.ai-rules/advanced-workflows/scripts/`.
 4. Do not expose these scripts through `package.json`.
 
 ## 6. Local AI Workspace Rules
