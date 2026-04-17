@@ -15,16 +15,23 @@ Use this file when the task touches:
 
 ## 1.1 Development Session Bootstrap Rule
 
-Before any code implementation or refactor work:
+`ai-bootstrap-check` is a governance/worktree preflight, not the default gate for every ordinary code edit.
 
-1. Run `bash .ai-rules/advanced-workflows/scripts/ai-bootstrap-check.sh`.
-2. If baseline metadata is missing in an existing workspace, run:
-   `bash .ai-rules/advanced-workflows/scripts/ai-bootstrap-check.sh --init-baseline`.
-3. For phase/parallel development, create workspace only via:
+Run `bash .ai-rules/advanced-workflows/scripts/ai-bootstrap-check.sh` only when one of these applies:
+
+1. The task is explicitly marked as phase, subagent, parallel, or worktree execution.
+2. The task changes `AGENTS.md`, `.ai-rules/**`, `.agents/**`, `docs/**`, `prd/**`, or local AI workflow artifacts.
+3. The user explicitly asks for a bootstrap/governance preflight.
+
+Rules:
+
+1. For ordinary `small-edit`, `feature/refactor`, and `debug` tasks, follow `.ai-rules/core/default-execution-workflow.md` and do not run `ai-bootstrap-check` as a mandatory start gate.
+2. For phase/parallel development, create workspace only via:
    `bash .ai-rules/advanced-workflows/scripts/create-ai-worktree.sh <phase_id> [branch_type]`.
-4. If bootstrap fails due to stale rules baseline, sync with latest `main` before coding.
-5. Do not start implementation when bootstrap check fails.
-6. For explicitly approved governance edits, use `--allow-rules-drift` (or `ALLOW_RULE_DRIFT=1`) and record approval context in task/PR notes.
+3. If baseline metadata is missing in an existing phase/worktree workspace, run:
+   `bash .ai-rules/advanced-workflows/scripts/ai-bootstrap-check.sh --init-baseline`.
+4. If bootstrap fails because current rules differ from latest approved `origin/main` rules, sync with latest `main` before coding.
+5. For explicitly approved governance edits, use `--allow-rules-drift` (or `ALLOW_RULE_DRIFT=1`) and record approval context in task/PR notes.
 
 ## 2. Package Manager and Command Runner Rule
 
@@ -150,7 +157,7 @@ Before running commands or implementing code:
 11. For test-suite versus browser-verification decisions, follow `.ai-rules/core/testing-and-integration-rules.md`.
 12. Follow `.ai-rules/core/project-governance-rules.md` for placement of AI workflow guards and local AI workspace material.
 13. Do not treat local AI workspace files as repository deliverables.
-14. Start coding only after `ai-bootstrap-check` passes.
+14. Run `ai-bootstrap-check` only for the governance/worktree cases listed in Section 1.1.
 15. Before commit/PR, run `bash .ai-rules/advanced-workflows/guards/check-rules-integrity.sh --staged`.
 
 ## 10. Guard Scripts

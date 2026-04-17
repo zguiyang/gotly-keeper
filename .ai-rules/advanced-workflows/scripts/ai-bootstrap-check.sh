@@ -104,6 +104,26 @@ fi
 
 CURRENT_RULES_TREE="$(git -C "$TARGET_DIR" rev-parse HEAD:.ai-rules)"
 BASELINE_RULES_TREE="$(grep '^RULES_BASELINE_TREE_SHA=' "$BASELINE_FILE" | cut -d'=' -f2)"
+LATEST_MAIN_SHA=""
+LATEST_MAIN_RULES_TREE=""
+
+if git -C "$TARGET_DIR" show-ref --verify --quiet refs/remotes/origin/main; then
+  LATEST_MAIN_SHA="$(git -C "$TARGET_DIR" rev-parse origin/main)"
+  LATEST_MAIN_RULES_TREE="$(git -C "$TARGET_DIR" rev-parse origin/main:.ai-rules)"
+fi
+
+refresh_baseline() {
+  local source_sha="$1"
+  local rules_tree="$2"
+  local source_name="$3"
+
+  cat > "$BASELINE_FILE" <<EOF
+RULES_BASELINE_MAIN_SHA=${source_sha}
+RULES_BASELINE_TREE_SHA=${rules_tree}
+RULES_BASELINE_CREATED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+RULES_BASELINE_SOURCE=${source_name}
+EOF
+}
 
 if [ -z "$BASELINE_RULES_TREE" ]; then
   echo "FAIL: invalid baseline file (missing RULES_BASELINE_TREE_SHA)"
@@ -112,7 +132,11 @@ fi
 
 if [ "$CURRENT_RULES_TREE" != "$BASELINE_RULES_TREE" ]; then
   ENV_ALLOW_RULE_DRIFT="${ALLOW_RULE_DRIFT:-0}"
-  if [ "$ARG_ALLOW_RULE_DRIFT" -eq 1 ] || [ "$ENV_ALLOW_RULE_DRIFT" = "1" ] || [ "$ENV_ALLOW_RULE_DRIFT" = "true" ]; then
+  if [ -n "$LATEST_MAIN_RULES_TREE" ] && [ "$CURRENT_RULES_TREE" = "$LATEST_MAIN_RULES_TREE" ]; then
+    refresh_baseline "$LATEST_MAIN_SHA" "$LATEST_MAIN_RULES_TREE" "origin/main"
+    BASELINE_RULES_TREE="$LATEST_MAIN_RULES_TREE"
+    echo "INFO: refreshed stale rules baseline from origin/main"
+  elif [ "$ARG_ALLOW_RULE_DRIFT" -eq 1 ] || [ "$ENV_ALLOW_RULE_DRIFT" = "1" ] || [ "$ENV_ALLOW_RULE_DRIFT" = "true" ]; then
     echo "WARN: rule baseline drift detected but explicitly allowed"
     echo "  baseline tree: ${BASELINE_RULES_TREE}"
     echo "  current tree:  ${CURRENT_RULES_TREE}"
@@ -126,8 +150,7 @@ if [ "$CURRENT_RULES_TREE" != "$BASELINE_RULES_TREE" ]; then
   fi
 fi
 
-if git -C "$TARGET_DIR" show-ref --verify --quiet refs/remotes/origin/main; then
-  LATEST_MAIN_RULES_TREE="$(git -C "$TARGET_DIR" rev-parse origin/main:.ai-rules)"
+if [ -n "$LATEST_MAIN_RULES_TREE" ]; then
   if [ "$BASELINE_RULES_TREE" != "$LATEST_MAIN_RULES_TREE" ]; then
     ENV_ALLOW_RULE_DRIFT="${ALLOW_RULE_DRIFT:-0}"
     if [ "$ARG_ALLOW_RULE_DRIFT" -eq 1 ] || [ "$ENV_ALLOW_RULE_DRIFT" = "1" ] || [ "$ENV_ALLOW_RULE_DRIFT" = "true" ]; then
