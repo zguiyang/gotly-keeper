@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, desc, eq, sql, type SQL } from 'drizzle-orm'
+import { and, desc, eq, inArray, sql, type SQL } from 'drizzle-orm'
 
 import {
   ASSET_LIST_LIMIT_MIN,
@@ -8,6 +8,7 @@ import {
 } from '@/server/lib/config/constants'
 import { db } from '@/server/lib/db'
 import { bookmarks, notes, todos } from '@/server/lib/db/schema'
+import { ASSET_LIFECYCLE_STATUS } from '@/shared/assets/asset-lifecycle.types'
 
 
 import { scoreAssetForQuery } from './search.query-parser'
@@ -25,6 +26,7 @@ export async function searchByKeyword({
   terms,
   typeHint,
   completionHint,
+  includeArchived = false,
   timeRangeHint,
   limit = 100,
 }: KeywordSearchOptions): Promise<KeywordCandidate[]> {
@@ -36,11 +38,22 @@ export async function searchByKeyword({
   const tasks: Array<Promise<AssetListItem[]>> = []
 
   if (includeNotes) {
+    const noteStatuses = includeArchived
+      ? [ASSET_LIFECYCLE_STATUS.ACTIVE, ASSET_LIFECYCLE_STATUS.ARCHIVED]
+      : [ASSET_LIFECYCLE_STATUS.ACTIVE]
+
     tasks.push(
       db
         .select()
         .from(notes)
-        .where(eq(notes.userId, userId))
+        .where(
+          and(
+            eq(notes.userId, userId),
+            noteStatuses.length === 1
+              ? eq(notes.lifecycleStatus, noteStatuses[0])
+              : inArray(notes.lifecycleStatus, noteStatuses)
+          )
+        )
         .orderBy(desc(notes.createdAt))
         .limit(clampedLimit)
         .then((rows) =>
@@ -61,11 +74,22 @@ export async function searchByKeyword({
   }
 
   if (includeBookmarks) {
+    const bookmarkStatuses = includeArchived
+      ? [ASSET_LIFECYCLE_STATUS.ACTIVE, ASSET_LIFECYCLE_STATUS.ARCHIVED]
+      : [ASSET_LIFECYCLE_STATUS.ACTIVE]
+
     tasks.push(
       db
         .select()
         .from(bookmarks)
-        .where(eq(bookmarks.userId, userId))
+        .where(
+          and(
+            eq(bookmarks.userId, userId),
+            bookmarkStatuses.length === 1
+              ? eq(bookmarks.lifecycleStatus, bookmarkStatuses[0])
+              : inArray(bookmarks.lifecycleStatus, bookmarkStatuses)
+          )
+        )
         .orderBy(desc(bookmarks.createdAt))
         .limit(clampedLimit)
         .then((rows) =>
@@ -90,7 +114,16 @@ export async function searchByKeyword({
   }
 
   if (includeTodos) {
-    const todoConditions: SQL[] = [eq(todos.userId, userId)]
+    const todoStatuses = includeArchived
+      ? [ASSET_LIFECYCLE_STATUS.ACTIVE, ASSET_LIFECYCLE_STATUS.ARCHIVED]
+      : [ASSET_LIFECYCLE_STATUS.ACTIVE]
+
+    const todoConditions: SQL[] = [
+      eq(todos.userId, userId),
+      todoStatuses.length === 1
+        ? eq(todos.lifecycleStatus, todoStatuses[0])
+        : inArray(todos.lifecycleStatus, todoStatuses),
+    ]
 
     if (completionHint === 'complete') {
       todoConditions.push(sql`${todos.completedAt} is not null`)

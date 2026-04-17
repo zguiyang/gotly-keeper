@@ -9,16 +9,10 @@ import {
 } from '@/shared/assets/asset-lifecycle.types'
 import { now } from '@/shared/time/dayjs'
 
-import { toTodoListItem } from './todos.mapper'
-import { todos } from './todos.schema'
+import { toNoteListItem } from './notes.mapper'
+import { notes } from './notes.schema'
 
-import type { TodoListItem } from './todos.types'
-
-type SetTodoCompletionInput = {
-  userId: string
-  todoId: string
-  completed: boolean
-}
+import type { NoteListItem } from './notes.types'
 
 function normalizeTextOrThrow(text: string): string {
   const trimmed = text.trim()
@@ -31,15 +25,15 @@ function normalizeTextOrThrow(text: string): string {
 
 async function updateLifecycle(input: {
   userId: string
-  todoId: string
+  noteId: string
   fromStatuses: AssetLifecycleStatus[]
   toStatus: AssetLifecycleStatus
   archivedAt: Date | null
   trashedAt: Date | null
-}): Promise<TodoListItem | null> {
+}): Promise<NoteListItem | null> {
   for (const fromStatus of input.fromStatuses) {
     const [updated] = await db
-      .update(todos)
+      .update(notes)
       .set({
         lifecycleStatus: input.toStatus,
         archivedAt: input.archivedAt,
@@ -48,80 +42,53 @@ async function updateLifecycle(input: {
       })
       .where(
         and(
-          eq(todos.id, input.todoId),
-          eq(todos.userId, input.userId),
-          eq(todos.lifecycleStatus, fromStatus)
+          eq(notes.id, input.noteId),
+          eq(notes.userId, input.userId),
+          eq(notes.lifecycleStatus, fromStatus)
         )
       )
       .returning()
 
     if (updated) {
-      return toTodoListItem(updated)
+      return toNoteListItem(updated)
     }
   }
 
   return null
 }
 
-export async function updateTodo(input: {
+export async function updateNote(input: {
   userId: string
-  todoId: string
+  noteId: string
   text: string
-  timeText?: string | null
-  dueAt?: Date | null
-}): Promise<TodoListItem | null> {
+}): Promise<NoteListItem | null> {
   const trimmedText = normalizeTextOrThrow(input.text)
 
   const [updated] = await db
-    .update(todos)
+    .update(notes)
     .set({
       originalText: trimmedText,
-      timeText: input.timeText ?? null,
-      dueAt: input.dueAt ?? null,
       updatedAt: now(),
     })
     .where(
       and(
-        eq(todos.id, input.todoId),
-        eq(todos.userId, input.userId),
-        eq(todos.lifecycleStatus, ASSET_LIFECYCLE_STATUS.ACTIVE)
+        eq(notes.id, input.noteId),
+        eq(notes.userId, input.userId),
+        eq(notes.lifecycleStatus, ASSET_LIFECYCLE_STATUS.ACTIVE)
       )
     )
     .returning()
 
-  return updated ? toTodoListItem(updated) : null
+  return updated ? toNoteListItem(updated) : null
 }
 
-export async function setTodoCompletion({
-  userId,
-  todoId,
-  completed,
-}: SetTodoCompletionInput): Promise<TodoListItem | null> {
-  const [updated] = await db
-    .update(todos)
-    .set({
-      completedAt: completed ? now() : null,
-      updatedAt: now(),
-    })
-    .where(
-      and(
-        eq(todos.id, todoId),
-        eq(todos.userId, userId),
-        eq(todos.lifecycleStatus, ASSET_LIFECYCLE_STATUS.ACTIVE)
-      )
-    )
-    .returning()
-
-  return updated ? toTodoListItem(updated) : null
-}
-
-export async function archiveTodo(input: {
+export async function archiveNote(input: {
   userId: string
-  todoId: string
-}): Promise<TodoListItem | null> {
+  noteId: string
+}): Promise<NoteListItem | null> {
   return updateLifecycle({
     userId: input.userId,
-    todoId: input.todoId,
+    noteId: input.noteId,
     fromStatuses: [ASSET_LIFECYCLE_STATUS.ACTIVE],
     toStatus: ASSET_LIFECYCLE_STATUS.ARCHIVED,
     archivedAt: now(),
@@ -129,13 +96,13 @@ export async function archiveTodo(input: {
   })
 }
 
-export async function unarchiveTodo(input: {
+export async function unarchiveNote(input: {
   userId: string
-  todoId: string
-}): Promise<TodoListItem | null> {
+  noteId: string
+}): Promise<NoteListItem | null> {
   return updateLifecycle({
     userId: input.userId,
-    todoId: input.todoId,
+    noteId: input.noteId,
     fromStatuses: [ASSET_LIFECYCLE_STATUS.ARCHIVED],
     toStatus: ASSET_LIFECYCLE_STATUS.ACTIVE,
     archivedAt: null,
@@ -143,13 +110,13 @@ export async function unarchiveTodo(input: {
   })
 }
 
-export async function moveTodoToTrash(input: {
+export async function moveNoteToTrash(input: {
   userId: string
-  todoId: string
-}): Promise<TodoListItem | null> {
+  noteId: string
+}): Promise<NoteListItem | null> {
   return updateLifecycle({
     userId: input.userId,
-    todoId: input.todoId,
+    noteId: input.noteId,
     fromStatuses: [ASSET_LIFECYCLE_STATUS.ACTIVE, ASSET_LIFECYCLE_STATUS.ARCHIVED],
     toStatus: ASSET_LIFECYCLE_STATUS.TRASHED,
     archivedAt: null,
@@ -157,13 +124,13 @@ export async function moveTodoToTrash(input: {
   })
 }
 
-export async function restoreTodoFromTrash(input: {
+export async function restoreNoteFromTrash(input: {
   userId: string
-  todoId: string
-}): Promise<TodoListItem | null> {
+  noteId: string
+}): Promise<NoteListItem | null> {
   return updateLifecycle({
     userId: input.userId,
-    todoId: input.todoId,
+    noteId: input.noteId,
     fromStatuses: [ASSET_LIFECYCLE_STATUS.TRASHED],
     toStatus: ASSET_LIFECYCLE_STATUS.ACTIVE,
     archivedAt: null,
@@ -171,20 +138,20 @@ export async function restoreTodoFromTrash(input: {
   })
 }
 
-export async function purgeTodo(input: {
+export async function purgeNote(input: {
   userId: string
-  todoId: string
+  noteId: string
 }): Promise<boolean> {
   const deleted = await db
-    .delete(todos)
+    .delete(notes)
     .where(
       and(
-        eq(todos.id, input.todoId),
-        eq(todos.userId, input.userId),
-        eq(todos.lifecycleStatus, ASSET_LIFECYCLE_STATUS.TRASHED)
+        eq(notes.id, input.noteId),
+        eq(notes.userId, input.userId),
+        eq(notes.lifecycleStatus, ASSET_LIFECYCLE_STATUS.TRASHED)
       )
     )
-    .returning({ id: todos.id })
+    .returning({ id: notes.id })
 
   return deleted.length > 0
 }

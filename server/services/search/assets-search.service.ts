@@ -30,6 +30,7 @@ export async function searchAssets({
   typeHint,
   timeHint,
   completionHint,
+  includeArchived = false,
   limit = ASSET_SEARCH_LIMIT_DEFAULT,
 }: SearchAssetsOptions): Promise<AssetListItem[]> {
   const trimmed = query.trim()
@@ -51,6 +52,7 @@ export async function searchAssets({
         query: trimmed,
         typeHint,
         completionHint,
+        includeArchived,
         limit: clampAssetListLimit(limit),
       })
     ).filter(
@@ -75,6 +77,7 @@ export async function searchAssets({
     terms,
     typeHint,
     completionHint,
+    includeArchived,
     timeRangeHint,
   })
 

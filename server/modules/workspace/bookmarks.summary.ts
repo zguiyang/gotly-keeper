@@ -3,15 +3,15 @@ import 'server-only'
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
+import { getAiProvider } from '@/server/lib/ai'
+import { BOOKMARK_SUMMARY_LIMIT, BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS } from '@/server/lib/config/ai'
 import { renderPrompt } from '@/server/lib/prompt-template'
 import { listBookmarks } from '@/server/services/bookmarks'
 import { nowIso, dayjs } from '@/shared/time/dayjs'
 
-import { getAiProvider } from '@/server/lib/ai'
-import { BOOKMARK_SUMMARY_LIMIT, BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS } from '@/server/lib/config/ai'
 
-import type { AssetListItem, BookmarkSummaryResult, BookmarkSummarySource } from '@/shared/assets/assets.types'
 import type { BookmarkListItem } from '@/server/services/bookmarks'
+import type { AssetListItem, BookmarkSummaryResult, BookmarkSummarySource } from '@/shared/assets/assets.types'
 
 type BookmarkSummaryPromptItem = {
   id: string
@@ -32,7 +32,11 @@ function toAssetListItem(bookmark: BookmarkListItem): AssetListItem {
     dueAt: null,
     completed: false,
     bookmarkMeta: bookmark.bookmarkMeta,
+    lifecycleStatus: bookmark.lifecycleStatus,
+    archivedAt: bookmark.archivedAt,
+    trashedAt: bookmark.trashedAt,
     createdAt: bookmark.createdAt,
+    updatedAt: bookmark.updatedAt,
   }
 }
 

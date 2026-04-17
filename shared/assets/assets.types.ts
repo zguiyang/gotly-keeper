@@ -1,3 +1,4 @@
+import type { AssetLifecycleStatus } from './asset-lifecycle.types'
 import type { BookmarkMeta } from './bookmark-meta.types'
 
 export type AssetListItem = {
@@ -11,7 +12,11 @@ export type AssetListItem = {
   dueAt: Date | null
   completed: boolean
   bookmarkMeta?: BookmarkMeta | null
+  lifecycleStatus?: AssetLifecycleStatus
+  archivedAt?: Date | null
+  trashedAt?: Date | null
   createdAt: Date
+  updatedAt?: Date
 }
 
 export type AssetQueryResult = {

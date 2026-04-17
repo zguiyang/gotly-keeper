@@ -10,8 +10,8 @@ import { nowIso, dayjs } from '@/shared/time/dayjs'
 import { getAiProvider } from '../../lib/ai/ai-provider'
 import { NOTE_SUMMARY_LIMIT, NOTE_SUMMARY_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
 
-import type { AssetListItem, NoteSummaryResult, NoteSummarySource } from '@/shared/assets/assets.types'
 import type { NoteListItem } from '@/server/services/notes'
+import type { AssetListItem, NoteSummaryResult, NoteSummarySource } from '@/shared/assets/assets.types'
 
 type NoteSummaryPromptItem = {
   id: string
@@ -31,7 +31,11 @@ function toAssetListItem(note: NoteListItem): AssetListItem {
     dueAt: null,
     completed: false,
     bookmarkMeta: null,
+    lifecycleStatus: note.lifecycleStatus,
+    archivedAt: note.archivedAt,
+    trashedAt: note.trashedAt,
     createdAt: note.createdAt,
+    updatedAt: note.updatedAt,
   }
 }
 
