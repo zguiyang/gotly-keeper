@@ -25,6 +25,12 @@ Use this file as an index only.
 - `.ai-rules/core/testing-and-integration-rules.md`
 - `.ai-rules/core/coding-style-rules.md`
 
+## Capability Boundary Source
+
+- `PROJECT_CAPABILITIES.md` is the single source of truth for what infrastructure and product capabilities are currently in scope.
+- For `small-edit`, `feature/refactor`, and `debug` tasks, check this file before implementation.
+- If a requested or implied change crosses capability boundaries, ask the user before coding.
+
 ## Domain Routing
 
 - `server/**` -> `.ai-rules/domain/backend-architecture-principles.md`

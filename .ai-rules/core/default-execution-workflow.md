@@ -28,6 +28,22 @@ Follow this loop in order:
 5. Verify with the smallest valid check first, then broaden if needed.
 6. If verification fails, identify root cause and retry with a focused fix.
 
+### 2.1 Non-Goals Gate (MANDATORY)
+
+Before implementation, explicitly list:
+
+- what is NOT being implemented
+- what existing system capabilities must NOT be extended
+
+Rules:
+
+- Do NOT introduce new subsystems (email, payment, queue, etc.)
+- Do NOT assume missing features should be implemented
+- If a feature requires new infrastructure, ask the user before coding
+- Apply the same non-goals and forbidden capability boundary to subagent prompts
+
+Use `PROJECT_CAPABILITIES.md` as the source of truth for capability boundaries.
+
 ## 3. Non-Default Workflows
 
 The following are not default behavior:
