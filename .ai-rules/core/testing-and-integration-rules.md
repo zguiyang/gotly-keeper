@@ -292,3 +292,37 @@ AI-driven E2E runs must produce lightweight evidence suitable for review:
 - failure artifacts when failed
 
 Passing AI runs are useful confidence signals, but they do not replace the minimal scripted smoke gate required for CI reliability.
+
+## 15. CI Hard Gates for Test and Rule Drift
+
+To prevent silent drift after architecture or rule refactors, CI must enforce the following hard gates:
+
+1. `pnpm typecheck` (equivalent to `tsc --noEmit`) must pass.
+2. `pnpm guard:import-boundaries` must pass.
+3. `pnpm guard:test-migration` must pass when legacy service tests are deleted.
+4. `pnpm guard:governance-links` must pass for `.ai-rules` path references and boundary exception TODO compliance.
+
+### 15.1 Legacy Test Migration Guard
+
+When deleting tests under legacy service paths (for example `tests/unit/server/services/assets/**`), the same change set must add replacement tests under the current service ownership paths.
+
+Legacy path detection rule:
+
+- if a deleted test lives under `tests/unit/server/services/<domain>/**`
+- and `server/services/<domain>/` no longer exists
+- treat it as a legacy-domain test deletion that requires replacement tests in active domains
+
+Fail condition:
+
+- legacy service tests are deleted
+- but no replacement service tests are added
+
+### 15.2 Boundary Exception TODO Governance
+
+Boundary exception TODO comments must be explicit and time-bounded.
+
+Required format:
+
+`TODO: resolve boundary violation [owner=@<id> due=YYYY-MM-DD]`
+
+Invalid format or overdue due-date fails CI.

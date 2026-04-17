@@ -189,6 +189,8 @@ This dependency diagram is the current repository mapping; behavior-boundary enf
 Rules:
 
 - `app/**` may call `server/modules/**`
+- `app/**` must not call `server/lib/**` directly; expose module-level boundary APIs first
+- `app/**` must not call `server/services/**` directly; route through `server/modules/**`
 - `server/modules/**` may call `server/services/**`
 - `server/modules/**` may call `server/lib/**` for module-owned boundary integrations
 - `server/services/**` may call `server/lib/**`
@@ -197,6 +199,7 @@ Rules:
 Forbidden patterns:
 
 - `server/**` importing `app/**`
+- `app/**` importing `server/lib/**` or `server/services/**`
 - `server/services/**` importing `server/modules/**`
 - `server/lib/**` importing `server/services/**` or `server/modules/**`
 
@@ -206,6 +209,7 @@ Constraint A (thin-entry constraint):
 
 - DO NOT place substantial business logic in `app/**/page.tsx`, `app/**/api/**/route.ts`, or `app/**/actions.ts`.
 - These files may validate/authenticate/shape payloads and call `server/modules/**` only.
+- These files must not import `server/lib/**` or `server/services/**` directly.
 - Real example: orchestration lives in `server/modules/workspace/index.ts` instead of route/page entries.
 
 Constraint B (service direction constraint):
@@ -387,7 +391,7 @@ When a capability crosses domain boundaries (e.g., search needs to understand as
 
 Fallback condition:
 - If immediate refactoring is not feasible, create a temporary interface in `shared/` that bridges the gap
-- Document the violation in code comments with `TODO: resolve boundary violation`
+- Document the violation in code comments with `TODO: resolve boundary violation [owner=@<id> due=YYYY-MM-DD]`
 - Schedule the violation for resolution in next refactoring phase
 
 ## 10. Related Rules
