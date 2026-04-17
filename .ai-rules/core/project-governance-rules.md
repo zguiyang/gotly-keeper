@@ -176,6 +176,11 @@ Use this directory for:
 
 This directory contains rule-validation helpers for AI governance.
 
+Note:
+
+The directory name does not mean these helpers are always phase-only.
+Whether they run is controlled by the active workflow protocol.
+
 Rules:
 
 1. Put AI workflow guard scripts here.
@@ -186,6 +191,11 @@ Rules:
 ### 5.3 `.ai-rules/advanced-workflows/scripts/`
 
 This directory contains AI governance execution scripts.
+
+Note:
+
+The directory name does not force phase-only usage.
+Use `.ai-rules/core/default-execution-workflow.md` for default trigger rules and `.ai-rules/advanced-workflows/phase-execution-protocol.md` for explicit phase/subagent triggers.
 
 Rules:
 
