@@ -1,13 +1,8 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-
-import { workspaceNavItems, isWorkspaceNavItemActive } from "@/config/workspace/nav"
+import { WorkspaceNavList } from '@/components/workspace/workspace-nav-list'
 
 export function Sidebar() {
-  const pathname = usePathname()
-
   return (
     <aside className="fixed left-0 top-0 h-full w-64 hidden lg:flex flex-col py-6 px-4 font-[family-name:var(--font-manrope)] text-sm z-50 bg-surface border-r border-outline-variant/20">
       <div className="mb-10 px-2">
@@ -18,27 +13,7 @@ export function Sidebar() {
       </div>
 
       <nav className="space-y-0.5 flex-1">
-        {workspaceNavItems.map((item) => {
-          const Icon = item.icon
-          const active = isWorkspaceNavItemActive(pathname, item.href)
-          return (
-            <Link
-              key={item.label}
-              className={`group relative flex items-center gap-3 px-3 py-2 rounded-sm transition-colors duration-150 ${
-                active
-                  ? "text-primary font-medium bg-primary/5"
-                  : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low"
-              }`}
-              href={item.href}
-            >
-              {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary rounded-r" />
-              )}
-              <Icon className="w-4 h-4" />
-              <span>{item.label}</span>
-            </Link>
-          )
-        })}
+        <WorkspaceNavList variant="sidebar" />
       </nav>
 
       <div className="mt-auto pt-6 px-2">

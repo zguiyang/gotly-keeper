@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { db } from '@/server/lib/db'
+import { createAssetRecord } from '@/server/services/assets/create-asset-record'
 import { bookmarks } from './bookmarks.schema'
 import type { BookmarkListItem } from './bookmarks.types'
 import { toBookmarkListItem } from './bookmarks.mapper'
@@ -10,24 +11,28 @@ export async function createBookmark(input: {
   text: string
   url: string
 }): Promise<BookmarkListItem> {
-  const trimmed = input.text.trim()
-  if (!trimmed) {
-    throw new Error('EMPTY_INPUT')
-  }
+  const normalizedUrl = input.url.trim()
 
-  if (!input.url) {
-    throw new Error('URL_REQUIRED')
-  }
+  return createAssetRecord({
+    text: input.text,
+    validate: () => {
+      if (!normalizedUrl) {
+        throw new Error('URL_REQUIRED')
+      }
+    },
+    insert: async (trimmedText) => {
+      const [created] = await db
+        .insert(bookmarks)
+        .values({
+          id: crypto.randomUUID(),
+          userId: input.userId,
+          originalText: trimmedText,
+          url: normalizedUrl,
+        })
+        .returning()
 
-  const [created] = await db
-    .insert(bookmarks)
-    .values({
-      id: crypto.randomUUID(),
-      userId: input.userId,
-      originalText: trimmed,
-      url: input.url,
-    })
-    .returning()
-
-  return toBookmarkListItem(created)
+      return created
+    },
+    map: toBookmarkListItem,
+  })
 }

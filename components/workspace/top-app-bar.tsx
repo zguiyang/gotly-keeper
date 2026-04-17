@@ -2,11 +2,9 @@
 
 import { Bell, Settings, Search, Menu } from "lucide-react"
 import Image from "next/image"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
 
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { workspaceNavItems, isWorkspaceNavItemActive } from "@/config/workspace/nav"
+import { WorkspaceNavList } from "@/components/workspace/workspace-nav-list"
 
 type TopAppBarProps = {
   userName: string
@@ -14,7 +12,6 @@ type TopAppBarProps = {
 }
 
 export function TopAppBar({ userName, userImage }: TopAppBarProps) {
-  const pathname = usePathname()
   const fallbackInitial = userName.trim().slice(0, 1).toUpperCase() || 'G'
 
   return (
@@ -37,24 +34,7 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
                 </div>
               </div>
               <nav className="flex-1 px-2 py-4 space-y-0.5">
-                {workspaceNavItems.map((item) => {
-                  const Icon = item.icon
-                  const active = isWorkspaceNavItemActive(pathname, item.href)
-                  return (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-sm transition-colors duration-150 ${
-                        active
-                          ? "text-primary font-medium bg-primary/5"
-                          : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low"
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span>{item.label}</span>
-                    </Link>
-                  )
-                })}
+                <WorkspaceNavList variant="sheet" />
               </nav>
               <div className="px-4 py-6 border-t border-outline-variant/20">
                 <p className="text-xs text-on-surface-variant leading-relaxed">
