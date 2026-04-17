@@ -11,6 +11,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Forbid __tests__ directories in source tree
         run: |
@@ -19,3 +35,18 @@ jobs:
             exit 1
           fi
           echo "OK: no legacy __tests__ usage in source tree."
+
+      - name: Typecheck and architecture guards
+        run: |
+          pnpm typecheck
+          pnpm guard:import-boundaries
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            bash scripts/guard-test-migration.sh --against "${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_REF="${{ github.event.before }}"
+            if [ -z "$BASE_REF" ] || [ "$BASE_REF" = "0000000000000000000000000000000000000000" ]; then
+              BASE_REF="HEAD~1"
+            fi
+            bash scripts/guard-test-migration.sh --against "$BASE_REF"
+          fi
+          pnpm guard:governance-links

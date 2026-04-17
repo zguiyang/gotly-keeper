@@ -11,11 +11,12 @@ check_violation() {
   local source_pattern="$1"
   local import_pattern="$2"
   local description="$3"
+  local search_root="${4:-server}"
 
   local matches
   local violations
 
-  matches=$(grep -rEn "$import_pattern" --include="*.ts" --include="*.tsx" server/ 2>/dev/null || true)
+  matches=$(grep -rEn "$import_pattern" --include="*.ts" --include="*.tsx" "$search_root" 2>/dev/null || true)
   violations=$(printf '%s\n' "$matches" | grep -E "$source_pattern" || true)
 
   if [ -n "$violations" ]; then
@@ -37,6 +38,20 @@ main() {
 
   # Rule 1: server/** may NOT import from app/**
   if ! check_violation "^server/.*:" "@/app/" "server/** importing from @/app/** is forbidden"; then
+    failures=$((failures + 1))
+  fi
+
+  # Rule 1.1: app/** may only access server modules, never services/lib directly
+  if ! check_violation "^app/.*:" "@/server/services(/|['\"])" "app/** importing from @/server/services/** is forbidden; use server/modules/**" "app"; then
+    failures=$((failures + 1))
+  fi
+  if ! check_violation "^app/.*:" "@/server/lib(/|['\"])" "app/** importing from @/server/lib/** is forbidden; use server/modules/**" "app"; then
+    failures=$((failures + 1))
+  fi
+  if ! check_violation "^app/.*:" "from ['\"][.]{1,2}/.*server/services(/|['\"])" "app/** relative importing from server/services/** is forbidden; use server/modules/**" "app"; then
+    failures=$((failures + 1))
+  fi
+  if ! check_violation "^app/.*:" "from ['\"][.]{1,2}/.*server/lib(/|['\"])" "app/** relative importing from server/lib/** is forbidden; use server/modules/**" "app"; then
     failures=$((failures + 1))
   fi
   if ! check_violation "^server/.*:" " from ['\"]app/" "server/** importing from app/** is forbidden"; then
