@@ -71,7 +71,7 @@ Rules:
 
 1. Keep the route handler thin: parse, validate, authenticate or authorize when needed, call server-side AI logic, and return the stream or response.
 2. Do not use internal AI route handlers as the data layer for ordinary Server Component rendering.
-3. Apply the route-handler and boundary rules in `.ai-rules/project-architecture-rules.md` for input validation, auth, safe errors, and response shaping.
+3. Apply the route-handler and boundary rules in `.ai-rules/core/project-architecture-rules.md` for input validation, auth, safe errors, and response shaping.
 
 ## 7. Verification Rule
 
@@ -80,4 +80,4 @@ For AI SDK changes:
 1. Run static verification such as `pnpm lint` or a narrower TypeScript check when available.
 2. For streaming UI behavior, use browser-backed verification when a dev server is already running or the user approves starting one.
 3. Do not make live model calls in tests by default. Prefer mocks or controlled fakes unless the user explicitly asks for live integration verification.
-4. For choosing between isolated tests and browser-based verification, follow `.ai-rules/testing-and-integration-rules.md`.
+4. For choosing between isolated tests and browser-based verification, follow `.ai-rules/core/testing-and-integration-rules.md`.

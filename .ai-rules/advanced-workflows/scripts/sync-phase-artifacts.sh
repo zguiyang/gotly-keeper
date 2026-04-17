@@ -7,7 +7,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  bash .ai-rules/scripts/sync-phase-artifacts.sh [--phase-id <phase_id>] [--dry-run]
+  bash .ai-rules/advanced-workflows/scripts/sync-phase-artifacts.sh [--phase-id <phase_id>] [--dry-run]
 
 Options:
   --phase-id <phase_id>   Sync only files prefixed with <phase_id>

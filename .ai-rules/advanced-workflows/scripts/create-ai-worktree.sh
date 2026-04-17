@@ -7,11 +7,11 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  bash .ai-rules/scripts/create-ai-worktree.sh <phase_id> [branch_type]
+  bash .ai-rules/advanced-workflows/scripts/create-ai-worktree.sh <phase_id> [branch_type]
 
 Examples:
-  bash .ai-rules/scripts/create-ai-worktree.sh phase-assets-owner-matrix feat
-  bash .ai-rules/scripts/create-ai-worktree.sh phase-assets-boundary-hardening refactor
+  bash .ai-rules/advanced-workflows/scripts/create-ai-worktree.sh phase-assets-owner-matrix feat
+  bash .ai-rules/advanced-workflows/scripts/create-ai-worktree.sh phase-assets-boundary-hardening refactor
 
 Notes:
   - branch is created as: <branch_type>/<phase_id>
@@ -46,9 +46,9 @@ if [ -z "$REPO_ROOT" ]; then
 fi
 cd "$REPO_ROOT"
 
-if [ ! -f "AGENTS.md" ] || [ ! -f ".ai-rules/README.md" ]; then
+if [ ! -f "AGENTS.md" ] || [ ! -f ".ai-rules/core/README.md" ]; then
   echo "FAIL: repository does not match expected rule entry layout"
-  echo "Expected files: AGENTS.md and .ai-rules/README.md"
+  echo "Expected files: AGENTS.md and .ai-rules/core/README.md"
   exit 1
 fi
 
@@ -88,7 +88,7 @@ RULES_BASELINE_SOURCE=origin/main
 EOF
 
 echo "==> Running bootstrap check..."
-bash .ai-rules/scripts/ai-bootstrap-check.sh --worktree "$WORKTREE_PATH"
+bash .ai-rules/advanced-workflows/scripts/ai-bootstrap-check.sh --worktree "$WORKTREE_PATH"
 
 mkdir -p "$WORKTREE_PATH/docs/superpowers/plans/artifacts"
 mkdir -p "docs/superpowers/plans/artifacts"
@@ -98,4 +98,4 @@ echo "PASS: worktree ready"
 echo "  branch:   ${BRANCH_NAME}"
 echo "  path:     ${WORKTREE_PATH}"
 echo "  baseline: ${BASELINE_MAIN_SHA}"
-echo "  artifact sync: bash .ai-rules/scripts/sync-phase-artifacts.sh --phase-id ${PHASE_ID}"
+echo "  artifact sync: bash .ai-rules/advanced-workflows/scripts/sync-phase-artifacts.sh --phase-id ${PHASE_ID}"

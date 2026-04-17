@@ -27,8 +27,8 @@ task_report_path: docs/superpowers/plans/artifacts/${phase_id}.task-report.md
 failure_report_path: docs/superpowers/plans/artifacts/${phase_id}-failure-report.md
 merge_strategy: local-first-pr-fallback
 pr_submission_rule: Must submit PR for every executed phase
-task_report_template: .ai-rules/templates/phase-task-report.template.md
-failure_report_template: .ai-rules/templates/phase-failure-report.template.md
+task_report_template: .ai-rules/advanced-workflows/templates/phase-task-report.template.md
+failure_report_template: .ai-rules/advanced-workflows/templates/phase-failure-report.template.md
 artifact_dir: docs/superpowers/plans/artifacts
 verification_report_path: docs/superpowers/plans/artifacts/${phase_id}.verification-report.md
 ```
@@ -64,7 +64,7 @@ Optional artifacts (as needed by phase scope):
 The phase document protocol guard lives with the rule files, not in project runtime scripts:
 
 ```bash
-bash .ai-rules/guards/check-phase-doc-protocol.sh
+bash .ai-rules/advanced-workflows/guards/check-phase-doc-protocol.sh
 ```
 
 Use it when creating or reviewing a phase plan document. Do not add this guard to `package.json`; it validates AI workflow documents, not application code.
@@ -103,7 +103,7 @@ This is an execution-precondition failure, not a runtime test failure.
 ```bash
 git branch --show-current  # Should be ${branch_type}/${phase_id}
 git merge-base --is-ancestor origin/main HEAD && echo "base-ok"
-bash .ai-rules/scripts/ai-bootstrap-check.sh
+bash .ai-rules/advanced-workflows/scripts/ai-bootstrap-check.sh
 ```
 
 **Fail-Fast**: If baseline check fails, STOP immediately.
@@ -116,8 +116,8 @@ bash .ai-rules/scripts/ai-bootstrap-check.sh
 git fetch --all --prune
 git rebase origin/main
 pnpm lint
-bash .ai-rules/guards/check-import-boundaries.sh
-bash .ai-rules/guards/check-phase-artifact-sync.sh --phase-id ${phase_id}
+bash .ai-rules/advanced-workflows/guards/check-import-boundaries.sh
+bash .ai-rules/advanced-workflows/guards/check-phase-artifact-sync.sh --phase-id ${phase_id}
 ```
 
 **Fail-Fast**: If any check fails, STOP immediately.
@@ -162,8 +162,8 @@ Applies to all gates. On failure:
 
 Each phase plan SHOULD include `Task 0`:
 - Decide `branch_type` from scope (`feat|fix|refactor|ui|chore`)
-- Create phase task-report from `.ai-rules/templates/phase-task-report.template.md`
-- Prepare failure-report from `.ai-rules/templates/phase-failure-report.template.md`
+- Create phase task-report from `.ai-rules/advanced-workflows/templates/phase-task-report.template.md`
+- Prepare failure-report from `.ai-rules/advanced-workflows/templates/phase-failure-report.template.md`
 - Run Preflight dependency check
 - Continue only when Preflight passes
 
@@ -172,9 +172,9 @@ Reason: ensures task reporting, failure logging, and stop behavior are standardi
 ## 5. Worktree Setup
 
 ```bash
-bash .ai-rules/scripts/create-ai-worktree.sh ${phase_id} ${branch_type}
+bash .ai-rules/advanced-workflows/scripts/create-ai-worktree.sh ${phase_id} ${branch_type}
 cd .worktrees/${phase_id}
-bash .ai-rules/scripts/ai-bootstrap-check.sh --worktree . --strict
+bash .ai-rules/advanced-workflows/scripts/ai-bootstrap-check.sh --worktree . --strict
 ```
 
 ## 5.1 Artifact Sync Rule (Worktree → Primary Workspace)
@@ -187,7 +187,7 @@ To avoid report divergence across multiple worktrees:
 2. Before handoff, gate transition, or session end, sync artifacts to the primary workspace path with:
 
 ```bash
-bash .ai-rules/scripts/sync-phase-artifacts.sh --phase-id ${phase_id}
+bash .ai-rules/advanced-workflows/scripts/sync-phase-artifacts.sh --phase-id ${phase_id}
 ```
 
 3. Never stage or commit synced artifacts under `docs/`.
@@ -203,9 +203,9 @@ This keeps audit artifacts discoverable in one local place while preserving work
 
 ## 7. Related Rules
 
-- Layered architecture boundaries: `.ai-rules/project-architecture-rules.md`
-- Testing and verification decision rules: `.ai-rules/testing-and-integration-rules.md`
-- Repository asset and local workspace governance: `.ai-rules/project-governance-rules.md`
+- Layered architecture boundaries: `.ai-rules/core/project-architecture-rules.md`
+- Testing and verification decision rules: `.ai-rules/core/testing-and-integration-rules.md`
+- Repository asset and local workspace governance: `.ai-rules/core/project-governance-rules.md`
 
 ## 8. Compatibility Note
 

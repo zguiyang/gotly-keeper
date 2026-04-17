@@ -7,7 +7,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  bash .ai-rules/scripts/ai-bootstrap-check.sh [--worktree <path>] [--strict] [--init-baseline] [--allow-rules-drift]
+  bash .ai-rules/advanced-workflows/scripts/ai-bootstrap-check.sh [--worktree <path>] [--strict] [--init-baseline] [--allow-rules-drift]
 
 Options:
   --worktree <path>   Check a specific worktree path (default: current directory)
@@ -69,8 +69,8 @@ if [ ! -f "$REPO_ROOT/AGENTS.md" ]; then
   exit 1
 fi
 
-if [ ! -f "$REPO_ROOT/.ai-rules/README.md" ]; then
-  echo "FAIL: .ai-rules/README.md missing"
+if [ ! -f "$REPO_ROOT/.ai-rules/core/README.md" ]; then
+  echo "FAIL: .ai-rules/core/README.md missing"
   exit 1
 fi
 
@@ -95,9 +95,9 @@ EOF
   else
     echo "FAIL: rules baseline metadata missing for this workspace"
     echo "If this is a phase workspace, create via:"
-    echo "  bash .ai-rules/scripts/create-ai-worktree.sh <phase_id> [branch_type]"
+    echo "  bash .ai-rules/advanced-workflows/scripts/create-ai-worktree.sh <phase_id> [branch_type]"
     echo "If this is an existing workspace, initialize once via:"
-    echo "  bash .ai-rules/scripts/ai-bootstrap-check.sh --init-baseline"
+    echo "  bash .ai-rules/advanced-workflows/scripts/ai-bootstrap-check.sh --init-baseline"
     exit 1
   fi
 fi
@@ -147,7 +147,7 @@ fi
 
 if [ "$STRICT_MODE" -eq 1 ]; then
   echo "==> Strict mode: running guard checks..."
-  bash "$REPO_ROOT/.ai-rules/guards/check-import-boundaries.sh"
+  bash "$REPO_ROOT/.ai-rules/advanced-workflows/guards/check-import-boundaries.sh"
 fi
 
 PROTECTED_WORKTREE_CHANGES="$(git -C "$TARGET_DIR" status --porcelain -- AGENTS.md .ai-rules 2>/dev/null || true)"
@@ -160,7 +160,7 @@ if [ -n "$PROTECTED_WORKTREE_CHANGES" ]; then
     echo "FAIL: protected governance files have local modifications in this workspace"
     echo "$PROTECTED_WORKTREE_CHANGES"
     echo "Action: revert/split these changes or explicitly allow with --allow-rules-drift."
-    echo "Recommended verification: bash .ai-rules/guards/check-rules-integrity.sh --staged"
+    echo "Recommended verification: bash .ai-rules/advanced-workflows/guards/check-rules-integrity.sh --staged"
     exit 1
   fi
 fi
@@ -169,4 +169,4 @@ echo "PASS: bootstrap check passed"
 echo "  repo:     ${REPO_ROOT}"
 echo "  worktree: $(cd "$TARGET_DIR" && pwd)"
 echo "  baseline: ${BASELINE_RULES_TREE}"
-echo "  note:     in worktree mode, run: bash .ai-rules/guards/check-phase-artifact-sync.sh --phase-id <phase_id> before merge/PR"
+echo "  note:     in worktree mode, run: bash .ai-rules/advanced-workflows/guards/check-phase-artifact-sync.sh --phase-id <phase_id> before merge/PR"
