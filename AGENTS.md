@@ -55,7 +55,7 @@ Apply this as follows:
 
 Rules in `.ai-rules/` are split into three layers:
 
-- `core/` for always-loaded minimal rules
+- `core/` for entry, routing, and task-level rules loaded by need
 - `domain/` for path-based rules
 - `advanced-workflows/` for explicit advanced modes only
 

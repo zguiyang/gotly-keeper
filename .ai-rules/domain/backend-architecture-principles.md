@@ -43,6 +43,12 @@ Rules:
 - if mixing appears, split the unit before merge
 - mixed-behavior units fail architecture review by default
 
+Clarification:
+
+- Small boundary glue such as payload shaping, mapper calls, error translation, and dependency injection does not count as mixed behavior by itself.
+- Split only when the unit owns substantial decisions from more than one behavior type.
+- Do not create extra files solely to satisfy labels when the direct version is clearer and still preserves dependency direction.
+
 ### 2.5 Boundary Coordinator Rule (Hard Constraint)
 
 Only flow-orchestration code may coordinate between business-rule code and technical-capability code.

@@ -12,12 +12,12 @@ This file does not restate general governance principles or framework knowledge 
 
 ## 2. Upstream Rules
 
-Read these first:
+Load upstream rules by need, not by default:
 
-- `.ai-rules/core/project-governance-rules.md`
-- `.ai-rules/domain/universal-development-boundary-rules.md`
-- `.ai-rules/domain/backend-architecture-principles.md`
-- `.ai-rules/domain/frontend-architecture-principles.md`
+- `.ai-rules/core/project-governance-rules.md` when repository placement, scripts, docs, planning artifacts, or AI workflow assets are touched.
+- `.ai-rules/domain/universal-development-boundary-rules.md` when ownership, boundary exceptions, or cross-layer placement is ambiguous.
+- `.ai-rules/domain/backend-architecture-principles.md` when server-side behavior, orchestration, infrastructure, or domain boundaries are touched.
+- `.ai-rules/domain/frontend-architecture-principles.md` when component, hook, client adapter, state, or frontend data-flow boundaries are touched.
 
 Use framework-specific skills and docs for framework behavior details.
 

@@ -191,11 +191,11 @@ bash .ai-rules/advanced-workflows/guards/check-import-boundaries.sh
 bash .ai-rules/advanced-workflows/guards/check-rules-integrity.sh --staged
 ```
 
-Use them directly when auditing AI workflow artifacts or architecture boundaries. Do not expose them through `package.json`.
+Use AI-workflow-only guards directly when auditing AI workflow artifacts. Architecture guards that protect runtime code boundaries may also be exposed through `package.json` when they are part of CI or normal project verification.
 
 ## 11. Phase Execution Protocol Reference
 
-For all phase plan execution rules (Preflight Gate, Start Gate, Sync Gate, Fail-Fast, PR-only merge), see:
+For all phase plan execution rules (Preflight Gate, Start Gate, Sync Gate, Fail-Fast, local-first merge, and PR fallback), see:
 
 - `.ai-rules/advanced-workflows/phase-execution-protocol.md`
 - `.ai-rules/core/project-architecture-rules.md`

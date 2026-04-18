@@ -76,6 +76,12 @@ Rules:
 - if behavior mixing appears, split the unit before merge
 - mixed-behavior units fail architecture review by default
 
+Clarification:
+
+- Simple event binding, prop shaping, view-model mapping, and calling a hook from a component do not count as mixed behavior by themselves.
+- Split only when a unit owns substantial rendering plus substantial orchestration or external data policy.
+- Do not introduce thin files whose only purpose is to satisfy labels when a direct component or hook remains easier to understand.
+
 Forbidden mixing examples:
 
 - a component that renders UI and directly fetches remote data
