@@ -26,11 +26,13 @@ worktree_naming_rule: .worktrees/${phase_id}
 task_report_path: docs/superpowers/plans/artifacts/${phase_id}.task-report.md
 failure_report_path: docs/superpowers/plans/artifacts/${phase_id}-failure-report.md
 merge_strategy: local-first-pr-fallback
-pr_submission_rule: Must submit PR for every executed phase
+pr_submission_rule: Create PR only after local merge fails and user explicitly approves PR fallback
 task_report_template: .ai-rules/advanced-workflows/templates/phase-task-report.template.md
 failure_report_template: .ai-rules/advanced-workflows/templates/phase-failure-report.template.md
 artifact_dir: docs/superpowers/plans/artifacts
 verification_report_path: docs/superpowers/plans/artifacts/${phase_id}.verification-report.md
+code_review_rule: Must pass code review before merge or PR fallback
+gh_auth_rule: Must verify `gh auth status` before any `gh pr` command
 ```
 
 ## 2.1 Reporting Contract (Mandatory)
@@ -122,13 +124,20 @@ bash .ai-rules/advanced-workflows/guards/check-phase-artifact-sync.sh --phase-id
 
 **Fail-Fast**: If any check fails, STOP immediately.
 
-### 3.4 PR Submission Gate (Mandatory)
+### 3.4 Code Review Gate (Before Merge or PR Fallback)
 
-```bash
-gh pr create --base main --head ${branch_type}/${phase_id}
-```
+**Purpose**: Prevent merging or creating fallback PRs for code that has not passed review.
 
-**Required**: Every executed phase must have a corresponding PR record for review/audit.
+Minimum review requirements:
+
+1. Review the full diff and related code in a code-review stance.
+2. Record whether blocking findings exist.
+3. If any blocking correctness, architecture, security, data-loss, or test-coverage issue exists, STOP immediately.
+4. Notify the user with the blocking findings and do not merge locally, create a PR, or use PR fallback merge until the issues are fixed and review is rerun.
+
+For PR-based integration, external review requirements still apply. A local AI review does not override missing required human approval, failed GitHub review rules, or failed status checks.
+
+**Fail-Fast**: If review fails or review status is unknown, STOP immediately and notify the user.
 
 ### 3.5 Local Merge Gate (Primary)
 
@@ -139,15 +148,64 @@ git merge --no-ff ${branch_type}/${phase_id}
 git push origin main
 ```
 
-**Primary path**: Always try local merge first.
+**Primary path**: Always try local merge first after Sync Gate and Code Review Gate pass.
 
-### 3.6 PR Fallback Merge Gate (When Local Merge Fails)
+**Fail-Fast**: If local merge or push fails, STOP immediately, notify the user with the exact failure, and ask whether to create a PR for fallback merge. Do not create a PR unless the user explicitly approves PR fallback.
+
+### 3.6 PR Fallback Consent Gate (Only When Local Merge Fails)
+
+Ask the user whether to create a PR for fallback merge.
+
+Rules:
+
+1. State that local merge failed.
+2. Summarize the merge/push failure.
+3. Ask for explicit approval before any PR operation.
+4. If the user does not approve PR fallback, stop and leave the branch/worktree intact.
+
+### 3.7 GitHub CLI Auth Gate (Before any `gh pr` Command)
+
+**Purpose**: Detect expired or missing GitHub CLI credentials before PR operations.
+
+```bash
+gh auth status
+```
+
+**Fail-Fast**: If `gh auth status` fails, STOP immediately, notify the user that GitHub CLI authentication is unavailable, and ask the user to restore authentication with `gh auth login` or another approved auth path. Do not attempt `gh pr create`, `gh pr merge`, or other GitHub PR operations while auth is failed or unknown.
+
+### 3.8 PR Fallback Creation Gate
+
+```bash
+gh pr create --base main --head ${branch_type}/${phase_id}
+```
+
+**Required only when**: Local Merge Gate failed and the user explicitly approved PR fallback.
+
+### 3.9 PR Review and Status Gate (Before PR Fallback Merge)
+
+**Purpose**: Ensure the PR is actually mergeable before either local merge or PR merge.
+
+Before merging, verify the PR review/check state using GitHub CLI or the GitHub UI.
+
+Minimum CLI check:
+
+```bash
+gh pr view --json reviewDecision,mergeStateStatus,statusCheckRollup
+```
+
+Rules:
+
+1. If required reviews are pending, changes are requested, checks are failing, or mergeability is blocked, STOP immediately.
+2. Notify the user with the exact blocking reason.
+3. If the repository has no required PR review/check policy, ask the user for explicit approval before PR fallback merge.
+
+### 3.10 PR Fallback Merge Gate (When Local Merge Fails and User Approved)
 
 ```bash
 gh pr merge --squash --auto
 ```
 
-If local merge fails, merge through PR.
+If local merge fails and the user approved PR fallback, merge through PR.
 If PR merge also fails, STOP immediately and notify user.
 
 ## 4. Fail-Fast Rule

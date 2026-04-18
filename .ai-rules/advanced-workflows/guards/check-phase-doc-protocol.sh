@@ -34,14 +34,20 @@ V2_FIELDS=(
   "artifact_dir"
   "task_report_template"
   "failure_report_template"
+  "code_review_rule"
+  "gh_auth_rule"
 )
 
 V2_RULES=(
   "Preflight Gate"
   "Start Gate"
   "Sync Gate"
-  "PR Submission Gate"
+  "Code Review Gate"
   "Local Merge Gate"
+  "PR Fallback Consent Gate"
+  "GitHub CLI Auth Gate"
+  "PR Fallback Creation Gate"
+  "PR Review and Status Gate"
   "PR Fallback Merge Gate"
   "Fail-Fast"
 )
@@ -86,8 +92,8 @@ validate_plan() {
       fi
     done
 
-    if ! grep -q "Must submit PR for every executed phase" "$phase_plan"; then
-      echo "FAIL: Missing PR submission rule in $phase_plan"
+    if ! grep -q "Create PR only after local merge fails and user explicitly approves PR fallback" "$phase_plan"; then
+      echo "FAIL: Missing PR fallback approval rule in $phase_plan"
       failures=$((failures + 1))
     fi
   else
