@@ -3,7 +3,9 @@
 import { Bell, Settings, Search, Menu } from "lucide-react"
 import Image from "next/image"
 
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { WorkspaceNavList } from "@/components/workspace/workspace-nav-list"
 
 type TopAppBarProps = {
@@ -20,11 +22,12 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
         <Sheet>
           <SheetTrigger
             aria-label="打开工作区导航"
-            className="rounded-2xl p-2.5 text-on-surface-variant transition-colors duration-150 hover:bg-surface-container-low hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            render={<Button variant="ghost" size="icon-lg" className="text-on-surface-variant hover:text-on-surface" />}
           >
-            <Menu className="w-5 h-5" />
+            <Menu />
           </SheetTrigger>
           <SheetContent side="left" className="w-64 border-r border-outline-variant/15 bg-surface p-0">
+            <SheetTitle className="sr-only">工作区导航</SheetTitle>
             <div className="flex flex-col h-full">
               <div className="border-b border-outline-variant/15 px-4 py-6">
                 <div className="font-headline text-[1.9rem] font-semibold tracking-[-0.04em] text-primary">Gotly AI</div>
@@ -50,7 +53,7 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
             <Search className="w-4 h-4 text-on-surface-variant/60" />
           </div>
-          <input
+          <Input
             aria-label="快速查找"
             className="h-10 w-full rounded-2xl border border-outline-variant/20 bg-surface-container-lowest/95 pl-10 pr-4 text-sm text-on-surface shadow-[0_16px_36px_-30px_rgba(0,81,177,0.3)] transition-[border-color,box-shadow] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:border-primary/35 focus-visible:ring-2 focus-visible:ring-primary/15"
             name="topbar-search"
@@ -61,18 +64,22 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
-        <button
-          className="rounded-2xl p-2.5 text-on-surface-variant transition-colors duration-150 hover:bg-surface-container-low hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        <Button
+          variant="ghost"
+          size="icon-lg"
+          className="text-on-surface-variant hover:text-on-surface"
           aria-label="通知"
         >
-          <Bell className="w-5 h-5" />
-        </button>
-        <button
-          className="rounded-2xl p-2.5 text-on-surface-variant transition-colors duration-150 hover:bg-surface-container-low hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          <Bell />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-lg"
+          className="text-on-surface-variant hover:text-on-surface"
           aria-label="设置"
         >
-          <Settings className="w-5 h-5" />
-        </button>
+          <Settings />
+        </Button>
         <div className="ml-1 flex size-9 items-center justify-center overflow-hidden rounded-full border border-outline-variant/10 bg-surface-container-high shadow-[0_14px_28px_-24px_rgba(0,81,177,0.28)]">
           {userImage ? (
             <Image

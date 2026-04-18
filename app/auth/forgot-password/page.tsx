@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { AuthField } from "@/components/auth/auth-field";
 import { AuthPageScaffold } from "@/components/auth/auth-page-scaffold";
+import { Button } from "@/components/ui/button";
 
 export default function ForgotPasswordPage() {
   return (
@@ -26,12 +27,12 @@ export default function ForgotPasswordPage() {
           type="email"
         />
 
-        <button
-          className="w-full rounded-full bg-gradient-to-r from-primary to-primary-container px-8 py-4 text-base font-bold text-white shadow-[0_12px_32px_-4px_rgba(0,81,177,0.06)] transition-[transform,filter,box-shadow] duration-200 hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        <Button
+          className="h-12 w-full rounded-full text-base"
           type="submit"
         >
           发送验证链接
-        </button>
+        </Button>
 
         <div className="flex flex-col items-center pt-4">
           <Link

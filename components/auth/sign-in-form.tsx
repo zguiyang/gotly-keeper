@@ -66,11 +66,9 @@ export function SignInForm() {
       )}
 
       <Button
-        className="w-full text-white"
+        className="h-12 w-full text-base"
         disabled={pending}
-        size="xl"
         type="submit"
-        variant="primary"
       >
         {pending ? '登录中…' : '立即登录'}
       </Button>

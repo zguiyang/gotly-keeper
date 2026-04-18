@@ -113,9 +113,9 @@ export default function LandingPage() {
                   <Link
                     href="/workspace"
                     className={cn(
-                      buttonVariants({ size: "xl" }),
+                      buttonVariants({ size: "lg" }),
                       styles.primaryCta,
-                      "rounded-full px-6 text-white shadow-lg shadow-primary/20"
+                      "h-12 rounded-full px-6 text-white shadow-lg shadow-primary/20"
                     )}
                   >
                     进入工作空间
@@ -128,9 +128,9 @@ export default function LandingPage() {
                   <a
                     href="#capabilities"
                     className={cn(
-                      buttonVariants({ variant: "outline", size: "xl" }),
+                      buttonVariants({ variant: "outline", size: "lg" }),
                       styles.secondaryCta,
-                      "rounded-full border-primary/15 bg-white/70 px-6 shadow-sm"
+                      "h-12 rounded-full border-primary/15 bg-white/70 px-6 shadow-sm"
                     )}
                   >
                     查看核心能力

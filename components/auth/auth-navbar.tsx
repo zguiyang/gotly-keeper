@@ -1,6 +1,7 @@
 import { CircleHelp, Archive } from "lucide-react";
 import * as React from "react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface AuthNavbarProps {
@@ -18,12 +19,15 @@ export function AuthNavbar({ className }: AuthNavbarProps) {
           Gotly AI
         </span>
       </div>
-      <button
-        className="rounded-lg p-2 text-[#54647a] transition-colors hover:bg-surface-container-low hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="text-[#54647a] hover:text-on-surface"
         aria-label="帮助与反馈"
       >
-        <CircleHelp className="h-5 w-5" strokeWidth={2} />
-      </button>
+        <CircleHelp strokeWidth={2} />
+      </Button>
     </header>
   );
 }

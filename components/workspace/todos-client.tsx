@@ -4,8 +4,10 @@ import { Check, Circle, Clock } from 'lucide-react'
 import { useState } from 'react'
 
 
+import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
+import { AssetEditDialog } from '@/components/workspace/asset-edit-dialog'
 import {
   WorkspaceEmptyState,
   workspaceMetaTextClassName,
@@ -52,20 +54,22 @@ function TodoItemComponent({
       }`}
     >
       <div className="flex min-w-0 flex-1 items-start gap-3.5">
-        <button
+        <Button
           type="button"
           onClick={() => onToggle(item)}
           disabled={pending}
-          className="mt-0.5 shrink-0 rounded-2xl p-0.5 text-left transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+          variant="ghost"
+          size="icon-sm"
+          className="mt-0.5 shrink-0 text-on-surface-variant/40 hover:text-primary"
           aria-label={item.completed ? '标记为未完成' : '标记为已完成'}
           title={item.completed ? '标记为未完成' : '标记为已完成'}
         >
           {item.completed ? (
-            <Check className="w-5 h-5 text-primary" />
+            <Check className="text-primary" />
           ) : (
-            <Circle className="w-5 h-5 text-on-surface-variant/30 hover:text-primary" />
+            <Circle />
           )}
-        </button>
+        </Button>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <h4
             className={`text-[17px] font-semibold leading-7 tracking-[-0.02em] ${
@@ -143,6 +147,7 @@ function TodoSection({
 
 export function TodosClient({ todos }: { todos: AssetListItem[] }) {
   const [items, setItems] = useState(todos)
+  const [editingTodo, setEditingTodo] = useState<AssetListItem | null>(null)
 
   const { updateAsset, archiveAsset, moveToTrash, isPending } = useAssetMutations()
   const { state, toggleCompletion } = useTodoCompletion()
@@ -169,22 +174,18 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
     }
   }
 
-  async function handleEdit(item: AssetListItem) {
-    const text = window.prompt('编辑待办内容', item.originalText)
-    if (!text || !text.trim()) {
-      return
-    }
-
+  async function submitEdit(item: AssetListItem, values: { text: string }) {
     const updated = await updateAsset({
       assetId: item.id,
       assetType: 'todo',
-      text: text.trim(),
+      text: values.text,
       timeText: item.timeText,
       dueAt: item.dueAt,
     })
     if (updated) {
       replaceItem(updated)
     }
+    return !!updated
   }
 
   async function handleArchive(item: AssetListItem) {
@@ -237,7 +238,7 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
                   emptyMessage="今天没有待办"
                   pendingIds={pendingIds}
                   onToggleTodo={handleToggleTodo}
-                  onEdit={handleEdit}
+                  onEdit={setEditingTodo}
                   onArchive={handleArchive}
                   onMoveToTrash={handleMoveToTrash}
                 />
@@ -254,7 +255,7 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
                   emptyMessage="本周没有待办"
                   pendingIds={pendingIds}
                   onToggleTodo={handleToggleTodo}
-                  onEdit={handleEdit}
+                  onEdit={setEditingTodo}
                   onArchive={handleArchive}
                   onMoveToTrash={handleMoveToTrash}
                 />
@@ -271,7 +272,7 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
                   emptyMessage="没有无截止日期的待办"
                   pendingIds={pendingIds}
                   onToggleTodo={handleToggleTodo}
-                  onEdit={handleEdit}
+                  onEdit={setEditingTodo}
                   onArchive={handleArchive}
                   onMoveToTrash={handleMoveToTrash}
                 />
@@ -288,7 +289,7 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
                   emptyMessage="没有已完成的待办"
                   pendingIds={pendingIds}
                   onToggleTodo={handleToggleTodo}
-                  onEdit={handleEdit}
+                  onEdit={setEditingTodo}
                   onArchive={handleArchive}
                   onMoveToTrash={handleMoveToTrash}
                 />
@@ -297,6 +298,14 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
           )}
         </div>
       )}
+
+      <AssetEditDialog
+        asset={editingTodo}
+        onOpenChange={(open) => {
+          if (!open) setEditingTodo(null)
+        }}
+        onSubmit={submitEdit}
+      />
     </>
   )
 }

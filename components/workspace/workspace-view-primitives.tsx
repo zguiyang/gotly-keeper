@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { cn } from '@/lib/utils'
 
 import type { LucideIcon } from 'lucide-react'
@@ -49,7 +50,7 @@ function WorkspacePageHeader({ title, description, eyebrow, className }: Workspa
 }
 
 type WorkspaceFilterTabsProps<TValue extends string> = {
-  tabs: Array<{ key: TValue; label: string }>
+  tabs: ReadonlyArray<{ key: TValue; label: string }>
   value: TValue
   onValueChange: (value: TValue) => void
   className?: string
@@ -62,31 +63,30 @@ function WorkspaceFilterTabs<TValue extends string>({
   className,
 }: WorkspaceFilterTabsProps<TValue>) {
   return (
-    <div
+    <ToggleGroup
+      value={[value]}
+      onValueChange={(nextValue) => {
+        const next = nextValue.at(-1)
+        if (next) {
+          onValueChange(next as TValue)
+        }
+      }}
+      variant="outline"
+      size="sm"
+      spacing={2}
       className={cn('flex flex-wrap items-center gap-2 border-b border-outline-variant/10 pb-4', className)}
       aria-label="内容筛选"
     >
-      {tabs.map((tab) => {
-        const isActive = tab.key === value
-
-        return (
-          <button
-            key={tab.key}
-            type="button"
-            aria-pressed={isActive}
-            onClick={() => onValueChange(tab.key)}
-            className={cn(
-              'rounded-full border px-3 py-1.5 text-[11px] font-medium tracking-[0.02em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
-              isActive
-                ? 'border-primary/15 bg-primary/6 text-primary'
-                : 'border-outline-variant/15 bg-surface-container-low text-on-surface-variant hover:border-outline-variant/25 hover:bg-surface-container-high/80'
-            )}
-          >
-            {tab.label}
-          </button>
-        )
-      })}
-    </div>
+      {tabs.map((tab) => (
+        <ToggleGroupItem
+          key={tab.key}
+          value={tab.key}
+          className="rounded-full px-3 text-[11px] tracking-[0.02em] data-[pressed]:border-primary/15 data-[pressed]:bg-primary/6 data-[pressed]:text-primary"
+        >
+          {tab.label}
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
   )
 }
 

@@ -4,6 +4,7 @@ import { FileText } from 'lucide-react'
 import { useState } from 'react'
 
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
+import { AssetEditDialog } from '@/components/workspace/asset-edit-dialog'
 import {
   WorkspaceEmptyState,
   workspaceMetaTextClassName,
@@ -71,23 +72,21 @@ function EmptyState() {
 
 export function NotesClient({ notes }: { notes: AssetListItem[] }) {
   const [items, setItems] = useState(notes)
+  const [editingNote, setEditingNote] = useState<AssetListItem | null>(null)
   const { updateAsset, archiveAsset, moveToTrash } = useAssetMutations()
 
-  async function handleEdit(note: AssetListItem) {
-    const text = window.prompt('编辑笔记内容', note.originalText)
-    if (!text || !text.trim() || text.trim() === note.originalText) {
-      return
-    }
-
+  async function submitEdit(note: AssetListItem, values: { text: string }) {
     const updated = await updateAsset({
       assetId: note.id,
       assetType: 'note',
-      text: text.trim(),
+      text: values.text,
     })
 
     if (updated) {
       setItems((current) => current.map((item) => (item.id === updated.id ? updated : item)))
     }
+
+    return !!updated
   }
 
   async function handleArchive(note: AssetListItem) {
@@ -117,7 +116,7 @@ export function NotesClient({ notes }: { notes: AssetListItem[] }) {
             <NoteCard
               key={note.id}
               note={note}
-              onEdit={handleEdit}
+              onEdit={setEditingNote}
               onArchive={handleArchive}
               onMoveToTrash={handleMoveToTrash}
             />
@@ -126,6 +125,14 @@ export function NotesClient({ notes }: { notes: AssetListItem[] }) {
       ) : (
         <EmptyState />
       )}
+
+      <AssetEditDialog
+        asset={editingNote}
+        onOpenChange={(open) => {
+          if (!open) setEditingNote(null)
+        }}
+        onSubmit={submitEdit}
+      />
     </div>
   )
 }
