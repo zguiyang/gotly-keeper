@@ -6,7 +6,7 @@ Use this file as an index only.
 
 ## Layers
 
-- `core/`: always-loaded minimal rules
+- `core/`: entry and task-routing rules, with detailed files loaded by need
 - `domain/`: load by touched code path
 - `advanced-workflows/`: load only when explicitly required
 
@@ -17,6 +17,8 @@ Use this file as an index only.
 3. this file
 4. only the smallest set of rules needed for touched files
 
+Do not interpret `core/` as "read every core file on every task." The always-loaded core context is only the entry workflow and this routing index. Load the other core files when the task touches their concern.
+
 ## Core Files
 
 - `.ai-rules/core/project-governance-rules.md`
@@ -24,6 +26,19 @@ Use this file as an index only.
 - `.ai-rules/core/project-tooling-and-runtime-rules.md`
 - `.ai-rules/core/testing-and-integration-rules.md`
 - `.ai-rules/core/coding-style-rules.md`
+
+## Minimal Context Packages
+
+Use these as the default context budget:
+
+- `question`: `AGENTS.md`, default workflow, this index, and only cited or directly relevant files.
+- `small-edit`: add `PROJECT_CAPABILITIES.md`, the touched-file domain rule, and coding style only if editing code.
+- `feature/refactor`: add capability boundary, architecture placement rules, touched-file domain rules, and testing rules.
+- `debug`: add tooling/runtime rules and testing rules, then touched-file domain rules once the failing area is known.
+- governance/rule edits: add project governance and tooling/runtime rules, then run the governance preflight defined there.
+- commit/PR/phase/subagent: load the matching advanced workflow only after the user explicitly requests that workflow.
+
+For Next.js behavior changes, read the relevant guide in `node_modules/next/dist/docs/` after identifying the exact behavior being changed. Do not preload broad Next.js docs for unrelated code edits.
 
 ## Capability Boundary Source
 
