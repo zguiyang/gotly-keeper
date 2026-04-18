@@ -91,7 +91,7 @@ function BookmarkItem({
         </div>
         <div className="flex items-center space-x-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity lg:opacity-100">
           <button
-            className="p-2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-sm"
+            className="cursor-pointer rounded-2xl p-2 text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             aria-label="分享收藏"
           >
             <Share2 className="w-4 h-4" />

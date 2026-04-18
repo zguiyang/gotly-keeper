@@ -19,7 +19,7 @@ export function AssetActionMenu({
   return (
     <details className="relative group/menu">
       <summary
-        className="list-none rounded-sm p-1 text-on-surface-variant transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        className="list-none rounded-2xl p-2 text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         aria-label={ariaLabel}
       >
         <MoreVertical className="w-4 h-4" />

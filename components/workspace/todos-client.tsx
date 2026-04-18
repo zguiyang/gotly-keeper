@@ -56,7 +56,7 @@ function TodoItemComponent({
           type="button"
           onClick={() => onToggle(item)}
           disabled={pending}
-          className="mt-0.5 shrink-0 rounded-sm text-left transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-0.5 shrink-0 rounded-2xl p-0.5 text-left transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
           aria-label={item.completed ? '标记为未完成' : '标记为已完成'}
           title={item.completed ? '标记为未完成' : '标记为已完成'}
         >
