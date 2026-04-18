@@ -1,174 +1,302 @@
-"use client";
-
 import {
-  Zap,
-  Brain,
-  Search,
   ArrowRight,
+  Archive,
+  Compass,
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 
+import {
+  featureCards,
+  floatingCards,
+  manifestoTags,
+  principles,
+  scenarios,
+} from "@/config/landing-page-content";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-
-const features = [
-  {
-    icon: Zap,
-    title: "捕捉 Capture",
-    description: "语音、图片、文本，多模态输入让记录更自然。灵感稍纵即逝，一触即达。",
-    badge: "多模态",
-  },
-  {
-    icon: Brain,
-    title: "整理 Refine",
-    description: "AI 自动整理归类，智能标签让碎片信息有序归档。告别信息焦虑。",
-    badge: "AI 驱动",
-  },
-  {
-    icon: Search,
-    title: "检索 Retrieve",
-    description: "随时快速访问，语义搜索让记忆重现。找到你需要的，不费吹灰之力。",
-    badge: "语义搜索",
-  },
-];
+import { cn } from "@/lib/utils";
 
 export default function LandingPage() {
   return (
-    <div className="auth-atmosphere min-h-screen">
-      <div className="relative flex min-h-screen flex-col">
-        {/* Main Content */}
-        <main className="flex-1">
-          <div className="mx-auto max-w-5xl px-6 py-16">
-            {/* Hero Section */}
-            <section className="flex flex-col items-center text-center mb-24">
-              {/* Logo */}
-              <div className="mb-8">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold text-3xl">G</span>
+    <div className="landing-shell auth-atmosphere min-h-screen">
+      <div className="landing-noise" aria-hidden="true" />
+      <div className="landing-content relative flex min-h-screen flex-col">
+        <header className="landing-topbar">
+          <div className="landing-container landing-topbar-inner">
+            <div className="landing-nav">
+              <Link href="/" className="landing-brand-lockup">
+                <div className="landing-brand-logo-block">
+                  <div className="landing-brand-mark">
+                    <Archive className="h-5 w-5" />
+                  </div>
+                  <div className="landing-brand-mark landing-brand-mark-secondary">
+                    <Compass className="h-4 w-4" />
+                  </div>
+                </div>
+                <div>
+                  <p className="font-headline text-base font-semibold tracking-tight text-on-surface sm:text-lg">
+                    Gotly AI
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    Quiet AI concierge
+                  </p>
+                </div>
+              </Link>
+
+              <nav className="landing-nav-menu" aria-label="页面导航">
+                <a href="#capabilities" className="landing-nav-link">
+                  核心能力
+                </a>
+                <a href="#scenarios" className="landing-nav-link">
+                  使用场景
+                </a>
+                <a href="#principles" className="landing-nav-link">
+                  产品原则
+                </a>
+                <a href="#manifesto" className="landing-nav-link">
+                  品牌宣言
+                </a>
+              </nav>
+
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Link
+                  href="/auth/sign-in"
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "sm" }),
+                    "rounded-full px-4 text-on-surface-variant hover:text-on-surface"
+                  )}
+                >
+                  登录
+                </Link>
+                <Link
+                  href="/auth/sign-up"
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "sm" }),
+                    "rounded-full border-primary/15 bg-white/70 px-4 shadow-sm"
+                  )}
+                >
+                  注册
+                </Link>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 pb-16 sm:pb-24">
+          <section className="landing-container landing-container-hero landing-section pt-10 sm:pt-14">
+            <div className="landing-hero-grid">
+              <div className="landing-hero-copy">
+                <Badge
+                  variant="secondary"
+                  className="landing-soft-badge rounded-full border border-primary/10 px-3 py-1 text-[0.72rem] uppercase tracking-[0.18em] text-primary"
+                >
+                  <Sparkles className="mr-1.5 h-3.5 w-3.5" data-icon="inline-start" />
+                  Quiet AI concierge
+                </Badge>
+
+                <h1 className="landing-display font-headline text-on-surface">
+                  把零碎想法，收进一处安静的入口。
+                </h1>
+
+                <p className="landing-lead">
+                  你先随手交给我，我先帮你收好。以后你再问，我帮你找回来。
+                </p>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <Link
+                    href="/workspace"
+                    className={cn(
+                      buttonVariants({ size: "xl" }),
+                      "landing-primary-cta auth-gradient-button rounded-full px-6 text-white shadow-lg shadow-primary/20"
+                    )}
+                  >
+                    进入工作空间
+                    <ArrowRight
+                      className="h-4 w-4 transition-transform duration-200 group-hover/button:translate-x-1"
+                      data-icon="inline-end"
+                    />
+                  </Link>
+
+                  <a
+                    href="#capabilities"
+                    className={cn(
+                      buttonVariants({ variant: "outline", size: "xl" }),
+                      "landing-secondary-cta rounded-full border-primary/15 bg-white/70 px-6 shadow-sm"
+                    )}
+                  >
+                    查看核心能力
+                  </a>
+                </div>
+
+                <div className="landing-inline-points">
+                  <span>轻量收纳箱</span>
+                  <span>统一入口</span>
+                  <span>少管理</span>
                 </div>
               </div>
 
-              {/* Brand Name */}
-              <h1 className="font-headline text-2xl font-bold tracking-tight text-on-surface mb-4">
-                Gotly AI
-              </h1>
-
-              {/* Main Headline */}
-              <h2 className="font-headline text-4xl md:text-5xl font-extrabold tracking-tight text-on-surface mb-6 max-w-2xl">
-                安静地架构你的思维
-              </h2>
-
-              {/* Subtitle */}
-              <p className="text-lg text-on-surface-variant mb-10 max-w-xl leading-relaxed">
-                轻量级 AI 思维捕捉工具，让灵感有序绽放。捕捉、整
-                <span className="relative inline-block mx-1">
-                  <span className="relative z-10">理</span>
-                  <span className="absolute bottom-0 left-0 right-0 h-2 bg-primary/20 rounded-full -mb-1" />
-                </span>
-                、检索，一切从容不迫。
-              </p>
-
-              {/* CTA */}
-              <Link href="/workspace">
-                <Button
-                  className="bg-gradient-to-r from-primary to-primary-container text-white px-8 py-6 rounded-full text-base font-semibold shadow-md hover:shadow-lg hover:opacity-90 transition-all duration-200 group"
-                  size="lg"
-                >
-                  进入工作空间
-                  <ArrowRight
-                    className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform"
-                    data-icon="inline-end"
-                  />
-                </Button>
-              </Link>
-            </section>
-
-            {/* Features Section */}
-            <section className="mb-24">
-              <div className="flex justify-center mb-12">
-                <Badge
-                  variant="secondary"
-                  className="px-4 py-1.5 text-sm font-medium rounded-full"
-                >
-                  <Sparkles className="w-3.5 h-3.5 mr-1.5" data-icon="inline-start" />
-                  核心能力
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {features.map((feature) => {
-                  const Icon = feature.icon;
-                  return (
-                    <Card
-                      key={feature.title}
-                      className="rounded-2xl bg-surface-container-lowest auth-card-shadow p-0 overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              <div className="landing-stage-wrap">
+                <div className="landing-stage-glow" aria-hidden="true" />
+                <div className="landing-float-stage">
+                  {floatingCards.map((card, index) => (
+                    <article
+                      key={card.title}
+                      className="landing-float-card"
+                      data-index={index}
                     >
-                      <CardContent className="p-8">
-                        {/* Icon */}
-                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
-                          <Icon className="w-6 h-6 text-primary" />
-                        </div>
+                      <span className="landing-float-eyebrow">{card.eyebrow}</span>
+                      <p className="landing-float-title">{card.title}</p>
+                      <p className="landing-float-description">{card.description}</p>
+                    </article>
+                  ))}
 
-                        {/* Badge */}
-                        <Badge
-                          variant="outline"
-                          className="mb-4 text-xs font-medium border-primary/30 text-primary"
-                        >
-                          {feature.badge}
-                        </Badge>
-
-                        {/* Title */}
-                        <h3 className="font-headline text-xl font-bold text-on-surface mb-3">
-                          {feature.title}
-                        </h3>
-
-                        {/* Description */}
-                        <p className="text-sm text-on-surface-variant leading-relaxed">
-                          {feature.description}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                  <div className="landing-stage-caption landing-panel">
+                    <p className="landing-stage-kicker">AI 统一入口优先</p>
+                    <p className="text-sm leading-7 text-on-surface-variant">
+                      对系统来说是结构化资产，对用户来说只是“我交给小管家保管的东西”。
+                    </p>
+                  </div>
+                </div>
               </div>
-            </section>
+            </div>
+          </section>
 
-            {/* Tagline Section */}
-            <section className="text-center mb-24">
-              <Separator className="mb-16" />
-              <p className="text-xl md:text-2xl font-headline font-semibold text-on-surface tracking-tight mb-4">
-                Quiet Architect
+          <section id="capabilities" className="landing-container landing-section">
+            <div className="landing-section-heading">
+              <Badge variant="outline" className="rounded-full border-primary/15 px-3 py-1 text-primary">
+                核心能力
+              </Badge>
+              <h2 className="font-headline text-3xl font-semibold tracking-tight text-on-surface sm:text-4xl">
+                少一点管理动作，多一点自然交付。
+              </h2>
+              <p className="landing-section-intro">
+                首页不要求用户先理解结构，只需要先把内容交给系统，再在需要时自然找回。
               </p>
-              <p className="text-base text-on-surface-variant max-w-lg mx-auto">
-                让思考更专注，让记录更从容
-              </p>
-              <Separator className="mt-16" />
-            </section>
-          </div>
+            </div>
+
+            <div className="landing-feature-grid">
+              {featureCards.map((feature) => {
+                const Icon = feature.icon;
+
+                return (
+                  <Card key={feature.title} className="landing-panel landing-card-surface">
+                    <CardContent className="space-y-5 p-7 sm:p-8">
+                      <div className="landing-feature-icon">
+                        <Icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium uppercase tracking-[0.16em] text-primary/80">
+                          {feature.title}
+                        </p>
+                        <h3 className="font-headline text-xl font-semibold text-on-surface">
+                          {feature.subtitle}
+                        </h3>
+                      </div>
+                      <p className="text-sm leading-7 text-on-surface-variant">
+                        {feature.description}
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+
+          <section id="scenarios" className="landing-container landing-section landing-section-tight">
+            <div className="landing-story-grid">
+              <div className="landing-story-intro">
+                <p className="landing-kicker">真实场景</p>
+                <h2 className="font-headline text-3xl font-semibold tracking-tight text-on-surface sm:text-4xl">
+                  不需要经营系统，只需要先交给它。
+                </h2>
+                <p className="landing-section-intro landing-story-copy">
+                  Gotly AI 面向的是忙碌、轻量记录、容易收藏但不想维护复杂结构的人。
+                </p>
+              </div>
+
+              <div className="landing-scenario-grid">
+                {scenarios.map((scenario) => (
+                  <article key={scenario.title} className="landing-panel landing-scenario-card">
+                    <p className="landing-kicker">{scenario.title}</p>
+                    <p className="text-sm leading-7 text-on-surface">{scenario.description}</p>
+                    <p className="rounded-2xl bg-primary-fixed/45 px-4 py-3 text-sm text-on-surface-variant">
+                      {scenario.example}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section id="principles" className="landing-container landing-section">
+            <div className="landing-principles landing-panel">
+              <div className="space-y-4">
+                <p className="landing-kicker">产品原则</p>
+                <h2 className="font-headline text-3xl font-semibold tracking-tight text-on-surface sm:text-4xl">
+                  结构化是后台能力，不是前台负担。
+                </h2>
+                <p className="landing-section-intro">
+                  这不是一套要求你主动维护的重型系统，而是一处把输入、整理与找回 quietly 接住的入口。
+                </p>
+              </div>
+
+              <div className="landing-principles-grid">
+                {principles.map((principle, index) => (
+                  <div key={principle} className="landing-principle-item">
+                    <span className="landing-principle-index">0{index + 1}</span>
+                    <p className="text-sm leading-7 text-on-surface-variant">{principle}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section id="manifesto" className="landing-container landing-manifesto">
+            <div className="landing-manifesto-panel landing-panel">
+              <div className="landing-manifesto-copy-block">
+                <p className="landing-kicker">Brand manifesto</p>
+                <h2 className="landing-manifesto-copy font-headline text-on-surface">
+                  你先交给我，我替你安静收好。
+                </h2>
+                <p className="landing-manifesto-description">
+                  Gotly AI 更像一处安静入口。先接住你零碎的记录，之后在需要时，把它们清楚地带回来。
+                </p>
+              </div>
+
+              <div className="landing-manifesto-side">
+                <div className="landing-manifesto-tags">
+                  {manifestoTags.map((tag) => (
+                    <span key={tag} className="landing-manifesto-tag">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="landing-manifesto-note">
+                  <p className="landing-stage-kicker">Quietly keeping what matters</p>
+                  <p>
+                    不把输入变成负担，不把找回变成搜索训练，而是把系统变成一位可靠的小管家。
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
         </main>
 
-        {/* Footer */}
-        <footer className="py-8 border-t border-outline-variant/20">
-          <div className="mx-auto max-w-5xl px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-on-surface-variant">
-              © 2024 Gotly AI. All rights reserved.
-            </p>
-            <div className="flex items-center gap-6">
-              <Link
-                href="/auth/sign-in"
-                className="text-sm text-on-surface-variant hover:text-primary transition-colors"
-              >
-                登录
-              </Link>
-              <Link
-                href="/auth/sign-up"
-                className="text-sm text-on-surface-variant hover:text-primary transition-colors"
-              >
-                注册
-              </Link>
+        <footer className="landing-bottombar">
+          <div className="landing-container landing-bottombar-inner">
+            <div className="flex flex-col gap-3 py-6 text-sm text-on-surface-variant sm:flex-row sm:items-center sm:justify-between">
+              <p>© 2026 Gotly AI. Quietly keeping what matters.</p>
+              <div className="flex items-center gap-5">
+                <Link href="/auth/sign-in" className="transition-colors hover:text-primary">
+                  登录
+                </Link>
+                <Link href="/auth/sign-up" className="transition-colors hover:text-primary">
+                  注册
+                </Link>
+              </div>
             </div>
           </div>
         </footer>

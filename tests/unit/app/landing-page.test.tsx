@@ -1,0 +1,46 @@
+import { describe, expect, it } from 'vitest'
+import { renderToStaticMarkup } from 'react-dom/server'
+
+import LandingPage from '@/app/page'
+
+describe('landing page', () => {
+  it('renders the new brand narrative and manifesto without a footer CTA button', () => {
+    const markup = renderToStaticMarkup(<LandingPage />)
+
+    expect(markup.match(/<h1/g)?.length).toBe(1)
+    expect(markup).toContain('把零碎想法，收进一处安静的入口。')
+    expect(markup).toContain('你先交给我，我替你安静收好。')
+    expect(markup).toContain('进入工作空间')
+    expect(markup).toContain('查看核心能力')
+    expect(markup).toContain('href="/workspace"')
+    expect(markup).toContain('href="#capabilities"')
+    expect(markup).toContain('id="capabilities"')
+    expect(markup).toContain('id="scenarios"')
+    expect(markup).toContain('id="principles"')
+    expect(markup).toContain('href="#manifesto"')
+    expect(markup).toContain('id="manifesto"')
+    expect(markup).toContain('aria-label="页面导航"')
+    expect(markup).toContain('核心能力')
+    expect(markup).toContain('使用场景')
+    expect(markup).toContain('产品原则')
+    expect(markup).toContain('品牌宣言')
+    expect(markup).toContain('class="landing-content')
+    expect(markup).toContain('<h2 class="landing-manifesto-copy')
+    expect(markup).toContain('class="landing-nav-link"')
+    expect(markup).toContain('<header')
+    expect(markup).toContain('<main')
+    expect(markup).toContain('<footer')
+    expect(markup).not.toContain('<h2 class="landing-float-title"')
+    expect(markup).toContain('Gotly AI 更像一处安静入口。')
+    expect(markup).toContain('Quietly keeping what matters')
+    expect(markup).toContain('轻量记录')
+    expect(markup).toContain('智能归档')
+    expect(markup).toContain('自然找回')
+
+    const manifestoIndex = markup.indexOf('你先交给我，我替你安静收好。')
+    const trailingMarkup = markup.slice(manifestoIndex)
+
+    expect(trailingMarkup).not.toContain('<button')
+    expect(trailingMarkup).not.toContain('href="/workspace"')
+  })
+})
