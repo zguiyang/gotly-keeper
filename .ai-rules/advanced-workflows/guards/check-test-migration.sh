@@ -5,7 +5,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  bash scripts/guard-test-migration.sh [--against <ref>] [--staged]
+  bash .ai-rules/advanced-workflows/guards/check-test-migration.sh [--against <ref>] [--staged]
 
 Options:
   --against <ref>   Compare against ref (default: origin/main if exists, else main, else HEAD~1)

@@ -302,10 +302,10 @@ Passing AI runs are useful confidence signals, but they do not replace the minim
 To prevent silent drift after architecture or rule refactors, CI must enforce the following hard gates:
 
 1. `pnpm typecheck` (equivalent to `tsc --noEmit`) must pass.
-2. `pnpm guard:import-boundaries` must pass.
-3. `pnpm guard:capability-boundary` must pass.
-4. `pnpm guard:test-migration` must pass when legacy service tests are deleted.
-5. `pnpm guard:boundary-exception-todos` must pass for boundary exception TODO compliance.
+2. `bash .ai-rules/advanced-workflows/guards/check-import-boundaries.sh` must pass.
+3. `bash .ai-rules/advanced-workflows/guards/check-capability-boundary.sh` must pass.
+4. `bash .ai-rules/advanced-workflows/guards/check-test-migration.sh` must pass when legacy service tests are deleted.
+5. `bash .ai-rules/advanced-workflows/guards/check-boundary-exception-todos.sh` must pass for boundary exception TODO compliance.
 6. For changes that touch `.ai-rules/`, `AGENTS.md`, or governance-related references, run `bash .ai-rules/advanced-workflows/guards/check-governance-links.sh` directly.
 
 ### 15.1 Legacy Test Migration Guard
