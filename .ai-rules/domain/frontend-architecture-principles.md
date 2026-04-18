@@ -177,16 +177,59 @@ Forbidden:
 
 ---
 
-## 4. Styling Placement Rules
+## 4. UI Implementation and Styling Placement Rules
 
-This repository uses Tailwind CSS as the default styling surface.
+This repository separates two decisions:
+
+1. **Component selection:** use shadcn/ui first for UI primitives and product
+   interface building blocks.
+2. **Style expression:** use Tailwind utilities first for styling, layout, and
+   state presentation instead of custom CSS.
 
 These rules apply to all frontend UI work, including work produced through
 design, layout, polish, redesign, or animation skills.
 
-### 4.1 Tailwind-First Rule
+### 4.1 shadcn/ui-First Implementation Rule
 
-Prefer Tailwind utilities in `className` for ordinary presentation concerns.
+Use shadcn/ui components as the default building blocks for product UI.
+
+Component implementation order:
+
+1. **Direct shadcn/ui component:** use a shadcn/ui component directly when it
+   fits the UI need, such as a button, card, dialog, menu, input, checkbox,
+   badge, separator, skeleton, alert, or textarea. If the needed primitive is
+   not installed but exists in shadcn/ui, add it through the approved shadcn
+   workflow before building a custom equivalent.
+2. **Composed shadcn/ui implementation:** when one direct component is not
+   enough, compose the UI from shadcn/ui primitives plus Tailwind `className`
+   styling and minimal DOM wrappers as needed. Use this for forms, grouped
+   controls, page sections, panels, toolbars, and locally adjusted variants.
+3. **Fully custom Tailwind/DOM implementation:** only when the first two layers
+   cannot reasonably express the interaction, structure, or visual requirement,
+   build the UI manually with Tailwind utilities and DOM elements. Even then,
+   keep using shadcn/ui primitives for any available controls inside the custom
+   structure.
+
+Rules:
+
+1. Do not hand-roll controls that already exist as shadcn/ui primitives, such
+   as buttons, inputs, dialogs, menus, checkboxes, toggles, badges, separators,
+   skeletons, alerts, cards, and form field structure.
+2. Do not switch between shadcn/ui and fully custom markup for equivalent UI
+   patterns in the same feature. Pick one shared composition and reuse it.
+3. Use built-in shadcn/ui variants and composition APIs before adding visual
+   overrides.
+4. Create local wrapper components outside `components/ui/**` when repeated
+   shadcn composition becomes a product pattern.
+5. Fully custom Tailwind/DOM is an exception path, not a peer default. Before
+   using it for a reusable or interactive UI element, the agent must be able to
+   state why direct shadcn/ui and composed shadcn/ui were not sufficient.
+
+### 4.2 Tailwind-First Styling Rule
+
+Prefer Tailwind utilities in `className` for ordinary presentation concerns
+on shadcn/ui components, local shadcn-based compositions, layout wrappers, and
+custom DOM exceptions.
 
 Use Tailwind utilities for:
 
@@ -207,14 +250,18 @@ Rules:
 
 1. Do not create custom CSS selectors when Tailwind utilities can express the
    same behavior clearly.
-2. Prefer `cn()` or local component composition when class lists become
+2. Use Tailwind to adapt layout, spacing, sizing, state, and responsive behavior
+   around shadcn/ui components.
+3. Prefer `cn()` or local component composition when class lists become
    conditional or repeated.
-3. Extract a local component when repeated Tailwind class composition becomes
+4. Extract a local component when repeated Tailwind class composition becomes
    hard to read.
-4. Do not move page-specific or component-specific styling into global CSS just
+5. Do not move page-specific or component-specific styling into global CSS just
    to shorten JSX.
+6. Do not implement an available shadcn/ui primitive with raw DOM merely because
+   Tailwind can style the raw DOM.
 
-### 4.2 Global CSS Boundary Rule
+### 4.3 Global CSS Boundary Rule
 
 `app/globals.css` is a shared system surface, not a page styling file.
 
@@ -242,7 +289,7 @@ Forbidden in `app/globals.css`:
 Before editing `app/globals.css`, the agent must be able to state why the new
 style is globally reusable or impossible to express cleanly with Tailwind.
 
-### 4.3 Custom CSS Exception Rule
+### 4.4 Custom CSS Exception Rule
 
 Custom CSS is allowed only when it is the smallest clear solution.
 
@@ -265,24 +312,27 @@ Rules:
 4. Do not use custom CSS as a substitute for ordinary Tailwind responsive,
    spacing, sizing, or layout utilities.
 
-### 4.4 Design Skill Boundary Rule
+### 4.5 Design Skill Boundary Rule
 
 Design skills may improve visual direction, hierarchy, interaction, and polish,
-but they do not override this repository's Tailwind-first styling placement
-rules.
+but they do not override this repository's shadcn/ui-first component selection
+rules or Tailwind-first styling placement rules.
 
 Rules:
 
 1. A design skill must work through the existing Tailwind/shadcn styling system
    unless the user explicitly approves a different styling approach.
-2. Design tokens belong in global CSS only when they are intended for repeated
+2. A design skill must not replace available shadcn/ui controls with fully
+   custom DOM just to achieve a visual effect.
+3. Design tokens belong in global CSS only when they are intended for repeated
    cross-application use.
-3. Page-specific visual treatments belong in JSX class composition or local
+4. Page-specific visual treatments belong in JSX class composition or local
    components, not in `app/globals.css`.
-4. If a design skill suggests global CSS for convenience, treat that suggestion
-   as advisory and apply this file's stricter placement boundary.
+5. If a design skill suggests custom markup or global CSS for convenience, treat
+   that suggestion as advisory and apply this file's stricter implementation and
+   placement boundaries.
 
-### 4.5 shadcn/ui Primitive Boundary Rule
+### 4.6 shadcn/ui Primitive Boundary Rule
 
 Files under `components/ui/**` are foundational UI primitives. Treat them as
 design-system source, not feature implementation files.
@@ -312,6 +362,20 @@ Before modifying `components/ui/**`, the agent must state why the change cannot
 be made through composition, a wrapper, existing variants, semantic tokens, or a
 usage-site `className`.
 
+### 4.7 UI Decision Trace Rule
+
+For any non-trivial UI implementation or refactor, include a short decision
+trace in the conversation before editing:
+
+- direct shadcn/ui components being used
+- local shadcn-based compositions being created or reused
+- any custom DOM/Tailwind exception and why shadcn/ui is insufficient
+- any `components/ui/**` change and why a wrapper or usage-site composition is
+  insufficient
+
+Keep the trace brief. Its purpose is to prevent implementation drift, not to
+create durable documentation.
+
 ---
 
 ## 5. Review and Enforcement Rules
@@ -323,6 +387,10 @@ Changes fail architecture review when:
 - one unit mixes multiple behavior types
 - flow direction is bypassed
 - ownership of state or decisions is ambiguous
+- an available shadcn/ui primitive is replaced with custom DOM without a
+  justified exception
+- equivalent UI patterns in the same feature mix shadcn/ui composition and
+  hand-rolled markup without a shared local abstraction
 - page-specific or component-specific styling is added to `app/globals.css`
   without a valid global-CSS exception
 - Tailwind-expressible layout, responsive, spacing, sizing, or state styling is
@@ -339,10 +407,15 @@ Before generating frontend code:
 3. verify flow is `User -> View -> Logic -> Data -> Logic -> View`
 4. verify boundary model conversion is explicit
 5. verify state ownership and transition ownership are explicit
-6. verify Tailwind utilities are used for ordinary styling
-7. verify any `app/globals.css` edit is globally reusable or justified by a
+6. choose UI components through the three-layer shadcn/ui order:
+   direct shadcn/ui component, composed shadcn/ui implementation, then fully
+   custom Tailwind/DOM exception
+7. verify Tailwind utilities support shadcn composition and ordinary styling
+   instead of replacing available primitives
+8. verify any custom DOM/Tailwind exception has a brief reason
+9. verify any `app/globals.css` edit is globally reusable or justified by a
    custom-CSS exception
-8. verify any `components/ui/**` edit is justified by an allowed
+10. verify any `components/ui/**` edit is justified by an allowed
    primitive-boundary exception
 
 ---
