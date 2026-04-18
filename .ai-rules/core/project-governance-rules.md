@@ -95,15 +95,15 @@ Allowed:
 - project test commands
 - database and migration commands
 - project maintenance commands that materially support the software itself
-- product architecture and CI guard commands that protect runtime code boundaries, imports, test migration safety, or capability boundaries
 
 Forbidden:
 
 - AI workflow guard commands
+- `.ai-rules/` guard commands, even when they protect architecture or CI boundaries
 - AI planning or documentation protocol validation commands
 - commands that exist only to help an AI follow repository rules
 
-If a command is useful only for AI governance, document it in `.ai-rules/` and run it directly instead of exposing it through `package.json`. If a guard protects both product architecture and AI governance, classify it by its primary failure surface: runtime/codebase correctness may be exposed as a project script; phase-plan or local-workspace discipline must stay under `.ai-rules/`.
+If a command belongs to the rule system, document it in `.ai-rules/` and run it directly instead of exposing it through `package.json`. CI may run `.ai-rules/` guards directly by path, but `package.json` must stay limited to product development commands.
 
 ### 4.3 `scripts/`
 
@@ -187,7 +187,7 @@ Rules:
 1. Put AI workflow guard scripts here.
 2. Run these scripts directly when needed.
 3. Do not expose these scripts through `package.json`.
-4. Keep these scripts focused on repository governance and rule compliance rather than application runtime behavior.
+4. Keep these scripts focused on repository governance, architecture boundaries, and rule compliance rather than application runtime behavior.
 
 ### 5.3 `.ai-rules/advanced-workflows/scripts/`
 

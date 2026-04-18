@@ -16,7 +16,7 @@
 
 - [ ] `pnpm lint` passes
 - [ ] `pnpm build` succeeds
-- [ ] `pnpm guard:ci` passes
+- [ ] Required `.ai-rules/advanced-workflows/guards/*.sh` checks pass
 - [ ] Tests added/updated if applicable
 - [ ] Documentation updated if applicable
 

@@ -183,6 +183,8 @@ Before running commands or implementing code:
 
 Rule-validation scripts live under `.ai-rules/advanced-workflows/guards/`.
 
+Run guard scripts directly by path. Do not expose `.ai-rules/` guards through `package.json`, even when CI uses them.
+
 Examples:
 
 ```bash
@@ -193,7 +195,7 @@ bash .ai-rules/advanced-workflows/guards/check-governance-links.sh
 bash .ai-rules/advanced-workflows/guards/check-rules-integrity.sh --staged
 ```
 
-Use AI-workflow-only guards directly when auditing AI workflow artifacts. Architecture guards that protect runtime code boundaries may also be exposed through `package.json` when they are part of CI or normal project verification.
+Use AI-workflow and architecture guards directly when auditing AI workflow artifacts, CI boundaries, or repository rule compliance.
 
 ## 11. Phase Execution Protocol Reference
 

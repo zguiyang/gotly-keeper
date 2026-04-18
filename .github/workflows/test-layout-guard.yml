@@ -39,16 +39,16 @@ jobs:
       - name: Typecheck and architecture guards
         run: |
           pnpm typecheck
-          pnpm guard:import-boundaries
-          pnpm guard:capability-boundary
-          pnpm guard:boundary-exception-todos
+          bash .ai-rules/advanced-workflows/guards/check-import-boundaries.sh
+          bash .ai-rules/advanced-workflows/guards/check-capability-boundary.sh
+          bash .ai-rules/advanced-workflows/guards/check-boundary-exception-todos.sh
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            bash scripts/guard-test-migration.sh --against "${{ github.event.pull_request.base.sha }}"
+            bash .ai-rules/advanced-workflows/guards/check-test-migration.sh --against "${{ github.event.pull_request.base.sha }}"
           else
             BASE_REF="${{ github.event.before }}"
             if [ -z "$BASE_REF" ] || [ "$BASE_REF" = "0000000000000000000000000000000000000000" ]; then
               BASE_REF="HEAD~1"
             fi
-            bash scripts/guard-test-migration.sh --against "$BASE_REF"
+            bash .ai-rules/advanced-workflows/guards/check-test-migration.sh --against "$BASE_REF"
           fi
           bash .ai-rules/advanced-workflows/guards/check-governance-links.sh
