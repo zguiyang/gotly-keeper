@@ -243,7 +243,7 @@ The intent is to combine delivery speed with reliable regression protection.
 Use a mixed model:
 
 1. AI-driven browser flow execution for most day-to-day end-to-end validation.
-2. A small durable scripted E2E smoke suite for release/CI gates.
+2. A small durable scripted E2E smoke suite for release/CI gates once those gates are implemented.
 
 Do not require engineers to hand-write script-based E2E for every flow when a flow-spec-driven AI execution path is sufficient.
 
@@ -260,7 +260,9 @@ AI-driven browser flow execution is the default for:
 
 Keep a minimal scripted smoke suite for critical production paths where reproducibility in CI is mandatory.
 
-At minimum, include business-critical gates such as:
+Until the scripted suite exists, do not describe browser-driven checks as a replacement for CI-grade release evidence. Treat them as development evidence and record any release-blocking gap explicitly.
+
+When adding or expanding the scripted suite, prioritize business-critical gates such as:
 
 - authentication and session continuity
 - one core creation/edit flow
@@ -272,6 +274,8 @@ The exact flows may evolve by product risk, but the smoke suite must stay intent
 ### 14.4 Flow Specification Requirement
 
 When using AI-driven E2E execution, the scenario source of truth must be a written flow specification.
+
+For routine local development, the written specification may live in the conversation or task notes. For repeated flows, release checks, or cross-session handoff, promote it to a tracked project location outside `docs/` and `prd/`, or to a local AI workspace only when it is not intended for version control.
 
 A valid flow specification should define:
 
@@ -300,7 +304,8 @@ To prevent silent drift after architecture or rule refactors, CI must enforce th
 1. `pnpm typecheck` (equivalent to `tsc --noEmit`) must pass.
 2. `pnpm guard:import-boundaries` must pass.
 3. `pnpm guard:test-migration` must pass when legacy service tests are deleted.
-4. `pnpm guard:governance-links` must pass for `.ai-rules` path references and boundary exception TODO compliance.
+4. `pnpm guard:boundary-exception-todos` must pass for boundary exception TODO compliance.
+5. For changes that touch `.ai-rules/`, `AGENTS.md`, or governance-related references, run `bash .ai-rules/advanced-workflows/guards/check-governance-links.sh` directly.
 
 ### 15.1 Legacy Test Migration Guard
 

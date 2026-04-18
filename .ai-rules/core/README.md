@@ -36,7 +36,7 @@ Use these as the default context budget:
 - `small-edit`: add `PROJECT_CAPABILITIES.md`, the touched-file domain rule, and coding style only if editing code.
 - `feature/refactor`: add capability boundary, architecture placement rules, touched-file domain rules, and testing rules.
 - `debug`: add tooling/runtime rules and testing rules, then touched-file domain rules once the failing area is known.
-- governance/rule edits: add project governance and tooling/runtime rules, then run the governance preflight defined there.
+- governance/rule edits: treat as an overlay on `question`, `small-edit`, `feature/refactor`, or `debug`; add project governance and tooling/runtime rules, then run the relevant governance guard directly.
 - skill selection: add skill routing rules only when a task may benefit from a skill or when choosing between skills is uncertain.
 - commit/PR/phase/subagent: load the matching advanced workflow only after the user explicitly requests that workflow.
 

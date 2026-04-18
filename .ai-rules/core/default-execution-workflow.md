@@ -13,6 +13,8 @@ Classify every task into exactly one of these categories:
 3. `feature/refactor`
 4. `debug`
 
+Governance or rule-editing work is not a fifth category. Classify it by size and risk using the four categories above, then load the governance context listed in `.ai-rules/core/README.md`.
+
 ## 2. Minimal Execution Loop
 
 Follow this loop in order:

@@ -11,19 +11,6 @@ cd "$REPO_ROOT"
 
 failures=0
 
-echo "Checking .ai-rules path references..."
-RULE_REFS="$(rg --glob '!node_modules/**' --glob '!.next/**' --glob '!.git/**' --glob '!.worktrees/**' -o --no-heading --no-filename '\.ai-rules/[A-Za-z0-9_./-]+\.md' . | sort -u || true)"
-
-if [ -n "$RULE_REFS" ]; then
-  while IFS= read -r ref; do
-    [ -z "$ref" ] && continue
-    if [ ! -f "$ref" ]; then
-      echo "FAIL: broken .ai-rules reference -> $ref"
-      failures=$((failures + 1))
-    fi
-  done <<< "$RULE_REFS"
-fi
-
 echo "Checking boundary exception TODO format and due dates..."
 TODOS="$(rg --glob '!node_modules/**' --glob '!.next/**' --glob '!.git/**' --glob '!.worktrees/**' --glob '*.ts' --glob '*.tsx' --glob '*.js' --glob '*.jsx' --glob '*.cjs' --glob '*.mjs' --no-heading -n 'TODO:\s*resolve boundary violation' app server client components hooks shared tests 2>/dev/null || true)"
 
@@ -52,9 +39,9 @@ if [ -n "$TODOS" ]; then
 fi
 
 if [ "$failures" -eq 0 ]; then
-  echo "PASS: governance link and boundary-exception checks passed"
+  echo "PASS: boundary-exception TODO checks passed"
   exit 0
 fi
 
-echo "FAIL: found ${failures} governance guard issue(s)"
+echo "FAIL: found ${failures} boundary-exception TODO issue(s)"
 exit 1
