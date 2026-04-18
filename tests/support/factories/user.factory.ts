@@ -1,4 +1,4 @@
-import type { User, Session } from '@/server/db/schema'
+import type { Session, User } from '@/server/lib/db/schema'
 
 export interface UserFactoryOptions {
   id?: string

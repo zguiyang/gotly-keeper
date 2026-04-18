@@ -1,5 +1,5 @@
 import type { AssetListItem } from '@/shared/assets/assets.types'
-import type { SearchAssetsOptions } from '@/server/search/search.types'
+import type { SearchAssetsOptions } from '@/server/services/search/search.types'
 
 export interface SearchServiceMockOptions {
   shouldSucceed?: boolean
