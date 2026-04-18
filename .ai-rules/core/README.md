@@ -26,6 +26,7 @@ Do not interpret `core/` as "read every core file on every task." The always-loa
 - `.ai-rules/core/project-tooling-and-runtime-rules.md`
 - `.ai-rules/core/testing-and-integration-rules.md`
 - `.ai-rules/core/coding-style-rules.md`
+- `.ai-rules/core/skill-routing-rules.md`
 
 ## Minimal Context Packages
 
@@ -36,6 +37,7 @@ Use these as the default context budget:
 - `feature/refactor`: add capability boundary, architecture placement rules, touched-file domain rules, and testing rules.
 - `debug`: add tooling/runtime rules and testing rules, then touched-file domain rules once the failing area is known.
 - governance/rule edits: add project governance and tooling/runtime rules, then run the governance preflight defined there.
+- skill selection: add skill routing rules only when a task may benefit from a skill or when choosing between skills is uncertain.
 - commit/PR/phase/subagent: load the matching advanced workflow only after the user explicitly requests that workflow.
 
 For Next.js behavior changes, read the relevant guide in `node_modules/next/dist/docs/` after identifying the exact behavior being changed. Do not preload broad Next.js docs for unrelated code edits.
