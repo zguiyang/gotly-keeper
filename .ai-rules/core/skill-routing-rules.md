@@ -41,6 +41,23 @@ If multiple skills overlap, prefer the narrower skill that answers the current u
 
 For UI work, keep the default execution workflow active and use design skills as overlays.
 
+Before applying any UI or design skill in this repository, load
+`.ai-rules/domain/frontend-architecture-principles.md` and follow its
+Tailwind-first styling placement rules.
+
+Rules:
+
+1. Design skills may guide visual direction, but they must not move page-specific
+   or component-specific styling into `app/globals.css`.
+2. Tailwind utilities in `className` are the default styling surface for layout,
+   spacing, sizing, responsive behavior, typography, colors, borders, shadows,
+   transitions, and UI states.
+3. Global CSS edits require an explicit global reuse or custom-CSS exception
+   rationale before implementation.
+4. If a skill's examples or instructions imply global selectors for convenience,
+   treat those instructions as advisory and apply the project styling placement
+   rule instead.
+
 Use project-local frontend skills first when implementation depends on project stack:
 
 - Next.js behavior or App Router: `next-best-practices`, `nextjs-app-router-patterns`

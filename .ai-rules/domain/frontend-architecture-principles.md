@@ -177,17 +177,128 @@ Forbidden:
 
 ---
 
-## 4. Review and Enforcement Rules
+## 4. Styling Placement Rules
 
-### 4.1 Merge Gate
+This repository uses Tailwind CSS as the default styling surface.
+
+These rules apply to all frontend UI work, including work produced through
+design, layout, polish, redesign, or animation skills.
+
+### 4.1 Tailwind-First Rule
+
+Prefer Tailwind utilities in `className` for ordinary presentation concerns.
+
+Use Tailwind utilities for:
+
+- layout
+- spacing
+- sizing
+- width and max-width
+- responsive behavior
+- typography
+- colors from existing theme tokens
+- borders and radii
+- shadows
+- transitions
+- hover, active, focus, and disabled states
+- reduced-motion variants when Tailwind can express the behavior clearly
+
+Rules:
+
+1. Do not create custom CSS selectors when Tailwind utilities can express the
+   same behavior clearly.
+2. Prefer `cn()` or local component composition when class lists become
+   conditional or repeated.
+3. Extract a local component when repeated Tailwind class composition becomes
+   hard to read.
+4. Do not move page-specific or component-specific styling into global CSS just
+   to shorten JSX.
+
+### 4.2 Global CSS Boundary Rule
+
+`app/globals.css` is a shared system surface, not a page styling file.
+
+Allowed in `app/globals.css`:
+
+- Tailwind, animation, and shadcn imports
+- Tailwind v4 `@theme` registrations
+- `:root` and `.dark` semantic tokens
+- global design tokens intentionally used across the application
+- `@layer base` element defaults
+- truly reusable global utilities used across multiple routes or component
+  families
+- browser primitives that Tailwind cannot express cleanly
+
+Forbidden in `app/globals.css`:
+
+- page-specific selectors
+- route-specific selectors
+- one-off component selectors
+- page layout classes such as custom containers, grids, section spacing, and
+  responsive rules that are used by only one route
+- hover, focus, animation, or media-query behavior for a single page or a single
+  component
+
+Before editing `app/globals.css`, the agent must be able to state why the new
+style is globally reusable or impossible to express cleanly with Tailwind.
+
+### 4.3 Custom CSS Exception Rule
+
+Custom CSS is allowed only when it is the smallest clear solution.
+
+Allowed exceptions:
+
+- pseudo-elements that materially simplify markup
+- keyframes or complex animations not covered by Tailwind utilities
+- masks, advanced gradients, `color-mix()`, or other browser features that are
+  clearer as CSS than as arbitrary Tailwind values
+- shared primitives that are used in multiple independent UI areas
+- framework or library integration requirements
+
+Rules:
+
+1. Keep custom CSS as close to the owning UI as the stack reasonably allows.
+2. If custom CSS is page-specific, prefer a page-local component abstraction over
+   `app/globals.css`.
+3. If a custom selector is global, give it a generic reusable name rather than a
+   route-specific prefix.
+4. Do not use custom CSS as a substitute for ordinary Tailwind responsive,
+   spacing, sizing, or layout utilities.
+
+### 4.4 Design Skill Boundary Rule
+
+Design skills may improve visual direction, hierarchy, interaction, and polish,
+but they do not override this repository's Tailwind-first styling placement
+rules.
+
+Rules:
+
+1. A design skill must work through the existing Tailwind/shadcn styling system
+   unless the user explicitly approves a different styling approach.
+2. Design tokens belong in global CSS only when they are intended for repeated
+   cross-application use.
+3. Page-specific visual treatments belong in JSX class composition or local
+   components, not in `app/globals.css`.
+4. If a design skill suggests global CSS for convenience, treat that suggestion
+   as advisory and apply this file's stricter placement boundary.
+
+---
+
+## 5. Review and Enforcement Rules
+
+### 5.1 Merge Gate
 
 Changes fail architecture review when:
 
 - one unit mixes multiple behavior types
 - flow direction is bypassed
 - ownership of state or decisions is ambiguous
+- page-specific or component-specific styling is added to `app/globals.css`
+  without a valid global-CSS exception
+- Tailwind-expressible layout, responsive, spacing, sizing, or state styling is
+  moved into custom CSS selectors
 
-### 4.2 AI Implementation Checklist
+### 5.2 AI Implementation Checklist
 
 Before generating frontend code:
 
@@ -196,10 +307,13 @@ Before generating frontend code:
 3. verify flow is `User -> View -> Logic -> Data -> Logic -> View`
 4. verify boundary model conversion is explicit
 5. verify state ownership and transition ownership are explicit
+6. verify Tailwind utilities are used for ordinary styling
+7. verify any `app/globals.css` edit is globally reusable or justified by a
+   custom-CSS exception
 
 ---
 
-## 5. Relation to Repository-Specific Rules
+## 6. Relation to Repository-Specific Rules
 
 This file defines behavior-first frontend architecture principles.
 
