@@ -1,0 +1,38 @@
+.shell {
+  position: relative;
+  min-height: 100vh;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: var(--surface);
+}
+
+.shell::before,
+.shell::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.shell::before {
+  width: 44vw;
+  height: 44vw;
+  min-width: 320px;
+  min-height: 320px;
+  background: radial-gradient(circle, rgba(0, 81, 177, 0.12) 0%, rgba(0, 81, 177, 0.06) 42%, transparent 72%);
+  top: 4%;
+  left: -12%;
+  filter: blur(100px);
+}
+
+.shell::after {
+  width: 34vw;
+  height: 34vw;
+  min-width: 280px;
+  min-height: 280px;
+  background: radial-gradient(circle, rgba(7, 104, 223, 0.14) 0%, rgba(201, 230, 255, 0.08) 46%, transparent 72%);
+  right: -8%;
+  bottom: 4%;
+  filter: blur(100px);
+}

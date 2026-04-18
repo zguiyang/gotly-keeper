@@ -59,8 +59,8 @@ const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
             id={fieldId}
             ref={ref}
             className={cn(
-              "w-full rounded-xl border-0 bg-surface-container-lowest px-4 py-3.5 text-sm text-on-surface outline-none transition-all",
-              "placeholder:text-outline-variant focus:ring-2 focus:ring-primary/15",
+              "w-full rounded-xl border-0 bg-surface-container-lowest px-4 py-3.5 text-sm text-on-surface outline-none",
+              "placeholder:text-outline-variant transition-[background-color,box-shadow,color] duration-200 focus-visible:ring-2 focus-visible:ring-primary/15",
               prefixIcon && "pl-11",
               suffixIcon && "pr-11",
               error && "ring-2 ring-destructive/20",
@@ -75,7 +75,7 @@ const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
             </div>
           ) : null}
         </div>
-        {error ? <p className="text-xs text-destructive">{error}</p> : null}
+        {error ? <p className="text-xs text-destructive" aria-live="polite">{error}</p> : null}
       </div>
     );
   }

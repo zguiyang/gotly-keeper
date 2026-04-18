@@ -46,8 +46,9 @@ export function SignUpForm() {
         inputClassName="bg-surface-container-low focus:bg-surface-container-lowest"
         label="昵称"
         name="name"
-        placeholder="输入你的昵称"
+        placeholder="例如：Joy"
         required
+        spellCheck={false}
       />
       <AuthField
         autoComplete="email"
@@ -56,6 +57,7 @@ export function SignUpForm() {
         name="email"
         placeholder="name@example.com"
         required
+        spellCheck={false}
         type="email"
       />
       <AuthField
@@ -88,7 +90,7 @@ export function SignUpForm() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-error/10 px-4 py-3 text-sm text-error">
+        <div className="rounded-md bg-error/10 px-4 py-3 text-sm text-error" aria-live="polite">
           {error}
         </div>
       )}
@@ -100,7 +102,7 @@ export function SignUpForm() {
         type="submit"
         variant="primary"
       >
-        <span>{pending ? '创建中...' : '创建账号'}</span>
+        <span>{pending ? '创建中…' : '创建账号'}</span>
         {!pending && <ArrowRight className="h-5 w-5" />}
       </Button>
     </form>

@@ -28,6 +28,7 @@ export function SignInForm() {
         name="email"
         placeholder="name@example.com"
         required
+        spellCheck={false}
         type="email"
       />
 
@@ -59,7 +60,7 @@ export function SignInForm() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-error/10 px-4 py-3 text-sm text-error">
+        <div className="rounded-md bg-error/10 px-4 py-3 text-sm text-error" aria-live="polite">
           {error}
         </div>
       )}
@@ -71,7 +72,7 @@ export function SignInForm() {
         type="submit"
         variant="primary"
       >
-        {pending ? '登录中...' : '立即登录'}
+        {pending ? '登录中…' : '立即登录'}
       </Button>
     </form>
   )

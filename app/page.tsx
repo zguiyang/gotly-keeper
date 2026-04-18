@@ -6,6 +6,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   featureCards,
   floatingCards,
@@ -13,25 +16,24 @@ import {
   principles,
   scenarios,
 } from "@/config/landing-page-content";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+
+import styles from "./page.module.css";
 
 export default function LandingPage() {
   return (
-    <div className="landing-shell auth-atmosphere min-h-screen">
-      <div className="landing-noise" aria-hidden="true" />
-      <div className="landing-content relative flex min-h-screen flex-col">
-        <header className="landing-topbar">
-          <div className="landing-container landing-topbar-inner">
-            <div className="landing-nav">
-              <Link href="/" className="landing-brand-lockup">
-                <div className="landing-brand-logo-block">
-                  <div className="landing-brand-mark">
+    <div className={styles.pageShell}>
+      <div className={styles.noise} aria-hidden="true" />
+      <div className={styles.content}>
+        <header className={styles.topbar}>
+          <div className={cn(styles.container, styles.topbarInner)}>
+            <div className={styles.nav}>
+              <Link href="/" className={styles.brandLockup}>
+                <div className={styles.brandLogoBlock}>
+                  <div className={styles.brandMark}>
                     <Archive className="h-5 w-5" />
                   </div>
-                  <div className="landing-brand-mark landing-brand-mark-secondary">
+                  <div className={cn(styles.brandMark, styles.brandMarkSecondary)}>
                     <Compass className="h-4 w-4" />
                   </div>
                 </div>
@@ -45,17 +47,17 @@ export default function LandingPage() {
                 </div>
               </Link>
 
-              <nav className="landing-nav-menu" aria-label="页面导航">
-                <a href="#capabilities" className="landing-nav-link">
+              <nav className={styles.navMenu} aria-label="页面导航">
+                <a href="#capabilities" className={styles.navLink}>
                   核心能力
                 </a>
-                <a href="#scenarios" className="landing-nav-link">
+                <a href="#scenarios" className={styles.navLink}>
                   使用场景
                 </a>
-                <a href="#principles" className="landing-nav-link">
+                <a href="#principles" className={styles.navLink}>
                   产品原则
                 </a>
-                <a href="#manifesto" className="landing-nav-link">
+                <a href="#manifesto" className={styles.navLink}>
                   品牌宣言
                 </a>
               </nav>
@@ -85,22 +87,25 @@ export default function LandingPage() {
         </header>
 
         <main className="flex-1 pb-16 sm:pb-24">
-          <section className="landing-container landing-container-hero landing-section pt-10 sm:pt-14">
-            <div className="landing-hero-grid">
-              <div className="landing-hero-copy">
+          <section className={cn(styles.container, styles.containerHero, styles.section, "pt-10 sm:pt-14")}>
+            <div className={styles.heroGrid}>
+              <div className={styles.heroCopy}>
                 <Badge
                   variant="secondary"
-                  className="landing-soft-badge rounded-full border border-primary/10 px-3 py-1 text-[0.72rem] uppercase tracking-[0.18em] text-primary"
+                  className={cn(
+                    styles.softBadge,
+                    "rounded-full border border-primary/10 px-3 py-1 text-[0.72rem] uppercase tracking-[0.18em] text-primary"
+                  )}
                 >
                   <Sparkles className="mr-1.5 h-3.5 w-3.5" data-icon="inline-start" />
                   Quiet AI concierge
                 </Badge>
 
-                <h1 className="landing-display font-headline text-on-surface">
+                <h1 className={cn(styles.display, "font-headline text-on-surface")}>
                   把零碎想法，收进一处安静的入口。
                 </h1>
 
-                <p className="landing-lead">
+                <p className={styles.lead}>
                   你先随手交给我，我先帮你收好。以后你再问，我帮你找回来。
                 </p>
 
@@ -109,7 +114,8 @@ export default function LandingPage() {
                     href="/workspace"
                     className={cn(
                       buttonVariants({ size: "xl" }),
-                      "landing-primary-cta auth-gradient-button rounded-full px-6 text-white shadow-lg shadow-primary/20"
+                      styles.primaryCta,
+                      "rounded-full px-6 text-white shadow-lg shadow-primary/20"
                     )}
                   >
                     进入工作空间
@@ -123,37 +129,38 @@ export default function LandingPage() {
                     href="#capabilities"
                     className={cn(
                       buttonVariants({ variant: "outline", size: "xl" }),
-                      "landing-secondary-cta rounded-full border-primary/15 bg-white/70 px-6 shadow-sm"
+                      styles.secondaryCta,
+                      "rounded-full border-primary/15 bg-white/70 px-6 shadow-sm"
                     )}
                   >
                     查看核心能力
                   </a>
                 </div>
 
-                <div className="landing-inline-points">
+                <div className={styles.inlinePoints}>
                   <span>轻量收纳箱</span>
                   <span>统一入口</span>
                   <span>少管理</span>
                 </div>
               </div>
 
-              <div className="landing-stage-wrap">
-                <div className="landing-stage-glow" aria-hidden="true" />
-                <div className="landing-float-stage">
+              <div className={styles.stageWrap}>
+                <div className={styles.stageGlow} aria-hidden="true" />
+                <div className={styles.floatStage}>
                   {floatingCards.map((card, index) => (
                     <article
                       key={card.title}
-                      className="landing-float-card"
+                      className={styles.floatCard}
                       data-index={index}
                     >
-                      <span className="landing-float-eyebrow">{card.eyebrow}</span>
-                      <p className="landing-float-title">{card.title}</p>
-                      <p className="landing-float-description">{card.description}</p>
+                      <span className={styles.floatEyebrow}>{card.eyebrow}</span>
+                      <p className={styles.floatTitle}>{card.title}</p>
+                      <p className={styles.floatDescription}>{card.description}</p>
                     </article>
                   ))}
 
-                  <div className="landing-stage-caption landing-panel">
-                    <p className="landing-stage-kicker">AI 统一入口优先</p>
+                  <div className={cn(styles.stageCaption, styles.panel)}>
+                    <p className={styles.stageKicker}>AI 统一入口优先</p>
                     <p className="text-sm leading-7 text-on-surface-variant">
                       对系统来说是结构化资产，对用户来说只是“我交给小管家保管的东西”。
                     </p>
@@ -163,27 +170,27 @@ export default function LandingPage() {
             </div>
           </section>
 
-          <section id="capabilities" className="landing-container landing-section">
-            <div className="landing-section-heading">
+          <section id="capabilities" className={cn(styles.container, styles.section, styles.sectionAnchor)}>
+            <div className={styles.sectionHeading}>
               <Badge variant="outline" className="rounded-full border-primary/15 px-3 py-1 text-primary">
                 核心能力
               </Badge>
               <h2 className="font-headline text-3xl font-semibold tracking-tight text-on-surface sm:text-4xl">
                 少一点管理动作，多一点自然交付。
               </h2>
-              <p className="landing-section-intro">
+              <p className={styles.sectionIntro}>
                 首页不要求用户先理解结构，只需要先把内容交给系统，再在需要时自然找回。
               </p>
             </div>
 
-            <div className="landing-feature-grid">
+            <div className={styles.featureGrid}>
               {featureCards.map((feature) => {
                 const Icon = feature.icon;
 
                 return (
-                  <Card key={feature.title} className="landing-panel landing-card-surface">
+                  <Card key={feature.title} className={cn(styles.panel, styles.cardSurface)}>
                     <CardContent className="space-y-5 p-7 sm:p-8">
-                      <div className="landing-feature-icon">
+                      <div className={styles.featureIcon}>
                         <Icon className="h-5 w-5 text-primary" />
                       </div>
                       <div className="space-y-2">
@@ -204,22 +211,25 @@ export default function LandingPage() {
             </div>
           </section>
 
-          <section id="scenarios" className="landing-container landing-section landing-section-tight">
-            <div className="landing-story-grid">
-              <div className="landing-story-intro">
-                <p className="landing-kicker">真实场景</p>
+          <section
+            id="scenarios"
+            className={cn(styles.container, styles.section, styles.sectionTight, styles.sectionAnchor)}
+          >
+            <div className={styles.storyGrid}>
+              <div className={styles.storyIntro}>
+                <p className={styles.kicker}>真实场景</p>
                 <h2 className="font-headline text-3xl font-semibold tracking-tight text-on-surface sm:text-4xl">
                   不需要经营系统，只需要先交给它。
                 </h2>
-                <p className="landing-section-intro landing-story-copy">
+                <p className={cn(styles.sectionIntro, styles.storyCopy)}>
                   Gotly AI 面向的是忙碌、轻量记录、容易收藏但不想维护复杂结构的人。
                 </p>
               </div>
 
-              <div className="landing-scenario-grid">
+              <div className={styles.scenarioGrid}>
                 {scenarios.map((scenario) => (
-                  <article key={scenario.title} className="landing-panel landing-scenario-card">
-                    <p className="landing-kicker">{scenario.title}</p>
+                  <article key={scenario.title} className={cn(styles.panel, styles.scenarioCard)}>
+                    <p className={styles.kicker}>{scenario.title}</p>
                     <p className="text-sm leading-7 text-on-surface">{scenario.description}</p>
                     <p className="rounded-2xl bg-primary-fixed/45 px-4 py-3 text-sm text-on-surface-variant">
                       {scenario.example}
@@ -230,22 +240,22 @@ export default function LandingPage() {
             </div>
           </section>
 
-          <section id="principles" className="landing-container landing-section">
-            <div className="landing-principles landing-panel">
+          <section id="principles" className={cn(styles.container, styles.section, styles.sectionAnchor)}>
+            <div className={cn(styles.principles, styles.panel)}>
               <div className="space-y-4">
-                <p className="landing-kicker">产品原则</p>
+                <p className={styles.kicker}>产品原则</p>
                 <h2 className="font-headline text-3xl font-semibold tracking-tight text-on-surface sm:text-4xl">
                   结构化是后台能力，不是前台负担。
                 </h2>
-                <p className="landing-section-intro">
+                <p className={styles.sectionIntro}>
                   这不是一套要求你主动维护的重型系统，而是一处把输入、整理与找回 quietly 接住的入口。
                 </p>
               </div>
 
-              <div className="landing-principles-grid">
+              <div className={styles.principlesGrid}>
                 {principles.map((principle, index) => (
-                  <div key={principle} className="landing-principle-item">
-                    <span className="landing-principle-index">0{index + 1}</span>
+                  <div key={principle} className={styles.principleItem}>
+                    <span className={styles.principleIndex}>0{index + 1}</span>
                     <p className="text-sm leading-7 text-on-surface-variant">{principle}</p>
                   </div>
                 ))}
@@ -253,29 +263,29 @@ export default function LandingPage() {
             </div>
           </section>
 
-          <section id="manifesto" className="landing-container landing-manifesto">
-            <div className="landing-manifesto-panel landing-panel">
-              <div className="landing-manifesto-copy-block">
-                <p className="landing-kicker">Brand manifesto</p>
-                <h2 className="landing-manifesto-copy font-headline text-on-surface">
+          <section id="manifesto" className={cn(styles.container, styles.manifesto, styles.sectionAnchor)}>
+            <div className={cn(styles.manifestoPanel, styles.panel)}>
+              <div className={styles.manifestoCopyBlock}>
+                <p className={styles.kicker}>Brand manifesto</p>
+                <h2 className={cn(styles.manifestoCopy, "font-headline text-on-surface")}>
                   你先交给我，我替你安静收好。
                 </h2>
-                <p className="landing-manifesto-description">
+                <p className={styles.manifestoDescription}>
                   Gotly AI 更像一处安静入口。先接住你零碎的记录，之后在需要时，把它们清楚地带回来。
                 </p>
               </div>
 
-              <div className="landing-manifesto-side">
-                <div className="landing-manifesto-tags">
+              <div className={styles.manifestoSide}>
+                <div className={styles.manifestoTags}>
                   {manifestoTags.map((tag) => (
-                    <span key={tag} className="landing-manifesto-tag">
+                    <span key={tag} className={styles.manifestoTag}>
                       {tag}
                     </span>
                   ))}
                 </div>
 
-                <div className="landing-manifesto-note">
-                  <p className="landing-stage-kicker">Quietly keeping what matters</p>
+                <div className={styles.manifestoNote}>
+                  <p className={styles.stageKicker}>Quietly keeping what matters</p>
                   <p>
                     不把输入变成负担，不把找回变成搜索训练，而是把系统变成一位可靠的小管家。
                   </p>
@@ -285,8 +295,8 @@ export default function LandingPage() {
           </section>
         </main>
 
-        <footer className="landing-bottombar">
-          <div className="landing-container landing-bottombar-inner">
+        <footer className={styles.bottombar}>
+          <div className={cn(styles.container, styles.bottombarInner)}>
             <div className="flex flex-col gap-3 py-6 text-sm text-on-surface-variant sm:flex-row sm:items-center sm:justify-between">
               <p>© 2026 Gotly AI. Quietly keeping what matters.</p>
               <div className="flex items-center gap-5">

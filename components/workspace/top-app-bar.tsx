@@ -1,7 +1,6 @@
 "use client"
 
 import { Bell, Settings, Search, Menu } from "lucide-react"
-import Image from "next/image"
 
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { WorkspaceNavList } from "@/components/workspace/workspace-nav-list"
@@ -15,13 +14,13 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
   const fallbackInitial = userName.trim().slice(0, 1).toUpperCase() || 'G'
 
   return (
-    <header className="h-14 w-full sticky top-0 bg-surface border-b border-outline-variant/20 flex items-center justify-between px-4 lg:px-8 z-40 font-[family-name:var(--font-manrope)] tracking-tight text-sm gap-4">
+    <header className="sticky top-0 z-40 flex h-14 w-full items-center justify-between gap-4 border-b border-outline-variant/20 bg-surface px-4 text-sm tracking-tight lg:px-8 font-headline">
       {/* Mobile menu */}
       <div className="lg:hidden flex items-center shrink-0">
         <Sheet>
           <SheetTrigger
             aria-label="打开工作区导航"
-            className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-sm transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            className="rounded-sm p-2 text-on-surface-variant transition-colors duration-150 hover:bg-surface-container-low hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
           >
             <Menu className="w-5 h-5" />
           </SheetTrigger>
@@ -53,8 +52,10 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
             <Search className="w-4 h-4 text-on-surface-variant/60" />
           </div>
           <input
-            className="w-full h-9 bg-white rounded-lg pl-10 pr-4 text-sm text-on-surface placeholder:text-on-surface-variant/40 border border-outline-variant/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-200 shadow-sm"
-            placeholder="快速查找..."
+            aria-label="快速查找"
+            className="h-9 w-full rounded-lg border border-outline-variant/30 bg-white pl-10 pr-4 text-sm text-on-surface shadow-sm transition-[border-color,box-shadow] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/20"
+            name="topbar-search"
+            placeholder="快速查找…"
             type="text"
           />
         </div>
@@ -63,30 +64,29 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
       {/* Right side actions */}
       <div className="flex items-center gap-1 shrink-0">
         <button
-          className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-sm transition-colors duration-150 cursor-pointer"
-          aria-label="Notifications"
+          className="rounded-sm p-2 text-on-surface-variant transition-colors duration-150 hover:bg-surface-container-low hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          aria-label="通知"
         >
           <Bell className="w-5 h-5" />
         </button>
         <button
-          className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded-sm transition-colors duration-150 cursor-pointer"
-          aria-label="Settings"
+          className="rounded-sm p-2 text-on-surface-variant transition-colors duration-150 hover:bg-surface-container-low hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          aria-label="设置"
         >
           <Settings className="w-5 h-5" />
         </button>
-        <div className="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden cursor-pointer ml-1">
+        <div className="ml-1 flex size-8 items-center justify-center overflow-hidden rounded-full bg-surface-container-high">
           {userImage ? (
-            <Image
+            <img
               alt={`${userName} 的头像`}
-              className="h-full w-full object-cover"
+              className="size-full object-cover"
               height={32}
+              loading="lazy"
               src={userImage}
               width={32}
             />
           ) : (
-            <span className="flex h-full w-full items-center justify-center text-sm font-medium text-primary">
-              {fallbackInitial}
-            </span>
+            <span className="text-sm font-medium text-primary">{fallbackInitial}</span>
           )}
         </div>
       </div>
