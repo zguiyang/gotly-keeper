@@ -282,6 +282,36 @@ Rules:
 4. If a design skill suggests global CSS for convenience, treat that suggestion
    as advisory and apply this file's stricter placement boundary.
 
+### 4.5 shadcn/ui Primitive Boundary Rule
+
+Files under `components/ui/**` are foundational UI primitives. Treat them as
+design-system source, not feature implementation files.
+
+Default rule:
+
+- do not modify `components/ui/**` for page-specific or feature-specific
+  styling, layout, copy, behavior, or state needs
+
+Prefer:
+
+- composing existing primitives at the usage site
+- creating app-level or feature-level wrapper components outside
+  `components/ui/**`
+- using existing variants, semantic tokens, and `className`
+- changing shared design tokens only when the intended effect is
+  application-wide
+
+Allowed exceptions:
+
+- the user explicitly requests a `components/ui/**` change
+- the task is an intentional shadcn/ui registry update with reviewed diffs
+- a confirmed primitive-level bug cannot be fixed cleanly at the usage site
+- the change is an intentional design-system-wide behavior or style change
+
+Before modifying `components/ui/**`, the agent must state why the change cannot
+be made through composition, a wrapper, existing variants, semantic tokens, or a
+usage-site `className`.
+
 ---
 
 ## 5. Review and Enforcement Rules
@@ -297,6 +327,8 @@ Changes fail architecture review when:
   without a valid global-CSS exception
 - Tailwind-expressible layout, responsive, spacing, sizing, or state styling is
   moved into custom CSS selectors
+- `components/ui/**` is modified for feature-specific styling, layout, copy,
+  behavior, or state without an allowed primitive-boundary exception
 
 ### 5.2 AI Implementation Checklist
 
@@ -310,6 +342,8 @@ Before generating frontend code:
 6. verify Tailwind utilities are used for ordinary styling
 7. verify any `app/globals.css` edit is globally reusable or justified by a
    custom-CSS exception
+8. verify any `components/ui/**` edit is justified by an allowed
+   primitive-boundary exception
 
 ---
 
