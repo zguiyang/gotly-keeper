@@ -170,10 +170,10 @@ This repository currently follows a mixed verification model:
 
 ### 11.2 Test Infrastructure
 
-Shared test utilities are located at `server/test-utils/`:
+Shared test utilities are located at `tests/support/`:
 
 ```text
-server/test-utils/
+tests/support/
 ├── factories/       # Data factory functions (asset.factory.ts, user.factory.ts)
 ├── mocks/           # Mock implementations (ai-runner.mock.ts, search-service.mock.ts)
 ├── setup/           # Test setup utilities (test-clock.ts)
@@ -199,13 +199,13 @@ Vitest is configured via a single config in `vitest.config.ts`, with `tests/**/*
 ### 11.4 Test Fixtures and Mocks Rules
 
 **Required:**
-- All shared fixtures go in `server/test-utils/factories/`
-- All shared mocks go in `server/test-utils/mocks/`
+- All shared fixtures go in `tests/support/factories/`
+- All shared mocks go in `tests/support/mocks/`
 - New domain tests should use factory fixtures instead of repetitive inline objects when shared fixtures improve clarity
 
 **Forbidden:**
 - Copying fixtures between domains
-- Creating domain-specific mocks that duplicate `test-utils/` mocks
+- Creating domain-specific mocks that duplicate `tests/support/` mocks
 - Hardcoding shared test data repeatedly when a reusable factory already exists
 
 ## 12. AI Decision Checklist
@@ -303,9 +303,10 @@ To prevent silent drift after architecture or rule refactors, CI must enforce th
 
 1. `pnpm typecheck` (equivalent to `tsc --noEmit`) must pass.
 2. `pnpm guard:import-boundaries` must pass.
-3. `pnpm guard:test-migration` must pass when legacy service tests are deleted.
-4. `pnpm guard:boundary-exception-todos` must pass for boundary exception TODO compliance.
-5. For changes that touch `.ai-rules/`, `AGENTS.md`, or governance-related references, run `bash .ai-rules/advanced-workflows/guards/check-governance-links.sh` directly.
+3. `pnpm guard:capability-boundary` must pass.
+4. `pnpm guard:test-migration` must pass when legacy service tests are deleted.
+5. `pnpm guard:boundary-exception-todos` must pass for boundary exception TODO compliance.
+6. For changes that touch `.ai-rules/`, `AGENTS.md`, or governance-related references, run `bash .ai-rules/advanced-workflows/guards/check-governance-links.sh` directly.
 
 ### 15.1 Legacy Test Migration Guard
 

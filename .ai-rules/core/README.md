@@ -51,7 +51,10 @@ For Next.js behavior changes, read the relevant guide in `node_modules/next/dist
 ## Domain Routing
 
 - `server/**` -> `.ai-rules/domain/backend-architecture-principles.md`
+- `app/**` -> `.ai-rules/core/project-architecture-rules.md`, then backend/frontend domain rules by touched behavior
 - `components/**`, `hooks/**`, `client/**`, `config/**` -> `.ai-rules/domain/frontend-architecture-principles.md`
+- `shared/**`, `lib/**` -> `.ai-rules/core/project-architecture-rules.md`; add `.ai-rules/domain/universal-development-boundary-rules.md` when ownership is ambiguous
+- `tests/**` -> `.ai-rules/core/testing-and-integration-rules.md`
 - forms/state/validation -> `.ai-rules/domain/react-client-state-and-forms-rules.md`
 - AI SDK/model/agent/streaming -> `.ai-rules/domain/ai-sdk-rules.md`
 

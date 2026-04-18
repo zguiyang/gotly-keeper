@@ -115,10 +115,10 @@ server/                 # Server-side business logic and infrastructure
   lib/                  # Infrastructure adapters (db/cache/ai/config/env)
   modules/              # Server module entrypoints for app/actions
   services/             # Domain/use-case orchestration and business services
-  test-utils/           # Shared server test support
 shared/                 # Cross-runtime shared types, schemas, constants, helpers
 scripts/                # Project runtime, maintenance, and test scripts
 tests/                  # Centralized unit/integration/e2e tests
+  support/              # Shared test fixtures, mocks, and setup helpers
 .ai-rules/              # Repository governance and implementation rules for AI
 ```
 

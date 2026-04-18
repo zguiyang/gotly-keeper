@@ -16,6 +16,7 @@
 
 - [ ] `pnpm lint` passes
 - [ ] `pnpm build` succeeds
+- [ ] `pnpm guard:ci` passes
 - [ ] Tests added/updated if applicable
 - [ ] Documentation updated if applicable
 

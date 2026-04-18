@@ -68,8 +68,11 @@ Never load all rules by default.
 Load by touched code area:
 
 - Any task: `.ai-rules/core/project-architecture-rules.md`, `.ai-rules/core/project-tooling-and-runtime-rules.md`, `.ai-rules/core/testing-and-integration-rules.md` as needed
+- `app/**`: `.ai-rules/core/project-architecture-rules.md`, then backend/frontend domain rules by touched behavior
 - `server/**`: `.ai-rules/domain/backend-architecture-principles.md`
 - `components/**`, `hooks/**`, `client/**`, `config/**`: `.ai-rules/domain/frontend-architecture-principles.md`
+- `shared/**`, `lib/**`: `.ai-rules/core/project-architecture-rules.md`; add `.ai-rules/domain/universal-development-boundary-rules.md` when ownership is ambiguous
+- `tests/**`: `.ai-rules/core/testing-and-integration-rules.md`
 - forms/state validation concerns: `.ai-rules/domain/react-client-state-and-forms-rules.md`
 - AI SDK concerns: `.ai-rules/domain/ai-sdk-rules.md`
 

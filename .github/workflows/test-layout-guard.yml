@@ -40,6 +40,8 @@ jobs:
         run: |
           pnpm typecheck
           pnpm guard:import-boundaries
+          pnpm guard:capability-boundary
+          pnpm guard:boundary-exception-todos
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             bash scripts/guard-test-migration.sh --against "${{ github.event.pull_request.base.sha }}"
           else
@@ -49,4 +51,4 @@ jobs:
             fi
             bash scripts/guard-test-migration.sh --against "$BASE_REF"
           fi
-          pnpm guard:governance-links
+          bash .ai-rules/advanced-workflows/guards/check-governance-links.sh

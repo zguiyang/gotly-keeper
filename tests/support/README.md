@@ -45,7 +45,7 @@ Use setup utilities (`setup/*.ts`) for:
 
 **FORBIDDEN:**
 - Copying fixtures between domains (e.g., `server/assets/__tests__/fixtures.ts` → `server/notes/__tests__/`)
-- Creating domain-specific mocks that duplicate `test-utils/` mocks
+- Creating domain-specific mocks that duplicate `tests/support/` mocks
 - Hardcoding test data in test files instead of using factories
 
 **REQUIRED:**
