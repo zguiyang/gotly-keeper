@@ -6,7 +6,9 @@ import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
 import {
   WorkspaceEmptyState,
   WorkspaceFilterTabs,
+  workspaceMetaTextClassName,
   WorkspacePageHeader,
+  workspacePillClassName,
   WorkspaceSectionDivider,
   WorkspaceTypeBadge,
 } from '@/components/workspace/workspace-view-primitives'
@@ -52,55 +54,67 @@ function AssetItem({
 }) {
   const presentation = assetTypePresentation[asset.type]
   const Icon = presentation.icon
+  const actions = [
+    { label: '编辑', onClick: () => onEdit(asset) },
+    { label: '归档', onClick: () => onArchive(asset) },
+    { label: '移入回收站', onClick: () => onMoveToTrash(asset), danger: true },
+  ]
 
   return (
-    <div className="group -mx-4 flex items-center rounded-sm px-4 py-5 transition-colors duration-150 hover:bg-surface-container-low/50">
-      <div
-        className={`w-10 h-10 flex-shrink-0 rounded-sm flex items-center justify-center mr-6 ${presentation.iconBg}`}
-      >
-        <Icon className={`w-5 h-5 ${presentation.iconColor}`} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-3 mb-1 flex-wrap">
-          <h3
-            className={`text-sm font-medium truncate ${
-              asset.completed
-                ? 'text-on-surface-variant line-through'
-                : 'text-on-surface group-hover:text-primary transition-colors'
-            }`}
-          >
-            {asset.title}
-          </h3>
-          <TypePill type={asset.type} />
-          {asset.completed && (
-            <span className="px-2 py-0.5 rounded-sm bg-surface-container-high text-[10px] font-medium text-on-surface-variant">
-              已完成
-            </span>
-          )}
-        </div>
-        <p
-          className={`text-xs line-clamp-1 ${
-            asset.completed ? 'text-on-surface-variant/60' : 'text-on-surface-variant'
-          }`}
+    <article className="group -mx-4 rounded-2xl px-4 py-5 transition-colors duration-150 hover:bg-surface-container-low/45">
+      <div className="flex items-start gap-4 lg:gap-5">
+        <div
+          className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${presentation.iconBg}`}
         >
-          {asset.excerpt}
-        </p>
+          <Icon className={`h-[18px] w-[18px] ${presentation.iconColor}`} />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="mb-2 flex flex-wrap items-center gap-2.5">
+            <TypePill type={asset.type} />
+            {asset.completed && <span className={workspacePillClassName}>已完成</span>}
+            <span className={`${workspaceMetaTextClassName} lg:hidden`}>
+              {asset.timeText || formatAssetRelativeTime(asset.createdAt)}
+            </span>
+          </div>
+
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <h3
+                className={`text-[17px] font-semibold leading-7 tracking-[-0.02em] ${
+                  asset.completed
+                    ? 'text-on-surface-variant line-through'
+                    : 'text-on-surface group-hover:text-primary transition-colors'
+                }`}
+              >
+                {asset.title}
+              </h3>
+
+              <p
+                className={`mt-1 max-w-3xl text-sm leading-6 ${
+                  asset.completed ? 'text-on-surface-variant/65' : 'text-on-surface-variant'
+                }`}
+              >
+                {asset.excerpt}
+              </p>
+            </div>
+
+            <div className="hidden shrink-0 items-center gap-3 lg:flex">
+              <span className={`${workspaceMetaTextClassName} min-w-[78px] text-right`}>
+                {asset.timeText || formatAssetRelativeTime(asset.createdAt)}
+              </span>
+              <div className="opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                <AssetActionMenu actions={actions} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-0.5 lg:hidden">
+          <AssetActionMenu actions={actions} />
+        </div>
       </div>
-      <div className="ml-4 lg:ml-8 text-right flex-shrink-0">
-        <span className="text-xs font-medium text-on-surface-variant/60">
-          {asset.timeText || formatAssetRelativeTime(asset.createdAt)}
-        </span>
-      </div>
-      <div className="ml-2 lg:ml-6 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity">
-        <AssetActionMenu
-          actions={[
-            { label: '编辑', onClick: () => onEdit(asset) },
-            { label: '归档', onClick: () => onArchive(asset) },
-            { label: '移入回收站', onClick: () => onMoveToTrash(asset), danger: true },
-          ]}
-        />
-      </div>
-    </div>
+    </article>
   )
 }
 
@@ -185,7 +199,10 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
   return (
     <>
       <div className="mb-10">
-        <WorkspacePageHeader title="知识库" />
+        <WorkspacePageHeader
+          title="知识库"
+          description="按同一套线索浏览最近捕获的笔记、书签和待办，快速找到该看的那一条。"
+        />
         <WorkspaceFilterTabs tabs={filterTabs} value={activeFilter} onValueChange={setActiveFilter} />
       </div>
 

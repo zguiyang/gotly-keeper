@@ -13,6 +13,14 @@ import { cn } from '@/lib/utils'
 
 import type { LucideIcon } from 'lucide-react'
 
+const workspaceMetaTextClassName = 'text-[11px] font-medium tracking-[0.02em] text-on-surface-variant/60'
+
+const workspacePillClassName =
+  'inline-flex items-center rounded-full border border-outline-variant/15 bg-surface-container-low px-2.5 py-1 text-[11px] font-medium tracking-[0.02em] text-on-surface-variant'
+
+const workspaceSurfaceClassName =
+  'rounded-2xl border border-outline-variant/10 bg-surface-container-lowest shadow-[0_12px_32px_-20px_rgba(0,81,177,0.22)]'
+
 type WorkspacePageHeaderProps = {
   title: string
   description?: string
@@ -22,16 +30,20 @@ type WorkspacePageHeaderProps = {
 
 function WorkspacePageHeader({ title, description, eyebrow, className }: WorkspacePageHeaderProps) {
   return (
-    <div className={cn('mb-8 flex flex-col gap-2', className)}>
+    <div className={cn('mb-10 flex flex-col gap-3', className)}>
       {eyebrow ? (
-        <span className="text-xs font-semibold tracking-[0.18em] text-primary/70 uppercase">
+        <span className="text-[11px] font-semibold tracking-[0.22em] text-primary/70 uppercase">
           {eyebrow}
         </span>
       ) : null}
-      <h1 className="font-headline text-2xl font-bold tracking-tight text-on-surface lg:text-3xl">
+      <h1 className="font-headline text-[2rem] font-semibold tracking-[-0.03em] text-on-surface lg:text-[2.5rem]">
         {title}
       </h1>
-      {description ? <p className="max-w-2xl text-sm leading-relaxed text-on-surface-variant">{description}</p> : null}
+      {description ? (
+        <p className="max-w-3xl text-[15px] leading-7 text-on-surface-variant">
+          {description}
+        </p>
+      ) : null}
     </div>
   )
 }
@@ -50,7 +62,10 @@ function WorkspaceFilterTabs<TValue extends string>({
   className,
 }: WorkspaceFilterTabsProps<TValue>) {
   return (
-    <div className={cn('flex flex-wrap items-center gap-2 border-b border-outline-variant/10 pb-3', className)} aria-label="内容筛选">
+    <div
+      className={cn('flex flex-wrap items-center gap-2 border-b border-outline-variant/10 pb-4', className)}
+      aria-label="内容筛选"
+    >
       {tabs.map((tab) => {
         const isActive = tab.key === value
 
@@ -61,10 +76,10 @@ function WorkspaceFilterTabs<TValue extends string>({
             aria-pressed={isActive}
             onClick={() => onValueChange(tab.key)}
             className={cn(
-              'rounded-sm border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+              'rounded-full border px-3 py-1.5 text-[11px] font-medium tracking-[0.02em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
               isActive
-                ? 'border-primary/20 bg-surface-container-lowest text-primary'
-                : 'border-outline-variant/20 bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
+                ? 'border-primary/15 bg-primary/6 text-primary'
+                : 'border-outline-variant/15 bg-surface-container-low text-on-surface-variant hover:border-outline-variant/25 hover:bg-surface-container-high/80'
             )}
           >
             {tab.label}
@@ -77,8 +92,8 @@ function WorkspaceFilterTabs<TValue extends string>({
 
 function WorkspaceSectionDivider({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-4 py-6">
-      <span className="text-xs font-bold tracking-widest text-on-surface-variant/60 uppercase">
+    <div className="flex items-center gap-4 py-7">
+      <span className="text-[11px] font-semibold tracking-[0.18em] text-on-surface-variant/60 uppercase">
         {label}
       </span>
       <Separator className="bg-outline-variant/10" />
@@ -95,16 +110,21 @@ type WorkspaceEmptyStateProps = {
 
 function WorkspaceEmptyState({ title, description, icon: Icon, className }: WorkspaceEmptyStateProps) {
   return (
-    <Card className={cn('mt-14 rounded-lg border-2 border-dashed border-outline-variant/10 bg-transparent py-8 shadow-none', className)}>
-      <CardContent className="flex flex-col items-center gap-3 px-6 text-center">
+    <Card
+      className={cn(
+        'mt-14 rounded-2xl border border-dashed border-outline-variant/20 bg-surface-container-low/30 py-10 shadow-none',
+        className
+      )}
+    >
+      <CardContent className="flex flex-col items-center gap-4 px-6 text-center">
         {Icon ? (
-          <div className="flex size-12 items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant/50">
+          <div className="flex size-12 items-center justify-center rounded-full bg-surface-container-lowest text-on-surface-variant/50 shadow-[0_10px_30px_-24px_rgba(0,81,177,0.35)]">
             <Icon className="size-6" />
           </div>
         ) : null}
         <div className="flex max-w-sm flex-col gap-1">
-          <p className="text-sm font-medium text-on-surface-variant">{title}</p>
-          {description ? <p className="text-xs leading-relaxed text-on-surface-variant/70">{description}</p> : null}
+          <p className="text-base font-medium text-on-surface">{title}</p>
+          {description ? <p className="text-sm leading-6 text-on-surface-variant/75">{description}</p> : null}
         </div>
       </CardContent>
     </Card>
@@ -113,7 +133,7 @@ function WorkspaceEmptyState({ title, description, icon: Icon, className }: Work
 
 function WorkspaceTypeBadge({ label, variant }: { label: string; variant: 'default' | 'secondary' | 'outline' }) {
   return (
-    <Badge variant={variant} className="rounded-sm px-2 py-0.5 text-[10px] font-medium">
+    <Badge variant={variant} className="rounded-full px-2.5 py-1 text-[10px] font-medium tracking-[0.04em]">
       {label}
     </Badge>
   )
@@ -128,12 +148,12 @@ type WorkspaceStatCardProps = {
 
 function WorkspaceStatCard({ title, description, children, className }: WorkspaceStatCardProps) {
   return (
-    <Card className={cn('rounded-lg border-outline-variant/10 bg-surface-container-lowest', className)}>
-      <CardHeader className="gap-1 px-4">
+    <Card className={cn(workspaceSurfaceClassName, className)}>
+      <CardHeader className="gap-1 px-5 py-5">
         <CardTitle className="text-sm">{title}</CardTitle>
         {description ? <CardDescription>{description}</CardDescription> : null}
       </CardHeader>
-      <CardContent className="px-4">{children}</CardContent>
+      <CardContent className="px-5 pb-5">{children}</CardContent>
     </Card>
   )
 }
@@ -141,8 +161,11 @@ function WorkspaceStatCard({ title, description, children, className }: Workspac
 export {
   WorkspaceEmptyState,
   WorkspaceFilterTabs,
+  workspaceMetaTextClassName,
   WorkspacePageHeader,
+  workspacePillClassName,
   WorkspaceSectionDivider,
   WorkspaceStatCard,
+  workspaceSurfaceClassName,
   WorkspaceTypeBadge,
 }

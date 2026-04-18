@@ -6,7 +6,12 @@ import { useState } from 'react'
 
 import { Separator } from '@/components/ui/separator'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
-import { WorkspaceEmptyState, WorkspacePageHeader } from '@/components/workspace/workspace-view-primitives'
+import {
+  WorkspaceEmptyState,
+  workspaceMetaTextClassName,
+  WorkspacePageHeader,
+  workspaceSurfaceClassName,
+} from '@/components/workspace/workspace-view-primitives'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useTodoCompletion } from '@/hooks/workspace/use-todo-completion'
 import { getTodoGroupKey } from '@/shared/assets/asset-time-display'
@@ -15,12 +20,12 @@ import { groupLabels } from '@/shared/constants/assets'
 
 function SectionHeader({ label, count }: { label: string; count: number }) {
   return (
-    <div className="flex items-center gap-2 mb-3">
-      <span className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
+    <div className="mb-3 flex items-center gap-2.5">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant/75">
         {label}
       </span>
-      <span className="text-xs text-on-surface-variant/50">·</span>
-      <span className="text-xs text-on-surface-variant/60">{count} 项</span>
+      <span className="text-xs text-on-surface-variant/40">·</span>
+      <span className={workspaceMetaTextClassName}>{count} 项</span>
     </div>
   )
 }
@@ -42,11 +47,11 @@ function TodoItemComponent({
 }) {
   return (
     <div
-      className={`group -mx-4 flex items-start justify-between rounded-sm px-4 py-3.5 transition-opacity duration-150 ${
+      className={`group -mx-4 flex items-start justify-between rounded-2xl px-4 py-4 transition-opacity duration-150 ${
         item.completed ? 'opacity-60' : ''
       }`}
     >
-      <div className="flex items-start gap-3 flex-1 min-w-0">
+      <div className="flex min-w-0 flex-1 items-start gap-3.5">
         <button
           type="button"
           onClick={() => onToggle(item)}
@@ -61,15 +66,15 @@ function TodoItemComponent({
             <Circle className="w-5 h-5 text-on-surface-variant/30 hover:text-primary" />
           )}
         </button>
-        <div className="flex flex-col gap-1 flex-1 min-w-0">
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <h4
-            className={`text-sm font-medium leading-snug truncate ${
+            className={`text-[17px] font-semibold leading-7 tracking-[-0.02em] ${
               item.completed ? 'line-through text-on-surface-variant' : 'text-on-surface'
             }`}
           >
             {item.title}
           </h4>
-          <div className="flex items-center gap-2 text-xs text-on-surface-variant/60">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-on-surface-variant/65">
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
               {item.timeText || '无截止日期'}
@@ -210,8 +215,8 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
     <>
       <WorkspacePageHeader
         title="待办"
-        description="从统一入口保存的待处理事项，会按时间线索整理在这里。"
-        eyebrow="Personal Inbox"
+        description="从统一入口留下的待处理事项，会按时间线索整理成清晰、可回看的任务流。"
+        eyebrow="Task Flow"
       />
 
       {showEmptyState ? (
@@ -222,20 +227,20 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
           className="py-16"
         />
       ) : (
-        <div className="space-y-8 max-w-2xl">
+        <div className="max-w-3xl space-y-9">
           {grouped.today.length > 0 && (
             <div>
               <SectionHeader label={groupLabels.today} count={grouped.today.length} />
-              <div className="bg-surface-container-lowest rounded-lg">
-                 <TodoSection
-                   items={grouped.today}
-                   emptyMessage="今天没有待办"
-                   pendingIds={pendingIds}
-                   onToggleTodo={handleToggleTodo}
-                   onEdit={handleEdit}
-                   onArchive={handleArchive}
-                   onMoveToTrash={handleMoveToTrash}
-                 />
+              <div className={workspaceSurfaceClassName}>
+                <TodoSection
+                  items={grouped.today}
+                  emptyMessage="今天没有待办"
+                  pendingIds={pendingIds}
+                  onToggleTodo={handleToggleTodo}
+                  onEdit={handleEdit}
+                  onArchive={handleArchive}
+                  onMoveToTrash={handleMoveToTrash}
+                />
               </div>
             </div>
           )}
@@ -243,16 +248,16 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
           {grouped.thisWeek.length > 0 && (
             <div>
               <SectionHeader label={groupLabels.thisWeek} count={grouped.thisWeek.length} />
-              <div className="bg-surface-container-lowest rounded-lg">
-                 <TodoSection
-                   items={grouped.thisWeek}
-                   emptyMessage="本周没有待办"
-                   pendingIds={pendingIds}
-                   onToggleTodo={handleToggleTodo}
-                   onEdit={handleEdit}
-                   onArchive={handleArchive}
-                   onMoveToTrash={handleMoveToTrash}
-                 />
+              <div className={workspaceSurfaceClassName}>
+                <TodoSection
+                  items={grouped.thisWeek}
+                  emptyMessage="本周没有待办"
+                  pendingIds={pendingIds}
+                  onToggleTodo={handleToggleTodo}
+                  onEdit={handleEdit}
+                  onArchive={handleArchive}
+                  onMoveToTrash={handleMoveToTrash}
+                />
               </div>
             </div>
           )}
@@ -260,16 +265,16 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
           {grouped.noDate.length > 0 && (
             <div>
               <SectionHeader label={groupLabels.noDate} count={grouped.noDate.length} />
-              <div className="bg-surface-container-lowest rounded-lg">
-                 <TodoSection
-                   items={grouped.noDate}
-                   emptyMessage="没有无截止日期的待办"
-                   pendingIds={pendingIds}
-                   onToggleTodo={handleToggleTodo}
-                   onEdit={handleEdit}
-                   onArchive={handleArchive}
-                   onMoveToTrash={handleMoveToTrash}
-                 />
+              <div className={workspaceSurfaceClassName}>
+                <TodoSection
+                  items={grouped.noDate}
+                  emptyMessage="没有无截止日期的待办"
+                  pendingIds={pendingIds}
+                  onToggleTodo={handleToggleTodo}
+                  onEdit={handleEdit}
+                  onArchive={handleArchive}
+                  onMoveToTrash={handleMoveToTrash}
+                />
               </div>
             </div>
           )}
@@ -277,16 +282,16 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
           {grouped.completed.length > 0 && (
             <div>
               <SectionHeader label={groupLabels.completed} count={grouped.completed.length} />
-              <div className="bg-surface-container-lowest rounded-lg">
-                 <TodoSection
-                   items={grouped.completed}
-                   emptyMessage="没有已完成的待办"
-                   pendingIds={pendingIds}
-                   onToggleTodo={handleToggleTodo}
-                   onEdit={handleEdit}
-                   onArchive={handleArchive}
-                   onMoveToTrash={handleMoveToTrash}
-                 />
+              <div className={workspaceSurfaceClassName}>
+                <TodoSection
+                  items={grouped.completed}
+                  emptyMessage="没有已完成的待办"
+                  pendingIds={pendingIds}
+                  onToggleTodo={handleToggleTodo}
+                  onEdit={handleEdit}
+                  onArchive={handleArchive}
+                  onMoveToTrash={handleMoveToTrash}
+                />
               </div>
             </div>
           )}
