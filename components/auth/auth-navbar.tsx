@@ -19,7 +19,7 @@ export function AuthNavbar({ className }: AuthNavbarProps) {
         </span>
       </div>
       <button
-        className="rounded-lg p-2 text-[#54647ea] transition-colors hover:bg-surface-container-low hover:text-on-surface"
+        className="rounded-lg p-2 text-[#54647a] transition-colors hover:bg-surface-container-low hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         aria-label="帮助与反馈"
       >
         <CircleHelp className="h-5 w-5" strokeWidth={2} />

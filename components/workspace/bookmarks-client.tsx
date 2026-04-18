@@ -3,7 +3,9 @@
 import { Share2, Bookmark, ExternalLink } from 'lucide-react'
 import { useState } from 'react'
 
+import { Separator } from '@/components/ui/separator'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
+import { WorkspaceEmptyState, WorkspacePageHeader } from '@/components/workspace/workspace-view-primitives'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 import { BOOKMARK_META_STATUS } from '@/shared/assets/bookmark-meta.types'
@@ -33,7 +35,7 @@ function BookmarkItem({
   const status = item.bookmarkMeta?.status ?? null
 
   return (
-    <div className="group py-6 lg:py-8 transition-all hover:bg-surface-container-low/50 -mx-4 px-4 rounded-lg">
+    <div className="group -mx-4 rounded-lg px-4 py-6 transition-colors duration-150 hover:bg-surface-container-low/50 lg:py-8">
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
         <div className="flex-1 space-y-2 min-w-0">
           <div className="flex items-center space-x-3 flex-wrap">
@@ -63,7 +65,9 @@ function BookmarkItem({
                   src={item.bookmarkMeta.icon}
                   alt=""
                   className="w-4 h-4 rounded-sm shrink-0"
+                  height={16}
                   loading="lazy"
+                  width={16}
                 />
               )}
               <h3 className="text-base lg:text-xl font-bold text-on-surface group-hover/title:text-primary transition-colors cursor-pointer leading-snug line-clamp-2 lg:line-clamp-none">
@@ -104,7 +108,7 @@ function BookmarkItem({
 }
 
 function Divider() {
-  return <div className="h-px bg-outline-variant opacity-10 mx-4" />
+  return <Separator className="mx-4 bg-outline-variant/10" />
 }
 
 export function BookmarksClient({ bookmarks }: { bookmarks: AssetListItem[] }) {
@@ -151,12 +155,7 @@ export function BookmarksClient({ bookmarks }: { bookmarks: AssetListItem[] }) {
   return (
     <>
       <div className="mb-10">
-        <h1 className="text-2xl lg:text-3xl font-bold text-on-surface tracking-tight mb-2 font-[family-name:var(--font-manrope)]">
-          我的收藏
-        </h1>
-        <p className="text-on-surface-variant text-base">
-          已为您整理好，随时可查。
-        </p>
+        <WorkspacePageHeader title="我的收藏" description="已为您整理好，随时可查。" />
       </div>
 
       <div className="max-w-6xl">
@@ -175,16 +174,7 @@ export function BookmarksClient({ bookmarks }: { bookmarks: AssetListItem[] }) {
         </div>
 
         {items.length === 0 && (
-          <div className="mt-20 text-center py-12">
-            <div className="flex justify-center mb-4">
-              <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center">
-                <Bookmark className="w-6 h-6 text-on-surface-variant" />
-              </div>
-            </div>
-            <p className="text-sm text-on-surface-variant font-medium">
-              暂无书签
-            </p>
-          </div>
+          <WorkspaceEmptyState title="暂无书签" icon={Bookmark} className="mt-20 py-12" />
         )}
       </div>
     </>

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { describe, expect, it } from 'vitest'
 
 import LandingPage from '@/app/page'
 
@@ -24,13 +24,15 @@ describe('landing page', () => {
     expect(markup).toContain('使用场景')
     expect(markup).toContain('产品原则')
     expect(markup).toContain('品牌宣言')
-    expect(markup).toContain('class="landing-content')
-    expect(markup).toContain('<h2 class="landing-manifesto-copy')
-    expect(markup).toContain('class="landing-nav-link"')
     expect(markup).toContain('<header')
     expect(markup).toContain('<main')
     expect(markup).toContain('<footer')
-    expect(markup).not.toContain('<h2 class="landing-float-title"')
+    expect(markup).toMatch(/<header class="[^"]+"/)
+    expect(markup).toMatch(/<nav class="[^"]+" aria-label="页面导航"/)
+    expect(markup).toMatch(/<section id="capabilities" class="[^"]+"/)
+    expect(markup).toMatch(/<article class="[^"]+" data-index="0"/)
+    expect(markup).toContain('Quiet AI concierge')
+    expect(markup).toContain('AI 统一入口优先')
     expect(markup).toContain('Gotly AI 更像一处安静入口。')
     expect(markup).toContain('Quietly keeping what matters')
     expect(markup).toContain('轻量记录')

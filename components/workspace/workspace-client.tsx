@@ -36,12 +36,13 @@ function QuickActionChips({
   ]
 
   return (
-    <div className="flex flex-wrap gap-2 mt-4">
+    <div className="mt-4 flex flex-wrap gap-2">
       {chips.map((chip, index) => (
         <button
+          type="button"
           key={index}
           onClick={() => onChipClick(chip)}
-          className="px-3 py-1.5 text-xs font-medium bg-surface-container-low hover:bg-surface-container-high rounded-sm border border-outline-variant/20 transition-colors duration-150 cursor-pointer text-on-surface-variant"
+          className="rounded-sm border border-outline-variant/20 bg-surface-container-low px-3 py-1.5 text-xs font-medium text-on-surface-variant transition-colors duration-150 hover:bg-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         >
           {chip}
         </button>
@@ -50,7 +51,7 @@ function QuickActionChips({
         type="button"
         onClick={onReviewTodos}
         disabled={disabled}
-        className="px-3 py-1.5 text-xs font-medium bg-primary text-on-primary hover:bg-primary/90 rounded-sm transition-colors duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        className="rounded-sm bg-primary px-3 py-1.5 text-xs font-medium text-on-primary transition-colors duration-150 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
       >
         复盘未完成待办
       </button>
@@ -58,7 +59,7 @@ function QuickActionChips({
         type="button"
         onClick={onSummarizeNotes}
         disabled={disabled}
-        className="px-3 py-1.5 text-xs font-medium bg-secondary text-on-secondary hover:bg-secondary/90 rounded-sm transition-colors duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        className="rounded-sm bg-secondary px-3 py-1.5 text-xs font-medium text-on-secondary transition-colors duration-150 hover:bg-secondary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
       >
         总结最近笔记
       </button>
@@ -66,7 +67,7 @@ function QuickActionChips({
         type="button"
         onClick={onSummarizeBookmarks}
         disabled={disabled}
-        className="px-3 py-1.5 text-xs font-medium bg-secondary text-on-secondary hover:bg-secondary/90 rounded-sm transition-colors duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        className="rounded-sm bg-secondary px-3 py-1.5 text-xs font-medium text-on-secondary transition-colors duration-150 hover:bg-secondary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
       >
         总结最近书签
       </button>
@@ -114,7 +115,7 @@ export function WorkspaceClient({
   return (
     <>
       <div className="mb-8">
-        <h1 className="text-2xl lg:text-3xl font-bold text-on-surface tracking-tight font-[family-name:var(--font-manrope)]">
+        <h1 className="font-headline text-2xl font-bold tracking-tight text-on-surface lg:text-3xl">
           想到什么，先放这
         </h1>
         <p className="text-sm text-on-surface-variant mt-1">
@@ -135,8 +136,10 @@ export function WorkspaceClient({
             <Sparkles className="w-5 h-5 text-on-surface-variant/50" />
           </div>
           <input
-            className="w-full h-14 bg-surface-container-lowest rounded-full pl-14 pr-28 text-base text-on-surface placeholder:text-on-surface-variant/40 shadow-[0_4px_16px_rgba(0,0,0,0.06)] border border-outline-variant/10 focus:outline-none focus:ring-2 focus:ring-primary/15 focus:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-200"
-            placeholder="粘贴链接、记下想法或搜索..."
+            aria-label="输入内容或搜索知识库"
+            className="h-14 w-full rounded-full border border-outline-variant/10 bg-surface-container-lowest pl-14 pr-28 text-base text-on-surface shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-[box-shadow,border-color] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 focus:shadow-[0_8px_24px_rgba(0,0,0,0.1)]"
+            name="workspace-query"
+            placeholder="粘贴链接、记下想法或搜索…"
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
@@ -146,17 +149,17 @@ export function WorkspaceClient({
             type="button"
             onClick={handleSubmit}
             disabled={status === 'submitting'}
-            className="absolute inset-y-0 right-2 my-auto flex items-center justify-center gap-2 px-5 h-10 bg-primary hover:bg-primary/90 text-on-primary rounded-full font-medium text-sm transition-all duration-150 cursor-pointer hover:shadow-[0_4px_12px_rgba(0,81,177,0.2)] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            className="absolute inset-y-0 right-2 my-auto flex h-10 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-on-primary transition-[background-color,box-shadow] duration-150 hover:bg-primary/90 hover:shadow-[0_4px_12px_rgba(0,81,177,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {status === 'submitting' ? '处理中...' : '提交'}
+            {status === 'submitting' ? '处理中…' : '提交'}
           </button>
         </div>
         {message ? (
-          <p className="text-xs text-on-surface-variant/60 mt-2 px-4">
+          <p className="mt-2 px-4 text-xs text-on-surface-variant/60" aria-live="polite">
             {message}
           </p>
         ) : inputValue ? (
-          <p className="text-xs text-on-surface-variant/60 mt-2 px-4">
+          <p className="mt-2 px-4 text-xs text-on-surface-variant/60">
             输入后会保存到知识库，查询结果会出现在这里
           </p>
         ) : null}

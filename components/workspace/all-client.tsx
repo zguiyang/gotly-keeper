@@ -3,6 +3,13 @@
 import { useState } from 'react'
 
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
+import {
+  WorkspaceEmptyState,
+  WorkspaceFilterTabs,
+  WorkspacePageHeader,
+  WorkspaceSectionDivider,
+  WorkspaceTypeBadge,
+} from '@/components/workspace/workspace-view-primitives'
 import { assetTypePresentation } from '@/config/ui/asset-presentation'
 import { filterTabs, emptyFilterMessages } from '@/config/workspace/filters'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
@@ -20,27 +27,15 @@ const typeLabels: Record<AssetType, string> = {
   todo: '待办',
 }
 
-function DateDivider({ label }: { label: string }) {
-  return (
-    <div className="flex items-center py-6">
-      <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/60 mr-4">
-        {label}
-      </span>
-      <div className="flex-1 h-px bg-outline-variant/10" />
-    </div>
-  )
-}
-
 function TypePill({ type }: { type: AssetType }) {
-  const colors = {
-    note: 'bg-primary/10 text-primary',
-    link: 'bg-secondary/10 text-secondary',
-    todo: 'bg-tertiary/10 text-tertiary',
+  const variants: Record<AssetType, 'default' | 'secondary' | 'outline'> = {
+    note: 'default',
+    link: 'secondary',
+    todo: 'outline',
   }
+
   return (
-    <span className={`px-2 py-0.5 rounded-sm text-[10px] font-medium ${colors[type]}`}>
-      {typeLabels[type]}
-    </span>
+    <WorkspaceTypeBadge label={typeLabels[type]} variant={variants[type]} />
   )
 }
 
@@ -59,7 +54,7 @@ function AssetItem({
   const Icon = presentation.icon
 
   return (
-    <div className="group flex items-center py-5 hover:bg-surface-container-low/50 px-4 -mx-4 rounded-sm transition-all cursor-pointer">
+    <div className="group -mx-4 flex items-center rounded-sm px-4 py-5 transition-colors duration-150 hover:bg-surface-container-low/50">
       <div
         className={`w-10 h-10 flex-shrink-0 rounded-sm flex items-center justify-center mr-6 ${presentation.iconBg}`}
       >
@@ -190,33 +185,14 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
   return (
     <>
       <div className="mb-10">
-        <h1 className="text-2xl lg:text-3xl font-bold text-on-surface tracking-tight mb-6 font-[family-name:var(--font-manrope)]">
-          知识库
-        </h1>
-        <div className="flex gap-6 border-b border-outline-variant/10 overflow-x-auto">
-          {filterTabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveFilter(tab.key)}
-              className={`pb-4 text-sm font-medium transition-colors relative whitespace-nowrap ${
-                activeFilter === tab.key
-                  ? 'text-primary font-bold'
-                  : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              {tab.label}
-              {activeFilter === tab.key && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-              )}
-            </button>
-          ))}
-        </div>
+        <WorkspacePageHeader title="知识库" />
+        <WorkspaceFilterTabs tabs={filterTabs} value={activeFilter} onValueChange={setActiveFilter} />
       </div>
 
       <div className="max-w-6xl">
         {todayAssets.length > 0 && (
           <>
-            <DateDivider label="今天" />
+            <WorkspaceSectionDivider label="今天" />
             {todayAssets.map((asset) => (
               <AssetItem
                 key={asset.id}
@@ -231,7 +207,7 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
 
         {yesterdayAssets.length > 0 && (
           <>
-            <DateDivider label="昨天" />
+            <WorkspaceSectionDivider label="昨天" />
             {yesterdayAssets.map((asset) => (
               <AssetItem
                 key={asset.id}
@@ -246,7 +222,7 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
 
         {olderAssets.length > 0 && (
           <>
-            <DateDivider label="更早" />
+            <WorkspaceSectionDivider label="更早" />
             {olderAssets.map((asset) => (
               <AssetItem
                 key={asset.id}
@@ -260,11 +236,7 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
         )}
 
         {!hasAnyAssets && (
-          <div className="mt-20 text-center py-12 border-2 border-dashed border-outline-variant/10 rounded-lg">
-            <p className="text-sm text-on-surface-variant font-medium">
-              {emptyFilterMessages[activeFilter] ?? emptyFilterMessages.all}
-            </p>
-          </div>
+          <WorkspaceEmptyState title={emptyFilterMessages[activeFilter] ?? emptyFilterMessages.all} />
         )}
       </div>
     </>

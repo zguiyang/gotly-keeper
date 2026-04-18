@@ -27,7 +27,7 @@ export function RecentItem({
   timeText?: string | null
 }) {
   return (
-    <div className="group py-4 border-t border-outline-variant/10 cursor-pointer hover:bg-surface-container-low/50 focus-within:bg-surface-container-low/50 -mx-2 px-2 rounded-sm transition-colors duration-150">
+    <div className="group -mx-2 rounded-sm border-t border-outline-variant/10 px-2 py-4 transition-colors duration-150 hover:bg-surface-container-low/50 focus-within:bg-surface-container-low/50">
       <div className="flex items-start gap-4">
         <div className={`w-8 h-8 rounded-sm flex items-center justify-center flex-shrink-0 ${iconBg}`}>
           <Icon className={`w-4 h-4 ${iconColor}`} />
@@ -68,9 +68,9 @@ export function WorkspaceQueryResultsPanel({
         </h2>
         <div className="flex-1 h-px bg-outline-variant/20" />
       </div>
-      <p className="text-xs text-on-surface-variant/60 mb-3">
-        {`"${query}"`}
-      </p>
+        <p className="mb-3 text-xs text-on-surface-variant/60">
+          {`"${query}"`}
+        </p>
       {results.length === 0 ? (
         <p className="text-sm text-on-surface-variant">
           没有找到相关内容。可以换个关键词，或先在上方保存一条新记录。

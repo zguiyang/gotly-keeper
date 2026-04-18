@@ -4,7 +4,9 @@ import { Check, Circle, Clock } from 'lucide-react'
 import { useState } from 'react'
 
 
+import { Separator } from '@/components/ui/separator'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
+import { WorkspaceEmptyState, WorkspacePageHeader } from '@/components/workspace/workspace-view-primitives'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useTodoCompletion } from '@/hooks/workspace/use-todo-completion'
 import { getTodoGroupKey } from '@/shared/assets/asset-time-display'
@@ -40,7 +42,7 @@ function TodoItemComponent({
 }) {
   return (
     <div
-      className={`group flex items-start justify-between py-3.5 px-4 -mx-4 transition-all rounded-sm cursor-default ${
+      className={`group -mx-4 flex items-start justify-between rounded-sm px-4 py-3.5 transition-opacity duration-150 ${
         item.completed ? 'opacity-60' : ''
       }`}
     >
@@ -127,9 +129,7 @@ function TodoSection({
             onArchive={onArchive}
             onMoveToTrash={onMoveToTrash}
           />
-          {index < items.length - 1 && (
-            <div className="h-px bg-outline-variant/10 mx-4" />
-          )}
+          {index < items.length - 1 && <Separator className="mx-4 bg-outline-variant/10" />}
         </div>
       ))}
     </div>
@@ -208,32 +208,19 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
 
   return (
     <>
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <span className="text-xs font-bold tracking-widest text-primary uppercase opacity-60">
-            Personal Inbox
-          </span>
-        </div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-on-surface tracking-tight font-[family-name:var(--font-manrope)]">
-          待办
-        </h1>
-        <p className="mt-2 text-on-surface-variant text-sm max-w-2xl leading-relaxed">
-          从统一入口保存的待处理事项，会按时间线索整理在这里。
-        </p>
-      </div>
+      <WorkspacePageHeader
+        title="待办"
+        description="从统一入口保存的待处理事项，会按时间线索整理在这里。"
+        eyebrow="Personal Inbox"
+      />
 
       {showEmptyState ? (
-        <div className="py-16 text-center">
-          <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center mx-auto mb-4">
-            <Check className="w-6 h-6 text-primary" />
-          </div>
-          <p className="text-sm font-medium text-on-surface-variant">
-            暂无待办
-          </p>
-          <p className="text-xs text-on-surface-variant/60 mt-1">
-            从统一入口保存新的待办后会出现在这里
-          </p>
-        </div>
+        <WorkspaceEmptyState
+          title="暂无待办"
+          description="从统一入口保存新的待办后会出现在这里"
+          icon={Check}
+          className="py-16"
+        />
       ) : (
         <div className="space-y-8 max-w-2xl">
           {grouped.today.length > 0 && (
