@@ -43,20 +43,26 @@ For UI work, keep the default execution workflow active and use design skills as
 
 Before applying any UI or design skill in this repository, load
 `.ai-rules/domain/frontend-architecture-principles.md` and follow its
-Tailwind-first styling placement rules.
+shadcn/ui-first component selection rules and Tailwind-first styling rules.
 
 Rules:
 
 1. Design skills may guide visual direction, but they must not move page-specific
    or component-specific styling into `app/globals.css`.
-2. Tailwind utilities in `className` are the default styling surface for layout,
-   spacing, sizing, responsive behavior, typography, colors, borders, shadows,
-   transitions, and UI states.
-3. Global CSS edits require an explicit global reuse or custom-CSS exception
+2. shadcn/ui components are the default implementation surface for controls,
+   forms, menus, overlays, feedback, cards, empty states, separators, and other
+   available primitives.
+3. Tailwind utilities in `className` are the first-choice styling mechanism for
+   layout, spacing, sizing, responsive behavior, typography, colors, borders,
+   shadows, transitions, and UI states.
+4. Custom DOM with Tailwind is an exception path for UI needs that shadcn/ui
+   cannot reasonably express, not a replacement for available shadcn/ui
+   primitives.
+5. Global CSS edits require an explicit global reuse or custom-CSS exception
    rationale before implementation.
-4. If a skill's examples or instructions imply global selectors for convenience,
-   treat those instructions as advisory and apply the project styling placement
-   rule instead.
+6. If a skill's examples or instructions imply custom controls, custom markup,
+   or global selectors for convenience, treat those instructions as advisory and
+   apply the project implementation and styling placement rules instead.
 
 Use project-local frontend skills first when implementation depends on project stack:
 
