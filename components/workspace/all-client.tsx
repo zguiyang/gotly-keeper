@@ -3,6 +3,7 @@
 import { useState } from 'react'
 
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
+import { AssetEditDialog } from '@/components/workspace/asset-edit-dialog'
 import {
   WorkspaceEmptyState,
   WorkspaceFilterTabs,
@@ -121,6 +122,7 @@ function AssetItem({
 export function AllClient({ assets }: { assets: AssetListItem[] }) {
   const [items, setItems] = useState(assets)
   const [activeFilter, setActiveFilter] = useState<string>('all')
+  const [editingAsset, setEditingAsset] = useState<AssetListItem | null>(null)
   const { updateAsset, archiveAsset, moveToTrash } = useAssetMutations()
 
   const filteredAssets =
@@ -134,52 +136,43 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
 
   const hasAnyAssets = filteredAssets.length > 0
 
-  async function handleEdit(asset: AssetListItem) {
-    const text = window.prompt('编辑内容', asset.originalText)
-    if (!text || !text.trim()) {
-      return
-    }
-
+  async function submitEdit(asset: AssetListItem, values: { text: string; url?: string }) {
     if (asset.type === 'note') {
       const updated = await updateAsset({
         assetId: asset.id,
         assetType: 'note',
-        text: text.trim(),
+        text: values.text,
       })
       if (updated) {
         setItems((current) => current.map((item) => (item.id === updated.id ? updated : item)))
       }
-      return
+      return !!updated
     }
 
     if (asset.type === 'todo') {
       const updated = await updateAsset({
         assetId: asset.id,
         assetType: 'todo',
-        text: text.trim(),
+        text: values.text,
         timeText: asset.timeText,
         dueAt: asset.dueAt,
       })
       if (updated) {
         setItems((current) => current.map((item) => (item.id === updated.id ? updated : item)))
       }
-      return
-    }
-
-    const url = window.prompt('编辑链接 URL', asset.url ?? '')
-    if (!url || !url.trim()) {
-      return
+      return !!updated
     }
 
     const updated = await updateAsset({
       assetId: asset.id,
       assetType: 'link',
-      text: text.trim(),
-      url: url.trim(),
+      text: values.text,
+      url: values.url ?? '',
     })
     if (updated) {
       setItems((current) => current.map((item) => (item.id === updated.id ? updated : item)))
     }
+    return !!updated
   }
 
   async function handleArchive(asset: AssetListItem) {
@@ -214,7 +207,7 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
               <AssetItem
                 key={asset.id}
                 asset={asset}
-                onEdit={handleEdit}
+                onEdit={setEditingAsset}
                 onArchive={handleArchive}
                 onMoveToTrash={handleMoveToTrash}
               />
@@ -229,7 +222,7 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
               <AssetItem
                 key={asset.id}
                 asset={asset}
-                onEdit={handleEdit}
+                onEdit={setEditingAsset}
                 onArchive={handleArchive}
                 onMoveToTrash={handleMoveToTrash}
               />
@@ -244,7 +237,7 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
               <AssetItem
                 key={asset.id}
                 asset={asset}
-                onEdit={handleEdit}
+                onEdit={setEditingAsset}
                 onArchive={handleArchive}
                 onMoveToTrash={handleMoveToTrash}
               />
@@ -256,6 +249,14 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
           <WorkspaceEmptyState title={emptyFilterMessages[activeFilter] ?? emptyFilterMessages.all} />
         )}
       </div>
+
+      <AssetEditDialog
+        asset={editingAsset}
+        onOpenChange={(open) => {
+          if (!open) setEditingAsset(null)
+        }}
+        onSubmit={submitEdit}
+      />
     </>
   )
 }

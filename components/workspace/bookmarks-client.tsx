@@ -3,8 +3,10 @@
 import { Share2, Bookmark, ExternalLink } from 'lucide-react'
 import { useState } from 'react'
 
+import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
+import { AssetEditDialog } from '@/components/workspace/asset-edit-dialog'
 import {
   WorkspaceEmptyState,
   workspaceMetaTextClassName,
@@ -90,12 +92,15 @@ function BookmarkItem({
           <span className={`${workspaceMetaTextClassName} sm:hidden`}>{formatBookmarkTime(item.createdAt)}</span>
         </div>
         <div className="flex items-center space-x-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity lg:opacity-100">
-          <button
-            className="cursor-pointer rounded-2xl p-2 text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="text-on-surface-variant hover:text-primary"
             aria-label="分享收藏"
           >
-            <Share2 className="w-4 h-4" />
-          </button>
+            <Share2 />
+          </Button>
           <AssetActionMenu
             actions={[
               { label: '编辑', onClick: () => onEdit(item) },
@@ -115,29 +120,22 @@ function Divider() {
 
 export function BookmarksClient({ bookmarks }: { bookmarks: AssetListItem[] }) {
   const [items, setItems] = useState(bookmarks)
+  const [editingBookmark, setEditingBookmark] = useState<AssetListItem | null>(null)
   const { updateAsset, archiveAsset, moveToTrash } = useAssetMutations()
 
-  async function handleEdit(item: AssetListItem) {
-    const text = window.prompt('编辑书签标题或备注', item.originalText)
-    if (!text || !text.trim()) {
-      return
-    }
-
-    const url = window.prompt('编辑书签 URL', item.url ?? '')
-    if (!url || !url.trim()) {
-      return
-    }
-
+  async function submitEdit(item: AssetListItem, values: { text: string; url?: string }) {
     const updated = await updateAsset({
       assetId: item.id,
       assetType: 'link',
-      text: text.trim(),
-      url: url.trim(),
+      text: values.text,
+      url: values.url ?? '',
     })
 
     if (updated) {
       setItems((current) => current.map((entry) => (entry.id === updated.id ? updated : entry)))
     }
+
+    return !!updated
   }
 
   async function handleArchive(item: AssetListItem) {
@@ -166,7 +164,7 @@ export function BookmarksClient({ bookmarks }: { bookmarks: AssetListItem[] }) {
             <div key={item.id}>
               <BookmarkItem
                 item={item}
-                onEdit={handleEdit}
+                onEdit={setEditingBookmark}
                 onArchive={handleArchive}
                 onMoveToTrash={handleMoveToTrash}
               />
@@ -179,6 +177,14 @@ export function BookmarksClient({ bookmarks }: { bookmarks: AssetListItem[] }) {
           <WorkspaceEmptyState title="暂无书签" icon={Bookmark} className="mt-20 py-12" />
         )}
       </div>
+
+      <AssetEditDialog
+        asset={editingBookmark}
+        onOpenChange={(open) => {
+          if (!open) setEditingBookmark(null)
+        }}
+        onSubmit={submitEdit}
+      />
     </>
   )
 }

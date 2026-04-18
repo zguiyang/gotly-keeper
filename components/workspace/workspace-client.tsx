@@ -3,6 +3,8 @@
 import { Sparkles } from 'lucide-react'
 import { useState } from 'react'
 
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { assetTypePresentation } from '@/config/ui/asset-presentation'
 import { useWorkspaceSubmit } from '@/hooks/workspace/use-workspace-submit'
 import { type AssetListItem } from '@/shared/assets/assets.types'
@@ -38,39 +40,46 @@ function QuickActionChips({
   return (
     <div className="mt-5 flex flex-wrap gap-2.5">
       {chips.map((chip, index) => (
-        <button
+        <Button
           type="button"
           key={index}
           onClick={() => onChipClick(chip)}
-          className="rounded-full border border-outline-variant/15 bg-surface-container-low px-3.5 py-2 text-[11px] font-medium tracking-[0.02em] text-on-surface-variant transition-colors duration-150 hover:border-outline-variant/25 hover:bg-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          variant="outline"
+          size="sm"
+          className="rounded-full text-[11px] tracking-[0.02em] text-on-surface-variant"
         >
           {chip}
-        </button>
+        </Button>
       ))}
-      <button
+      <Button
         type="button"
         onClick={onReviewTodos}
         disabled={disabled}
-        className="rounded-full bg-primary px-3.5 py-2 text-[11px] font-medium tracking-[0.02em] text-on-primary transition-colors duration-150 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+        size="sm"
+        className="rounded-full text-[11px] tracking-[0.02em]"
       >
         复盘未完成待办
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         onClick={onSummarizeNotes}
         disabled={disabled}
-        className="rounded-full bg-secondary px-3.5 py-2 text-[11px] font-medium tracking-[0.02em] text-on-secondary transition-colors duration-150 hover:bg-secondary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+        variant="secondary"
+        size="sm"
+        className="rounded-full text-[11px] tracking-[0.02em]"
       >
         总结最近笔记
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         onClick={onSummarizeBookmarks}
         disabled={disabled}
-        className="rounded-full bg-secondary px-3.5 py-2 text-[11px] font-medium tracking-[0.02em] text-on-secondary transition-colors duration-150 hover:bg-secondary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+        variant="secondary"
+        size="sm"
+        className="rounded-full text-[11px] tracking-[0.02em]"
       >
         总结最近书签
-      </button>
+      </Button>
     </div>
   )
 }
@@ -135,7 +144,7 @@ export function WorkspaceClient({
           <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
             <Sparkles className="w-5 h-5 text-on-surface-variant/50" />
           </div>
-          <input
+          <Input
             aria-label="输入内容或搜索知识库"
             className="h-15 w-full rounded-full border border-outline-variant/10 bg-surface-container-lowest pl-14 pr-28 text-base text-on-surface shadow-[0_16px_36px_-30px_rgba(0,81,177,0.35)] transition-[box-shadow,border-color] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 focus:shadow-[0_18px_42px_-28px_rgba(0,81,177,0.42)]"
             name="workspace-query"
@@ -145,14 +154,14 @@ export function WorkspaceClient({
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
           />
-          <button
+          <Button
             type="button"
             onClick={handleSubmit}
             disabled={status === 'submitting'}
-            className="absolute inset-y-0 right-2 my-auto flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-on-primary transition-[background-color,box-shadow] duration-150 hover:bg-primary/90 hover:shadow-[0_10px_24px_-18px_rgba(0,81,177,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+            className="absolute inset-y-0 right-2 my-auto h-11 rounded-full px-5"
           >
             {status === 'submitting' ? '处理中…' : '提交'}
-          </button>
+          </Button>
         </div>
         {message ? (
           <p className="mt-2 px-4 text-xs text-on-surface-variant/60" aria-live="polite">

@@ -2,6 +2,8 @@
 
 import * as React from "react";
 
+import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 export interface AuthFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -36,9 +38,9 @@ const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
     const fieldId = id || generatedId;
 
     return (
-      <div className={cn("space-y-2", containerClassName)}>
+      <Field className={containerClassName} data-invalid={!!error}>
         {label ? (
-          <label
+          <FieldLabel
             htmlFor={fieldId}
             className={cn(
               "ml-1 block text-xs font-semibold uppercase tracking-[0.22em] text-on-surface-variant",
@@ -46,18 +48,19 @@ const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
             )}
           >
             {label}
-          </label>
+          </FieldLabel>
         ) : null}
-        {description ? <p className="text-xs text-on-surface-variant">{description}</p> : null}
+        {description ? <FieldDescription>{description}</FieldDescription> : null}
         <div className="relative">
           {prefixIcon ? (
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-outline">
               {prefixIcon}
             </div>
           ) : null}
-          <input
+          <Input
             id={fieldId}
             ref={ref}
+            aria-invalid={!!error}
             className={cn(
               "w-full rounded-xl border-0 bg-surface-container-lowest px-4 py-3.5 text-sm text-on-surface outline-none",
               "placeholder:text-outline-variant transition-[background-color,box-shadow,color] duration-200 focus-visible:ring-2 focus-visible:ring-primary/15",
@@ -75,8 +78,8 @@ const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
             </div>
           ) : null}
         </div>
-        {error ? <p className="text-xs text-destructive" aria-live="polite">{error}</p> : null}
-      </div>
+        <FieldError>{error}</FieldError>
+      </Field>
     );
   }
 );

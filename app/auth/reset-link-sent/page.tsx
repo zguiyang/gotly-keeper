@@ -2,6 +2,7 @@ import { CheckCircle } from "lucide-react";
 import Link from "next/link";
 
 import { AuthPageScaffold } from "@/components/auth/auth-page-scaffold";
+import { Button } from "@/components/ui/button";
 
 export default function ResetLinkSentPage() {
   return (
@@ -39,12 +40,13 @@ export default function ResetLinkSentPage() {
         <div className="mt-12 border-t border-outline-variant/10 pt-8">
           <p className="font-body text-sm text-on-surface-variant">
             没有收到邮件？
-            <button
+            <Button
               type="button"
-              className="ml-1 text-primary transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              variant="link"
+              className="ml-1 h-auto px-0"
             >
               重新发送
-            </button>
+            </Button>
           </p>
         </div>
       </div>

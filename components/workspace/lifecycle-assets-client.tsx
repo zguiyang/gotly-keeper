@@ -1,8 +1,18 @@
 'use client'
 
-import { AlertDialog as AlertDialogPrimitive } from '@base-ui/react/alert-dialog'
 import { useMemo, useState } from 'react'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
 import {
@@ -74,43 +84,25 @@ function PurgeAssetDialog({
   }
 
   return (
-    <AlertDialogPrimitive.Root open={open} onOpenChange={setOpen}>
-      <AlertDialogPrimitive.Trigger
-        data-slot="purge-dialog-trigger"
-        render={
-          <button
-            type="button"
-            className="w-full rounded-xl px-3 py-2 text-left text-[12px] text-error transition-colors hover:bg-error/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
-          />
-        }
-        disabled={disabled || submitting}
-      >
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger render={<Button variant="destructive" />} disabled={disabled || submitting}>
         永久删除
-      </AlertDialogPrimitive.Trigger>
-      <AlertDialogPrimitive.Portal>
-        <AlertDialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/10 backdrop-blur-xs" />
-        <AlertDialogPrimitive.Viewport className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <AlertDialogPrimitive.Popup className="grid w-full max-w-xs gap-4 rounded-xl bg-popover p-4 text-popover-foreground ring-1 ring-foreground/10 outline-none sm:max-w-sm">
-            <div className="grid gap-1.5 text-center sm:text-left">
-              <AlertDialogPrimitive.Title className="font-heading text-base font-medium">
-                确认永久删除
-              </AlertDialogPrimitive.Title>
-              <AlertDialogPrimitive.Description className="text-sm text-muted-foreground">
-                删除后无法恢复，{asset.title} 将从系统中彻底移除。
-              </AlertDialogPrimitive.Description>
-            </div>
-            <div className="-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end">
-              <AlertDialogPrimitive.Close render={<Button variant="outline" />}>
-                取消
-              </AlertDialogPrimitive.Close>
-              <Button variant="destructive" disabled={submitting} onClick={() => void handleConfirm()}>
-                {submitting ? '删除中…' : '永久删除'}
-              </Button>
-            </div>
-          </AlertDialogPrimitive.Popup>
-        </AlertDialogPrimitive.Viewport>
-      </AlertDialogPrimitive.Portal>
-    </AlertDialogPrimitive.Root>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认永久删除</AlertDialogTitle>
+          <AlertDialogDescription>
+            删除后无法恢复，{asset.title} 将从系统中彻底移除。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" disabled={submitting} onClick={() => void handleConfirm()}>
+            {submitting ? '删除中...' : '永久删除'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }
 

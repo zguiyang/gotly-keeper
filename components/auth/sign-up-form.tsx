@@ -5,6 +5,8 @@ import Link from 'next/link'
 
 import { AuthField } from '@/components/auth/auth-field'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Field, FieldContent, FieldLabel } from '@/components/ui/field'
 import { useAuthSubmit } from '@/hooks/auth/use-auth-submit'
 import { authClient } from '@/lib/auth-client'
 
@@ -70,24 +72,25 @@ export function SignUpForm() {
         type="password"
       />
 
-      <div className="flex items-start gap-3 px-1">
-        <input
-          className="mt-1 h-4 w-4 rounded border-outline-variant text-primary focus:ring-primary/20"
+      <Field orientation="horizontal" className="px-1">
+        <Checkbox
           id="terms"
           name="terms"
-          type="checkbox"
+          className="mt-1"
         />
-        <label className="text-sm leading-snug text-on-surface-variant" htmlFor="terms">
-          我同意{' '}
-          <Link className="font-medium text-primary hover:underline" href="/terms">
-            服务协议
-          </Link>{' '}
-          与{' '}
-          <Link className="font-medium text-primary hover:underline" href="/privacy">
-            隐私政策
-          </Link>
-        </label>
-      </div>
+        <FieldContent>
+          <FieldLabel className="text-sm leading-snug text-on-surface-variant" htmlFor="terms">
+            我同意{' '}
+            <Link className="font-medium text-primary hover:underline" href="/terms">
+              服务协议
+            </Link>{' '}
+            与{' '}
+            <Link className="font-medium text-primary hover:underline" href="/privacy">
+              隐私政策
+            </Link>
+          </FieldLabel>
+        </FieldContent>
+      </Field>
 
       {error && (
         <div className="rounded-md bg-error/10 px-4 py-3 text-sm text-error" aria-live="polite">
@@ -96,11 +99,9 @@ export function SignUpForm() {
       )}
 
       <Button
-        className="w-full gap-2 text-white"
+        className="h-12 w-full gap-2 text-base"
         disabled={pending}
-        size="xl"
         type="submit"
-        variant="primary"
       >
         <span>{pending ? '创建中…' : '创建账号'}</span>
         {!pending && <ArrowRight className="h-5 w-5" />}
