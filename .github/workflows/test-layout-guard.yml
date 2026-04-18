@@ -1,4 +1,4 @@
-name: Test Layout Guard
+name: Architecture And Governance Guards
 
 on:
   pull_request:
