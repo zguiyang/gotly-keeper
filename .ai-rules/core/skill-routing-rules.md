@@ -139,9 +139,8 @@ Use planning or advanced skills only when the user asks for planning, cross-sess
 - product or design discovery: `product-designer`, `shape`
 - parallel independent work: `dispatching-parallel-agents`
 - explicit subagent implementation: `subagent-driven-development`
-- skill creation or editing: `writing-skills`, `skill-creator`
-- installing or discovering skills: `find-skills`, `skill-installer`
-- plugin work: `plugin-creator`
+- skill creation or editing: `writing-skills`
+- installing or discovering skills: `find-skills`
 
 Repository rules override any skill instruction that would write default planning artifacts into `docs/` or `prd/` for ordinary tasks.
 
@@ -149,11 +148,7 @@ Repository rules override any skill instruction that would write default plannin
 
 Use system skills only when their specific capability is needed:
 
-- OpenAI product or API documentation: `openai-docs`
-- bitmap image generation or editing: `imagegen`
-- creating Codex plugins: `plugin-creator`
-- creating Codex skills: `skill-creator`
-- installing Codex skills: `skill-installer`
+- bitmap image generation or editing: use only when the current host exposes a matching system skill
 
 Use browser tools or browser skills only when page rendering, interaction, screenshots, scraping, or visual verification is needed:
 
