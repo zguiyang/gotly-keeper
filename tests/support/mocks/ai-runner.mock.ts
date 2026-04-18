@@ -1,5 +1,4 @@
-import type { AiResult } from '@/server/ai/ai.types'
-import { AiProviderError } from '@/server/ai/ai.types'
+import { AiProviderError, type AiResult } from '@/server/lib/ai/ai.types'
 import type { ZodSchema } from 'zod'
 
 export interface AiRunnerMockOptions<T> {

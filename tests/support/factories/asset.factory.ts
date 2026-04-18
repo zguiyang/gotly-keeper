@@ -1,4 +1,4 @@
-import type { Asset, NewAsset } from '@/server/db/schema'
+import type { AssetListItem } from '@/shared/assets/assets.types'
 
 export interface AssetFactoryOptions {
   id?: string
@@ -9,40 +9,31 @@ export interface AssetFactoryOptions {
   timeText?: string
   dueAt?: Date
   completedAt?: Date
+  title?: string
+  excerpt?: string
   createdAt?: Date
   updatedAt?: Date
 }
 
-export function createAssetFixture(options: AssetFactoryOptions = {}): Asset {
+export function createAssetFixture(options: AssetFactoryOptions = {}): AssetListItem {
   const now = new Date()
   return {
     id: options.id ?? 'asset-test-id',
-    userId: options.userId ?? 'user-test-id',
     originalText: options.originalText ?? 'Test asset content',
+    title: options.title ?? options.originalText ?? 'Test asset content',
+    excerpt: options.excerpt ?? options.originalText ?? 'Test asset content',
     type: options.type ?? 'note',
     url: options.url ?? null,
     timeText: options.timeText ?? null,
     dueAt: options.dueAt ?? null,
-    completedAt: options.completedAt ?? null,
+    completed: options.completedAt != null,
     createdAt: options.createdAt ?? now,
     updatedAt: options.updatedAt ?? now,
   }
 }
 
-export function createNewAssetFixture(options: AssetFactoryOptions = {}): NewAsset {
-  const now = new Date()
-  return {
-    id: options.id ?? 'asset-test-id',
-    userId: options.userId ?? 'user-test-id',
-    originalText: options.originalText ?? 'Test asset content',
-    type: options.type ?? 'note',
-    url: options.url ?? null,
-    timeText: options.timeText ?? null,
-    dueAt: options.dueAt ?? null,
-    completedAt: options.completedAt ?? null,
-    createdAt: options.createdAt ?? now,
-    updatedAt: options.updatedAt ?? now,
-  }
+export function createNewAssetFixture(options: AssetFactoryOptions = {}): AssetListItem {
+  return createAssetFixture(options)
 }
 
 export const assetFixtures = {
