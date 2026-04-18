@@ -138,3 +138,29 @@ Use browser tools or browser skills only when page rendering, interaction, scree
 - Chrome DevTools debugging or performance inspection: `chrome-devtools`
 
 If a task requires browser-backed verification but no relevant service is running, follow `.ai-rules/core/project-tooling-and-runtime-rules.md` before starting or requesting a service.
+
+## 7. Karpathy and Superpowers Boundaries
+
+`karpathy-guidelines` is a behavioral coding guardrail, not a workflow.
+
+Use it when the main risk is LLM coding behavior, such as unclear assumptions, scope creep, over-abstraction, broad incidental edits, or weak success criteria. It is most relevant for writing, reviewing, or refactoring code where simplicity, surgical changes, and verification quality materially affect the result.
+
+Superpowers skills are specialist skills and process helpers, not the default project workflow.
+
+Load the specific Superpowers skill that matches the task. Do not load the entire Superpowers skill set by default, and do not treat `using-superpowers` as a replacement for this repository's default execution workflow.
+
+Use both `karpathy-guidelines` and a Superpowers skill only when both risks are present:
+
+- use `karpathy-guidelines` when the task needs coding discipline or scope control
+- use a Superpowers skill when the task needs a specific process or capability
+- use both for tasks such as bug fixes, risky refactors, UI implementation, or code review where behavior discipline and specialist guidance both matter
+
+Project rules override any skill instruction that would:
+
+- replace the default execution workflow for ordinary tasks
+- write default planning artifacts into `docs/` or `prd/`
+- require staged approval for ordinary small edits
+- expand scope beyond the user's request
+- start services, install dependencies, or use external tools against project rules
+
+A skill may refine how the default workflow is executed, but it must not silently change the task category, artifact policy, verification policy, service-startup policy, or capability boundary.
