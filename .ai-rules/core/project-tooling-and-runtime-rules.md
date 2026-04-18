@@ -140,6 +140,23 @@ Rules:
 3. Follow `.ai-rules/core/project-governance-rules.md` for placement and promotion rules.
 4. If the user explicitly requests a durable plan/report file, create it in the correct layer.
 
+## 8.1 Completion, PR, and Merge Readiness Rule
+
+Before creating a PR or merging completed work, agents must prove code readiness. GitHub CLI readiness is required only before GitHub PR operations.
+
+Rules:
+
+1. Run verification appropriate to the changed code before offering or attempting integration.
+2. Review the full diff and related code in a code-review stance before local merge or PR fallback.
+3. If the review finds blocking correctness, architecture, security, data-loss, or test-coverage issues, stop and tell the user. Do not merge or create a PR until the issues are fixed and review is rerun.
+4. Prefer local merge into the base branch first when the active workflow allows direct local integration.
+5. If local merge or push fails, stop and ask the user whether to create a PR for fallback merge. Do not create a PR unless the user explicitly approves PR fallback.
+6. Before any `gh pr ...` command, run `gh auth status`.
+7. If GitHub CLI authentication fails, stop and tell the user that `gh` authentication is unavailable. Ask the user to restore auth with `gh auth login` or another approved auth path before retrying.
+8. Do not use PR merge to bypass failed, pending, or unknown PR review/check status.
+9. For phase execution, follow the stricter gate order in `.ai-rules/advanced-workflows/phase-execution-protocol.md`.
+10. If a global skill or external workflow, including `finishing-a-development-branch`, suggests offering PR creation as a peer option to local merge, that portion is overridden in this repository. Use local merge first, and offer PR fallback only after local merge or push fails.
+
 ## 9. Operational Checklist
 
 Before running commands or implementing code:
@@ -159,6 +176,8 @@ Before running commands or implementing code:
 13. Do not treat local AI workspace files as repository deliverables.
 14. Run `ai-bootstrap-check` only for the governance/worktree cases listed in Section 1.1.
 15. Before commit/PR, run `bash .ai-rules/advanced-workflows/guards/check-rules-integrity.sh --staged`.
+16. Before local merge, complete code review as defined in Section 8.1.
+17. Before PR creation or PR merge, complete code review and `gh auth status` checks as defined in Section 8.1.
 
 ## 10. Guard Scripts
 
