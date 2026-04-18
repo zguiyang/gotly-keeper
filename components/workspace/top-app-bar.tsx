@@ -1,6 +1,7 @@
 "use client"
 
 import { Bell, Settings, Search, Menu } from "lucide-react"
+import Image from "next/image"
 
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { WorkspaceNavList } from "@/components/workspace/workspace-nav-list"
@@ -77,11 +78,11 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
         </button>
         <div className="ml-1 flex size-8 items-center justify-center overflow-hidden rounded-full bg-surface-container-high">
           {userImage ? (
-            <img
+            <Image
               alt={`${userName} 的头像`}
               className="size-full object-cover"
               height={32}
-              loading="lazy"
+              sizes="32px"
               src={userImage}
               width={32}
             />

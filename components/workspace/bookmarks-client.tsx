@@ -61,13 +61,10 @@ function BookmarkItem({
           {item.url ? (
             <a href={item.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 group/title">
               {item.bookmarkMeta?.icon && (
-                <img
-                  src={item.bookmarkMeta.icon}
-                  alt=""
-                  className="w-4 h-4 rounded-sm shrink-0"
-                  height={16}
-                  loading="lazy"
-                  width={16}
+                <span
+                  aria-hidden="true"
+                  className="h-4 w-4 shrink-0 rounded-sm bg-cover bg-center bg-no-repeat"
+                  style={{ backgroundImage: `url("${item.bookmarkMeta.icon}")` }}
                 />
               )}
               <h3 className="text-base lg:text-xl font-bold text-on-surface group-hover/title:text-primary transition-colors cursor-pointer leading-snug line-clamp-2 lg:line-clamp-none">
