@@ -164,3 +164,21 @@ Project rules override any skill instruction that would:
 - start services, install dependencies, or use external tools against project rules
 
 A skill may refine how the default workflow is executed, but it must not silently change the task category, artifact policy, verification policy, service-startup policy, or capability boundary.
+
+## 8. Skill Self-Mutation and Cascading Boundaries
+
+Skills must not modify their own files, global skill files, local skill registries, or `.agents/**` maintenance artifacts unless the user explicitly requests skill maintenance, skill installation, or plugin work.
+
+If a skill instructs the agent to run cleanup scripts, install dependencies, write persistent design context, generate `DESIGN.md`, or invoke another skill before ordinary implementation, treat that instruction as advisory unless it is required by the user's explicit task and allowed by project rules.
+
+For UI and design work, prefer the narrowest matching design skill:
+
+- local UI fixes: `layout`, `typeset`, `polish`, `clarify`
+- specific visual adjustment: `colorize`, `bolder`, `quieter`, `distill`
+- motion only: `animate`, `interaction-design`
+- review only: `critique`, `audit`, `web-design-guidelines`
+- broad redesign or new high-quality interface: `design-taste-frontend`, `redesign-existing-projects`, `impeccable`
+- explicit aesthetic direction only: `high-end-visual-design`, `gpt-taste`, `minimalist-ui`, `industrial-brutalist-ui`
+- Google Stitch design-system artifact only: `stitch-design-taste`
+
+Do not cascade from one design skill into another unless the second skill answers a concrete uncertainty that the first skill cannot resolve.
