@@ -13,6 +13,8 @@ type WorkspaceNavListProps = {
 
 export function WorkspaceNavList({ variant }: WorkspaceNavListProps) {
   const pathname = usePathname()
+  const baseItemClassName =
+    'flex items-center gap-3 rounded-2xl px-3.5 py-2.5 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
 
   return (
     <>
@@ -24,25 +26,19 @@ export function WorkspaceNavList({ variant }: WorkspaceNavListProps) {
           <Link
             key={item.label}
             href={item.href}
-            className={
-              variant === 'sidebar'
-                ? `group relative flex items-center gap-3 rounded-sm px-3 py-2 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
-                    active
-                      ? 'text-primary font-medium bg-primary/5'
-                      : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
-                  }`
-                : `flex items-center gap-3 rounded-sm px-3 py-2 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
-                    active
-                      ? 'text-primary font-medium bg-primary/5'
-                      : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
-                  }`
-            }
+            className={`${baseItemClassName} ${
+              variant === 'sidebar' ? 'group relative' : ''
+            } ${
+              active
+                ? 'bg-primary/6 font-medium text-primary'
+                : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
+            }`}
           >
             {variant === 'sidebar' && active ? (
-              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary rounded-r" />
+              <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r bg-primary" />
             ) : null}
-            <Icon className="w-4 h-4" />
-            <span>{item.label}</span>
+            <Icon className="h-4 w-4" />
+            <span className="text-[15px] leading-6">{item.label}</span>
           </Link>
         )
       })}
