@@ -36,13 +36,13 @@ function QuickActionChips({
   ]
 
   return (
-    <div className="mt-4 flex flex-wrap gap-2">
+    <div className="mt-5 flex flex-wrap gap-2.5">
       {chips.map((chip, index) => (
         <button
           type="button"
           key={index}
           onClick={() => onChipClick(chip)}
-          className="rounded-sm border border-outline-variant/20 bg-surface-container-low px-3 py-1.5 text-xs font-medium text-on-surface-variant transition-colors duration-150 hover:bg-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          className="rounded-full border border-outline-variant/15 bg-surface-container-low px-3.5 py-2 text-[11px] font-medium tracking-[0.02em] text-on-surface-variant transition-colors duration-150 hover:border-outline-variant/25 hover:bg-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         >
           {chip}
         </button>
@@ -51,7 +51,7 @@ function QuickActionChips({
         type="button"
         onClick={onReviewTodos}
         disabled={disabled}
-        className="rounded-sm bg-primary px-3 py-1.5 text-xs font-medium text-on-primary transition-colors duration-150 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-full bg-primary px-3.5 py-2 text-[11px] font-medium tracking-[0.02em] text-on-primary transition-colors duration-150 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
       >
         复盘未完成待办
       </button>
@@ -59,7 +59,7 @@ function QuickActionChips({
         type="button"
         onClick={onSummarizeNotes}
         disabled={disabled}
-        className="rounded-sm bg-secondary px-3 py-1.5 text-xs font-medium text-on-secondary transition-colors duration-150 hover:bg-secondary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-full bg-secondary px-3.5 py-2 text-[11px] font-medium tracking-[0.02em] text-on-secondary transition-colors duration-150 hover:bg-secondary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
       >
         总结最近笔记
       </button>
@@ -67,7 +67,7 @@ function QuickActionChips({
         type="button"
         onClick={onSummarizeBookmarks}
         disabled={disabled}
-        className="rounded-sm bg-secondary px-3 py-1.5 text-xs font-medium text-on-secondary transition-colors duration-150 hover:bg-secondary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-full bg-secondary px-3.5 py-2 text-[11px] font-medium tracking-[0.02em] text-on-secondary transition-colors duration-150 hover:bg-secondary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
       >
         总结最近书签
       </button>
@@ -115,10 +115,10 @@ export function WorkspaceClient({
   return (
     <>
       <div className="mb-8">
-        <h1 className="font-headline text-2xl font-bold tracking-tight text-on-surface lg:text-3xl">
+        <h1 className="font-headline text-[2.2rem] font-semibold tracking-[-0.03em] text-on-surface lg:text-[2.8rem]">
           想到什么，先放这
         </h1>
-        <p className="text-sm text-on-surface-variant mt-1">
+        <p className="mt-2 max-w-3xl text-[15px] leading-7 text-on-surface-variant">
           先收好，之后找回。Gotly 负责整理，你负责创造。
         </p>
         <QuickActionChips
@@ -137,7 +137,7 @@ export function WorkspaceClient({
           </div>
           <input
             aria-label="输入内容或搜索知识库"
-            className="h-14 w-full rounded-full border border-outline-variant/10 bg-surface-container-lowest pl-14 pr-28 text-base text-on-surface shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-[box-shadow,border-color] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 focus:shadow-[0_8px_24px_rgba(0,0,0,0.1)]"
+            className="h-15 w-full rounded-full border border-outline-variant/10 bg-surface-container-lowest pl-14 pr-28 text-base text-on-surface shadow-[0_16px_36px_-30px_rgba(0,81,177,0.35)] transition-[box-shadow,border-color] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 focus:shadow-[0_18px_42px_-28px_rgba(0,81,177,0.42)]"
             name="workspace-query"
             placeholder="粘贴链接、记下想法或搜索…"
             type="text"
@@ -149,7 +149,7 @@ export function WorkspaceClient({
             type="button"
             onClick={handleSubmit}
             disabled={status === 'submitting'}
-            className="absolute inset-y-0 right-2 my-auto flex h-10 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-on-primary transition-[background-color,box-shadow] duration-150 hover:bg-primary/90 hover:shadow-[0_4px_12px_rgba(0,81,177,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+            className="absolute inset-y-0 right-2 my-auto flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-on-primary transition-[background-color,box-shadow] duration-150 hover:bg-primary/90 hover:shadow-[0_10px_24px_-18px_rgba(0,81,177,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {status === 'submitting' ? '处理中…' : '提交'}
           </button>
@@ -177,7 +177,7 @@ export function WorkspaceClient({
 
       <section>
         <div className="flex items-center gap-4 mb-2">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-on-surface-variant">
+          <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
             最近捕获
           </h2>
           <div className="flex-1 h-px bg-outline-variant/20" />

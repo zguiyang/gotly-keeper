@@ -5,7 +5,12 @@ import { useState } from 'react'
 
 import { Separator } from '@/components/ui/separator'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
-import { WorkspaceEmptyState, WorkspacePageHeader } from '@/components/workspace/workspace-view-primitives'
+import {
+  WorkspaceEmptyState,
+  workspaceMetaTextClassName,
+  workspacePillClassName,
+  WorkspacePageHeader,
+} from '@/components/workspace/workspace-view-primitives'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 import { BOOKMARK_META_STATUS } from '@/shared/assets/bookmark-meta.types'
@@ -38,23 +43,23 @@ function BookmarkItem({
     <div className="group -mx-4 rounded-lg px-4 py-6 transition-colors duration-150 hover:bg-surface-container-low/50 lg:py-8">
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
         <div className="flex-1 space-y-2 min-w-0">
-          <div className="flex items-center space-x-3 flex-wrap">
-            <span className="text-xs font-semibold uppercase tracking-widest text-primary-container bg-primary/10 px-2 py-0.5 rounded-sm">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className={`${workspacePillClassName} border-primary/10 bg-primary/8 text-primary`}>
               {getHostname(item.url)}
             </span>
             {status === BOOKMARK_META_STATUS.PENDING && (
-              <span className="text-xs text-amber-700 bg-amber-100 px-2 py-0.5 rounded-sm">解析中</span>
+              <span className={`${workspacePillClassName} border-amber-200/60 bg-amber-50 text-amber-700`}>解析中</span>
             )}
             {status === BOOKMARK_META_STATUS.SUCCESS && (
-              <span className="text-xs text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-sm">已补全</span>
+              <span className={`${workspacePillClassName} border-emerald-200/60 bg-emerald-50 text-emerald-700`}>已补全</span>
             )}
             {status === BOOKMARK_META_STATUS.FAILED && (
-              <span className="text-xs text-red-700 bg-red-100 px-2 py-0.5 rounded-sm">补全失败</span>
+              <span className={`${workspacePillClassName} border-red-200/60 bg-red-50 text-red-700`}>补全失败</span>
             )}
             {status === BOOKMARK_META_STATUS.SKIPPED_PRIVATE_URL && (
-              <span className="text-xs text-slate-700 bg-slate-100 px-2 py-0.5 rounded-sm">私网地址已跳过</span>
+              <span className={`${workspacePillClassName} bg-slate-100 text-slate-700`}>私网地址已跳过</span>
             )}
-            <span className="text-xs text-on-surface-variant/60 hidden sm:block">
+            <span className={`${workspaceMetaTextClassName} hidden sm:block`}>
               {formatBookmarkTime(item.createdAt)}
             </span>
           </div>
@@ -79,10 +84,10 @@ function BookmarkItem({
               </h3>
             </div>
           )}
-          <p className="text-on-surface-variant text-sm leading-relaxed max-w-3xl line-clamp-2 sm:line-clamp-3 lg:line-clamp-none">
+          <p className="max-w-3xl text-[15px] leading-7 text-on-surface-variant line-clamp-2 sm:line-clamp-3 lg:line-clamp-none">
             {item.excerpt}
           </p>
-          <span className="text-xs text-on-surface-variant/60 sm:hidden">{formatBookmarkTime(item.createdAt)}</span>
+          <span className={`${workspaceMetaTextClassName} sm:hidden`}>{formatBookmarkTime(item.createdAt)}</span>
         </div>
         <div className="flex items-center space-x-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity lg:opacity-100">
           <button
@@ -152,7 +157,7 @@ export function BookmarksClient({ bookmarks }: { bookmarks: AssetListItem[] }) {
   return (
     <>
       <div className="mb-10">
-        <WorkspacePageHeader title="我的收藏" description="已为您整理好，随时可查。" />
+        <WorkspacePageHeader title="我的收藏" description="按来源与内容整理过的链接收藏，适合回看、筛选和继续深入。" />
       </div>
 
       <div className="max-w-6xl">

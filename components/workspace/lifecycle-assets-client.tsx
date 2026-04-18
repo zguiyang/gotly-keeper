@@ -8,7 +8,9 @@ import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
 import {
   WorkspaceEmptyState,
   WorkspaceFilterTabs,
+  workspaceMetaTextClassName,
   WorkspacePageHeader,
+  workspaceSurfaceClassName,
   WorkspaceTypeBadge,
 } from '@/components/workspace/workspace-view-primitives'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
@@ -162,7 +164,14 @@ export function LifecycleAssetsClient({
   return (
     <div className="max-w-6xl">
       <div className="mb-8">
-        <WorkspacePageHeader title={mode === 'archive' ? '归档' : '回收站'} />
+        <WorkspacePageHeader
+          title={mode === 'archive' ? '归档' : '回收站'}
+          description={
+            mode === 'archive'
+              ? '先收起暂时不需要打扰你的内容，保留一份整洁的工作台。'
+              : '回收站保留最近移除的内容，你可以恢复或彻底删除。'
+          }
+        />
         <WorkspaceFilterTabs tabs={FILTERS} value={activeFilter} onValueChange={setActiveFilter} />
       </div>
 
@@ -180,17 +189,17 @@ export function LifecycleAssetsClient({
             return (
               <div
                 key={item.id}
-                className="group flex items-center justify-between rounded-lg border border-outline-variant/10 bg-surface-container-lowest px-4 py-3"
+                className={`${workspaceSurfaceClassName} group flex items-center justify-between px-5 py-4`}
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="mb-2 flex items-center gap-2.5">
                     <WorkspaceTypeBadge label={typeLabel(item.type)} variant="default" />
-                    <span className="text-xs text-on-surface-variant/60">
+                    <span className={workspaceMetaTextClassName}>
                       {formatAssetRelativeTime(item.createdAt)}
                     </span>
                   </div>
-                  <p className="text-sm font-medium text-on-surface truncate">{item.title}</p>
-                  <p className="text-xs text-on-surface-variant line-clamp-1 mt-1">{item.excerpt}</p>
+                  <p className="truncate text-[17px] font-semibold leading-7 tracking-[-0.02em] text-on-surface">{item.title}</p>
+                  <p className="mt-1 line-clamp-1 text-sm leading-6 text-on-surface-variant">{item.excerpt}</p>
                 </div>
 
                 {mode === 'archive' ? (

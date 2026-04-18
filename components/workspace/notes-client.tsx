@@ -4,7 +4,12 @@ import { FileText } from 'lucide-react'
 import { useState } from 'react'
 
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
-import { WorkspaceEmptyState, WorkspacePageHeader } from '@/components/workspace/workspace-view-primitives'
+import {
+  WorkspaceEmptyState,
+  workspaceMetaTextClassName,
+  WorkspacePageHeader,
+  workspaceSurfaceClassName,
+} from '@/components/workspace/workspace-view-primitives'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { formatAssetRelativeTime } from '@/shared/assets/asset-time-display'
 import { type AssetListItem } from '@/shared/assets/assets.types'
@@ -23,8 +28,13 @@ function NoteCard({
   const hasTitle = note.title && note.title !== note.excerpt
 
   return (
-    <div className="mb-4 flex min-h-[140px] break-inside-avoid flex-col rounded-lg bg-surface-container-lowest p-4 shadow-note-card transition-shadow duration-200">
-      <div className="flex items-center justify-between mb-2">
+    <article
+      className={`${workspaceSurfaceClassName} mb-5 flex min-h-[196px] break-inside-avoid flex-col p-5 transition-transform duration-200 hover:-translate-y-0.5`}
+    >
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <span className={`${workspaceMetaTextClassName} order-2 ml-auto shrink-0`}>
+          {note.timeText || formatAssetRelativeTime(note.createdAt)}
+        </span>
         <AssetActionMenu
           actions={[
             { label: '编辑', onClick: () => onEdit(note) },
@@ -32,22 +42,19 @@ function NoteCard({
             { label: '移入回收站', onClick: () => onMoveToTrash(note), danger: true },
           ]}
         />
-        <span className="text-[10px] text-on-surface-variant/60">
-          {note.timeText || formatAssetRelativeTime(note.createdAt)}
-        </span>
       </div>
 
-      <div className="flex-1">
+      <div className="flex flex-1 flex-col">
         {hasTitle && (
-          <h3 className="text-sm font-medium text-on-surface mb-1 leading-snug line-clamp-2">
+          <h3 className="mb-2 text-lg font-semibold leading-7 tracking-[-0.02em] text-on-surface line-clamp-2">
             {note.title}
           </h3>
         )}
-        <p className="text-xs text-on-surface-variant whitespace-pre-wrap leading-relaxed line-clamp-4">
+        <p className="text-[15px] leading-7 text-on-surface-variant whitespace-pre-wrap line-clamp-5">
           {note.excerpt}
         </p>
       </div>
-    </div>
+    </article>
   )
 }
 
@@ -99,10 +106,13 @@ export function NotesClient({ notes }: { notes: AssetListItem[] }) {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <WorkspacePageHeader title="笔记" description="从统一入口保存的文本记录，会整理在这里" />
+      <WorkspacePageHeader
+        title="笔记"
+        description="从统一入口留下的想法、碎片和草稿，会被整理成便于回看的知识卡片。"
+      />
 
       {items.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {items.map((note) => (
             <NoteCard
               key={note.id}
