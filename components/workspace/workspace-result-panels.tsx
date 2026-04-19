@@ -9,7 +9,6 @@ import { WorkspaceActionableAssetList } from './workspace-actionable-assets'
 import {
   workspaceMetaTextClassName,
   workspacePillClassName,
-  workspaceSurfaceClassName,
 } from './workspace-view-primitives'
 
 export function RecentItem({
@@ -61,10 +60,8 @@ export function RecentItem({
 }
 
 export function WorkspaceQueryResultsPanel({
-  queryDescription,
   results,
 }: {
-  queryDescription: string
   results: AssetListItem[]
 }) {
   return (
@@ -75,7 +72,6 @@ export function WorkspaceQueryResultsPanel({
         </h2>
         <div className="flex-1 h-px bg-border/20" />
       </div>
-      <p className="mb-4 text-sm leading-6 text-on-surface-variant/75">{queryDescription}</p>
       <WorkspaceActionableAssetList
         assets={results}
         emptyMessage="没有找到相关内容。可以换个关键词，或先在上方保存一条新记录。"
@@ -86,18 +82,14 @@ export function WorkspaceQueryResultsPanel({
 
 type SummaryPanelBaseProps = {
   title: string
-  headline: string
-  summary: string
-  points: string[]
   sources: AssetListItem[]
+  emptyMessage: string
 }
 
 function SummaryPanelBase({
   title,
-  headline,
-  summary,
-  points,
   sources,
+  emptyMessage,
 }: SummaryPanelBaseProps) {
   return (
     <section className="mb-8">
@@ -107,34 +99,10 @@ function SummaryPanelBase({
         </h2>
         <div className="flex-1 h-px bg-border/20" />
       </div>
-      <div className={`${workspaceSurfaceClassName} p-5`}>
-        <h3 className="text-lg font-semibold leading-7 tracking-[-0.02em] text-on-surface">
-          {headline}
-        </h3>
-        <p className="mt-2 text-[15px] leading-7 text-on-surface-variant">
-          {summary}
-        </p>
-        {points.length > 0 ? (
-          <ul className="mt-4 space-y-2">
-            {points.map((point, index) => (
-              <li key={`${point}-${index}`} className="text-[15px] leading-7 text-on-surface">
-                {index + 1}. {point}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {sources.length > 0 ? (
-          <div className="mt-5 border-t border-border/10 pt-4">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant/75">
-              来源
-            </p>
-            <WorkspaceActionableAssetList
-              assets={sources}
-              emptyMessage="没有可操作的来源。"
-            />
-          </div>
-        ) : null}
-      </div>
+      <WorkspaceActionableAssetList
+        assets={sources}
+        emptyMessage={emptyMessage}
+      />
     </section>
   )
 }
@@ -143,10 +111,8 @@ export function WorkspaceTodoReviewPanel({ review }: { review: TodoReviewResult 
   return (
     <SummaryPanelBase
       title="待办复盘"
-      headline={review.headline}
-      summary={review.summary}
-      points={review.nextActions}
       sources={review.sources}
+      emptyMessage="没有可操作的待办。"
     />
   )
 }
@@ -155,10 +121,8 @@ export function WorkspaceNoteSummaryPanel({ summary }: { summary: NoteSummaryRes
   return (
     <SummaryPanelBase
       title="笔记摘要"
-      headline={summary.headline}
-      summary={summary.summary}
-      points={summary.keyPoints}
       sources={summary.sources}
+      emptyMessage="没有可操作的笔记。"
     />
   )
 }
@@ -167,10 +131,8 @@ export function WorkspaceBookmarkSummaryPanel({ summary }: { summary: BookmarkSu
   return (
     <SummaryPanelBase
       title="书签摘要"
-      headline={summary.headline}
-      summary={summary.summary}
-      points={summary.keyPoints}
       sources={summary.sources}
+      emptyMessage="没有可操作的书签。"
     />
   )
 }
