@@ -1,7 +1,7 @@
 import 'server-only'
 
-import { parseWorkspaceCommand } from '@/server/lib/ai/workspace-parser'
 import { parsedCommandSchema, type ParsedCommand } from '@/server/lib/ai/ai-schema'
+import { parseWorkspaceCommand } from '@/server/lib/ai/workspace-parser'
 import {
   canArchive,
   canMoveToTrash,
@@ -52,10 +52,7 @@ import {
   ASSET_LIFECYCLE_STATUS,
   type AssetLifecycleStatus,
 } from '@/shared/assets/asset-lifecycle.types'
-import type {
-  WorkspaceRunRequest,
-  WorkspaceRunResult,
-} from '@/shared/workspace/workspace-run.types'
+
 
 import {
   buildPendingBookmarkMetaForResponse,
@@ -74,6 +71,10 @@ import type {
   TodoReviewResult,
   WorkspaceAssetActionResult,
 } from '@/shared/assets/assets.types'
+import type {
+  WorkspaceRunRequest,
+  WorkspaceRunResult,
+} from '@/shared/workspace/workspace-run.types'
 
 export type WorkspaceAssetItem = AssetListItem
 

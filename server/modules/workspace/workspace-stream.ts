@@ -6,16 +6,18 @@ import {
   type UIMessage,
   type UIMessageStreamWriter,
 } from 'ai'
-import type {
-  WorkspaceRunRequest,
-  WorkspaceRunStage,
-} from '@/shared/workspace/workspace-run.types'
 
 import {
   buildQuickActionWorkspaceCommand,
   executeWorkspaceCommand,
   resolveWorkspaceCommand,
 } from './index'
+
+import type {
+  WorkspaceRunRequest,
+  WorkspaceRunStage,
+} from '@/shared/workspace/workspace-run.types'
+
 export { toWorkspaceRunResult } from './workspace-run-result'
 
 export const QUICK_ACTION_PROMPTS = {

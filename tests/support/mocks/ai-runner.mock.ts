@@ -1,5 +1,4 @@
 import { AiProviderError, type AiResult } from '@/server/lib/ai/ai.types'
-import type { ZodSchema } from 'zod'
 
 export interface AiRunnerMockOptions<T> {
   shouldSucceed?: boolean
@@ -11,17 +10,7 @@ export function createAiRunnerMock<T>(options: AiRunnerMockOptions<T> = {}) {
   const { shouldSucceed = true, resultData, errorMessage = 'AI mock error' } = options
 
   return {
-    runAiGeneration: async function mockRunAiGeneration<T>({
-      schema,
-      systemPrompt,
-      userPrompt,
-    }: {
-      schema: ZodSchema<T>
-      systemPrompt: string
-      userPrompt: string
-      timeoutMs?: number
-      maxRetries?: number
-    }): Promise<AiResult<T>> {
+    runAiGeneration: async function mockRunAiGeneration<T>(): Promise<AiResult<T>> {
       if (!shouldSucceed) {
         return {
           success: false,
@@ -35,10 +24,7 @@ export function createAiRunnerMock<T>(options: AiRunnerMockOptions<T> = {}) {
     },
 
     interpretAssetInputWithAi: async function mockInterpretAssetInputWithAi(
-      trimmed: string,
-      schema: ZodSchema<unknown>,
-      systemPrompt: string,
-      buildPromptFn: (text: string) => string
+      trimmed: string
     ): Promise<{ success: true; data: unknown } | { success: false; fallback: true }> {
       if (!shouldSucceed) {
         return { success: false, fallback: true }
@@ -49,12 +35,9 @@ export function createAiRunnerMock<T>(options: AiRunnerMockOptions<T> = {}) {
       }
     },
 
-    summarizeWithAi: async function mockSummarizeWithAi<T>(
-      schema: ZodSchema<T>,
-      systemPrompt: string,
-      promptInput: object,
-      timeoutMs: number
-    ): Promise<{ success: true; data: T } | { success: false; fallback: true }> {
+    summarizeWithAi: async function mockSummarizeWithAi<T>(): Promise<
+      { success: true; data: T } | { success: false; fallback: true }
+    > {
       if (!shouldSucceed) {
         return { success: false, fallback: true }
       }

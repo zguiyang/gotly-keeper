@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import { useCallback, useState, type FormEvent } from 'react'
 
 type AuthSubmitError = {
   message?: string | null

@@ -4,8 +4,9 @@ import { asc, isNull, or, eq } from 'drizzle-orm'
 
 import { db } from '@/server/lib/db'
 import { bookmarks, notes, todos } from '@/server/lib/db/schema'
-import type { BookmarkMeta } from '@/shared/assets/bookmark-meta.types'
 import { now } from '@/shared/time/dayjs'
+
+import type { BookmarkMeta } from '@/shared/assets/bookmark-meta.types'
 
 type StructuredNoteBackfill = {
   title: string | null

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildAssetInterpreterPrompt } from '@/server/lib/ai/ai.prompts'
 import { parsedCommandSchema } from '@/server/lib/ai/ai-schema'
+import { buildAssetInterpreterPrompt } from '@/server/lib/ai/ai.prompts'
 import { renderPrompt } from '@/server/lib/prompt-template'
 
 describe('asset-interpreter contract', () => {

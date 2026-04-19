@@ -1,10 +1,12 @@
 import 'server-only'
 
 import { db } from '@/server/lib/db'
-import { notes } from './notes.schema'
-import type { NoteListItem } from './notes.types'
+
 import { toNoteListItem } from './notes.mapper'
+import { notes } from './notes.schema'
 import { normalizeNoteWriteInput, type NoteWriteInput } from './notes.write'
+
+import type { NoteListItem } from './notes.types'
 
 export async function createNote(
   input: {

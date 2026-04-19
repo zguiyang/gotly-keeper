@@ -1,10 +1,11 @@
-import type { WorkspaceRunRequest } from '@/shared/workspace/workspace-run.types'
 
 import { requireWorkspaceUserAccess } from '@/server/modules/auth/workspace-session'
 import {
   QUICK_ACTION_PROMPTS,
   streamWorkspaceRun,
 } from '@/server/modules/workspace/workspace-stream'
+
+import type { WorkspaceRunRequest } from '@/shared/workspace/workspace-run.types'
 
 function isWorkspaceRunRequest(body: unknown): body is WorkspaceRunRequest {
   if (!body || typeof body !== 'object') {
