@@ -28,6 +28,10 @@ describe('bookmarks.mapper', () => {
 
     expect(result.title).toBe('Structured title')
     expect(result.excerpt).toBe('Structured note')
+    expect(result).toMatchObject({
+      note: 'Structured note',
+      summary: 'Structured summary',
+    })
   })
 
   it('falls back to summary and bookmark meta when structured fields are missing', () => {

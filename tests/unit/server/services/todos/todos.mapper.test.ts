@@ -22,6 +22,9 @@ describe('todos.mapper', () => {
     expect(result.id).toBe('todo_1')
     expect(result.title).toBe('abcdefghijklmnopqrstuvwxyz123456')
     expect(result.excerpt).toBe(row.originalText)
+    expect(result).toMatchObject({
+      content: null,
+    })
     expect(result.completed).toBe(true)
     expect(result.completedAt).toBe(completedAt)
     expect(result.createdAt).toBe(createdAt)
@@ -43,5 +46,25 @@ describe('todos.mapper', () => {
 
     expect(result.completed).toBe(false)
     expect(result.title).toBe('short text')
+  })
+
+  it('preserves structured todo content for editing', () => {
+    const result = toTodoListItem({
+      id: 'todo_3',
+      originalText: '提交周报\n补充项目风险',
+      title: '提交周报',
+      content: '补充项目风险',
+      timeText: null,
+      dueAt: null,
+      completedAt: null,
+      createdAt: new Date('2026-04-17T00:00:00.000Z'),
+      updatedAt: new Date('2026-04-17T01:00:00.000Z'),
+    })
+
+    expect(result).toMatchObject({
+      title: '提交周报',
+      excerpt: '补充项目风险',
+      content: '补充项目风险',
+    })
   })
 })

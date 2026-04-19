@@ -19,6 +19,8 @@ export function toNoteListItem(note: NoteListRow): NoteListItem {
     originalText: note.originalText,
     title,
     excerpt,
+    content: note.content?.trim() || null,
+    summary: note.summary?.trim() || null,
     lifecycleStatus: note.lifecycleStatus ?? ASSET_LIFECYCLE_STATUS.ACTIVE,
     archivedAt: note.archivedAt ?? null,
     trashedAt: note.trashedAt ?? null,

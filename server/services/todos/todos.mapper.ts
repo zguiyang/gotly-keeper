@@ -30,6 +30,7 @@ export function toTodoListItem(todo: TodoListRow): TodoListItem {
     originalText: todo.originalText,
     title: structuredTitle || todo.originalText.slice(0, 32),
     excerpt: structuredContent || todo.originalText,
+    content: structuredContent,
     lifecycleStatus: todo.lifecycleStatus ?? ASSET_LIFECYCLE_STATUS.ACTIVE,
     archivedAt: todo.archivedAt ?? null,
     trashedAt: todo.trashedAt ?? null,

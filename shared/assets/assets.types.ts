@@ -9,6 +9,7 @@ export type AssetListItem = {
   type: 'note' | 'link' | 'todo'
   content?: string | null
   note?: string | null
+  summary?: string | null
   url: string | null
   timeText: string | null
   dueAt: Date | null

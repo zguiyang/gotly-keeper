@@ -8,6 +8,8 @@ export type BookmarkListItem = {
   originalText: string
   title: string
   excerpt: string
+  note: string | null
+  summary: string | null
   url: string | null
   bookmarkMeta: BookmarkMeta | null
   lifecycleStatus: AssetLifecycleStatus

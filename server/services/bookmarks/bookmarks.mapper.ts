@@ -36,6 +36,8 @@ export function toBookmarkListItem(bookmark: BookmarkListRow): BookmarkListItem 
     originalText: bookmark.originalText,
     title: bookmarkTitle || bookmark.originalText.slice(0, 32),
     excerpt: bookmarkExcerpt,
+    note: bookmark.note?.trim() || null,
+    summary: bookmark.summary?.trim() || null,
     url: bookmark.url,
     bookmarkMeta,
     lifecycleStatus: bookmark.lifecycleStatus ?? ASSET_LIFECYCLE_STATUS.ACTIVE,

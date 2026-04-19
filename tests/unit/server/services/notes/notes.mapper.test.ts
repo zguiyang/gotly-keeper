@@ -16,6 +16,10 @@ describe('notes.mapper', () => {
 
     expect(result.title).toBe('结构化标题')
     expect(result.excerpt).toBe('结构化摘要')
+    expect(result).toMatchObject({
+      content: '结构化正文',
+      summary: '结构化摘要',
+    })
   })
 
   it('falls back to content then originalText for excerpt', () => {

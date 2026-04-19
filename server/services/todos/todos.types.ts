@@ -7,6 +7,7 @@ export type TodoListItem = {
   originalText: string
   title: string
   excerpt: string
+  content: string | null
   lifecycleStatus: AssetLifecycleStatus
   archivedAt: Date | null
   trashedAt: Date | null

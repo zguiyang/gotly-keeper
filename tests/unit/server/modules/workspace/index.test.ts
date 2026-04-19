@@ -86,6 +86,9 @@ vi.mock('@/server/services/assets/asset-lifecycle', () => ({
 }))
 
 import {
+  createWorkspaceLink,
+  createWorkspaceNote,
+  createWorkspaceTodo,
   buildQuickActionWorkspaceCommand,
   executeWorkspaceCommand,
   runWorkspaceCommand,
@@ -146,6 +149,7 @@ describe('runWorkspaceCommand', () => {
       result: {
         kind: 'query',
         query: '文章',
+        queryDescription: '书签 · 上周',
         results: [{ id: 'asset_1' }],
       },
     })
@@ -215,5 +219,113 @@ describe('runWorkspaceCommand', () => {
     expect(command.summary).toEqual({ target: 'bookmarks', query: null })
     expect(summarizeWorkspaceRecentBookmarksInternalMock).toHaveBeenCalledWith('user_1', null)
     expect(result).toEqual({ kind: 'bookmark-summary', summary: { headline: '书签摘要' } })
+  })
+
+  it('returns structured note fields in created asset payload', async () => {
+    createNoteMock.mockResolvedValue({
+      id: 'note_1',
+      originalText: '需求评审\n\n补充边界条件',
+      title: '需求评审',
+      content: '补充边界条件',
+      summary: '补充边界条件',
+      excerpt: '补充边界条件',
+      lifecycleStatus: 'active',
+      archivedAt: null,
+      trashedAt: null,
+      createdAt: new Date('2026-04-19T00:00:00.000Z'),
+      updatedAt: new Date('2026-04-19T00:00:00.000Z'),
+    })
+
+    await expect(
+      createWorkspaceNote({
+        userId: 'user_1',
+        rawInput: '需求评审\n\n补充边界条件',
+        title: '需求评审',
+        content: '补充边界条件',
+        summary: '补充边界条件',
+      })
+    ).resolves.toMatchObject({
+      kind: 'created',
+      asset: {
+        type: 'note',
+        title: '需求评审',
+        content: '补充边界条件',
+        summary: '补充边界条件',
+      },
+    })
+  })
+
+  it('returns structured todo fields in created asset payload', async () => {
+    createTodoMock.mockResolvedValue({
+      id: 'todo_1',
+      originalText: '提交周报\n补充项目风险\n明天上午',
+      title: '提交周报',
+      content: '补充项目风险',
+      excerpt: '补充项目风险',
+      timeText: '明天上午',
+      dueAt: null,
+      completed: false,
+      completedAt: null,
+      lifecycleStatus: 'active',
+      archivedAt: null,
+      trashedAt: null,
+      createdAt: new Date('2026-04-19T00:00:00.000Z'),
+      updatedAt: new Date('2026-04-19T00:00:00.000Z'),
+    })
+
+    await expect(
+      createWorkspaceTodo({
+        userId: 'user_1',
+        rawInput: '提交周报\n补充项目风险\n明天上午',
+        title: '提交周报',
+        content: '补充项目风险',
+        timeText: '明天上午',
+        dueAt: null,
+      })
+    ).resolves.toMatchObject({
+      kind: 'created',
+      asset: {
+        type: 'todo',
+        title: '提交周报',
+        content: '补充项目风险',
+      },
+    })
+  })
+
+  it('returns structured bookmark fields in created asset payload', async () => {
+    createBookmarkMock.mockResolvedValue({
+      id: 'bookmark_1',
+      originalText: 'AI SDK 文档\n流式输出示例\nhttps://example.com',
+      title: 'AI SDK 文档',
+      note: '流式输出示例',
+      summary: '流式输出示例',
+      excerpt: '流式输出示例',
+      url: 'https://example.com',
+      bookmarkMeta: null,
+      lifecycleStatus: 'active',
+      archivedAt: null,
+      trashedAt: null,
+      createdAt: new Date('2026-04-19T00:00:00.000Z'),
+      updatedAt: new Date('2026-04-19T00:00:00.000Z'),
+    })
+
+    await expect(
+      createWorkspaceLink({
+        userId: 'user_1',
+        rawInput: 'AI SDK 文档\n流式输出示例\nhttps://example.com',
+        title: 'AI SDK 文档',
+        note: '流式输出示例',
+        summary: '流式输出示例',
+        url: 'https://example.com',
+      })
+    ).resolves.toMatchObject({
+      kind: 'created',
+      asset: {
+        type: 'link',
+        title: 'AI SDK 文档',
+        note: '流式输出示例',
+        summary: '流式输出示例',
+      },
+    })
   })
 })

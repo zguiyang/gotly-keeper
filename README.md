@@ -96,6 +96,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `pnpm db:studio` | Open Drizzle Studio |
 | `pnpm db:check` | Check DB schema against migrations |
 | `pnpm assets:backfill-embeddings` | Backfill vector embeddings for assets |
+| `pnpm assets:backfill-structured -- --dry-run --limit=100` | Backfill structured asset fields conservatively |
 | `pnpm test` | Run all tests |
 | `pnpm test:unit` | Run unit tests |
 | `pnpm test:integration` | Run integration tests |

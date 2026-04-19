@@ -13,6 +13,7 @@
     "db:check": "drizzle-kit check",
     "verify:db": "node --import tsx scripts/verify-db.ts",
     "assets:backfill-embeddings": "node --require ./scripts/register-server-only-alias.cjs --import tsx scripts/backfill-asset-embeddings.ts",
+    "assets:backfill-structured": "node --require ./scripts/register-server-only-alias.cjs --import tsx scripts/backfill-structured-assets.ts",
     "worker:start": "node --require ./scripts/register-server-only-alias.cjs --import tsx scripts/run-workers.ts",
     "typecheck": "tsc --noEmit",
     "verify": "pnpm verify:db && pnpm typecheck && pnpm test:unit",
