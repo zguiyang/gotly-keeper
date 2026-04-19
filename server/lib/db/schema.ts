@@ -5,6 +5,8 @@ import { ASSET_LIFECYCLE_STATUS } from '@/shared/assets/asset-lifecycle.types'
 
 import type { BookmarkMeta } from '@/shared/assets/bookmark-meta.types'
 
+type ParsedMeta = Record<string, unknown>
+
 export const users = pgTable(
   'users',
   {
@@ -75,6 +77,10 @@ export const notes = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     originalText: text('original_text').notNull(),
+    title: text('title'),
+    content: text('content'),
+    summary: text('summary'),
+    parsedMeta: jsonb('parsed_meta').$type<ParsedMeta>(),
     lifecycleStatus: text('lifecycle_status', {
       enum: [
         ASSET_LIFECYCLE_STATUS.ACTIVE,
@@ -139,6 +145,9 @@ export const todos = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     originalText: text('original_text').notNull(),
+    title: text('title'),
+    content: text('content'),
+    parsedMeta: jsonb('parsed_meta').$type<ParsedMeta>(),
     timeText: text('time_text'),
     dueAt: timestamp('due_at'),
     completedAt: timestamp('completed_at'),
@@ -207,6 +216,10 @@ export const bookmarks = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     originalText: text('original_text').notNull(),
+    title: text('title'),
+    note: text('note'),
+    summary: text('summary'),
+    parsedMeta: jsonb('parsed_meta').$type<ParsedMeta>(),
     url: text('url'),
     bookmarkMeta: jsonb('bookmark_meta').$type<BookmarkMeta>(),
     lifecycleStatus: text('lifecycle_status', {
