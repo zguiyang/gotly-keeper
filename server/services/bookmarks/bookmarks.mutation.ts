@@ -27,13 +27,34 @@ type UpdateBookmarkResult = {
   urlChanged: boolean
 }
 
-function normalizeTextOrThrow(text: string): string {
+function normalizeRequiredTextOrThrow(text: string): string {
   const trimmed = text.trim()
   if (!trimmed) {
     throw new Error('EMPTY_INPUT')
   }
 
   return trimmed
+}
+
+function normalizeOptionalText(value?: string | null): string | null | undefined {
+  if (value === undefined) {
+    return undefined
+  }
+
+  const normalized = value?.trim()
+  return normalized ? normalized : null
+}
+
+function hasStructuredBookmarkUpdateFields(input: {
+  title?: string | null
+  note?: string | null
+  summary?: string | null
+}): boolean {
+  return input.title !== undefined || input.note !== undefined || input.summary !== undefined
+}
+
+function resolveRawInput(input: { rawInput?: string; text?: string }): string {
+  return input.rawInput ?? input.text ?? ''
 }
 
 function normalizeUrlOrThrow(url: string): string {
@@ -96,11 +117,19 @@ async function updateLifecycle(input: {
 export async function updateBookmark(input: {
   userId: string
   bookmarkId: string
-  text: string
+  rawInput?: string
+  text?: string
   url: string
+  title?: string | null
+  note?: string | null
+  summary?: string | null
 }): Promise<UpdateBookmarkResult | null> {
-  const trimmedText = normalizeTextOrThrow(input.text)
+  const usesLegacyTextUpdate = input.rawInput === undefined && input.text !== undefined && !hasStructuredBookmarkUpdateFields(input)
+  const trimmedText = normalizeRequiredTextOrThrow(resolveRawInput(input))
   const normalizedUrl = normalizeUrlOrThrow(input.url)
+  const normalizedTitle = normalizeOptionalText(input.title)
+  const normalizedNote = normalizeOptionalText(input.note)
+  const normalizedSummary = normalizeOptionalText(input.summary)
 
   const [existing] = await db
     .select({
@@ -127,6 +156,9 @@ export async function updateBookmark(input: {
     .set({
       originalText: trimmedText,
       url: normalizedUrl,
+      title: usesLegacyTextUpdate ? null : normalizedTitle,
+      note: usesLegacyTextUpdate ? null : normalizedNote,
+      summary: usesLegacyTextUpdate ? null : normalizedSummary,
       bookmarkMeta: urlChanged ? createPendingBookmarkMeta() : undefined,
       updatedAt: now(),
     })

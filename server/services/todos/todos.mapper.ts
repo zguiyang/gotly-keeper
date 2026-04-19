@@ -9,6 +9,8 @@ type TodoListRow = Partial<Pick<
   Todo,
   | 'id'
   | 'originalText'
+  | 'title'
+  | 'content'
   | 'timeText'
   | 'dueAt'
   | 'completedAt'
@@ -20,11 +22,14 @@ type TodoListRow = Partial<Pick<
 >> & Pick<Todo, 'id' | 'originalText' | 'timeText' | 'dueAt' | 'completedAt' | 'createdAt' | 'updatedAt'>
 
 export function toTodoListItem(todo: TodoListRow): TodoListItem {
+  const structuredTitle = todo.title?.trim() || null
+  const structuredContent = todo.content?.trim() || null
+
   return {
     id: todo.id,
     originalText: todo.originalText,
-    title: todo.originalText.slice(0, 32),
-    excerpt: todo.originalText,
+    title: structuredTitle || todo.originalText.slice(0, 32),
+    excerpt: structuredContent || todo.originalText,
     lifecycleStatus: todo.lifecycleStatus ?? ASSET_LIFECYCLE_STATUS.ACTIVE,
     archivedAt: todo.archivedAt ?? null,
     trashedAt: todo.trashedAt ?? null,

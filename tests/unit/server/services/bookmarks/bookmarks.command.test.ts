@@ -35,14 +35,20 @@ describe('bookmarks.command', () => {
   it('trims input and returns mapped bookmark', async () => {
     const result = await createBookmark({
       userId: 'u1',
-      text: '  link text  ',
-      url: 'https://example.com',
+      rawInput: '  link text  ',
+      url: ' https://example.com ',
+      title: '  Example title  ',
+      note: '  Example note  ',
+      summary: '  Example summary  ',
     })
 
     expect(mocks.valuesMock).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 'u1',
         originalText: 'link text',
+        title: 'Example title',
+        note: 'Example note',
+        summary: 'Example summary',
         url: 'https://example.com',
       })
     )
@@ -50,20 +56,39 @@ describe('bookmarks.command', () => {
     expect(result).toEqual({ id: 'bookmark_1', title: 'link text' })
   })
 
+  it('stores empty structured fields as null', async () => {
+    await createBookmark({
+      userId: 'u1',
+      rawInput: '  link text  ',
+      url: 'https://example.com',
+      title: '   ',
+      note: '',
+      summary: ' ',
+    })
+
+    expect(mocks.valuesMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: null,
+        note: null,
+        summary: null,
+      })
+    )
+  })
+
   it('throws EMPTY_INPUT before URL validation', async () => {
-    await expect(createBookmark({ userId: 'u1', text: '   ', url: '' })).rejects.toThrow('EMPTY_INPUT')
+    await expect(createBookmark({ userId: 'u1', rawInput: '   ', url: '' })).rejects.toThrow('EMPTY_INPUT')
     expect(mocks.insertMock).not.toHaveBeenCalled()
   })
 
   it('throws URL_REQUIRED when url is missing', async () => {
-    await expect(createBookmark({ userId: 'u1', text: 'link text', url: '' })).rejects.toThrow('URL_REQUIRED')
+    await expect(createBookmark({ userId: 'u1', rawInput: 'link text', url: '' })).rejects.toThrow(
+      'URL_REQUIRED'
+    )
     expect(mocks.insertMock).not.toHaveBeenCalled()
   })
 
   it('throws URL_REQUIRED when url is only spaces', async () => {
-    await expect(createBookmark({ userId: 'u1', text: 'link text', url: '   ' })).rejects.toThrow(
-      'URL_REQUIRED'
-    )
+    await expect(createBookmark({ userId: 'u1', rawInput: 'link text', url: '   ' })).rejects.toThrow('URL_REQUIRED')
     expect(mocks.insertMock).not.toHaveBeenCalled()
   })
 })

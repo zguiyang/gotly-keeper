@@ -45,8 +45,41 @@ describe('todos.command', () => {
     expect(result).toEqual({ id: 'todo_1', title: 'task' })
   })
 
+  it('writes structured todo fields when provided', async () => {
+    await createTodo({
+      userId: 'u1',
+      rawInput: '  明天提交周报  ',
+      title: '提交周报',
+      content: '补充本周项目进展和风险',
+      timeText: '明天上午',
+      dueAt: new Date('2026-04-20T01:00:00.000Z'),
+    })
+
+    expect(mocks.valuesMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'u1',
+        originalText: '明天提交周报',
+        title: '提交周报',
+        content: '补充本周项目进展和风险',
+        timeText: '明天上午',
+        dueAt: new Date('2026-04-20T01:00:00.000Z'),
+      })
+    )
+  })
+
   it('throws EMPTY_INPUT when text is empty after trim', async () => {
     await expect(createTodo({ userId: 'u1', text: '   ' })).rejects.toThrow('EMPTY_INPUT')
+    expect(mocks.insertMock).not.toHaveBeenCalled()
+  })
+
+  it('throws EMPTY_INPUT when rawInput is empty after trim', async () => {
+    await expect(
+      createTodo({
+        userId: 'u1',
+        rawInput: '   ',
+        title: '提交周报',
+      })
+    ).rejects.toThrow('EMPTY_INPUT')
     expect(mocks.insertMock).not.toHaveBeenCalled()
   })
 })

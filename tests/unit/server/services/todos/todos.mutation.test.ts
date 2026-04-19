@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { setTodoCompletion } from '@/server/services/todos/todos.mutation'
+import { setTodoCompletion, updateTodo } from '@/server/services/todos/todos.mutation'
 
 const fixedNow = new Date('2026-04-17T00:00:00.000Z')
 
@@ -61,5 +61,89 @@ describe('todos.mutation', () => {
     })
     expect(mocks.toTodoListItemMock).toHaveBeenCalledTimes(1)
     expect(result).toEqual({ id: 'todo_1' })
+  })
+
+  it('updates structured fields when provided', async () => {
+    mocks.returningMock.mockResolvedValue([{ id: 'todo_1' }])
+
+    await updateTodo({
+      userId: 'u1',
+      todoId: 'todo_1',
+      rawInput: '  明天提交周报  ',
+      title: '提交周报',
+      content: '补充本周项目进展和风险',
+      timeText: '明天上午',
+      dueAt: new Date('2026-04-20T01:00:00.000Z'),
+    })
+
+    expect(mocks.setMock).toHaveBeenCalledWith({
+      originalText: '明天提交周报',
+      title: '提交周报',
+      content: '补充本周项目进展和风险',
+      timeText: '明天上午',
+      dueAt: new Date('2026-04-20T01:00:00.000Z'),
+      updatedAt: fixedNow,
+    })
+  })
+
+  it('clears structured fields for legacy text updates', async () => {
+    mocks.returningMock.mockResolvedValue([{ id: 'todo_1' }])
+
+    await updateTodo({
+      userId: 'u1',
+      todoId: 'todo_1',
+      text: '  明天提交周报  ',
+    })
+
+    expect(mocks.setMock).toHaveBeenCalledWith({
+      originalText: '明天提交周报',
+      title: null,
+      content: null,
+      timeText: null,
+      dueAt: null,
+      updatedAt: fixedNow,
+    })
+  })
+
+  it('keeps structured fields unchanged when rawInput omits them', async () => {
+    mocks.returningMock.mockResolvedValue([{ id: 'todo_1' }])
+
+    await updateTodo({
+      userId: 'u1',
+      todoId: 'todo_1',
+      rawInput: '  明天提交周报  ',
+    })
+
+    expect(mocks.setMock).toHaveBeenCalledWith({
+      originalText: '明天提交周报',
+      title: undefined,
+      content: undefined,
+      timeText: undefined,
+      dueAt: undefined,
+      updatedAt: fixedNow,
+    })
+  })
+
+  it('allows clearing structured fields with null', async () => {
+    mocks.returningMock.mockResolvedValue([{ id: 'todo_1' }])
+
+    await updateTodo({
+      userId: 'u1',
+      todoId: 'todo_1',
+      text: '  明天提交周报  ',
+      title: null,
+      content: null,
+      timeText: null,
+      dueAt: null,
+    })
+
+    expect(mocks.setMock).toHaveBeenCalledWith({
+      originalText: '明天提交周报',
+      title: null,
+      content: null,
+      timeText: null,
+      dueAt: null,
+      updatedAt: fixedNow,
+    })
   })
 })
