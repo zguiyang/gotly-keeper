@@ -34,6 +34,15 @@ describe('prompt-template', () => {
     expect(rendered).toContain('{"ok":true}')
   })
 
+  it('renders AI system prompts from markdown template files', async () => {
+    await expect(renderPrompt('ai/parsed-command.system', {})).resolves.toContain(
+      'ParsedCommand'
+    )
+    await expect(renderPrompt('bookmark/content-summary.system', {})).resolves.toContain(
+      '网页摘要助手'
+    )
+  })
+
   it('supports strict nested variables with dot path', () => {
     const output = renderTemplate(
       'demo',

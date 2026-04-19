@@ -3,12 +3,14 @@ import 'server-only'
 import { z } from 'zod'
 
 import { runAiGeneration } from '@/server/lib/ai'
+import { renderPrompt } from '@/server/lib/prompt-template'
 import { writeBookmarkEnrichResult } from '@/server/modules/workspace/bookmark-enrich.module'
 import { dequeueBookmarkEnrichTask } from '@/server/services/bookmark/bookmark-queue.service'
 
+import { BaseWorker } from './base.worker'
+
 import type { BookmarkEnrichResult, BookmarkEnrichTask } from '@/server/services/bookmark/bookmark-enrich.contract'
 import type { BookmarkEnrichedType } from '@/shared/assets/bookmark-meta.types'
-import { BaseWorker } from './base.worker'
 
 const BOOKMARK_ENRICH_FETCH_TIMEOUT_MS = 8_000
 const BOOKMARK_ENRICH_MAX_INPUT_LENGTH = 8_000
@@ -142,10 +144,10 @@ async function generateContentSummary(
     return description
   }
 
+  const systemPrompt = await renderPrompt('bookmark/content-summary.system', {})
   const aiResult = await runAiGeneration({
     schema: bookmarkSummarySchema,
-    systemPrompt:
-      '你是网页摘要助手。请基于输入生成2-4句中文摘要，不要编造，不要加入列表符号或标题。',
+    systemPrompt,
     userPrompt: JSON.stringify({
       title,
       description,

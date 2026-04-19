@@ -1,8 +1,11 @@
 import 'server-only'
 
-import { buildAssetInterpreterPrompt } from './ai.prompts'
-import { parsedCommandSchema } from './ai-schema'
 import { runAiGeneration } from './ai-runner'
+import { parsedCommandSchema } from './ai-schema'
+import {
+  buildAssetInterpreterPrompt,
+  buildParsedCommandSystemPrompt,
+} from './ai.prompts'
 
 import type { ParsedCommand, SummaryCommandPayload } from './ai-schema'
 
@@ -215,10 +218,13 @@ export async function parseWorkspaceCommand(input: string): Promise<ParsedComman
   const originalText = normalizeInput(input)
 
   try {
-    const userPrompt = await buildAssetInterpreterPrompt(originalText)
+    const [systemPrompt, userPrompt] = await Promise.all([
+      buildParsedCommandSystemPrompt(),
+      buildAssetInterpreterPrompt(originalText),
+    ])
     const result = await runAiGeneration({
       schema: parsedCommandSchema,
-      systemPrompt: 'Return exactly one ParsedCommand JSON object.',
+      systemPrompt,
       userPrompt,
     })
 

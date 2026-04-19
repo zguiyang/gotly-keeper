@@ -7,6 +7,8 @@ Use this file when work touches:
 - `ai`
 - `@ai-sdk/react`
 - AI Gateway configuration
+- `server/prompts/**`
+- `server/lib/prompt-template/**`
 - model calls, agents, tools, embeddings, reranking, or streaming chat
 - `app/api/**/route.ts` handlers that exist to serve AI SDK client transports
 
@@ -73,7 +75,33 @@ Rules:
 2. Do not use internal AI route handlers as the data layer for ordinary Server Component rendering.
 3. Apply the route-handler and boundary rules in `.ai-rules/core/project-architecture-rules.md` for input validation, auth, safe errors, and response shaping.
 
-## 7. Verification Rule
+## 7. Prompt Template Rule
+
+Stable model prompts are repository assets, not inline business code.
+
+Rules:
+
+1. Put stable system and user prompts in Markdown files under `server/prompts/<domain>/`.
+2. Name prompt files by role when applicable, such as `<name>.system.md` and `<name>.user.md`.
+3. Read prompt templates with `renderPrompt()` from `server/lib/prompt-template`.
+4. Pass dynamic content through template variables instead of string concatenation or inline interpolation.
+5. Keep prompt input shaping in code as typed data structures; keep natural-language instructions in Markdown templates.
+6. Do not inline long or stable `system`, `prompt`, `systemPrompt`, or `userPrompt` string literals at model call sites.
+
+Allowed inline values:
+
+- short non-model UI copy
+- enum labels, tool names, and routing keys
+- test fixtures
+- temporary debug strings that are removed before merge
+- a one-line guard exception with `AI_PROMPT_INLINE_EXCEPTION: <reason>` when a prompt cannot reasonably live in `server/prompts/**`
+
+Verification:
+
+- run `bash .ai-rules/advanced-workflows/guards/check-ai-prompt-templates.sh --staged` before commit when AI model call sites or prompt files are staged
+- use `--all --warn-only` for full repository audits that may include legacy prompt debt
+
+## 8. Verification Rule
 
 For AI SDK changes:
 
@@ -81,3 +109,4 @@ For AI SDK changes:
 2. For streaming UI behavior, use browser-backed verification when a dev server is already running or the user approves starting one.
 3. Do not make live model calls in tests by default. Prefer mocks or controlled fakes unless the user explicitly asks for live integration verification.
 4. For choosing between isolated tests and browser-based verification, follow `.ai-rules/core/testing-and-integration-rules.md`.
+5. For prompt placement, run `bash .ai-rules/advanced-workflows/guards/check-ai-prompt-templates.sh --staged`.

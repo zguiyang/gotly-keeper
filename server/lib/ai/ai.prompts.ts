@@ -22,3 +22,7 @@ export async function buildAssetInterpreterPrompt(
     '请直接返回符合 ParsedCommand 的 JSON 对象，不要输出解释、备注、Markdown、代码块。',
   ].join('\n\n')
 }
+
+export async function buildParsedCommandSystemPrompt(): Promise<string> {
+  return renderPrompt('ai/parsed-command.system', {})
+}

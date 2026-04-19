@@ -1,8 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { runAiGenerationMock, buildAssetInterpreterPromptMock } = vi.hoisted(() => ({
+const {
+  runAiGenerationMock,
+  buildAssetInterpreterPromptMock,
+  buildParsedCommandSystemPromptMock,
+} = vi.hoisted(() => ({
   runAiGenerationMock: vi.fn(),
   buildAssetInterpreterPromptMock: vi.fn(),
+  buildParsedCommandSystemPromptMock: vi.fn(),
 }))
 
 vi.mock('@/server/lib/ai/ai-runner', () => ({
@@ -11,6 +16,7 @@ vi.mock('@/server/lib/ai/ai-runner', () => ({
 
 vi.mock('@/server/lib/ai/ai.prompts', () => ({
   buildAssetInterpreterPrompt: buildAssetInterpreterPromptMock,
+  buildParsedCommandSystemPrompt: buildParsedCommandSystemPromptMock,
 }))
 
 import { parseWorkspaceCommand } from '@/server/lib/ai/workspace-parser'
@@ -20,7 +26,9 @@ describe('workspace-parser', () => {
   beforeEach(() => {
     runAiGenerationMock.mockReset()
     buildAssetInterpreterPromptMock.mockReset()
+    buildParsedCommandSystemPromptMock.mockReset()
     buildAssetInterpreterPromptMock.mockResolvedValue('mock-user-prompt')
+    buildParsedCommandSystemPromptMock.mockResolvedValue('mock-system-prompt')
   })
 
   it('normalizes originalText and rawInput from the trimmed input', async () => {
@@ -49,7 +57,14 @@ describe('workspace-parser', () => {
     const result = await parseWorkspaceCommand('  存一下这个链接 https://example.com  ')
 
     expect(buildAssetInterpreterPromptMock).toHaveBeenCalledWith('存一下这个链接 https://example.com')
+    expect(buildParsedCommandSystemPromptMock).toHaveBeenCalledTimes(1)
     expect(runAiGenerationMock).toHaveBeenCalledTimes(1)
+    expect(runAiGenerationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        systemPrompt: 'mock-system-prompt',
+        userPrompt: 'mock-user-prompt',
+      })
+    )
     expect(result.originalText).toBe('存一下这个链接 https://example.com')
     expect(result.rawInput).toBe('存一下这个链接 https://example.com')
     expect(result.operation).toBe('create_link')

@@ -1,4 +1,5 @@
 -- Migration: 0006_add_structured_asset_fields.sql
+-- DRIZZLE_MANUAL_DDL_EXCEPTION: legacy schema patch predates the Drizzle generated migration discipline.
 -- Description: Add structured content fields to notes, todos, and bookmarks
 -- Run after: Existing notes, todos, and bookmarks tables have been created and migrated
 -- Rollback:
