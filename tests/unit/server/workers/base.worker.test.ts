@@ -25,9 +25,12 @@ describe('BaseWorker', () => {
           throw stopError
         }
 
-        protected async handleTask(_task: number): Promise<void> {}
+        protected async handleTask(task: number): Promise<void> {
+          void task
+        }
 
-        protected async onError(error: unknown, _task: number | null): Promise<void> {
+        protected async onError(error: unknown, task: number | null): Promise<void> {
+          void task
           if (error === stopError) {
             throw error
           }
@@ -81,7 +84,8 @@ describe('BaseWorker', () => {
         idleCount += 1
       }
 
-      protected async onError(error: unknown, _task: number | null): Promise<void> {
+      protected async onError(error: unknown, task: number | null): Promise<void> {
+        void task
         if (error === stopError) {
           throw error
         }
@@ -120,7 +124,8 @@ describe('BaseWorker', () => {
         processed.push(task)
       }
 
-      protected async onError(error: unknown, _task: number | null): Promise<void> {
+      protected async onError(error: unknown, task: number | null): Promise<void> {
+        void task
         if (error === stopError) {
           throw error
         }

@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import * as aiExports from '@/server/lib/ai'
+import { parseWorkspaceCommand } from '@/server/lib/ai/workspace-parser'
+
 const {
   runAiGenerationMock,
   buildAssetInterpreterPromptMock,
@@ -18,9 +21,6 @@ vi.mock('@/server/lib/ai/ai.prompts', () => ({
   buildAssetInterpreterPrompt: buildAssetInterpreterPromptMock,
   buildParsedCommandSystemPrompt: buildParsedCommandSystemPromptMock,
 }))
-
-import { parseWorkspaceCommand } from '@/server/lib/ai/workspace-parser'
-import * as aiExports from '@/server/lib/ai'
 
 describe('workspace-parser', () => {
   beforeEach(() => {

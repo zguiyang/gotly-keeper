@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  createWorkspaceLink,
+  createWorkspaceNote,
+  createWorkspaceTodo,
+  buildQuickActionWorkspaceCommand,
+  executeWorkspaceCommand,
+  runWorkspaceCommand,
+} from '@/server/modules/workspace'
+
 const parseWorkspaceCommandMock = vi.hoisted(() => vi.fn())
 const createNoteMock = vi.hoisted(() => vi.fn())
 const createTodoMock = vi.hoisted(() => vi.fn())
@@ -84,15 +93,6 @@ vi.mock('@/server/services/assets/asset-lifecycle', () => ({
   canRestoreFromTrash: vi.fn(),
   canUnarchive: vi.fn(),
 }))
-
-import {
-  createWorkspaceLink,
-  createWorkspaceNote,
-  createWorkspaceTodo,
-  buildQuickActionWorkspaceCommand,
-  executeWorkspaceCommand,
-  runWorkspaceCommand,
-} from '@/server/modules/workspace'
 
 describe('runWorkspaceCommand', () => {
   beforeEach(() => {

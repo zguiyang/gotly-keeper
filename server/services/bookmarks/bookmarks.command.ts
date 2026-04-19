@@ -2,9 +2,11 @@ import 'server-only'
 
 import { db } from '@/server/lib/db'
 import { createAssetRecord } from '@/server/services/assets/create-asset-record'
-import { bookmarks } from './bookmarks.schema'
-import type { BookmarkListItem } from './bookmarks.types'
+
 import { toBookmarkListItem } from './bookmarks.mapper'
+import { bookmarks } from './bookmarks.schema'
+
+import type { BookmarkListItem } from './bookmarks.types'
 
 function normalizeOptionalText(value?: string | null): string | null {
   const normalized = value?.trim()

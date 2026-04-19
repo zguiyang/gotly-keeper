@@ -1,9 +1,8 @@
 import 'server-only'
 
-import { updateBookmarkEnrichment } from '@/server/services/bookmarks'
 import { enqueueBookmarkEnrichTask } from '@/server/services/bookmark/bookmark-queue.service'
 import { checkUrlSafety } from '@/server/services/bookmark/url-safety'
-
+import { updateBookmarkEnrichment } from '@/server/services/bookmarks'
 import { BOOKMARK_META_STATUS, type BookmarkMeta } from '@/shared/assets/bookmark-meta.types'
 import { nowIso } from '@/shared/time/dayjs'
 

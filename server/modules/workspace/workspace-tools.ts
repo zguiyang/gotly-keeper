@@ -12,6 +12,8 @@ import {
   type ParsedCommand,
 } from '@/server/lib/ai/ai-schema'
 
+import { toWorkspaceRunResult } from './workspace-run-result'
+
 import {
   createWorkspaceLink,
   createWorkspaceNote,
@@ -21,7 +23,6 @@ import {
   summarizeWorkspaceRecentBookmarks,
   summarizeWorkspaceRecentNotes,
 } from './index'
-import { toWorkspaceRunResult } from './workspace-run-result'
 
 const TODO_TARGET_KEYWORDS = ['待办', 'todo', '任务', '未完成']
 const NOTE_KEYWORDS = ['笔记', '想法', '备忘', '灵感', '记录']

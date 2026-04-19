@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { POST } from '@/app/api/workspace/run/route'
+
 const requireWorkspaceUserAccessMock = vi.hoisted(() => vi.fn())
 const streamWorkspaceRunMock = vi.hoisted(() => vi.fn())
 const streamResponse = vi.hoisted(() => new Response('stream'))
@@ -16,8 +18,6 @@ vi.mock('@/server/modules/workspace/workspace-stream', () => ({
   },
   streamWorkspaceRun: streamWorkspaceRunMock,
 }))
-
-import { POST } from '@/app/api/workspace/run/route'
 
 describe('/api/workspace/run POST', () => {
   beforeEach(() => {

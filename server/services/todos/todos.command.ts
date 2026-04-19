@@ -2,9 +2,11 @@ import 'server-only'
 
 import { db } from '@/server/lib/db'
 import { createAssetRecord } from '@/server/services/assets/create-asset-record'
-import { todos } from './todos.schema'
-import type { TodoListItem } from './todos.types'
+
 import { toTodoListItem } from './todos.mapper'
+import { todos } from './todos.schema'
+
+import type { TodoListItem } from './todos.types'
 
 function normalizeStructuredField(value: string | null | undefined): string | null | undefined {
   if (value === undefined) {

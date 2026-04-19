@@ -4,6 +4,7 @@ import {
   buildAssetEditValues,
   getAssetEditInitialState,
 } from '@/components/workspace/asset-edit-dialog'
+
 import type { AssetListItem } from '@/shared/assets/assets.types'
 
 function createAsset(overrides: Partial<AssetListItem> = {}): AssetListItem {

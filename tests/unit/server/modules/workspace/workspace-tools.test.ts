@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+
+import { toWorkspaceRunResult } from '@/server/modules/workspace/workspace-stream'
+import { createWorkspaceTools } from '@/server/modules/workspace/workspace-tools'
 import { BOOKMARK_META_STATUS } from '@/shared/assets/bookmark-meta.types'
 
 const toolExecutionOptions = {} as never
@@ -46,9 +49,6 @@ vi.mock('@/server/modules/workspace/bookmark-enrich.module', () => ({
   buildPendingBookmarkMetaForResponse: buildPendingBookmarkMetaForResponseMock,
   scheduleBookmarkEnrichTask: scheduleBookmarkEnrichTaskMock,
 }))
-
-import { toWorkspaceRunResult } from '@/server/modules/workspace/workspace-stream'
-import { createWorkspaceTools } from '@/server/modules/workspace/workspace-tools'
 
 function createDate(value: string) {
   return new Date(value)
