@@ -7,6 +7,7 @@ import { getAiProvider } from '@/server/lib/ai'
 import { BOOKMARK_SUMMARY_LIMIT, BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS } from '@/server/lib/config/ai'
 import { renderPrompt } from '@/server/lib/prompt-template'
 import { listBookmarks } from '@/server/services/bookmarks'
+import { searchAssets } from '@/server/services/search/assets-search.service'
 import { nowIso, dayjs } from '@/shared/time/dayjs'
 
 
@@ -106,10 +107,18 @@ function normalizeBookmarkSummaryOutput(
 }
 
 export async function summarizeWorkspaceRecentBookmarksInternal(
-  userId: string
+  userId: string,
+  query?: string | null
 ): Promise<BookmarkSummaryResult> {
-  const bookmarkItems = await listBookmarks({ userId, limit: BOOKMARK_SUMMARY_LIMIT })
-  const bookmarks = bookmarkItems.map(toAssetListItem)
+  const trimmedQuery = query?.trim()
+  const bookmarks = trimmedQuery
+    ? (await searchAssets({
+        userId,
+        query: trimmedQuery,
+        typeHint: 'link',
+        limit: BOOKMARK_SUMMARY_LIMIT,
+      })).filter((asset) => asset.type === 'link')
+    : (await listBookmarks({ userId, limit: BOOKMARK_SUMMARY_LIMIT })).map(toAssetListItem)
 
   if (bookmarks.length === 0) {
     return normalizeBookmarkSummaryOutput(getFallbackBookmarkSummary(bookmarks), bookmarks)

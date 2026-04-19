@@ -4,6 +4,7 @@ import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
 import { renderPrompt } from '@/server/lib/prompt-template'
+import { searchAssets } from '@/server/services/search/assets-search.service'
 import { listIncompleteTodos } from '@/server/services/todos'
 import { nowIso, dayjs } from '@/shared/time/dayjs'
 
@@ -106,10 +107,19 @@ function normalizeTodoReviewOutput(
 }
 
 export async function reviewWorkspaceUnfinishedTodosInternal(
-  userId: string
+  userId: string,
+  query?: string | null
 ): Promise<TodoReviewResult> {
-  const todoItems = await listIncompleteTodos(userId, TODO_REVIEW_LIMIT)
-  const todos = todoItems.map(toAssetListItem)
+  const trimmedQuery = query?.trim()
+  const todos = trimmedQuery
+    ? (await searchAssets({
+        userId,
+        query: trimmedQuery,
+        typeHint: 'todo',
+        completionHint: 'incomplete',
+        limit: TODO_REVIEW_LIMIT,
+      })).filter((asset) => asset.type === 'todo')
+    : (await listIncompleteTodos(userId, TODO_REVIEW_LIMIT)).map(toAssetListItem)
 
   if (todos.length === 0) {
     return normalizeTodoReviewOutput(getFallbackTodoReview(todos), todos)

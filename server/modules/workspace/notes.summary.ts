@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import { renderPrompt } from '@/server/lib/prompt-template'
 import { listNotes } from '@/server/services/notes'
+import { searchAssets } from '@/server/services/search/assets-search.service'
 import { nowIso, dayjs } from '@/shared/time/dayjs'
 
 import { getAiProvider } from '../../lib/ai/ai-provider'
@@ -101,10 +102,18 @@ function normalizeNoteSummaryOutput(
 }
 
 export async function summarizeWorkspaceRecentNotesInternal(
-  userId: string
+  userId: string,
+  query?: string | null
 ): Promise<NoteSummaryResult> {
-  const noteItems = await listNotes({ userId, limit: NOTE_SUMMARY_LIMIT })
-  const notes = noteItems.map(toAssetListItem)
+  const trimmedQuery = query?.trim()
+  const notes = trimmedQuery
+    ? (await searchAssets({
+        userId,
+        query: trimmedQuery,
+        typeHint: 'note',
+        limit: NOTE_SUMMARY_LIMIT,
+      })).filter((asset) => asset.type === 'note')
+    : (await listNotes({ userId, limit: NOTE_SUMMARY_LIMIT })).map(toAssetListItem)
 
   if (notes.length === 0) {
     return normalizeNoteSummaryOutput(getFallbackNoteSummary(notes), notes)

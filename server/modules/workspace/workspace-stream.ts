@@ -1,17 +1,22 @@
 import 'server-only'
 
-import { stepCountIs, streamText } from 'ai'
-
-import { getAiProvider } from '@/server/lib/ai/ai-provider'
-import type { WorkspaceAssetActionResult } from '@/shared/assets/assets.types'
+import {
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  type UIMessage,
+  type UIMessageStreamWriter,
+} from 'ai'
 import type {
   WorkspaceRunRequest,
-  WorkspaceRunResult,
   WorkspaceRunStage,
 } from '@/shared/workspace/workspace-run.types'
 
-import { buildWorkspaceToolRulesPrompt } from './workspace-tool-rules'
-import { createWorkspaceTools } from './workspace-tools'
+import {
+  buildQuickActionWorkspaceCommand,
+  executeWorkspaceCommand,
+  resolveWorkspaceCommand,
+} from './index'
+export { toWorkspaceRunResult } from './workspace-run-result'
 
 export const QUICK_ACTION_PROMPTS = {
   'review-todos': '请复盘我当前未完成的待办，提炼重点、风险和下一步行动。',
@@ -19,45 +24,83 @@ export const QUICK_ACTION_PROMPTS = {
   'summarize-bookmarks': '请总结我最近收藏的书签，提炼值得关注的主题和下一步行动。',
 } as const
 
-export function buildWorkspaceRunSystemPrompt() {
-  return [
-    '你是 Gotly 的 workspace 助手。',
-    '你的职责是从有限工具中选择一个最合适的工具。',
-    '如果用户是新增内容，优先选择 create_*。',
-    '如果用户是查询历史内容，选择 search_assets。',
-    '如果用户是要求总结，选择 summarize_workspace。',
-    '不要捏造工具，不要同时调用多个工具。',
-    buildWorkspaceToolRulesPrompt(),
-  ].join('\n\n')
-}
-
 export function resolveWorkspaceRunPrompt(request: WorkspaceRunRequest) {
   return request.kind === 'input' ? request.text : QUICK_ACTION_PROMPTS[request.action]
+}
+
+async function resolveWorkspaceRunCommand(request: WorkspaceRunRequest) {
+  if (request.kind === 'quick-action') {
+    return buildQuickActionWorkspaceCommand(request.action)
+  }
+
+  return resolveWorkspaceCommand({ text: request.text })
+}
+
+type WorkspaceStreamMessage = UIMessage<{ stage?: WorkspaceRunStage }>
+
+function writeAssistantText(
+  writer: UIMessageStreamWriter<WorkspaceStreamMessage>,
+  text: string
+) {
+  const textId = crypto.randomUUID()
+  writer.write({ type: 'text-start', id: textId })
+  writer.write({ type: 'text-delta', id: textId, delta: text })
+  writer.write({ type: 'text-end', id: textId })
+}
+
+function writeStage(
+  writer: UIMessageStreamWriter<WorkspaceStreamMessage>,
+  stage: WorkspaceRunStage,
+  text: string
+) {
+  writer.write({ type: 'message-metadata', messageMetadata: { stage } })
+  writeAssistantText(writer, text)
 }
 
 export function streamWorkspaceRun(options: {
   userId: string
   request: WorkspaceRunRequest
 }) {
-  const model = getAiProvider()
+  const stream = createUIMessageStream<WorkspaceStreamMessage>({
+    execute: async ({ writer }) => {
+      writer.write({
+        type: 'start',
+        messageMetadata: { stage: 'understanding' },
+      })
+      writeAssistantText(writer, '正在理解你的请求')
 
-  if (!model) {
-    return null
-  }
+      writeStage(writer, 'structuring', '正在结构化理解请求')
+      const command = await resolveWorkspaceRunCommand(options.request)
 
-  return streamText({
-    model,
-    system: buildWorkspaceRunSystemPrompt(),
-    prompt: resolveWorkspaceRunPrompt(options.request),
-    tools: createWorkspaceTools(options.userId),
-    stopWhen: stepCountIs(2),
-    temperature: 0,
-    providerOptions: {
-      alibaba: {
-        enableThinking: false,
-      },
+      writeStage(writer, 'executing', '正在执行结构化命令')
+      const toolCallId = crypto.randomUUID()
+      writer.write({
+        type: 'tool-input-available',
+        toolCallId,
+        toolName: command.operation,
+        input: command,
+      })
+
+      const result = await executeWorkspaceCommand({
+        userId: options.userId,
+        command,
+      })
+
+      writer.write({
+        type: 'tool-output-available',
+        toolCallId,
+        output: result,
+      })
+      writer.write({ type: 'finish-step' })
+      writer.write({
+        type: 'finish',
+        finishReason: 'stop',
+        messageMetadata: { stage: 'finalizing' },
+      })
     },
   })
+
+  return createUIMessageStreamResponse({ stream })
 }
 
 export function getWorkspaceRunMessageMetadata(part: {
@@ -65,6 +108,10 @@ export function getWorkspaceRunMessageMetadata(part: {
 }): { stage: WorkspaceRunStage } | undefined {
   if (part.type === 'start') {
     return { stage: 'understanding' }
+  }
+
+  if (part.type === 'message-metadata') {
+    return { stage: 'structuring' }
   }
 
   if (part.type === 'tool-call' || part.type === 'tool-result') {
@@ -76,18 +123,4 @@ export function getWorkspaceRunMessageMetadata(part: {
   }
 
   return undefined
-}
-
-export function toWorkspaceRunResult(
-  result: WorkspaceAssetActionResult
-): WorkspaceRunResult {
-  if (result.kind === 'created' && result.asset.type === 'link') {
-    return {
-      kind: 'created',
-      asset: result.asset,
-      notice: '已保存书签，页面信息会稍后补全。',
-    }
-  }
-
-  return result
 }

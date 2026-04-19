@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { parseWorkspaceCommand } from '@/server/lib/ai/workspace-parser'
+import { parsedCommandSchema, type ParsedCommand } from '@/server/lib/ai/ai-schema'
 import {
   canArchive,
   canMoveToTrash,
@@ -50,6 +52,10 @@ import {
   ASSET_LIFECYCLE_STATUS,
   type AssetLifecycleStatus,
 } from '@/shared/assets/asset-lifecycle.types'
+import type {
+  WorkspaceRunRequest,
+  WorkspaceRunResult,
+} from '@/shared/workspace/workspace-run.types'
 
 import {
   buildPendingBookmarkMetaForResponse,
@@ -58,6 +64,7 @@ import {
 import { summarizeWorkspaceRecentBookmarksInternal } from './bookmarks.summary'
 import { summarizeWorkspaceRecentNotesInternal } from './notes.summary'
 import { reviewWorkspaceUnfinishedTodosInternal } from './todos.review'
+import { toWorkspaceRunResult } from './workspace-run-result'
 
 
 import type {
@@ -93,6 +100,12 @@ export class WorkspaceModuleError extends Error {
 
 const URL_REGEX = /https?:\/\/[^\s]+/g
 const TODO_KEYWORDS = ['记得', '提醒', '待办', '要', '处理', '发', '提交', '整理', '预订', '回复']
+const SEARCH_KEYWORDS = ['找', '查', '搜索', '搜', '在哪', '哪里', '回忆', '看看']
+const SUMMARY_KEYWORDS = ['总结', '汇总', '复盘', '梳理', '归纳', '回顾']
+const NOTE_KEYWORDS = ['笔记', '想法', '备忘', '灵感', '记录']
+const BOOKMARK_KEYWORDS = ['收藏', '书签', '链接', '网址', '文章', '网页', 'url']
+const TODO_TARGET_KEYWORDS = ['待办', 'todo', '任务', '未完成']
+const TIME_HINT_REGEX = /(今天|明天|后天|昨天|今晚|明早|下午|晚上|本周|上周|下周|最近|周[一二三四五六日天]|\d{1,2}点)/
 
 function extractUrl(text: string): string | null {
   const matches = text.match(URL_REGEX)
@@ -107,6 +120,184 @@ type AssetInputClassification =
   | { kind: 'note' }
   | { kind: 'link'; url: string }
   | { kind: 'todo' }
+
+function detectTimeHint(text: string): string | null {
+  return text.match(TIME_HINT_REGEX)?.[0] ?? null
+}
+
+function hasSearchIntent(text: string): boolean {
+  return SEARCH_KEYWORDS.some((kw) => text.includes(kw)) || text.includes('?') || text.includes('？')
+}
+
+function hasSummaryIntent(text: string): boolean {
+  return SUMMARY_KEYWORDS.some((kw) => text.includes(kw))
+}
+
+function detectSearchTypeHint(text: string): 'todo' | 'note' | 'link' | null {
+  if (BOOKMARK_KEYWORDS.some((kw) => text.includes(kw))) {
+    return 'link'
+  }
+
+  if (TODO_TARGET_KEYWORDS.some((kw) => text.includes(kw))) {
+    return 'todo'
+  }
+
+  if (NOTE_KEYWORDS.some((kw) => text.includes(kw))) {
+    return 'note'
+  }
+
+  return null
+}
+
+function detectSummaryTarget(text: string): 'todos' | 'notes' | 'bookmarks' | null {
+  if (TODO_TARGET_KEYWORDS.some((kw) => text.includes(kw))) {
+    return 'todos'
+  }
+
+  if (BOOKMARK_KEYWORDS.some((kw) => text.includes(kw))) {
+    return 'bookmarks'
+  }
+
+  if (NOTE_KEYWORDS.some((kw) => text.includes(kw))) {
+    return 'notes'
+  }
+
+  return null
+}
+
+function resolveSummaryTarget(command: ParsedCommand): 'todos' | 'notes' | 'bookmarks' {
+  return command.summary?.target ?? detectSummaryTarget(command.originalText) ?? 'notes'
+}
+
+function resolveCommandQuery(command: ParsedCommand): string {
+  return command.search?.query ?? command.summary?.query ?? command.originalText
+}
+
+function resolveSummaryQuery(command: ParsedCommand): string | null {
+  return command.summary?.query ?? null
+}
+
+function resolveCommandLinkUrl(command: ParsedCommand): string {
+  const structuredUrl = command.bookmark?.url?.trim()
+
+  if (structuredUrl) {
+    return structuredUrl
+  }
+
+  const fallbackUrl = extractUrl(command.rawInput ?? command.originalText)
+
+  if (fallbackUrl) {
+    return fallbackUrl
+  }
+
+  throw new WorkspaceModuleError('缺少可保存的链接地址。')
+}
+
+function buildHeuristicWorkspaceCommand(text: string): ParsedCommand {
+  const trimmedText = text.trim()
+
+  if (hasSummaryIntent(trimmedText)) {
+    return parsedCommandSchema.parse({
+      confidence: 0,
+      originalText: trimmedText,
+      rawInput: trimmedText,
+      intent: 'summarize',
+      operation: 'summarize_workspace',
+      assetType: null,
+      todo: null,
+      note: null,
+      bookmark: null,
+      search: null,
+      summary: {
+        target: detectSummaryTarget(trimmedText),
+        query: trimmedText,
+      },
+    })
+  }
+
+  if (hasSearchIntent(trimmedText)) {
+    return parsedCommandSchema.parse({
+      confidence: 0,
+      originalText: trimmedText,
+      rawInput: trimmedText,
+      intent: 'search',
+      operation: 'search_assets',
+      assetType: null,
+      todo: null,
+      note: null,
+      bookmark: null,
+      search: {
+        query: trimmedText,
+        typeHint: detectSearchTypeHint(trimmedText),
+        timeHint: detectTimeHint(trimmedText),
+        completionHint: null,
+      },
+      summary: null,
+    })
+  }
+
+  const classification = classifyAssetInput(trimmedText)
+
+  if (classification.kind === 'link') {
+    return parsedCommandSchema.parse({
+      confidence: 0,
+      originalText: trimmedText,
+      rawInput: trimmedText,
+      intent: 'create',
+      operation: 'create_link',
+      assetType: 'link',
+      todo: null,
+      note: null,
+      bookmark: {
+        url: classification.url,
+        title: null,
+        note: null,
+        summary: null,
+      },
+      search: null,
+      summary: null,
+    })
+  }
+
+  if (classification.kind === 'todo') {
+    return parsedCommandSchema.parse({
+      confidence: 0,
+      originalText: trimmedText,
+      rawInput: trimmedText,
+      intent: 'create',
+      operation: 'create_todo',
+      assetType: 'todo',
+      todo: {
+        title: trimmedText,
+        content: null,
+        timeText: detectTimeHint(trimmedText),
+        dueAtIso: null,
+      },
+      note: null,
+      bookmark: null,
+      search: null,
+      summary: null,
+    })
+  }
+
+  return parsedCommandSchema.parse({
+    confidence: 0,
+    originalText: trimmedText,
+    rawInput: trimmedText,
+    intent: 'create',
+    operation: 'create_note',
+    assetType: 'note',
+    todo: null,
+    note: {
+      title: null,
+      content: trimmedText,
+      summary: null,
+    },
+    bookmark: null,
+    search: null,
+    summary: null,
+  })
+}
 
 function classifyAssetInput(text: string): AssetInputClassification {
   const url = extractUrl(text)
@@ -183,11 +374,22 @@ function toAssetListItemFromBookmark(bookmark: BookmarkListItem): AssetListItem 
 
 export async function createWorkspaceNote(input: {
   userId: string
-  text: string
+  text?: string
+  rawInput?: string
+  title?: string | null
+  content?: string | null
+  summary?: string | null
 }): Promise<WorkspaceAssetActionResult> {
   const note = await createNote({
     userId: input.userId,
-    text: input.text,
+    ...(input.rawInput !== undefined
+      ? {
+          rawInput: input.rawInput,
+          title: input.title,
+          content: input.content,
+          summary: input.summary,
+        }
+      : { text: input.text ?? '' }),
   })
 
   return { kind: 'created', asset: toAssetListItemFromNote(note) }
@@ -195,11 +397,24 @@ export async function createWorkspaceNote(input: {
 
 export async function createWorkspaceTodo(input: {
   userId: string
-  text: string
+  text?: string
+  rawInput?: string
+  title?: string | null
+  content?: string | null
+  timeText?: string | null
+  dueAt?: Date | null
 }): Promise<WorkspaceAssetActionResult> {
   const todo = await createTodo({
     userId: input.userId,
-    text: input.text,
+    ...(input.rawInput !== undefined
+      ? {
+          rawInput: input.rawInput,
+          title: input.title,
+          content: input.content,
+          timeText: input.timeText,
+          dueAt: input.dueAt,
+        }
+      : { text: input.text ?? '' }),
   })
 
   return { kind: 'created', asset: toAssetListItemFromTodo(todo) }
@@ -207,12 +422,23 @@ export async function createWorkspaceTodo(input: {
 
 export async function createWorkspaceLink(input: {
   userId: string
-  text: string
+  text?: string
+  rawInput?: string
   url: string
+  title?: string | null
+  note?: string | null
+  summary?: string | null
 }): Promise<WorkspaceAssetActionResult> {
   const bookmark = await createBookmark({
     userId: input.userId,
-    text: input.text,
+    ...(input.rawInput !== undefined
+      ? {
+          rawInput: input.rawInput,
+          title: input.title,
+          note: input.note,
+          summary: input.summary,
+        }
+      : { text: input.text ?? '' }),
     url: input.url,
   })
 
@@ -709,28 +935,187 @@ export async function listWorkspaceTrashedAssets(input: {
 
 export async function reviewWorkspaceUnfinishedTodos(input: {
   userId: string
+  query?: string | null
 }): Promise<TodoReviewResult> {
-  return reviewWorkspaceUnfinishedTodosInternal(input.userId)
+  return reviewWorkspaceUnfinishedTodosInternal(input.userId, input.query ?? null)
 }
 
 export async function summarizeWorkspaceRecentNotes(input: {
   userId: string
+  query?: string | null
 }): Promise<NoteSummaryResult> {
-  return summarizeWorkspaceRecentNotesInternal(input.userId)
+  return summarizeWorkspaceRecentNotesInternal(input.userId, input.query ?? null)
 }
 
 export async function summarizeWorkspaceRecentBookmarks(input: {
   userId: string
+  query?: string | null
 }): Promise<BookmarkSummaryResult> {
-  return summarizeWorkspaceRecentBookmarksInternal(input.userId)
+  return summarizeWorkspaceRecentBookmarksInternal(input.userId, input.query ?? null)
 }
 
 export async function searchWorkspaceAssets(input: {
   userId: string
   query: string
+  typeHint?: 'todo' | 'note' | 'link' | null
+  timeHint?: string | null
+  completionHint?: 'complete' | 'incomplete' | null
 }): Promise<AssetListItem[]> {
   return searchAssets({
     userId: input.userId,
     query: input.query,
+    typeHint: input.typeHint ?? null,
+    timeHint: input.timeHint ?? null,
+    completionHint: input.completionHint ?? null,
   })
+}
+
+export async function resolveWorkspaceCommand(input: {
+  text: string
+}): Promise<ParsedCommand> {
+  try {
+    return await parseWorkspaceCommand(input.text)
+  } catch {
+    return buildHeuristicWorkspaceCommand(input.text)
+  }
+}
+
+export function buildQuickActionWorkspaceCommand(
+  action: Extract<WorkspaceRunRequest, { kind: 'quick-action' }>['action']
+): ParsedCommand {
+  const target =
+    action === 'review-todos'
+      ? 'todos'
+      : action === 'summarize-notes'
+        ? 'notes'
+        : 'bookmarks'
+
+  return parsedCommandSchema.parse({
+    confidence: 1,
+    originalText: action,
+    rawInput: action,
+    intent: 'summarize',
+    operation: 'summarize_workspace',
+    assetType: null,
+    todo: null,
+    note: null,
+    bookmark: null,
+    search: null,
+    summary: {
+      target,
+      query: null,
+    },
+  })
+}
+
+export async function executeWorkspaceCommand(input: {
+  userId: string
+  command: ParsedCommand
+}): Promise<WorkspaceRunResult> {
+  const { command, userId } = input
+
+  if (command.operation === 'create_note') {
+    return toWorkspaceRunResult(
+      await createWorkspaceNote({
+        userId,
+        rawInput: command.rawInput ?? command.originalText,
+        title: command.note?.title ?? null,
+        content: command.note?.content ?? command.originalText,
+        summary: command.note?.summary ?? null,
+      })
+    )
+  }
+
+  if (command.operation === 'create_todo') {
+    return toWorkspaceRunResult(
+      await createWorkspaceTodo({
+        userId,
+        rawInput: command.rawInput ?? command.originalText,
+        title: command.todo?.title ?? command.originalText,
+        content: command.todo?.content ?? null,
+        timeText: command.todo?.timeText ?? null,
+        dueAt: command.todo?.dueAtIso ? new Date(command.todo.dueAtIso) : null,
+      })
+    )
+  }
+
+  if (command.operation === 'create_link') {
+    return toWorkspaceRunResult(
+      await createWorkspaceLink({
+        userId,
+        rawInput: command.rawInput ?? command.originalText,
+        url: resolveCommandLinkUrl(command),
+        title: command.bookmark?.title ?? null,
+        note: command.bookmark?.note ?? null,
+        summary: command.bookmark?.summary ?? null,
+      })
+    )
+  }
+
+  if (command.operation === 'search_assets') {
+    const query = resolveCommandQuery(command)
+    const results = await searchWorkspaceAssets({
+      userId,
+      query,
+      typeHint: command.search?.typeHint ?? null,
+      timeHint: command.search?.timeHint ?? null,
+      completionHint: command.search?.completionHint ?? null,
+    })
+
+    return {
+      kind: 'query',
+      query,
+      results,
+    }
+  }
+
+  const query = resolveSummaryQuery(command)
+  const target = resolveSummaryTarget(command)
+
+  if (target === 'todos') {
+    return {
+      kind: 'todo-review',
+      review: await reviewWorkspaceUnfinishedTodos({
+        userId,
+        query,
+      }),
+    }
+  }
+
+  if (target === 'notes') {
+    return {
+      kind: 'note-summary',
+      summary: await summarizeWorkspaceRecentNotes({
+        userId,
+        query,
+      }),
+    }
+  }
+
+  return {
+    kind: 'bookmark-summary',
+    summary: await summarizeWorkspaceRecentBookmarks({
+      userId,
+      query,
+    }),
+  }
+}
+
+export async function runWorkspaceCommand(input: {
+  userId: string
+  text: string
+}): Promise<{
+  command: ParsedCommand
+  result: WorkspaceRunResult
+}> {
+  const command = await resolveWorkspaceCommand({ text: input.text })
+  const result = await executeWorkspaceCommand({
+    userId: input.userId,
+    command,
+  })
+
+  return {
+    command,
+    result,
+  }
 }
