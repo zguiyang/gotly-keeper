@@ -98,13 +98,21 @@ describe('createWorkspaceTools', () => {
 
     const tools = createWorkspaceTools('user_1')
     const output = await tools.create_note.execute!(
-      { text: 'https://example.com 这其实是一条笔记' },
+      {
+        rawInput: 'https://example.com 这其实是一条笔记',
+        title: '一条笔记',
+        content: 'https://example.com 这其实是一条笔记',
+        summary: '这是笔记摘要',
+      },
       toolExecutionOptions
     )
 
     expect(createNoteMock).toHaveBeenCalledWith({
       userId: 'user_1',
-      text: 'https://example.com 这其实是一条笔记',
+      rawInput: 'https://example.com 这其实是一条笔记',
+      title: '一条笔记',
+      content: 'https://example.com 这其实是一条笔记',
+      summary: '这是笔记摘要',
     })
     expect(createTodoMock).not.toHaveBeenCalled()
     expect(createBookmarkMock).not.toHaveBeenCalled()
@@ -136,13 +144,23 @@ describe('createWorkspaceTools', () => {
 
     const tools = createWorkspaceTools('user_1')
     const output = await tools.create_todo.execute!(
-      { text: '普通一句话' },
+      {
+        rawInput: '普通一句话',
+        title: '普通一句话',
+        content: '补充说明',
+        timeText: '明天上午',
+        dueAtIso: '2026-04-20T09:00:00.000Z',
+      },
       toolExecutionOptions
     )
 
     expect(createTodoMock).toHaveBeenCalledWith({
       userId: 'user_1',
-      text: '普通一句话',
+      rawInput: '普通一句话',
+      title: '普通一句话',
+      content: '补充说明',
+      timeText: '明天上午',
+      dueAt: createDate('2026-04-20T09:00:00.000Z'),
     })
     expect(createNoteMock).not.toHaveBeenCalled()
     expect(createBookmarkMock).not.toHaveBeenCalled()
@@ -174,16 +192,22 @@ describe('createWorkspaceTools', () => {
     const tools = createWorkspaceTools('user_1')
     const output = await tools.create_link.execute!(
       {
-        text: '保存这个链接',
+        rawInput: '保存这个链接',
         url: 'https://example.com',
+        title: '示例页面',
+        note: '这是一条备注',
+        summary: '这是摘要',
       },
       toolExecutionOptions
     )
 
     expect(createBookmarkMock).toHaveBeenCalledWith({
       userId: 'user_1',
-      text: '保存这个链接',
+      rawInput: '保存这个链接',
       url: 'https://example.com',
+      title: '示例页面',
+      note: '这是一条备注',
+      summary: '这是摘要',
     })
     expect(createNoteMock).not.toHaveBeenCalled()
     expect(createTodoMock).not.toHaveBeenCalled()
@@ -209,13 +233,21 @@ describe('createWorkspaceTools', () => {
 
     const tools = createWorkspaceTools('user_1')
     const output = await tools.search_assets.execute!(
-      { query: 'landing page' },
+      {
+        query: 'landing page',
+        typeHint: 'link',
+        timeHint: '上周',
+        completionHint: 'incomplete',
+      },
       toolExecutionOptions
     )
 
     expect(searchAssetsMock).toHaveBeenCalledWith({
       userId: 'user_1',
       query: 'landing page',
+      typeHint: 'link',
+      timeHint: '上周',
+      completionHint: 'incomplete',
     })
     expect(output).toEqual({
       kind: 'query',
@@ -236,14 +268,55 @@ describe('createWorkspaceTools', () => {
     const tools = createWorkspaceTools('user_1')
 
     await expect(
-      tools.summarize_workspace.execute!({ target: 'todos' }, toolExecutionOptions)
+      tools.summarize_workspace.execute!(
+        { target: 'todos', query: '最近要处理的事情' },
+        toolExecutionOptions
+      )
     ).resolves.toEqual({ kind: 'todo-review', review: todoReview })
     await expect(
-      tools.summarize_workspace.execute!({ target: 'notes' }, toolExecutionOptions)
+      tools.summarize_workspace.execute!(
+        { target: 'notes', query: '最近产品想法' },
+        toolExecutionOptions
+      )
     ).resolves.toEqual({ kind: 'note-summary', summary: noteSummary })
     await expect(
-      tools.summarize_workspace.execute!({ target: 'bookmarks' }, toolExecutionOptions)
+      tools.summarize_workspace.execute!(
+        { target: 'bookmarks', query: '最近收藏的文章' },
+        toolExecutionOptions
+      )
     ).resolves.toEqual({ kind: 'bookmark-summary', summary: bookmarkSummary })
+
+    expect(reviewWorkspaceUnfinishedTodosInternalMock).toHaveBeenCalledWith(
+      'user_1',
+      '最近要处理的事情'
+    )
+    expect(summarizeWorkspaceRecentNotesInternalMock).toHaveBeenCalledWith(
+      'user_1',
+      '最近产品想法'
+    )
+    expect(summarizeWorkspaceRecentBookmarksInternalMock).toHaveBeenCalledWith(
+      'user_1',
+      '最近收藏的文章'
+    )
+  })
+
+  it('summarize_workspace preserves null query for fixed summary commands', async () => {
+    reviewWorkspaceUnfinishedTodosInternalMock.mockResolvedValue({ headline: '待办复盘' })
+    summarizeWorkspaceRecentNotesInternalMock.mockResolvedValue({ headline: '笔记摘要' })
+    summarizeWorkspaceRecentBookmarksInternalMock.mockResolvedValue({ headline: '书签摘要' })
+
+    const tools = createWorkspaceTools('user_1')
+
+    await tools.summarize_workspace.execute!({ target: 'todos', query: null }, toolExecutionOptions)
+    await tools.summarize_workspace.execute!({ target: 'notes', query: null }, toolExecutionOptions)
+    await tools.summarize_workspace.execute!(
+      { target: 'bookmarks', query: null },
+      toolExecutionOptions
+    )
+
+    expect(reviewWorkspaceUnfinishedTodosInternalMock).toHaveBeenLastCalledWith('user_1', null)
+    expect(summarizeWorkspaceRecentNotesInternalMock).toHaveBeenLastCalledWith('user_1', null)
+    expect(summarizeWorkspaceRecentBookmarksInternalMock).toHaveBeenLastCalledWith('user_1', null)
   })
 })
 

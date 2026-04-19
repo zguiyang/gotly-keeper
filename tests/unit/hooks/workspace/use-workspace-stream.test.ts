@@ -169,7 +169,7 @@ describe('useWorkspaceStream', () => {
     activeHook = null
   })
 
-  it('maps metadata stages into launcher state and final query result', async () => {
+  it('maps structuring stage into launcher state and final query result', async () => {
     const deferred = createDeferred<void>()
 
     chatMock.implementation = async ({ message, setMessages, setStatus, setError }) => {
@@ -177,7 +177,7 @@ describe('useWorkspaceStream', () => {
 
       setError(undefined)
       setStatus('streaming')
-      setMessages([createAssistantMessage({ stage: 'executing', text: '正在检索资料' })])
+      setMessages([createAssistantMessage({ stage: 'structuring', text: '正在结构化理解请求' })])
 
       await deferred.promise
 
@@ -194,8 +194,8 @@ describe('useWorkspaceStream', () => {
     })
 
     expect(hook.result.current.state.status).toBe('streaming')
-    expect(hook.result.current.state.stage).toBe('executing')
-    expect(hook.result.current.state.stageMessage).toBe('正在检索资料')
+    expect(hook.result.current.state.stage).toBe('structuring')
+    expect(hook.result.current.state.stageMessage).toBe('正在结构化理解请求')
 
     deferred.resolve()
 

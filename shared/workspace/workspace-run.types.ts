@@ -18,4 +18,8 @@ export type WorkspaceRunResult =
   | Exclude<WorkspaceAssetActionResult, { kind: 'created' }>
   | WorkspaceRunCreatedResult
 
-export type WorkspaceRunStage = 'understanding' | 'executing' | 'finalizing'
+export type WorkspaceRunStage =
+  | 'understanding'
+  | 'structuring'
+  | 'executing'
+  | 'finalizing'

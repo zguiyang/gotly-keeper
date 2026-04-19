@@ -1,75 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const {
-  streamTextMock,
-  stepCountIsMock,
-  requireWorkspaceUserAccessMock,
-  getAiProviderMock,
-  createWorkspaceToolsMock,
-  buildWorkspaceToolRulesPromptMock,
-  toUIMessageStreamResponseMock,
-  streamResponse,
-  stopCondition,
-  toolsRegistry,
-} = vi.hoisted(() => {
-  const streamResponse = new Response('stream')
-
-  return {
-    streamTextMock: vi.fn(),
-    stepCountIsMock: vi.fn(),
-    requireWorkspaceUserAccessMock: vi.fn(),
-    getAiProviderMock: vi.fn(),
-    createWorkspaceToolsMock: vi.fn(),
-    buildWorkspaceToolRulesPromptMock: vi.fn(),
-    toUIMessageStreamResponseMock: vi.fn(),
-    streamResponse,
-    stopCondition: Symbol('stop-condition'),
-    toolsRegistry: { create_note: { description: '保存笔记' } },
-  }
-})
-
-vi.mock('ai', () => ({
-  streamText: streamTextMock,
-  stepCountIs: stepCountIsMock,
-}))
+const requireWorkspaceUserAccessMock = vi.hoisted(() => vi.fn())
+const streamWorkspaceRunMock = vi.hoisted(() => vi.fn())
+const streamResponse = vi.hoisted(() => new Response('stream'))
 
 vi.mock('@/server/modules/auth/workspace-session', () => ({
   requireWorkspaceUserAccess: requireWorkspaceUserAccessMock,
 }))
 
-vi.mock('@/server/lib/ai/ai-provider', () => ({
-  getAiProvider: getAiProviderMock,
-}))
-
-vi.mock('@/server/modules/workspace/workspace-tools', () => ({
-  createWorkspaceTools: createWorkspaceToolsMock,
-}))
-
-vi.mock('@/server/modules/workspace/workspace-tool-rules', () => ({
-  buildWorkspaceToolRulesPrompt: buildWorkspaceToolRulesPromptMock,
+vi.mock('@/server/modules/workspace/workspace-stream', () => ({
+  QUICK_ACTION_PROMPTS: {
+    'review-todos': '请复盘我当前未完成的待办，提炼重点、风险和下一步行动。',
+    'summarize-notes': '请总结我最近的笔记，提炼关键信息和下一步行动。',
+    'summarize-bookmarks': '请总结我最近收藏的书签，提炼值得关注的主题和下一步行动。',
+  },
+  streamWorkspaceRun: streamWorkspaceRunMock,
 }))
 
 import { POST } from '@/app/api/workspace/run/route'
 
 describe('/api/workspace/run POST', () => {
   beforeEach(() => {
-    streamTextMock.mockReset()
-    stepCountIsMock.mockReset()
     requireWorkspaceUserAccessMock.mockReset()
-    getAiProviderMock.mockReset()
-    createWorkspaceToolsMock.mockReset()
-    buildWorkspaceToolRulesPromptMock.mockReset()
-    toUIMessageStreamResponseMock.mockReset()
+    streamWorkspaceRunMock.mockReset()
 
-    stepCountIsMock.mockReturnValue(stopCondition)
     requireWorkspaceUserAccessMock.mockResolvedValue({ id: 'user_123' })
-    getAiProviderMock.mockReturnValue({ provider: 'mock-model' })
-    createWorkspaceToolsMock.mockReturnValue(toolsRegistry)
-    buildWorkspaceToolRulesPromptMock.mockReturnValue('工具规则段落')
-    toUIMessageStreamResponseMock.mockReturnValue(streamResponse)
-    streamTextMock.mockReturnValue({
-      toUIMessageStreamResponse: toUIMessageStreamResponseMock,
-    })
+    streamWorkspaceRunMock.mockReturnValue(streamResponse)
   })
 
   it('rejects empty input payload', async () => {
@@ -82,10 +38,10 @@ describe('/api/workspace/run POST', () => {
 
     expect(res.status).toBe(400)
     await expect(res.json()).resolves.toEqual({ error: '请输入有效内容。' })
-    expect(streamTextMock).not.toHaveBeenCalled()
+    expect(streamWorkspaceRunMock).not.toHaveBeenCalled()
   })
 
-  it('uses authenticated tool streaming for input requests', async () => {
+  it('forwards authenticated input requests into workspace stream', async () => {
     const req = new Request('http://localhost/api/workspace/run', {
       method: 'POST',
       body: JSON.stringify({ kind: 'input', text: '帮我记一下发布清单' }),
@@ -95,40 +51,13 @@ describe('/api/workspace/run POST', () => {
 
     expect(res).toBe(streamResponse)
     expect(requireWorkspaceUserAccessMock).toHaveBeenCalledTimes(1)
-    expect(createWorkspaceToolsMock).toHaveBeenCalledWith('user_123')
-    expect(stepCountIsMock).toHaveBeenCalledWith(2)
-    expect(streamTextMock).toHaveBeenCalledWith({
-      model: { provider: 'mock-model' },
-      system: [
-        '你是 Gotly 的 workspace 助手。',
-        '你的职责是从有限工具中选择一个最合适的工具。',
-        '如果用户是新增内容，优先选择 create_*。',
-        '如果用户是查询历史内容，选择 search_assets。',
-        '如果用户是要求总结，选择 summarize_workspace。',
-        '不要捏造工具，不要同时调用多个工具。',
-        '工具规则段落',
-      ].join('\n\n'),
-      prompt: '帮我记一下发布清单',
-      tools: toolsRegistry,
-      stopWhen: stopCondition,
-      temperature: 0,
-      providerOptions: {
-        alibaba: {
-          enableThinking: false,
-        },
-      },
+    expect(streamWorkspaceRunMock).toHaveBeenCalledWith({
+      userId: 'user_123',
+      request: { kind: 'input', text: '帮我记一下发布清单' },
     })
-    expect(toUIMessageStreamResponseMock).toHaveBeenCalledTimes(1)
-
-    const [{ messageMetadata }] = toUIMessageStreamResponseMock.mock.calls[0]
-    expect(messageMetadata({ part: { type: 'start' } })).toEqual({ stage: 'understanding' })
-    expect(messageMetadata({ part: { type: 'tool-call' } })).toEqual({ stage: 'executing' })
-    expect(messageMetadata({ part: { type: 'tool-result' } })).toEqual({ stage: 'executing' })
-    expect(messageMetadata({ part: { type: 'finish-step' } })).toEqual({ stage: 'finalizing' })
-    expect(messageMetadata({ part: { type: 'finish' } })).toEqual({ stage: 'finalizing' })
   })
 
-  it('maps quick actions to fixed prompts', async () => {
+  it('forwards quick actions without doing route-level classification', async () => {
     const req = new Request('http://localhost/api/workspace/run', {
       method: 'POST',
       body: JSON.stringify({ kind: 'quick-action', action: 'summarize-notes' }),
@@ -136,11 +65,10 @@ describe('/api/workspace/run POST', () => {
 
     await POST(req)
 
-    expect(streamTextMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        prompt: '请总结我最近的笔记，提炼关键信息和下一步行动。',
-      })
-    )
+    expect(streamWorkspaceRunMock).toHaveBeenCalledWith({
+      userId: 'user_123',
+      request: { kind: 'quick-action', action: 'summarize-notes' },
+    })
   })
 
   it('rejects invalid quick-action values', async () => {
@@ -153,7 +81,7 @@ describe('/api/workspace/run POST', () => {
 
     expect(res.status).toBe(400)
     await expect(res.json()).resolves.toEqual({ error: '请求参数无效。' })
-    expect(streamTextMock).not.toHaveBeenCalled()
+    expect(streamWorkspaceRunMock).not.toHaveBeenCalled()
   })
 
   it('rejects quick-action values from prototype keys', async () => {
@@ -166,12 +94,10 @@ describe('/api/workspace/run POST', () => {
 
     expect(res.status).toBe(400)
     await expect(res.json()).resolves.toEqual({ error: '请求参数无效。' })
-    expect(streamTextMock).not.toHaveBeenCalled()
+    expect(streamWorkspaceRunMock).not.toHaveBeenCalled()
   })
 
-  it('returns clear error when AI provider is unavailable', async () => {
-    getAiProviderMock.mockReturnValue(null)
-
+  it('returns the stream response directly without provider-gating in route', async () => {
     const req = new Request('http://localhost/api/workspace/run', {
       method: 'POST',
       body: JSON.stringify({ kind: 'input', text: '总结一下最近内容' }),
@@ -179,8 +105,7 @@ describe('/api/workspace/run POST', () => {
 
     const res = await POST(req)
 
-    expect(res.status).toBe(503)
-    await expect(res.json()).resolves.toEqual({ error: 'AI provider not configured' })
-    expect(streamTextMock).not.toHaveBeenCalled()
+    expect(res).toBe(streamResponse)
+    expect(streamWorkspaceRunMock).toHaveBeenCalledTimes(1)
   })
 })

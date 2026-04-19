@@ -36,7 +36,6 @@ export const todoCommandPayloadSchema = z.object({
   content: z.string().min(1).nullable(),
   timeText: z.string().min(1).nullable(),
   dueAtIso: z.string().datetime().nullable(),
-  reminder: z.boolean().nullable(),
 })
 
 export const noteCommandPayloadSchema = z.object({

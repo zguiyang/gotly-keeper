@@ -2,7 +2,6 @@ import type { WorkspaceRunRequest } from '@/shared/workspace/workspace-run.types
 
 import { requireWorkspaceUserAccess } from '@/server/modules/auth/workspace-session'
 import {
-  getWorkspaceRunMessageMetadata,
   QUICK_ACTION_PROMPTS,
   streamWorkspaceRun,
 } from '@/server/modules/workspace/workspace-stream'
@@ -51,11 +50,5 @@ export async function POST(req: Request) {
     request: body,
   })
 
-  if (!result) {
-    return Response.json({ error: 'AI provider not configured' }, { status: 503 })
-  }
-
-  return result.toUIMessageStreamResponse({
-    messageMetadata: ({ part }) => getWorkspaceRunMessageMetadata(part),
-  })
+  return result
 }

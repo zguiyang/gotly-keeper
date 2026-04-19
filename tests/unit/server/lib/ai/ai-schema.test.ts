@@ -64,7 +64,6 @@ describe('parsedCommandSchema', () => {
         content: null,
         timeText: null,
         dueAtIso: null,
-        reminder: null,
       },
       note: {
         title: '不应该出现',
