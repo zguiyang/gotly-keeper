@@ -261,6 +261,56 @@ Rules:
 6. Do not implement an available shadcn/ui primitive with raw DOM merely because
    Tailwind can style the raw DOM.
 
+### 4.2.1 Design Token Source-of-Truth Rule
+
+Design tokens are the only default color source for frontend UI.
+
+Purpose:
+
+- keep contrast decisions centralized
+- make light/dark theme changes work through one token system
+- preserve shadcn/ui semantic-token behavior
+- avoid one-off page colors that cannot be audited or themed reliably
+
+Rules:
+
+1. Define real color values in the global design-token surface only.
+2. In pages, components, hooks, client code, and frontend config, express color
+   through Tailwind utilities backed by semantic tokens.
+3. Prefer semantic token utilities such as `bg-background`, `text-foreground`,
+   `text-muted-foreground`, `border-border`, `ring-primary/30`,
+   `bg-primary/10`, `from-primary`, and `to-primary-container`.
+4. Do not use raw color literals in frontend implementation files, including
+   hex values, `rgb()`/`rgba()`, `hsl()`/`hsla()`, or arbitrary Tailwind color
+   utilities such as `text-[#54647a]`.
+5. Do not use Tailwind built-in palette utilities for product UI colors, such
+   as `bg-amber-50`, `text-emerald-700`, `border-slate-200`, `text-white`, or
+   `bg-black/30`.
+6. For status UI, use semantic status tokens instead of palette colors:
+   `status-pending`, `status-success`, `status-error`, and `status-muted`.
+7. If a repeated product pattern needs a new color role, add or request a
+   semantic token instead of choosing a local palette color.
+8. If custom CSS is necessary, use theme variables such as `var(--primary)`,
+   `var(--background)`, or `var(--status-success)` inside the CSS rather than
+   hardcoded color values.
+
+Allowed exceptions:
+
+- global token definitions in `app/globals.css`
+- external brand colors or user-supplied content colors that must remain exact
+- CSS effects that cannot be expressed clearly with token utilities, such as
+  complex masks, glows, or gradients, when they are still based on theme
+  variables where possible
+- explicitly user-approved one-off visual exceptions
+
+Exception requirements:
+
+1. The user must approve the exception before implementation.
+2. The code must keep the exception local to the owning UI.
+3. The exception line must include `DESIGN_TOKEN_EXCEPTION:` with a short reason.
+4. When possible, the exception must still derive from theme variables rather
+   than raw color literals.
+
 ### 4.3 Global CSS Boundary Rule
 
 `app/globals.css` is a shared system surface, not a page styling file.
@@ -391,6 +441,9 @@ Changes fail architecture review when:
   justified exception
 - equivalent UI patterns in the same feature mix shadcn/ui composition and
   hand-rolled markup without a shared local abstraction
+- frontend implementation files introduce raw colors, Tailwind built-in color
+  palettes, or arbitrary color utilities without a user-approved
+  `DESIGN_TOKEN_EXCEPTION:`
 - page-specific or component-specific styling is added to `app/globals.css`
   without a valid global-CSS exception
 - Tailwind-expressible layout, responsive, spacing, sizing, or state styling is
@@ -413,10 +466,20 @@ Before generating frontend code:
 7. verify Tailwind utilities support shadcn composition and ordinary styling
    instead of replacing available primitives
 8. verify any custom DOM/Tailwind exception has a brief reason
-9. verify any `app/globals.css` edit is globally reusable or justified by a
+9. verify colors come from semantic design tokens or have a user-approved
+   `DESIGN_TOKEN_EXCEPTION:`
+10. verify status UI uses `status-pending`, `status-success`, `status-error`,
+   or `status-muted` tokens instead of Tailwind built-in palette colors
+11. verify any `app/globals.css` edit is globally reusable or justified by a
    custom-CSS exception
-10. verify any `components/ui/**` edit is justified by an allowed
+12. verify any `components/ui/**` edit is justified by an allowed
    primitive-boundary exception
+
+Before committing frontend UI changes:
+
+1. run `bash .ai-rules/advanced-workflows/guards/check-design-token-usage.sh --staged`
+2. fix token bypasses instead of suppressing the guard
+3. use `DESIGN_TOKEN_EXCEPTION:` only for user-approved special cases
 
 ---
 

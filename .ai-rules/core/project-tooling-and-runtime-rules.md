@@ -191,6 +191,7 @@ Examples:
 bash .ai-rules/advanced-workflows/guards/check-phase-doc-protocol.sh
 bash .ai-rules/advanced-workflows/guards/check-import-boundaries.sh
 bash .ai-rules/advanced-workflows/guards/check-global-css-placement.sh
+bash .ai-rules/advanced-workflows/guards/check-design-token-usage.sh --staged
 bash .ai-rules/advanced-workflows/guards/check-governance-links.sh
 bash .ai-rules/advanced-workflows/guards/check-rules-integrity.sh --staged
 ```
