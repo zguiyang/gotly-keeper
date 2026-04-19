@@ -21,14 +21,14 @@ import type { AssetListItem } from '@/shared/assets/assets.types'
 
 function getAssetSupportingText(asset: AssetListItem) {
   if (asset.type === 'todo') {
-    return asset.content ?? (asset.excerpt !== asset.title ? asset.excerpt : '')
+    return asset.content ?? ''
   }
 
   if (asset.type === 'link') {
-    return asset.note ?? asset.summary ?? asset.excerpt
+    return asset.note ?? asset.summary ?? ''
   }
 
-  return asset.content ?? asset.summary ?? asset.excerpt
+  return asset.content ?? asset.summary ?? ''
 }
 
 function replaceAsset(items: AssetListItem[], updated: AssetListItem) {

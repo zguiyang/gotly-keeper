@@ -1,13 +1,12 @@
 'use client'
 
 import { Sparkles } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { assetTypePresentation } from '@/config/ui/asset-presentation'
 import { useWorkspaceStream } from '@/hooks/workspace/use-workspace-stream'
-import { type AssetListItem } from '@/shared/assets/assets.types'
 import { formatAbsoluteTime } from '@/shared/time/formatters'
 
 import {
@@ -18,6 +17,9 @@ import {
   WorkspaceTodoReviewPanel,
 } from './workspace-result-panels'
 import { WorkspaceRunPanel } from './workspace-run-panel'
+
+import type { AssetListItem } from '@/shared/assets/assets.types'
+import type { WorkspaceRunResult } from '@/shared/workspace/workspace-run.types'
 
 function QuickActionChips({
   onChipClick,
@@ -92,24 +94,21 @@ export function WorkspaceClient({
 }) {
   const [inputValue, setInputValue] = useState('')
   const [recentItems, setRecentItems] = useState(recentAssets)
-  const lastHandledCreatedAssetIdRef = useRef<string | null>(null)
 
-  const { state, submitInput, triggerQuickAction } = useWorkspaceStream()
-
-  useEffect(() => {
-    const createdResult = state.result?.kind === 'created' ? state.result : null
-
-    if (!createdResult) {
+  const handleWorkspaceResult = useCallback((result: WorkspaceRunResult) => {
+    if (result.kind !== 'created') {
       return
     }
 
-    if (lastHandledCreatedAssetIdRef.current === createdResult.asset.id) {
-      return
-    }
+    setRecentItems((items) => [
+      result.asset,
+      ...items.filter((item) => item.id !== result.asset.id),
+    ].slice(0, 6))
+  }, [])
 
-    lastHandledCreatedAssetIdRef.current = createdResult.asset.id
-    setRecentItems((items) => [createdResult.asset, ...items].slice(0, 6))
-  }, [state.result])
+  const { state, submitInput, triggerQuickAction } = useWorkspaceStream({
+    onResult: handleWorkspaceResult,
+  })
 
   async function handleSubmit() {
     const text = inputValue.trim()
@@ -196,7 +195,6 @@ export function WorkspaceClient({
 
       {state.result?.kind === 'query' ? (
         <WorkspaceQueryResultsPanel
-          queryDescription={state.result.queryDescription}
           results={state.result.results}
         />
       ) : state.result?.kind === 'todo-review' ? (

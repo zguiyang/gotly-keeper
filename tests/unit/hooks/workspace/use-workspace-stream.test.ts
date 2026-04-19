@@ -4,14 +4,14 @@ import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { UIMessage } from 'ai'
-
 import { useWorkspaceStream } from '@/hooks/workspace/use-workspace-stream'
+
 import type {
   WorkspaceRunRequest,
   WorkspaceRunResult,
   WorkspaceRunStage,
 } from '@/shared/workspace/workspace-run.types'
+import type { UIMessage } from 'ai'
 
 type WorkspaceMessage = UIMessage<{ stage?: WorkspaceRunStage }>
 
@@ -28,7 +28,15 @@ const chatMock = vi.hoisted(() => ({
 }))
 
 vi.mock('@ai-sdk/react', () => ({
-  useChat: () => {
+  useChat: (options?: {
+    onFinish?: (event: {
+      message: WorkspaceMessage
+      messages: WorkspaceMessage[]
+      isAbort: boolean
+      isDisconnect: boolean
+      isError: boolean
+    }) => void
+  }) => {
     const [messages, setMessages] = React.useState<WorkspaceMessage[]>([])
     const [status, setStatus] = React.useState<'ready' | 'submitted' | 'streaming' | 'error'>('ready')
     const [error, setError] = React.useState<Error | undefined>(undefined)
@@ -39,9 +47,41 @@ vi.mock('@ai-sdk/react', () => ({
           throw new Error('chat mock implementation missing')
         }
 
-        await chatMock.implementation({ message, setMessages, setStatus, setError })
+        let latestMessages = messages
+        const setMessagesAndCapture: React.Dispatch<React.SetStateAction<WorkspaceMessage[]>> = (nextMessages) => {
+          if (typeof nextMessages === 'function') {
+            setMessages((currentMessages) => {
+              latestMessages = nextMessages(currentMessages)
+              return latestMessages
+            })
+            return
+          }
+
+          latestMessages = nextMessages
+          setMessages(nextMessages)
+        }
+
+        await chatMock.implementation({
+          message,
+          setMessages: setMessagesAndCapture,
+          setStatus,
+          setError,
+        })
+
+        const assistantMessage =
+          [...latestMessages].reverse().find((entry) => entry.role === 'assistant') ?? null
+
+        if (assistantMessage) {
+          options?.onFinish?.({
+            message: assistantMessage,
+            messages: latestMessages,
+            isAbort: false,
+            isDisconnect: false,
+            isError: false,
+          })
+        }
       },
-      [setMessages, setStatus, setError]
+      [messages, options, setMessages, setStatus, setError]
     )
 
     return {
@@ -147,6 +187,7 @@ function renderHook<T>(useHook: () => T) {
   let current!: T
 
   function TestComponent() {
+    // eslint-disable-next-line react-hooks/globals -- This local test harness exposes the latest hook value to assertions.
     current = useHook()
     return null
   }
@@ -240,6 +281,25 @@ describe('useWorkspaceStream', () => {
 
     expect(hook.result.current.state.status).toBe('success')
     expect(hook.result.current.state.result?.kind).toBe('todo-review')
+  })
+
+  it('notifies callers when a final tool result is available', async () => {
+    const onResult = vi.fn()
+
+    chatMock.implementation = async ({ setMessages, setStatus }) => {
+      setStatus('ready')
+      setMessages([createAssistantMessage({ result: createQueryResult() })])
+    }
+
+    const hook = renderHook(() => useWorkspaceStream({ onResult }))
+    activeHook = hook
+
+    await act(async () => {
+      await hook.result.current.submitInput('找一下书签')
+    })
+
+    expect(onResult).toHaveBeenCalledTimes(1)
+    expect(onResult).toHaveBeenCalledWith(expect.objectContaining({ kind: 'query' }))
   })
 
   it('clears previous result as soon as a new request is submitted', async () => {

@@ -1,7 +1,7 @@
 'use client'
 
-import { DefaultChatTransport, type UIMessage } from 'ai'
 import { useChat } from '@ai-sdk/react'
+import { DefaultChatTransport, type UIMessage } from 'ai'
 import { useCallback, useMemo } from 'react'
 
 import type {
@@ -176,7 +176,9 @@ function getRequestFromMessages(messages: WorkspaceLauncherMessage[]): Workspace
   throw new Error('Workspace launcher request metadata is missing.')
 }
 
-export function useWorkspaceStream() {
+export function useWorkspaceStream(options: {
+  onResult?: (result: WorkspaceRunResult) => void
+} = {}) {
   const transport = useMemo(
     () =>
       new DefaultChatTransport<WorkspaceLauncherMessage>({
@@ -190,6 +192,13 @@ export function useWorkspaceStream() {
 
   const { messages, sendMessage, status, error, clearError } = useChat<WorkspaceLauncherMessage>({
     transport,
+    onFinish: ({ message }) => {
+      const result = getResultFromMessage(message)
+
+      if (result) {
+        options.onResult?.(result)
+      }
+    },
   })
 
   const state = useMemo(
