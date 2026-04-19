@@ -173,6 +173,35 @@ function resolveCommandQuery(command: ParsedCommand): string {
   return command.search?.query ?? command.summary?.query ?? command.originalText
 }
 
+function describeWorkspaceSearch(input: {
+  typeHint?: 'todo' | 'note' | 'link' | null
+  timeHint?: string | null
+  completionHint?: 'complete' | 'incomplete' | null
+}): string {
+  const typeLabel =
+    input.typeHint === 'todo'
+      ? '待办'
+      : input.typeHint === 'note'
+        ? '笔记'
+        : input.typeHint === 'link'
+          ? '书签'
+          : '全部内容'
+
+  const qualifiers: string[] = []
+
+  if (input.completionHint === 'incomplete') {
+    qualifiers.push('未完成')
+  } else if (input.completionHint === 'complete') {
+    qualifiers.push('已完成')
+  }
+
+  if (input.timeHint) {
+    qualifiers.push(input.timeHint)
+  }
+
+  return qualifiers.length > 0 ? `${typeLabel} · ${qualifiers.join(' · ')}` : typeLabel
+}
+
 function resolveSummaryQuery(command: ParsedCommand): string | null {
   return command.summary?.query ?? null
 }
@@ -505,13 +534,28 @@ export async function setWorkspaceTodoCompletion(input: {
 export async function updateWorkspaceNote(input: {
   userId: string
   assetId: string
-  text: string
+  text?: string
+  rawInput?: string
+  title?: string | null
+  content?: string | null
+  summary?: string | null
 }): Promise<AssetListItem> {
-  const updated = await updateNote({
-    userId: input.userId,
-    noteId: input.assetId,
-    text: input.text,
-  })
+  const updated = await updateNote(
+    input.rawInput !== undefined
+      ? {
+          userId: input.userId,
+          noteId: input.assetId,
+          rawInput: input.rawInput,
+          title: input.title,
+          content: input.content,
+          summary: input.summary,
+        }
+      : {
+          userId: input.userId,
+          noteId: input.assetId,
+          text: input.text ?? '',
+        }
+  )
 
   if (!updated) {
     throw new WorkspaceModuleError(
@@ -527,7 +571,10 @@ export async function updateWorkspaceNote(input: {
 export async function updateWorkspaceTodo(input: {
   userId: string
   assetId: string
-  text: string
+  text?: string
+  rawInput?: string
+  title?: string | null
+  content?: string | null
   timeText?: string | null
   dueAt?: Date | null
 }): Promise<AssetListItem> {
@@ -535,6 +582,9 @@ export async function updateWorkspaceTodo(input: {
     userId: input.userId,
     todoId: input.assetId,
     text: input.text,
+    rawInput: input.rawInput,
+    title: input.title,
+    content: input.content,
     timeText: input.timeText,
     dueAt: input.dueAt,
   })
@@ -553,15 +603,31 @@ export async function updateWorkspaceTodo(input: {
 export async function updateWorkspaceBookmark(input: {
   userId: string
   assetId: string
-  text: string
+  text?: string
+  rawInput?: string
   url: string
+  title?: string | null
+  note?: string | null
+  summary?: string | null
 }): Promise<AssetListItem> {
-  const updated = await updateBookmark({
-    userId: input.userId,
-    bookmarkId: input.assetId,
-    text: input.text,
-    url: input.url,
-  })
+  const updated = await updateBookmark(
+    input.rawInput !== undefined
+      ? {
+          userId: input.userId,
+          bookmarkId: input.assetId,
+          rawInput: input.rawInput,
+          url: input.url,
+          title: input.title,
+          note: input.note,
+          summary: input.summary,
+        }
+      : {
+          userId: input.userId,
+          bookmarkId: input.assetId,
+          text: input.text ?? '',
+          url: input.url,
+        }
+  )
 
   if (!updated) {
     throw new WorkspaceModuleError(
@@ -1065,6 +1131,11 @@ export async function executeWorkspaceCommand(input: {
     return {
       kind: 'query',
       query,
+      queryDescription: describeWorkspaceSearch({
+        typeHint: command.search?.typeHint ?? null,
+        timeHint: command.search?.timeHint ?? null,
+        completionHint: command.search?.completionHint ?? null,
+      }),
       results,
     }
   }

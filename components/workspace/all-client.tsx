@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
-import { AssetEditDialog } from '@/components/workspace/asset-edit-dialog'
+import { AssetEditDialog, type AssetEditValues } from '@/components/workspace/asset-edit-dialog'
 import {
   WorkspaceEmptyState,
   WorkspaceFilterTabs,
@@ -136,12 +136,18 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
 
   const hasAnyAssets = filteredAssets.length > 0
 
-  async function submitEdit(asset: AssetListItem, values: { text: string; url?: string }) {
+  async function submitEdit(asset: AssetListItem, values: AssetEditValues) {
     if (asset.type === 'note') {
+      if (!('content' in values) || 'timeText' in values) {
+        return false
+      }
+
       const updated = await updateAsset({
         assetId: asset.id,
         assetType: 'note',
-        text: values.text,
+        rawInput: values.rawInput,
+        title: values.title,
+        content: values.content,
       })
       if (updated) {
         setItems((current) => current.map((item) => (item.id === updated.id ? updated : item)))
@@ -150,12 +156,22 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
     }
 
     if (asset.type === 'todo') {
+      if (!('timeText' in values) || !('content' in values)) {
+        return false
+      }
+
       const updated = await updateAsset({
         assetId: asset.id,
         assetType: 'todo',
-        text: values.text,
-        timeText: asset.timeText,
-        dueAt: asset.dueAt,
+        rawInput: values.rawInput,
+        title: values.title,
+        content: values.content,
+        ...(values.timeText !== undefined
+          ? {
+              timeText: values.timeText,
+              dueAt: values.timeText === asset.timeText ? asset.dueAt : null,
+            }
+          : {}),
       })
       if (updated) {
         setItems((current) => current.map((item) => (item.id === updated.id ? updated : item)))
@@ -166,8 +182,10 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
     const updated = await updateAsset({
       assetId: asset.id,
       assetType: 'link',
-      text: values.text,
-      url: values.url ?? '',
+      rawInput: values.rawInput,
+      title: values.title,
+      note: 'note' in values ? values.note : null,
+      url: 'url' in values ? values.url : '',
     })
     if (updated) {
       setItems((current) => current.map((item) => (item.id === updated.id ? updated : item)))

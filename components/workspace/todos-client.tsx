@@ -7,7 +7,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
-import { AssetEditDialog } from '@/components/workspace/asset-edit-dialog'
+import { AssetEditDialog, type AssetEditValues } from '@/components/workspace/asset-edit-dialog'
 import {
   WorkspaceEmptyState,
   workspaceMetaTextClassName,
@@ -47,6 +47,8 @@ function TodoItemComponent({
   onArchive: (item: AssetListItem) => void
   onMoveToTrash: (item: AssetListItem) => void
 }) {
+  const note = item.excerpt !== item.title ? item.excerpt : null
+
   return (
     <div
       className={`group -mx-4 flex items-start justify-between rounded-2xl px-4 py-4 transition-opacity duration-150 ${
@@ -83,9 +85,10 @@ function TodoItemComponent({
               <Clock className="w-3 h-3" />
               {item.timeText || '无截止日期'}
             </span>
-            <span className="w-1 h-1 rounded-full bg-border/40" />
-            <span>来自统一入口</span>
           </div>
+          {note ? (
+            <p className="text-sm leading-6 text-on-surface-variant line-clamp-2">{note}</p>
+          ) : null}
         </div>
       </div>
       <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity">
@@ -174,13 +177,26 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
     }
   }
 
-  async function submitEdit(item: AssetListItem, values: { text: string }) {
+  async function submitEdit(
+    item: AssetListItem,
+    values: AssetEditValues
+  ) {
+    if (!('timeText' in values) || !('content' in values)) {
+      return false
+    }
+
     const updated = await updateAsset({
       assetId: item.id,
       assetType: 'todo',
-      text: values.text,
-      timeText: item.timeText,
-      dueAt: item.dueAt,
+      rawInput: values.rawInput,
+      title: values.title,
+      content: values.content,
+      ...(values.timeText !== undefined
+        ? {
+            timeText: values.timeText,
+            dueAt: values.timeText === item.timeText ? item.dueAt : null,
+          }
+        : {}),
     })
     if (updated) {
       replaceItem(updated)

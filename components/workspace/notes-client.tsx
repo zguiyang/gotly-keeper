@@ -4,7 +4,7 @@ import { FileText } from 'lucide-react'
 import { useState } from 'react'
 
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
-import { AssetEditDialog } from '@/components/workspace/asset-edit-dialog'
+import { AssetEditDialog, type AssetEditValues } from '@/components/workspace/asset-edit-dialog'
 import {
   WorkspaceEmptyState,
   workspaceMetaTextClassName,
@@ -75,11 +75,20 @@ export function NotesClient({ notes }: { notes: AssetListItem[] }) {
   const [editingNote, setEditingNote] = useState<AssetListItem | null>(null)
   const { updateAsset, archiveAsset, moveToTrash } = useAssetMutations()
 
-  async function submitEdit(note: AssetListItem, values: { text: string }) {
+  async function submitEdit(
+    note: AssetListItem,
+    values: AssetEditValues
+  ) {
+    if (!('content' in values) || 'timeText' in values) {
+      return false
+    }
+
     const updated = await updateAsset({
       assetId: note.id,
       assetType: 'note',
-      text: values.text,
+      rawInput: values.rawInput,
+      title: values.title,
+      content: values.content,
     })
 
     if (updated) {

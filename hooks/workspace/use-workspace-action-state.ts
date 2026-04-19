@@ -74,7 +74,11 @@ export function applyWorkspaceActionResult(
     case 'query':
       return {
         ...baseState,
-        queryResult: { query: result.query, results: result.results },
+        queryResult: {
+          query: result.query,
+          queryDescription: result.queryDescription,
+          results: result.results,
+        },
       }
 
     case 'todo-review':

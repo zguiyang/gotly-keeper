@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
-import { AssetEditDialog } from '@/components/workspace/asset-edit-dialog'
+import { AssetEditDialog, type AssetEditValues } from '@/components/workspace/asset-edit-dialog'
 import {
   WorkspaceEmptyState,
   workspaceMetaTextClassName,
@@ -123,12 +123,21 @@ export function BookmarksClient({ bookmarks }: { bookmarks: AssetListItem[] }) {
   const [editingBookmark, setEditingBookmark] = useState<AssetListItem | null>(null)
   const { updateAsset, archiveAsset, moveToTrash } = useAssetMutations()
 
-  async function submitEdit(item: AssetListItem, values: { text: string; url?: string }) {
+  async function submitEdit(
+    item: AssetListItem,
+    values: AssetEditValues
+  ) {
+    if (!('note' in values)) {
+      return false
+    }
+
     const updated = await updateAsset({
       assetId: item.id,
       assetType: 'link',
-      text: values.text,
-      url: values.url ?? '',
+      rawInput: values.rawInput,
+      title: values.title,
+      note: values.note,
+      url: values.url,
     })
 
     if (updated) {

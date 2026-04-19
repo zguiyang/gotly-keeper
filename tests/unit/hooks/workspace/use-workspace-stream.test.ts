@@ -84,6 +84,7 @@ function createQueryResult(): WorkspaceRunResult {
   return {
     kind: 'query',
     query: '帮我找上周收藏的文章',
+    queryDescription: '书签 · 上周',
     results: [
       {
         id: 'asset_1',

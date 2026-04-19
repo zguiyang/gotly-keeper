@@ -195,7 +195,10 @@ export function WorkspaceClient({
       ) : null}
 
       {state.result?.kind === 'query' ? (
-        <WorkspaceQueryResultsPanel query={state.result.query} results={state.result.results} />
+        <WorkspaceQueryResultsPanel
+          queryDescription={state.result.queryDescription}
+          results={state.result.results}
+        />
       ) : state.result?.kind === 'todo-review' ? (
         <WorkspaceTodoReviewPanel review={state.result.review} />
       ) : state.result?.kind === 'note-summary' ? (

@@ -6,6 +6,7 @@ import {
   setTodoCompletionAction,
   summarizeRecentBookmarksAction,
   summarizeRecentNotesAction,
+  updateWorkspaceAssetAction,
 } from '@/app/workspace/actions'
 import { ModuleActionError, MODULE_ACTION_ERROR_CODES } from '@/server/modules/actions/action-error'
 
@@ -19,6 +20,9 @@ const {
   reviewWorkspaceUnfinishedTodosMock,
   summarizeWorkspaceRecentNotesMock,
   summarizeWorkspaceRecentBookmarksMock,
+  updateWorkspaceNoteMock,
+  updateWorkspaceTodoMock,
+  updateWorkspaceBookmarkMock,
   WorkspaceModuleErrorMock,
   WORKSPACE_MODULE_ERROR_CODES_MOCK,
 } = vi.hoisted(() => ({
@@ -30,6 +34,9 @@ const {
   reviewWorkspaceUnfinishedTodosMock: vi.fn(),
   summarizeWorkspaceRecentNotesMock: vi.fn(),
   summarizeWorkspaceRecentBookmarksMock: vi.fn(),
+  updateWorkspaceNoteMock: vi.fn(),
+  updateWorkspaceTodoMock: vi.fn(),
+  updateWorkspaceBookmarkMock: vi.fn(),
   WorkspaceModuleErrorMock: class WorkspaceModuleError extends Error {
     constructor(publicMessage: string, code = 'TODO_NOT_FOUND') {
       super(publicMessage)
@@ -61,6 +68,9 @@ vi.mock('@/server/modules/workspace', () => ({
   reviewWorkspaceUnfinishedTodos: reviewWorkspaceUnfinishedTodosMock,
   summarizeWorkspaceRecentNotes: summarizeWorkspaceRecentNotesMock,
   summarizeWorkspaceRecentBookmarks: summarizeWorkspaceRecentBookmarksMock,
+  updateWorkspaceNote: updateWorkspaceNoteMock,
+  updateWorkspaceTodo: updateWorkspaceTodoMock,
+  updateWorkspaceBookmark: updateWorkspaceBookmarkMock,
   WorkspaceModuleError: WorkspaceModuleErrorMock,
   WORKSPACE_MODULE_ERROR_CODES: WORKSPACE_MODULE_ERROR_CODES_MOCK,
 }))
@@ -75,6 +85,9 @@ describe('workspace server actions', () => {
     reviewWorkspaceUnfinishedTodosMock.mockReset()
     summarizeWorkspaceRecentNotesMock.mockReset()
     summarizeWorkspaceRecentBookmarksMock.mockReset()
+    updateWorkspaceNoteMock.mockReset()
+    updateWorkspaceTodoMock.mockReset()
+    updateWorkspaceBookmarkMock.mockReset()
 
     requireSignedInUserMock.mockResolvedValue({ id: 'user_123' })
     executeModuleActionMock.mockImplementation(async (_action: string, handler: () => Promise<unknown>) => {
@@ -171,5 +184,117 @@ describe('workspace server actions', () => {
     expect(reviewWorkspaceUnfinishedTodosMock).toHaveBeenCalledWith({ userId: 'user_123' })
     expect(summarizeWorkspaceRecentNotesMock).toHaveBeenCalledWith({ userId: 'user_123' })
     expect(summarizeWorkspaceRecentBookmarksMock).toHaveBeenCalledWith({ userId: 'user_123' })
+  })
+
+  it('updateWorkspaceAssetAction forwards structured note payload', async () => {
+    updateWorkspaceNoteMock.mockResolvedValue({ id: 'note_1', type: 'note' })
+
+    await updateWorkspaceAssetAction({
+      assetId: 'note_1',
+      assetType: 'note',
+      rawInput: '  需求评审\n\n补充边界条件  ',
+      title: '  需求评审  ',
+      content: '  补充边界条件  ',
+    })
+
+    expect(updateWorkspaceNoteMock).toHaveBeenCalledWith({
+      userId: 'user_123',
+      assetId: 'note_1',
+      rawInput: '需求评审\n\n补充边界条件',
+      title: '需求评审',
+      content: '补充边界条件',
+      summary: '补充边界条件',
+    })
+  })
+
+  it('updateWorkspaceAssetAction forwards structured todo payload', async () => {
+    updateWorkspaceTodoMock.mockResolvedValue({ id: 'todo_1', type: 'todo' })
+
+    const dueAt = new Date('2026-04-20T01:00:00.000Z')
+
+    await updateWorkspaceAssetAction({
+      assetId: 'todo_1',
+      assetType: 'todo',
+      rawInput: '  提交周报\n补充项目风险\n明天上午  ',
+      title: '  提交周报  ',
+      content: '  补充项目风险  ',
+      timeText: '  明天上午  ',
+      dueAt,
+    })
+
+    expect(updateWorkspaceTodoMock).toHaveBeenCalledWith({
+      userId: 'user_123',
+      assetId: 'todo_1',
+      rawInput: '提交周报\n补充项目风险\n明天上午',
+      title: '提交周报',
+      content: '补充项目风险',
+      timeText: '明天上午',
+      dueAt,
+    })
+  })
+
+  it('updateWorkspaceAssetAction forwards structured bookmark payload', async () => {
+    updateWorkspaceBookmarkMock.mockResolvedValue({ id: 'bookmark_1', type: 'link' })
+
+    await updateWorkspaceAssetAction({
+      assetId: 'bookmark_1',
+      assetType: 'link',
+      rawInput: '  AI SDK 文档\n流式输出示例\nhttps://example.com  ',
+      title: '  AI SDK 文档  ',
+      note: '  流式输出示例  ',
+      url: '  https://example.com  ',
+    })
+
+    expect(updateWorkspaceBookmarkMock).toHaveBeenCalledWith({
+      userId: 'user_123',
+      assetId: 'bookmark_1',
+      rawInput: 'AI SDK 文档\n流式输出示例\nhttps://example.com',
+      title: 'AI SDK 文档',
+      note: '流式输出示例',
+      summary: '流式输出示例',
+      url: 'https://example.com',
+    })
+  })
+
+  it('updateWorkspaceAssetAction does not overwrite note structured fields when content is omitted', async () => {
+    updateWorkspaceNoteMock.mockResolvedValue({ id: 'note_1', type: 'note' })
+
+    await updateWorkspaceAssetAction({
+      assetId: 'note_1',
+      assetType: 'note',
+      rawInput: '保留原正文',
+      title: '  只改标题  ',
+    })
+
+    expect(updateWorkspaceNoteMock).toHaveBeenCalledWith({
+      userId: 'user_123',
+      assetId: 'note_1',
+      rawInput: '保留原正文',
+      title: '只改标题',
+      content: undefined,
+      summary: undefined,
+    })
+  })
+
+  it('updateWorkspaceAssetAction does not overwrite bookmark note when note is omitted', async () => {
+    updateWorkspaceBookmarkMock.mockResolvedValue({ id: 'bookmark_1', type: 'link' })
+
+    await updateWorkspaceAssetAction({
+      assetId: 'bookmark_1',
+      assetType: 'link',
+      rawInput: '保留原备注和原文',
+      title: '  只改标题  ',
+      url: ' https://example.com ',
+    })
+
+    expect(updateWorkspaceBookmarkMock).toHaveBeenCalledWith({
+      userId: 'user_123',
+      assetId: 'bookmark_1',
+      rawInput: '保留原备注和原文',
+      title: '只改标题',
+      note: undefined,
+      summary: undefined,
+      url: 'https://example.com',
+    })
   })
 })
