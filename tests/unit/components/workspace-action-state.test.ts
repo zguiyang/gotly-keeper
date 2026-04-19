@@ -33,6 +33,7 @@ const mockAssetListItem: AssetListItem = {
 
 const mockQueryResult: AssetQueryResult = {
   query: 'test query',
+  queryDescription: '书签 · 上周',
   results: [mockAssetListItem],
 }
 
@@ -188,7 +189,12 @@ describe('workspace-action-state', () => {
         bookmarkSummary: mockBookmarkSummary,
       }
 
-      const result = { kind: 'query' as const, query: 'test query', results: [mockAssetListItem] }
+      const result = {
+        kind: 'query' as const,
+        query: 'test query',
+        queryDescription: '书签 · 上周',
+        results: [mockAssetListItem],
+      }
       const newState = applyWorkspaceActionResult(initialState, result)
 
       expect(newState.status).toBe('success')

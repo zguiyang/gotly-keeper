@@ -62,10 +62,10 @@ export function RecentItem({
 }
 
 export function WorkspaceQueryResultsPanel({
-  query,
+  queryDescription,
   results,
 }: {
-  query: string
+  queryDescription: string
   results: AssetListItem[]
 }) {
   return (
@@ -76,7 +76,7 @@ export function WorkspaceQueryResultsPanel({
         </h2>
         <div className="flex-1 h-px bg-border/20" />
       </div>
-      <p className="mb-4 text-sm leading-6 text-on-surface-variant/75">{`“${query}”`}</p>
+      <p className="mb-4 text-sm leading-6 text-on-surface-variant/75">{queryDescription}</p>
       {results.length === 0 ? (
         <p className="text-sm text-on-surface-variant">
           没有找到相关内容。可以换个关键词，或先在上方保存一条新记录。

@@ -7,6 +7,8 @@ export type AssetListItem = {
   title: string
   excerpt: string
   type: 'note' | 'link' | 'todo'
+  content?: string | null
+  note?: string | null
   url: string | null
   timeText: string | null
   dueAt: Date | null
@@ -21,6 +23,7 @@ export type AssetListItem = {
 
 export type AssetQueryResult = {
   query: string
+  queryDescription: string
   results: AssetListItem[]
 }
 
@@ -73,7 +76,7 @@ export type BookmarkSummaryResult = {
 
 export type WorkspaceAssetActionResult =
   | { kind: 'created'; asset: AssetListItem }
-  | { kind: 'query'; query: string; results: AssetListItem[] }
+  | { kind: 'query'; query: string; queryDescription: string; results: AssetListItem[] }
   | { kind: 'todo-review'; review: TodoReviewResult }
   | { kind: 'note-summary'; summary: NoteSummaryResult }
   | { kind: 'bookmark-summary'; summary: BookmarkSummaryResult }

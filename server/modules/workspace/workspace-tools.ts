@@ -148,6 +148,35 @@ function getSearchAssetsToolInput(command: Extract<ParsedCommand, { operation: '
   })
 }
 
+function describeWorkspaceSearch(input: {
+  typeHint?: 'todo' | 'note' | 'link' | null
+  timeHint?: string | null
+  completionHint?: 'complete' | 'incomplete' | null
+}) {
+  const typeLabel =
+    input.typeHint === 'todo'
+      ? '待办'
+      : input.typeHint === 'note'
+        ? '笔记'
+        : input.typeHint === 'link'
+          ? '书签'
+          : '全部内容'
+
+  const qualifiers: string[] = []
+
+  if (input.completionHint === 'incomplete') {
+    qualifiers.push('未完成')
+  } else if (input.completionHint === 'complete') {
+    qualifiers.push('已完成')
+  }
+
+  if (input.timeHint) {
+    qualifiers.push(input.timeHint)
+  }
+
+  return qualifiers.length > 0 ? `${typeLabel} · ${qualifiers.join(' · ')}` : typeLabel
+}
+
 function getSummarizeWorkspaceToolInput(
   command: Extract<ParsedCommand, { operation: 'summarize_workspace' }>
 ) {
@@ -200,6 +229,11 @@ function createWorkspaceToolExecutors(userId: string) {
       return {
         kind: 'query' as const,
         query,
+        queryDescription: describeWorkspaceSearch({
+          typeHint: typeHint ?? null,
+          timeHint: timeHint ?? null,
+          completionHint: completionHint ?? null,
+        }),
         results,
       }
     },

@@ -18,15 +18,133 @@ import { Textarea } from '@/components/ui/textarea'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
 
-type AssetEditValues = {
-  text: string
-  url?: string
+type AssetEditFormState = {
+  title: string
+  content: string
+  url: string
+  timeText: string
 }
+
+export type NoteEditValues = {
+  title?: string | null
+  content?: string | null
+  rawInput: string
+}
+
+export type TodoEditValues = {
+  title?: string | null
+  content?: string | null
+  timeText?: string | null
+  rawInput: string
+}
+
+export type LinkEditValues = {
+  title?: string | null
+  note?: string | null
+  url: string
+  rawInput: string
+}
+
+export type AssetEditValues = NoteEditValues | TodoEditValues | LinkEditValues
 
 function getTitle(asset: AssetListItem) {
   if (asset.type === 'note') return '编辑笔记'
   if (asset.type === 'todo') return '编辑待办'
   return '编辑书签'
+}
+
+function normalizeEditableValue(value: string | null | undefined): string {
+  return value?.trim() ?? ''
+}
+
+function buildStructuredRawInput(asset: AssetListItem, next: AssetEditFormState): string {
+  const nextTitle = next.title.trim()
+  const nextContent = next.content.trim()
+  const nextUrl = next.url.trim()
+  const nextTimeText = next.timeText.trim()
+
+  if (asset.type === 'note') {
+    return [nextTitle, nextContent].filter(Boolean).join('\n\n')
+  }
+
+  if (asset.type === 'todo') {
+    return [nextTitle, nextContent, nextTimeText].filter(Boolean).join('\n')
+  }
+
+  return [nextTitle, nextContent, nextUrl].filter(Boolean).join('\n')
+}
+
+export function getAssetEditInitialState(asset: AssetListItem | null): AssetEditFormState {
+  if (!asset) {
+    return {
+      title: '',
+      content: '',
+      url: '',
+      timeText: '',
+    }
+  }
+
+  return {
+    title: asset.title ?? '',
+    content: asset.type === 'link' ? asset.note ?? '' : asset.content ?? '',
+    url: asset.url ?? '',
+    timeText: asset.timeText ?? '',
+  }
+}
+
+export function buildAssetEditValues(
+  asset: AssetListItem,
+  next: AssetEditFormState
+): AssetEditValues | null {
+  const initial = getAssetEditInitialState(asset)
+  const nextTitle = normalizeEditableValue(next.title)
+  const nextContent = normalizeEditableValue(next.content)
+  const nextUrl = normalizeEditableValue(next.url)
+  const nextTimeText = normalizeEditableValue(next.timeText)
+  const initialTitle = normalizeEditableValue(initial.title)
+  const initialContent = normalizeEditableValue(initial.content)
+  const initialUrl = normalizeEditableValue(initial.url)
+  const initialTimeText = normalizeEditableValue(initial.timeText)
+
+  const titleChanged = nextTitle !== initialTitle
+  const contentChanged = nextContent !== initialContent
+  const urlChanged = nextUrl !== initialUrl
+  const timeTextChanged = nextTimeText !== initialTimeText
+
+  if (!titleChanged && !contentChanged && !urlChanged && !timeTextChanged) {
+    return null
+  }
+
+  const canSafelyRebuildRawInput =
+    asset.type === 'link' ? asset.note !== undefined || contentChanged : asset.content !== undefined || contentChanged
+
+  const rawInput = canSafelyRebuildRawInput
+    ? buildStructuredRawInput(asset, next).trim()
+    : asset.originalText.trim()
+
+  if (asset.type === 'note') {
+    return {
+      rawInput,
+      ...(titleChanged ? { title: nextTitle || null } : {}),
+      ...(contentChanged ? { content: nextContent || null } : {}),
+    }
+  }
+
+  if (asset.type === 'todo') {
+    return {
+      rawInput,
+      ...(titleChanged ? { title: nextTitle || null } : {}),
+      ...(contentChanged ? { content: nextContent || null } : {}),
+      ...(timeTextChanged ? { timeText: nextTimeText || null } : {}),
+    }
+  }
+
+  return {
+    rawInput,
+    url: nextUrl,
+    ...(titleChanged ? { title: nextTitle || null } : {}),
+    ...(contentChanged ? { note: nextContent || null } : {}),
+  }
 }
 
 export function AssetEditDialog({
@@ -38,14 +156,19 @@ export function AssetEditDialog({
   onOpenChange: (open: boolean) => void
   onSubmit: (asset: AssetListItem, values: AssetEditValues) => Promise<boolean>
 }) {
-  const [text, setText] = useState('')
+  const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
   const [url, setUrl] = useState('')
+  const [timeText, setTimeText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    setText(asset?.originalText ?? '')
-    setUrl(asset?.url ?? '')
+    const initial = getAssetEditInitialState(asset)
+    setTitle(initial.title)
+    setContent(initial.content)
+    setUrl(initial.url)
+    setTimeText(initial.timeText)
     setError(null)
     setSubmitting(false)
   }, [asset])
@@ -57,11 +180,13 @@ export function AssetEditDialog({
       return
     }
 
-    const nextText = text.trim()
+    const nextTitle = title.trim()
+    const nextContent = content.trim()
     const nextUrl = url.trim()
+    const values = buildAssetEditValues(asset, { title, content, url, timeText })
 
-    if (!nextText) {
-      setError('请输入内容')
+    if (!nextTitle && !nextContent) {
+      setError(asset.type === 'link' ? '请至少填写标题或备注' : '请至少填写标题或正文')
       return
     }
 
@@ -70,14 +195,16 @@ export function AssetEditDialog({
       return
     }
 
+    if (!values) {
+      onOpenChange(false)
+      return
+    }
+
     setSubmitting(true)
     setError(null)
 
     try {
-      const updated = await onSubmit(asset, {
-        text: nextText,
-        url: asset.type === 'link' ? nextUrl : undefined,
-      })
+      const updated = await onSubmit(asset, values)
 
       if (updated) {
         onOpenChange(false)
@@ -98,16 +225,26 @@ export function AssetEditDialog({
 
           <FieldGroup>
             <Field data-invalid={!!error}>
-              <FieldLabel htmlFor="asset-edit-text">内容</FieldLabel>
-              <Textarea
-                id="asset-edit-text"
+              <FieldLabel htmlFor="asset-edit-title">标题</FieldLabel>
+              <Input
+                id="asset-edit-title"
                 aria-invalid={!!error}
-                className="min-h-28"
-                value={text}
-                onChange={(event) => setText(event.target.value)}
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
               />
               <FieldError>{error}</FieldError>
             </Field>
+
+            {asset?.type === 'todo' ? (
+              <Field>
+                <FieldLabel htmlFor="asset-edit-time">时间</FieldLabel>
+                <Input
+                  id="asset-edit-time"
+                  value={timeText}
+                  onChange={(event) => setTimeText(event.target.value)}
+                />
+              </Field>
+            ) : null}
 
             {asset?.type === 'link' ? (
               <Field>
@@ -120,6 +257,19 @@ export function AssetEditDialog({
                 />
               </Field>
             ) : null}
+
+            <Field>
+              <FieldLabel htmlFor="asset-edit-content">
+                {asset?.type === 'note' ? '正文' : asset?.type === 'todo' ? '备注' : '备注'}
+              </FieldLabel>
+              <Textarea
+                id="asset-edit-content"
+                className="min-h-28"
+                value={content}
+                onChange={(event) => setContent(event.target.value)}
+              />
+            </Field>
+
           </FieldGroup>
 
           <DialogFooter>

@@ -89,37 +89,73 @@ function parseDueAt(raw: unknown): Date | null {
 }
 
 function parseUpdateAssetInput(input: unknown):
-  | { assetId: string; assetType: 'note'; text: string }
-  | { assetId: string; assetType: 'todo'; text: string; timeText: string | null; dueAt: Date | null }
-  | { assetId: string; assetType: 'link'; text: string; url: string } {
+  | {
+      assetId: string
+      assetType: 'note'
+      rawInput: string
+      title?: string | null
+      content?: string | null
+      summary?: string | null
+    }
+  | {
+      assetId: string
+      assetType: 'todo'
+      rawInput: string
+      title?: string | null
+      content?: string | null
+      timeText?: string | null
+      dueAt?: Date | null
+    }
+  | {
+      assetId: string
+      assetType: 'link'
+      rawInput: string
+      title?: string | null
+      note?: string | null
+      summary?: string | null
+      url: string
+    } {
   const base = parseAssetRefInput(input)
-  if (!input || typeof input !== 'object' || !('text' in input)) {
+  if (!input || typeof input !== 'object' || !('rawInput' in input)) {
     throw new ModuleActionError('资产更新参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
   }
 
-  const { text } = input
-  if (typeof text !== 'string' || !text.trim()) {
+  const { rawInput } = input
+  if (typeof rawInput !== 'string' || !rawInput.trim()) {
     throw new ModuleActionError('请输入有效内容。', MODULE_ACTION_ERROR_CODES.EMPTY_INPUT)
   }
+
+  const title =
+    'title' in input && typeof input.title === 'string' ? input.title.trim() || null : undefined
+
+  const content =
+    'content' in input && typeof input.content === 'string' ? input.content.trim() || null : undefined
 
   if (base.assetType === 'note') {
     return {
       assetId: base.assetId,
       assetType: 'note',
-      text: text.trim(),
+      rawInput: rawInput.trim(),
+      title,
+      content,
+      summary: content,
     }
   }
 
   if (base.assetType === 'todo') {
     const timeText =
-      'timeText' in input && typeof input.timeText === 'string' ? input.timeText.trim() || null : null
+      'timeText' in input && typeof input.timeText === 'string'
+        ? input.timeText.trim() || null
+        : undefined
 
     return {
       assetId: base.assetId,
       assetType: 'todo',
-      text: text.trim(),
+      rawInput: rawInput.trim(),
+      title,
+      content,
       timeText,
-      dueAt: parseDueAt('dueAt' in input ? input.dueAt : null),
+      dueAt: 'dueAt' in input ? parseDueAt(input.dueAt) : undefined,
     }
   }
 
@@ -130,7 +166,11 @@ function parseUpdateAssetInput(input: unknown):
   return {
     assetId: base.assetId,
     assetType: 'link',
-    text: text.trim(),
+    rawInput: rawInput.trim(),
+    title,
+    note: 'note' in input && typeof input.note === 'string' ? input.note.trim() || null : undefined,
+    summary:
+      'note' in input && typeof input.note === 'string' ? input.note.trim() || null : undefined,
     url: input.url.trim(),
   }
 }
@@ -248,13 +288,18 @@ export async function updateWorkspaceAssetAction(
         result = await updateWorkspaceNote({
           userId: user.id,
           assetId: parsed.assetId,
-          text: parsed.text,
+          rawInput: parsed.rawInput,
+          title: parsed.title,
+          content: parsed.content,
+          summary: parsed.summary,
         })
       } else if (parsed.assetType === 'todo') {
         result = await updateWorkspaceTodo({
           userId: user.id,
           assetId: parsed.assetId,
-          text: parsed.text,
+          rawInput: parsed.rawInput,
+          title: parsed.title,
+          content: parsed.content,
           timeText: parsed.timeText,
           dueAt: parsed.dueAt,
         })
@@ -262,8 +307,11 @@ export async function updateWorkspaceAssetAction(
         result = await updateWorkspaceBookmark({
           userId: user.id,
           assetId: parsed.assetId,
-          text: parsed.text,
+          rawInput: parsed.rawInput,
           url: parsed.url,
+          title: parsed.title,
+          note: parsed.note,
+          summary: parsed.summary,
         })
       }
 

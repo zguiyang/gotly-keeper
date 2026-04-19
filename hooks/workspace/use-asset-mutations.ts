@@ -17,9 +17,30 @@ import type { AssetListItem } from '@/shared/assets/assets.types'
 type MutationAction = 'update' | 'archive' | 'unarchive' | 'trash' | 'restore' | 'purge'
 
 type UpdateAssetInput =
-  | { assetId: string; assetType: 'note'; text: string }
-  | { assetId: string; assetType: 'todo'; text: string; timeText?: string | null; dueAt?: Date | null }
-  | { assetId: string; assetType: 'link'; text: string; url: string }
+  | {
+      assetId: string
+      assetType: 'note'
+      rawInput: string
+      title?: string | null
+      content?: string | null
+    }
+  | {
+      assetId: string
+      assetType: 'todo'
+      rawInput: string
+      title?: string | null
+      content?: string | null
+      timeText?: string | null
+      dueAt?: Date | null
+    }
+  | {
+      assetId: string
+      assetType: 'link'
+      rawInput: string
+      title?: string | null
+      note?: string | null
+      url: string
+    }
 
 function makePendingKey(assetId: string, action: MutationAction) {
   return `${assetId}:${action}`

@@ -252,6 +252,7 @@ describe('createWorkspaceTools', () => {
     expect(output).toEqual({
       kind: 'query',
       query: 'landing page',
+      queryDescription: '书签 · 未完成 · 上周',
       results,
     })
   })
@@ -368,6 +369,7 @@ describe('toWorkspaceRunResult', () => {
     const queryResult = {
       kind: 'query' as const,
       query: 'landing page',
+      queryDescription: '全部内容',
       results: [],
     }
 
