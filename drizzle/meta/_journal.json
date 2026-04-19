@@ -64,6 +64,13 @@
       "when": 1776429414911,
       "tag": "0008_workspace_asset_lifecycle",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1776592200000,
+      "tag": "0009_structured_asset_fields",
+      "breakpoints": true
     }
   ]
 }

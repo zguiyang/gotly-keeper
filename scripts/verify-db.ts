@@ -6,12 +6,23 @@ const REQUIRED_COLUMNS = [
   { table: 'notes', column: 'lifecycle_status' },
   { table: 'notes', column: 'archived_at' },
   { table: 'notes', column: 'trashed_at' },
+  { table: 'notes', column: 'title' },
+  { table: 'notes', column: 'content' },
+  { table: 'notes', column: 'summary' },
+  { table: 'notes', column: 'parsed_meta' },
   { table: 'todos', column: 'lifecycle_status' },
   { table: 'todos', column: 'archived_at' },
   { table: 'todos', column: 'trashed_at' },
+  { table: 'todos', column: 'title' },
+  { table: 'todos', column: 'content' },
+  { table: 'todos', column: 'parsed_meta' },
   { table: 'bookmarks', column: 'lifecycle_status' },
   { table: 'bookmarks', column: 'archived_at' },
   { table: 'bookmarks', column: 'trashed_at' },
+  { table: 'bookmarks', column: 'title' },
+  { table: 'bookmarks', column: 'note' },
+  { table: 'bookmarks', column: 'summary' },
+  { table: 'bookmarks', column: 'parsed_meta' },
 ] as const
 
 function getDatabaseConfig() {
@@ -39,8 +50,11 @@ async function verifyWorkspaceLifecycleColumns() {
         where table_schema = 'public'
           and (
             (table_name = 'notes' and column_name in ('lifecycle_status', 'archived_at', 'trashed_at'))
+            or (table_name = 'notes' and column_name in ('title', 'content', 'summary', 'parsed_meta'))
             or (table_name = 'todos' and column_name in ('lifecycle_status', 'archived_at', 'trashed_at'))
+            or (table_name = 'todos' and column_name in ('title', 'content', 'parsed_meta'))
             or (table_name = 'bookmarks' and column_name in ('lifecycle_status', 'archived_at', 'trashed_at'))
+            or (table_name = 'bookmarks' and column_name in ('title', 'note', 'summary', 'parsed_meta'))
           )
       `
     )
@@ -53,11 +67,11 @@ async function verifyWorkspaceLifecycleColumns() {
     if (missing.length > 0) {
       const missingList = missing.map((item) => `${item.table}.${item.column}`).join(', ')
       throw new Error(
-        `[verify:db] Missing lifecycle columns: ${missingList}. Run "pnpm db:migrate" and retry.`
+        `[verify:db] Missing workspace columns: ${missingList}. Run "pnpm db:migrate" and retry.`
       )
     }
 
-    console.info('[verify:db] OK - workspace lifecycle columns exist')
+    console.info('[verify:db] OK - workspace lifecycle and structured columns exist')
   } finally {
     await pool.end()
   }
