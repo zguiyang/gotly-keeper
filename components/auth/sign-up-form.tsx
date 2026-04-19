@@ -45,7 +45,7 @@ export function SignUpForm() {
     <form className="space-y-6" onSubmit={onSubmit}>
       <AuthField
         autoComplete="username"
-        inputClassName="bg-surface-container-low focus:bg-surface-container-lowest"
+        inputClassName="bg-muted focus:bg-surface-container-lowest"
         label="昵称"
         name="name"
         placeholder="例如：Joy"
@@ -54,7 +54,7 @@ export function SignUpForm() {
       />
       <AuthField
         autoComplete="email"
-        inputClassName="bg-surface-container-low focus:bg-surface-container-lowest"
+        inputClassName="bg-muted focus:bg-surface-container-lowest"
         label="电子邮箱"
         name="email"
         placeholder="name@example.com"
@@ -64,7 +64,7 @@ export function SignUpForm() {
       />
       <AuthField
         autoComplete="new-password"
-        inputClassName="bg-surface-container-low focus:bg-surface-container-lowest"
+        inputClassName="bg-muted focus:bg-surface-container-lowest"
         label="密码"
         name="password"
         placeholder="••••••••"

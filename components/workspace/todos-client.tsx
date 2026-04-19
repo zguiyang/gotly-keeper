@@ -83,7 +83,7 @@ function TodoItemComponent({
               <Clock className="w-3 h-3" />
               {item.timeText || '无截止日期'}
             </span>
-            <span className="w-1 h-1 rounded-full bg-outline-variant/40" />
+            <span className="w-1 h-1 rounded-full bg-border/40" />
             <span>来自统一入口</span>
           </div>
         </div>
@@ -138,7 +138,7 @@ function TodoSection({
             onArchive={onArchive}
             onMoveToTrash={onMoveToTrash}
           />
-          {index < items.length - 1 && <Separator className="mx-4 bg-outline-variant/10" />}
+          {index < items.length - 1 && <Separator className="mx-4 bg-border/10" />}
         </div>
       ))}
     </div>

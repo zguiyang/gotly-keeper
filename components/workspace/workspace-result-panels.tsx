@@ -33,7 +33,7 @@ export function RecentItem({
   timeText?: string | null
 }) {
   return (
-    <div className="group -mx-3 rounded-2xl border-t border-outline-variant/10 px-3 py-4 transition-colors duration-150 hover:bg-surface-container-low/45 focus-within:bg-surface-container-low/45">
+    <div className="group -mx-3 rounded-2xl border-t border-border/10 px-3 py-4 transition-colors duration-150 hover:bg-muted/45 focus-within:bg-muted/45">
       <div className="flex items-start gap-4">
         <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ${iconBg}`}>
           <Icon className={`h-4 w-4 ${iconColor}`} />
@@ -74,7 +74,7 @@ export function WorkspaceQueryResultsPanel({
         <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
           查询结果
         </h2>
-        <div className="flex-1 h-px bg-outline-variant/20" />
+        <div className="flex-1 h-px bg-border/20" />
       </div>
       <p className="mb-4 text-sm leading-6 text-on-surface-variant/75">{`“${query}”`}</p>
       {results.length === 0 ? (
@@ -134,7 +134,7 @@ function SummaryPanelBase<TSource extends { id: string }>({
         <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
           {title}
         </h2>
-        <div className="flex-1 h-px bg-outline-variant/20" />
+        <div className="flex-1 h-px bg-border/20" />
       </div>
       <div className={`${workspaceSurfaceClassName} p-5`}>
         <h3 className="text-lg font-semibold leading-7 tracking-[-0.02em] text-on-surface">
@@ -153,7 +153,7 @@ function SummaryPanelBase<TSource extends { id: string }>({
           </ul>
         ) : null}
         {sources.length > 0 ? (
-          <div className="mt-5 border-t border-outline-variant/10 pt-4">
+          <div className="mt-5 border-t border-border/10 pt-4">
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant/75">
               来源
             </p>

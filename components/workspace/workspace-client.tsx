@@ -146,7 +146,7 @@ export function WorkspaceClient({
           </div>
           <Input
             aria-label="输入内容或搜索知识库"
-            className="h-15 w-full rounded-full border border-outline-variant/10 bg-surface-container-lowest pl-14 pr-28 text-base text-on-surface shadow-[var(--shadow-elevation-3)] transition-[box-shadow,border-color] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 focus:shadow-[var(--shadow-soft)]"
+            className="h-15 w-full rounded-full border border-border/10 bg-surface-container-lowest pl-14 pr-28 text-base text-on-surface shadow-[var(--shadow-elevation-3)] transition-[box-shadow,border-color] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 focus:shadow-[var(--shadow-soft)]"
             name="workspace-query"
             placeholder="粘贴链接、记下想法或搜索…"
             type="text"
@@ -189,7 +189,7 @@ export function WorkspaceClient({
           <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
             最近捕获
           </h2>
-          <div className="flex-1 h-px bg-outline-variant/20" />
+          <div className="flex-1 h-px bg-border/20" />
         </div>
 
         {recentItems.length === 0 ? (

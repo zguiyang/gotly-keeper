@@ -10,11 +10,11 @@ interface AuthDividerProps {
 export function AuthDivider({ className, text = "其他方式" }: AuthDividerProps) {
   return (
     <div className={cn("flex items-center gap-4", className)}>
-      <div className="h-px flex-1 bg-outline-variant/20" />
-      <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-outline">
+      <div className="h-px flex-1 bg-border/20" />
+      <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
         {text}
       </span>
-      <div className="h-px flex-1 bg-outline-variant/20" />
+      <div className="h-px flex-1 bg-border/20" />
     </div>
   );
 }

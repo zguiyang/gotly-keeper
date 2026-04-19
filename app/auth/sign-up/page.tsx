@@ -16,7 +16,7 @@ export default function SignUpPage() {
         <h1 className="font-headline text-4xl font-extrabold leading-tight tracking-tight text-on-surface">
           开启你的灵感之旅
         </h1>
-        <p className="text-base leading-relaxed text-on-secondary-container/80">
+        <p className="text-base leading-relaxed text-on-surface-variant/80">
           创建一个账号，开始高效记录与检索
         </p>
       </div>
@@ -25,7 +25,7 @@ export default function SignUpPage() {
         <SignUpForm />
 
         <div className="pt-2 text-center">
-          <p className="text-sm text-on-secondary-container">
+          <p className="text-sm text-on-surface-variant">
             已有账号？{" "}
             <Link className="font-semibold text-primary hover:underline" href="/auth/sign-in">
               立即登录

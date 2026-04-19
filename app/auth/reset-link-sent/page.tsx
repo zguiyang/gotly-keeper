@@ -11,7 +11,7 @@ export default function ResetLinkSentPage() {
       withFooter={false}
     >
       <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
-      <div className="absolute -right-24 -bottom-24 h-96 w-96 rounded-full bg-secondary-container/20 blur-3xl" />
+      <div className="absolute -right-24 -bottom-24 h-96 w-96 rounded-full bg-primary-container/16 blur-3xl" />
 
       <div className="relative z-10 w-full max-w-[420px] text-center">
         <div className="mb-10 flex justify-center">
@@ -37,7 +37,7 @@ export default function ResetLinkSentPage() {
           </Link>
         </div>
 
-        <div className="mt-12 border-t border-outline-variant/10 pt-8">
+        <div className="mt-12 border-t border-border/10 pt-8">
           <p className="font-body text-sm text-on-surface-variant">
             没有收到邮件？
             <Button

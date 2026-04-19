@@ -62,7 +62,7 @@ function AssetItem({
   ]
 
   return (
-    <article className="group -mx-4 rounded-2xl px-4 py-5 transition-colors duration-150 hover:bg-surface-container-low/45">
+    <article className="group -mx-4 rounded-2xl px-4 py-5 transition-colors duration-150 hover:bg-muted/45">
       <div className="flex items-start gap-4 lg:gap-5">
         <div
           className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${presentation.iconBg}`}

@@ -17,10 +17,10 @@ import type { LucideIcon } from 'lucide-react'
 const workspaceMetaTextClassName = 'text-[11px] font-medium tracking-[0.02em] text-on-surface-variant/60'
 
 const workspacePillClassName =
-  'inline-flex items-center rounded-full border border-outline-variant/15 bg-surface-container-low px-2.5 py-1 text-[11px] font-medium tracking-[0.02em] text-on-surface-variant'
+  'inline-flex items-center rounded-full border border-border/15 bg-muted px-2.5 py-1 text-[11px] font-medium tracking-[0.02em] text-on-surface-variant'
 
 const workspaceSurfaceClassName =
-  'rounded-2xl border border-outline-variant/10 bg-surface-container-lowest shadow-[var(--shadow-soft)]'
+  'rounded-2xl border border-border/10 bg-surface-container-lowest shadow-[var(--shadow-soft)]'
 
 type WorkspacePageHeaderProps = {
   title: string
@@ -74,7 +74,7 @@ function WorkspaceFilterTabs<TValue extends string>({
       variant="outline"
       size="sm"
       spacing={2}
-      className={cn('flex flex-wrap items-center gap-2 border-b border-outline-variant/10 pb-4', className)}
+      className={cn('flex flex-wrap items-center gap-2 border-b border-border/10 pb-4', className)}
       aria-label="内容筛选"
     >
       {tabs.map((tab) => (
@@ -96,7 +96,7 @@ function WorkspaceSectionDivider({ label }: { label: string }) {
       <span className="text-[11px] font-semibold tracking-[0.18em] text-on-surface-variant/60 uppercase">
         {label}
       </span>
-      <Separator className="bg-outline-variant/10" />
+      <Separator className="bg-border/10" />
     </div>
   )
 }
@@ -112,7 +112,7 @@ function WorkspaceEmptyState({ title, description, icon: Icon, className }: Work
   return (
     <Card
       className={cn(
-        'mt-14 rounded-2xl border border-dashed border-outline-variant/20 bg-surface-container-low/30 py-10 shadow-none',
+        'mt-14 rounded-2xl border border-dashed border-border/20 bg-muted/30 py-10 shadow-none',
         className
       )}
     >

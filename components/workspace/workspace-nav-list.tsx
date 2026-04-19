@@ -31,7 +31,7 @@ export function WorkspaceNavList({ variant }: WorkspaceNavListProps) {
             } ${
               active
                 ? 'bg-primary/6 font-medium text-primary'
-                : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
+                : 'text-on-surface-variant hover:bg-muted hover:text-on-surface'
             }`}
           >
             {variant === 'sidebar' && active ? (

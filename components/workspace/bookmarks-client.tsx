@@ -42,7 +42,7 @@ function BookmarkItem({
   const status = item.bookmarkMeta?.status ?? null
 
   return (
-    <div className="group -mx-4 rounded-lg px-4 py-6 transition-colors duration-150 hover:bg-surface-container-low/50 lg:py-8">
+    <div className="group -mx-4 rounded-lg px-4 py-6 transition-colors duration-150 hover:bg-muted/50 lg:py-8">
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
         <div className="flex-1 space-y-2 min-w-0">
           <div className="flex items-center gap-2.5 flex-wrap">
@@ -115,7 +115,7 @@ function BookmarkItem({
 }
 
 function Divider() {
-  return <Separator className="mx-4 bg-outline-variant/10" />
+  return <Separator className="mx-4 bg-border/10" />
 }
 
 export function BookmarksClient({ bookmarks }: { bookmarks: AssetListItem[] }) {

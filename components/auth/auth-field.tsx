@@ -53,7 +53,7 @@ const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
         {description ? <FieldDescription>{description}</FieldDescription> : null}
         <div className="relative">
           {prefixIcon ? (
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-outline">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-muted-foreground">
               {prefixIcon}
             </div>
           ) : null}
@@ -63,7 +63,7 @@ const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
             aria-invalid={!!error}
             className={cn(
               "w-full rounded-xl border-0 bg-surface-container-lowest px-4 py-3.5 text-sm text-on-surface outline-none",
-              "placeholder:text-outline-variant transition-[background-color,box-shadow,color] duration-200 focus-visible:ring-2 focus-visible:ring-primary/15",
+              "placeholder:text-muted-foreground/60 transition-[background-color,box-shadow,color] duration-200 focus-visible:ring-2 focus-visible:ring-primary/15",
               prefixIcon && "pl-11",
               suffixIcon && "pr-11",
               error && "ring-2 ring-destructive/20",
@@ -73,7 +73,7 @@ const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
             {...props}
           />
           {suffixIcon ? (
-            <div className="absolute inset-y-0 right-0 flex items-center pr-4 text-outline">
+            <div className="absolute inset-y-0 right-0 flex items-center pr-4 text-muted-foreground">
               {suffixIcon}
             </div>
           ) : null}

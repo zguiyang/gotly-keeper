@@ -17,7 +17,7 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
   const fallbackInitial = userName.trim().slice(0, 1).toUpperCase() || 'G'
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between gap-4 border-b border-outline-variant/15 bg-surface/88 px-4 text-sm backdrop-blur-xl lg:px-8">
+    <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between gap-4 border-b border-border/15 bg-surface/88 px-4 text-sm backdrop-blur-xl lg:px-8">
       <div className="lg:hidden flex items-center shrink-0">
         <Sheet>
           <SheetTrigger
@@ -26,10 +26,10 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
           >
             <Menu />
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 border-r border-outline-variant/15 bg-surface p-0">
+          <SheetContent side="left" className="w-64 border-r border-border/15 bg-surface p-0">
             <SheetTitle className="sr-only">工作区导航</SheetTitle>
             <div className="flex flex-col h-full">
-              <div className="border-b border-outline-variant/15 px-4 py-6">
+              <div className="border-b border-border/15 px-4 py-6">
                 <div className="font-headline text-[1.9rem] font-semibold tracking-[-0.04em] text-primary">Gotly AI</div>
                 <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-on-surface-variant/75">
                   Personal Curator
@@ -38,7 +38,7 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
               <nav className="flex-1 px-2 py-4 space-y-0.5">
                 <WorkspaceNavList variant="sheet" />
               </nav>
-              <div className="border-t border-outline-variant/15 px-4 py-6">
+              <div className="border-t border-border/15 px-4 py-6">
                 <p className="text-sm leading-6 text-on-surface-variant">
                   Gotly 小管家随时待命
                 </p>
@@ -55,7 +55,7 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
           </div>
           <Input
             aria-label="快速查找"
-            className="h-10 w-full rounded-2xl border border-outline-variant/20 bg-surface-container-lowest/95 pl-10 pr-4 text-sm text-on-surface shadow-[var(--shadow-elevation-3)] transition-[border-color,box-shadow] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:border-primary/35 focus-visible:ring-2 focus-visible:ring-primary/15"
+            className="h-10 w-full rounded-2xl border border-border/20 bg-surface-container-lowest/95 pl-10 pr-4 text-sm text-on-surface shadow-[var(--shadow-elevation-3)] transition-[border-color,box-shadow] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:border-primary/35 focus-visible:ring-2 focus-visible:ring-primary/15"
             name="topbar-search"
             placeholder="快速查找…"
             type="text"
@@ -80,7 +80,7 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
         >
           <Settings />
         </Button>
-        <div className="ml-1 flex size-9 items-center justify-center overflow-hidden rounded-full border border-outline-variant/10 bg-surface-container-high shadow-[var(--shadow-elevation-2)]">
+        <div className="ml-1 flex size-9 items-center justify-center overflow-hidden rounded-full border border-border/10 bg-muted shadow-[var(--shadow-elevation-2)]">
           {userImage ? (
             <Image
               alt={`${userName} 的头像`}
