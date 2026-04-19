@@ -70,7 +70,7 @@ Load by touched code area:
 - Any task: `.ai-rules/core/project-architecture-rules.md`, `.ai-rules/core/project-tooling-and-runtime-rules.md`, `.ai-rules/core/testing-and-integration-rules.md` as needed
 - `app/**`: `.ai-rules/core/project-architecture-rules.md`, then backend/frontend domain rules by touched behavior
 - `server/**`: `.ai-rules/domain/backend-architecture-principles.md`
-- `server/lib/db/schema.ts`, `drizzle/**`, database migrations: `.ai-rules/domain/backend-architecture-principles.md`
+- `server/lib/db/schema.ts`, the Drizzle Kit output directory from `drizzle.config.ts`, database migrations: `.ai-rules/domain/backend-architecture-principles.md`
 - `server/prompts/**`, `server/lib/ai/**`, server AI model calls: `.ai-rules/domain/ai-sdk-rules.md`
 - `components/**`, `hooks/**`, `client/**`, `config/**`: `.ai-rules/domain/frontend-architecture-principles.md`
 - `shared/**`, `lib/**`: `.ai-rules/core/project-architecture-rules.md`; add `.ai-rules/domain/universal-development-boundary-rules.md` when ownership is ambiguous

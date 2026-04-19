@@ -51,7 +51,7 @@ For Next.js behavior changes, read the relevant guide in `node_modules/next/dist
 ## Domain Routing
 
 - `server/**` -> `.ai-rules/domain/backend-architecture-principles.md`
-- `server/lib/db/schema.ts`, `drizzle/**`, database migrations -> `.ai-rules/domain/backend-architecture-principles.md`
+- `server/lib/db/schema.ts`, the Drizzle Kit output directory from `drizzle.config.ts`, database migrations -> `.ai-rules/domain/backend-architecture-principles.md`
 - `server/prompts/**`, `server/lib/ai/**`, server AI model calls -> `.ai-rules/domain/ai-sdk-rules.md`
 - `app/**` -> `.ai-rules/core/project-architecture-rules.md`, then backend/frontend domain rules by touched behavior
 - `components/**`, `hooks/**`, `client/**`, `config/**` -> `.ai-rules/domain/frontend-architecture-principles.md`
