@@ -7,13 +7,13 @@ export const assetInputIntentSchema = z.enum([
   'create_link',
   'create_todo',
   'search_assets',
-  'summarize_assets',
+  'summarize_workspace',
 ])
 
 export const assetSummaryTargetSchema = z.enum([
-  'unfinished_todos',
-  'recent_notes',
-  'recent_bookmarks',
+  'todos',
+  'notes',
+  'bookmarks',
 ])
 
 export const aiAssetInputSchema = z.object({

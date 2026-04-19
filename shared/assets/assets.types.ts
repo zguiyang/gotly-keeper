@@ -77,3 +77,5 @@ export type WorkspaceAssetActionResult =
   | { kind: 'todo-review'; review: TodoReviewResult }
   | { kind: 'note-summary'; summary: NoteSummaryResult }
   | { kind: 'bookmark-summary'; summary: BookmarkSummaryResult }
+
+// Do not remove this union. The stream result should map into the same discriminants.

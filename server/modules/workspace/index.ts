@@ -31,6 +31,7 @@ import {
   updateNote,
   type NoteListItem,
 } from '@/server/services/notes'
+import { searchAssets } from '@/server/services/search/assets-search.service'
 import { deleteEmbeddingsForAsset } from '@/server/services/search/semantic-search.service'
 import {
   archiveTodo,
@@ -180,6 +181,53 @@ function toAssetListItemFromBookmark(bookmark: BookmarkListItem): AssetListItem 
   }
 }
 
+export async function createWorkspaceNote(input: {
+  userId: string
+  text: string
+}): Promise<WorkspaceAssetActionResult> {
+  const note = await createNote({
+    userId: input.userId,
+    text: input.text,
+  })
+
+  return { kind: 'created', asset: toAssetListItemFromNote(note) }
+}
+
+export async function createWorkspaceTodo(input: {
+  userId: string
+  text: string
+}): Promise<WorkspaceAssetActionResult> {
+  const todo = await createTodo({
+    userId: input.userId,
+    text: input.text,
+  })
+
+  return { kind: 'created', asset: toAssetListItemFromTodo(todo) }
+}
+
+export async function createWorkspaceLink(input: {
+  userId: string
+  text: string
+  url: string
+}): Promise<WorkspaceAssetActionResult> {
+  const bookmark = await createBookmark({
+    userId: input.userId,
+    text: input.text,
+    url: input.url,
+  })
+
+  const asset = toAssetListItemFromBookmark(bookmark)
+  asset.bookmarkMeta = buildPendingBookmarkMetaForResponse()
+
+  void scheduleBookmarkEnrichTask({
+    bookmarkId: asset.id,
+    userId: input.userId,
+    url: input.url,
+  })
+
+  return { kind: 'created', asset }
+}
+
 export async function createWorkspaceAsset(input: {
   userId: string
   text: string
@@ -187,39 +235,24 @@ export async function createWorkspaceAsset(input: {
   const classification = classifyAssetInput(input.text)
 
   if (classification.kind === 'link') {
-    const bookmark = await createBookmark({
+    return createWorkspaceLink({
       userId: input.userId,
       text: input.text,
       url: classification.url,
     })
-
-    const asset = toAssetListItemFromBookmark(bookmark)
-    asset.bookmarkMeta = buildPendingBookmarkMetaForResponse()
-
-    void scheduleBookmarkEnrichTask({
-      bookmarkId: asset.id,
-      userId: input.userId,
-      url: asset.url!,
-    })
-
-    return { kind: 'created', asset }
   }
 
   if (classification.kind === 'todo') {
-    const todo = await createTodo({
+    return createWorkspaceTodo({
       userId: input.userId,
       text: input.text,
     })
-
-    return { kind: 'created', asset: toAssetListItemFromTodo(todo) }
   }
 
-  const note = await createNote({
+  return createWorkspaceNote({
     userId: input.userId,
     text: input.text,
   })
-
-  return { kind: 'created', asset: toAssetListItemFromNote(note) }
 }
 
 export async function setWorkspaceTodoCompletion(input: {
@@ -690,4 +723,14 @@ export async function summarizeWorkspaceRecentBookmarks(input: {
   userId: string
 }): Promise<BookmarkSummaryResult> {
   return summarizeWorkspaceRecentBookmarksInternal(input.userId)
+}
+
+export async function searchWorkspaceAssets(input: {
+  userId: string
+  query: string
+}): Promise<AssetListItem[]> {
+  return searchAssets({
+    userId: input.userId,
+    query: input.query,
+  })
 }

@@ -1,12 +1,12 @@
 'use client'
 
 import { Sparkles } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { assetTypePresentation } from '@/config/ui/asset-presentation'
-import { useWorkspaceSubmit } from '@/hooks/workspace/use-workspace-submit'
+import { useWorkspaceStream } from '@/hooks/workspace/use-workspace-stream'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 import { formatAbsoluteTime } from '@/shared/time/formatters'
 
@@ -17,6 +17,7 @@ import {
   WorkspaceQueryResultsPanel,
   WorkspaceTodoReviewPanel,
 } from './workspace-result-panels'
+import { WorkspaceRunPanel } from './workspace-run-panel'
 
 function QuickActionChips({
   onChipClick,
@@ -91,27 +92,38 @@ export function WorkspaceClient({
 }) {
   const [inputValue, setInputValue] = useState('')
   const [recentItems, setRecentItems] = useState(recentAssets)
+  const lastHandledCreatedAssetIdRef = useRef<string | null>(null)
 
-  const { state, submit, reviewTodos, summarizeNotes, summarizeBookmarks } = useWorkspaceSubmit()
+  const { state, submitInput, triggerQuickAction } = useWorkspaceStream()
 
-  const { status, message, queryResult, todoReview, noteSummary, bookmarkSummary } = state
+  useEffect(() => {
+    const createdResult = state.result?.kind === 'created' ? state.result : null
+
+    if (!createdResult) {
+      return
+    }
+
+    if (lastHandledCreatedAssetIdRef.current === createdResult.asset.id) {
+      return
+    }
+
+    lastHandledCreatedAssetIdRef.current = createdResult.asset.id
+    setRecentItems((items) => [createdResult.asset, ...items].slice(0, 6))
+  }, [state.result])
 
   async function handleSubmit() {
     const text = inputValue.trim()
     if (!text) {
       return
     }
-    const result = await submit(text)
 
-    if (result?.kind === 'created') {
-      setRecentItems((items) => [result.asset, ...items].slice(0, 6))
-    }
+    await submitInput(text)
 
     setInputValue('')
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && status !== 'submitting') {
+    if (e.key === 'Enter' && state.status !== 'streaming') {
       e.preventDefault()
       handleSubmit()
     }
@@ -132,10 +144,10 @@ export function WorkspaceClient({
         </p>
         <QuickActionChips
           onChipClick={handleChipClick}
-          onReviewTodos={reviewTodos}
-          onSummarizeBookmarks={summarizeBookmarks}
-          onSummarizeNotes={summarizeNotes}
-          disabled={status === 'submitting'}
+          onReviewTodos={() => triggerQuickAction('review-todos')}
+          onSummarizeBookmarks={() => triggerQuickAction('summarize-bookmarks')}
+          onSummarizeNotes={() => triggerQuickAction('summarize-notes')}
+          disabled={state.status === 'streaming'}
         />
       </div>
 
@@ -157,15 +169,19 @@ export function WorkspaceClient({
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={status === 'submitting'}
+            disabled={state.status === 'streaming'}
             className="absolute inset-y-0 right-2 my-auto h-11 rounded-full px-5"
           >
-            {status === 'submitting' ? '处理中…' : '提交'}
+            {state.status === 'streaming' ? '处理中…' : '提交'}
           </Button>
         </div>
-        {message ? (
+        {state.errorMessage ? (
           <p className="mt-2 px-4 text-xs text-on-surface-variant/60" aria-live="polite">
-            {message}
+            {state.errorMessage}
+          </p>
+        ) : state.result?.kind === 'created' && state.result.notice ? (
+          <p className="mt-2 px-4 text-xs text-on-surface-variant/60" aria-live="polite">
+            {state.result.notice}
           </p>
         ) : inputValue ? (
           <p className="mt-2 px-4 text-xs text-on-surface-variant/60">
@@ -174,14 +190,18 @@ export function WorkspaceClient({
         ) : null}
       </section>
 
-      {queryResult ? (
-        <WorkspaceQueryResultsPanel query={queryResult.query} results={queryResult.results} />
-      ) : todoReview ? (
-        <WorkspaceTodoReviewPanel review={todoReview} />
-      ) : noteSummary ? (
-        <WorkspaceNoteSummaryPanel summary={noteSummary} />
-      ) : bookmarkSummary ? (
-        <WorkspaceBookmarkSummaryPanel summary={bookmarkSummary} />
+      {state.status === 'streaming' && state.stage ? (
+        <WorkspaceRunPanel stage={state.stage} message={state.stageMessage} />
+      ) : null}
+
+      {state.result?.kind === 'query' ? (
+        <WorkspaceQueryResultsPanel query={state.result.query} results={state.result.results} />
+      ) : state.result?.kind === 'todo-review' ? (
+        <WorkspaceTodoReviewPanel review={state.result.review} />
+      ) : state.result?.kind === 'note-summary' ? (
+        <WorkspaceNoteSummaryPanel summary={state.result.summary} />
+      ) : state.result?.kind === 'bookmark-summary' ? (
+        <WorkspaceBookmarkSummaryPanel summary={state.result.summary} />
       ) : null}
 
       <section>
