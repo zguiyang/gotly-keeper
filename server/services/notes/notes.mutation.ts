@@ -11,17 +11,9 @@ import { now } from '@/shared/time/dayjs'
 
 import { toNoteListItem } from './notes.mapper'
 import { notes } from './notes.schema'
+import { normalizeNoteWriteInput, type NoteWriteInput } from './notes.write'
 
 import type { NoteListItem } from './notes.types'
-
-function normalizeTextOrThrow(text: string): string {
-  const trimmed = text.trim()
-  if (!trimmed) {
-    throw new Error('EMPTY_INPUT')
-  }
-
-  return trimmed
-}
 
 async function updateLifecycle(input: {
   userId: string
@@ -57,17 +49,30 @@ async function updateLifecycle(input: {
   return null
 }
 
-export async function updateNote(input: {
-  userId: string
-  noteId: string
-  text: string
-}): Promise<NoteListItem | null> {
-  const trimmedText = normalizeTextOrThrow(input.text)
+export async function updateNote(
+  input: {
+    userId: string
+    noteId: string
+  } & NoteWriteInput
+): Promise<NoteListItem | null> {
+  const normalized = normalizeNoteWriteInput(input)
+  const structuredFieldPatch = normalized.usesStructuredFields
+    ? {
+        title: normalized.title,
+        content: normalized.content,
+        summary: normalized.summary,
+      }
+    : {
+        title: null,
+        content: null,
+        summary: null,
+      }
 
   const [updated] = await db
     .update(notes)
     .set({
-      originalText: trimmedText,
+      originalText: normalized.originalText,
+      ...structuredFieldPatch,
       updatedAt: now(),
     })
     .where(

@@ -9,6 +9,9 @@ type BookmarkListRow = Partial<Pick<
   Bookmark,
   | 'id'
   | 'originalText'
+  | 'title'
+  | 'note'
+  | 'summary'
   | 'url'
   | 'bookmarkMeta'
   | 'lifecycleStatus'
@@ -20,13 +23,19 @@ type BookmarkListRow = Partial<Pick<
 
 export function toBookmarkListItem(bookmark: BookmarkListRow): BookmarkListItem {
   const bookmarkMeta = bookmark.bookmarkMeta ?? null
-  const bookmarkTitle = bookmarkMeta?.title ?? null
+  const bookmarkTitle = bookmark.title ?? bookmarkMeta?.title ?? null
+  const bookmarkExcerpt =
+    bookmark.note ??
+    bookmark.summary ??
+    bookmarkMeta?.description ??
+    bookmarkMeta?.contentSummary ??
+    bookmark.originalText
 
   return {
     id: bookmark.id,
     originalText: bookmark.originalText,
     title: bookmarkTitle || bookmark.originalText.slice(0, 32),
-    excerpt: bookmarkMeta?.description ?? bookmarkMeta?.contentSummary ?? bookmark.originalText,
+    excerpt: bookmarkExcerpt,
     url: bookmark.url,
     bookmarkMeta,
     lifecycleStatus: bookmark.lifecycleStatus ?? ASSET_LIFECYCLE_STATUS.ACTIVE,

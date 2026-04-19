@@ -29,6 +29,28 @@ function normalizeTextOrThrow(text: string): string {
   return trimmed
 }
 
+function normalizeStructuredField(value: string | null | undefined): string | null | undefined {
+  if (value === undefined) {
+    return undefined
+  }
+
+  if (value === null) {
+    return null
+  }
+
+  const trimmed = value.trim()
+  return trimmed ? trimmed : null
+}
+
+function hasStructuredTodoUpdateFields(input: {
+  title?: string | null
+  content?: string | null
+  timeText?: string | null
+  dueAt?: Date | null
+}): boolean {
+  return input.title !== undefined || input.content !== undefined || input.timeText !== undefined || input.dueAt !== undefined
+}
+
 async function updateLifecycle(input: {
   userId: string
   todoId: string
@@ -66,18 +88,31 @@ async function updateLifecycle(input: {
 export async function updateTodo(input: {
   userId: string
   todoId: string
-  text: string
+  text?: string
+  rawInput?: string
+  title?: string | null
+  content?: string | null
   timeText?: string | null
   dueAt?: Date | null
 }): Promise<TodoListItem | null> {
-  const trimmedText = normalizeTextOrThrow(input.text)
+  const usesLegacyTextUpdate = input.rawInput === undefined && input.text !== undefined && !hasStructuredTodoUpdateFields(input)
+  const normalizedTitle = normalizeStructuredField(input.title)
+  const normalizedContent = normalizeStructuredField(input.content)
+  const normalizedTimeText = normalizeStructuredField(input.timeText)
+  const trimmedText = input.rawInput !== undefined
+    ? normalizeTextOrThrow(input.rawInput)
+    : input.text !== undefined
+      ? normalizeTextOrThrow(input.text)
+      : undefined
 
   const [updated] = await db
     .update(todos)
     .set({
       originalText: trimmedText,
-      timeText: input.timeText ?? null,
-      dueAt: input.dueAt ?? null,
+      title: usesLegacyTextUpdate ? null : normalizedTitle,
+      content: usesLegacyTextUpdate ? null : normalizedContent,
+      timeText: usesLegacyTextUpdate ? null : normalizedTimeText,
+      dueAt: usesLegacyTextUpdate ? null : input.dueAt,
       updatedAt: now(),
     })
     .where(
