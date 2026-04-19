@@ -23,7 +23,7 @@ export function AuthNavbar({ className }: AuthNavbarProps) {
         type="button"
         variant="ghost"
         size="icon"
-        className="text-[#54647a] hover:text-on-surface"
+        className="text-on-surface-variant hover:text-on-surface"
         aria-label="帮助与反馈"
       >
         <CircleHelp strokeWidth={2} />

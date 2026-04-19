@@ -20,7 +20,7 @@ const workspacePillClassName =
   'inline-flex items-center rounded-full border border-outline-variant/15 bg-surface-container-low px-2.5 py-1 text-[11px] font-medium tracking-[0.02em] text-on-surface-variant'
 
 const workspaceSurfaceClassName =
-  'rounded-2xl border border-outline-variant/10 bg-surface-container-lowest shadow-[0_12px_32px_-20px_rgba(0,81,177,0.22)]'
+  'rounded-2xl border border-outline-variant/10 bg-surface-container-lowest shadow-[var(--shadow-soft)]'
 
 type WorkspacePageHeaderProps = {
   title: string
@@ -118,7 +118,7 @@ function WorkspaceEmptyState({ title, description, icon: Icon, className }: Work
     >
       <CardContent className="flex flex-col items-center gap-4 px-6 text-center">
         {Icon ? (
-          <div className="flex size-12 items-center justify-center rounded-full bg-surface-container-lowest text-on-surface-variant/50 shadow-[0_10px_30px_-24px_rgba(0,81,177,0.35)]">
+          <div className="flex size-12 items-center justify-center rounded-full bg-surface-container-lowest text-on-surface-variant/50 shadow-[var(--shadow-elevation-2)]">
             <Icon className="size-6" />
           </div>
         ) : null}

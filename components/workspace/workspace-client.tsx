@@ -146,7 +146,7 @@ export function WorkspaceClient({
           </div>
           <Input
             aria-label="输入内容或搜索知识库"
-            className="h-15 w-full rounded-full border border-outline-variant/10 bg-surface-container-lowest pl-14 pr-28 text-base text-on-surface shadow-[0_16px_36px_-30px_rgba(0,81,177,0.35)] transition-[box-shadow,border-color] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 focus:shadow-[0_18px_42px_-28px_rgba(0,81,177,0.42)]"
+            className="h-15 w-full rounded-full border border-outline-variant/10 bg-surface-container-lowest pl-14 pr-28 text-base text-on-surface shadow-[var(--shadow-elevation-3)] transition-[box-shadow,border-color] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 focus:shadow-[var(--shadow-soft)]"
             name="workspace-query"
             placeholder="粘贴链接、记下想法或搜索…"
             type="text"

@@ -17,9 +17,9 @@ export function AuthPageFooter({ className, compact = false }: AuthPageFooterPro
         className
       )}
     >
-      <div
-        className={cn(
-          "mx-auto flex w-full items-center text-[#54647a]",
+        <div
+          className={cn(
+          "mx-auto flex w-full items-center text-on-surface-variant",
           compact
             ? "max-w-5xl flex-col gap-3 text-center"
             : "max-w-7xl flex-col gap-4 md:flex-row md:justify-between"

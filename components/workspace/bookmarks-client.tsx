@@ -50,16 +50,16 @@ function BookmarkItem({
               {getHostname(item.url)}
             </span>
             {status === BOOKMARK_META_STATUS.PENDING && (
-              <span className={`${workspacePillClassName} border-amber-200/60 bg-amber-50 text-amber-700`}>解析中</span>
+              <span className={`${workspacePillClassName} border-status-pending/20 bg-status-pending/10 text-status-pending`}>解析中</span>
             )}
             {status === BOOKMARK_META_STATUS.SUCCESS && (
-              <span className={`${workspacePillClassName} border-emerald-200/60 bg-emerald-50 text-emerald-700`}>已补全</span>
+              <span className={`${workspacePillClassName} border-status-success/20 bg-status-success/10 text-status-success`}>已补全</span>
             )}
             {status === BOOKMARK_META_STATUS.FAILED && (
-              <span className={`${workspacePillClassName} border-red-200/60 bg-red-50 text-red-700`}>补全失败</span>
+              <span className={`${workspacePillClassName} border-status-error/20 bg-status-error/10 text-status-error`}>补全失败</span>
             )}
             {status === BOOKMARK_META_STATUS.SKIPPED_PRIVATE_URL && (
-              <span className={`${workspacePillClassName} bg-slate-100 text-slate-700`}>私网地址已跳过</span>
+              <span className={`${workspacePillClassName} border-status-muted/20 bg-status-muted/10 text-status-muted`}>私网地址已跳过</span>
             )}
             <span className={`${workspaceMetaTextClassName} hidden sm:block`}>
               {formatBookmarkTime(item.createdAt)}

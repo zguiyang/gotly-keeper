@@ -55,7 +55,7 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
           </div>
           <Input
             aria-label="快速查找"
-            className="h-10 w-full rounded-2xl border border-outline-variant/20 bg-surface-container-lowest/95 pl-10 pr-4 text-sm text-on-surface shadow-[0_16px_36px_-30px_rgba(0,81,177,0.3)] transition-[border-color,box-shadow] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:border-primary/35 focus-visible:ring-2 focus-visible:ring-primary/15"
+            className="h-10 w-full rounded-2xl border border-outline-variant/20 bg-surface-container-lowest/95 pl-10 pr-4 text-sm text-on-surface shadow-[var(--shadow-elevation-3)] transition-[border-color,box-shadow] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:border-primary/35 focus-visible:ring-2 focus-visible:ring-primary/15"
             name="topbar-search"
             placeholder="快速查找…"
             type="text"
@@ -80,7 +80,7 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
         >
           <Settings />
         </Button>
-        <div className="ml-1 flex size-9 items-center justify-center overflow-hidden rounded-full border border-outline-variant/10 bg-surface-container-high shadow-[0_14px_28px_-24px_rgba(0,81,177,0.28)]">
+        <div className="ml-1 flex size-9 items-center justify-center overflow-hidden rounded-full border border-outline-variant/10 bg-surface-container-high shadow-[var(--shadow-elevation-2)]">
           {userImage ? (
             <Image
               alt={`${userName} 的头像`}

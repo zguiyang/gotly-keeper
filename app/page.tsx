@@ -76,7 +76,7 @@ export default function LandingPage() {
                   href="/auth/sign-up"
                   className={cn(
                     buttonVariants({ variant: "outline", size: "sm" }),
-                    "rounded-full border-primary/15 bg-white/70 px-4 shadow-sm"
+                    "rounded-full border-primary/15 bg-surface-container-lowest/70 px-4 shadow-sm"
                   )}
                 >
                   注册
@@ -115,7 +115,7 @@ export default function LandingPage() {
                     className={cn(
                       buttonVariants({ size: "lg" }),
                       styles.primaryCta,
-                      "h-12 rounded-full px-6 text-white shadow-lg shadow-primary/20"
+                      "h-12 rounded-full px-6 shadow-lg shadow-primary/20"
                     )}
                   >
                     进入工作空间
@@ -130,7 +130,7 @@ export default function LandingPage() {
                     className={cn(
                       buttonVariants({ variant: "outline", size: "lg" }),
                       styles.secondaryCta,
-                      "h-12 rounded-full border-primary/15 bg-white/70 px-6 shadow-sm"
+                      "h-12 rounded-full border-primary/15 bg-surface-container-lowest/70 px-6 shadow-sm"
                     )}
                   >
                     查看核心能力

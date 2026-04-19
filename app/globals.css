@@ -7,7 +7,7 @@
 /* Gotly AI Design Tokens - Ethereal Archive Design System */
 @theme inline {
   /* Fonts */
-  --font-sans: var(--font-inter), "Inter", "PingFang SC", "Noto Sans SC", sans-serif;
+  --font-sans: "Inter", "PingFang SC", "Noto Sans SC", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Fira Code", monospace;
   --font-heading: "Manrope", var(--font-sans);
   --font-headline: "Manrope", var(--font-sans);
@@ -74,20 +74,20 @@
   --color-surface-container-lowest-fixed: #ffffff;
 
   /* Semantic mappings */
-  --color-ring: var(--primary);
-  --color-input: var(--outline);
-  --color-border: var(--outline);
-  --color-destructive: var(--error);
-  --color-accent: var(--primary-container);
-  --color-accent-foreground: var(--on-primary-container);
-  --color-muted: var(--surface-container-low);
-  --color-muted-foreground: var(--on-surface-variant);
-  --color-secondary-foreground: var(--on-secondary);
-  --color-primary-foreground: var(--on-primary);
-  --color-popover-foreground: var(--on-surface);
-  --color-popover: var(--surface-container-lowest);
-  --color-card-foreground: var(--on-surface);
-  --color-card: var(--surface-container-lowest);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
 
   /* Content Type Semantic Colors */
   --color-type-note: var(--primary);
@@ -96,8 +96,12 @@
   --color-type-link-bg: var(--secondary-fixed);
   --color-type-todo: var(--tertiary);
   --color-type-todo-bg: var(--tertiary-fixed);
+  --color-status-pending: var(--secondary);
+  --color-status-success: var(--primary);
+  --color-status-error: var(--destructive);
+  --color-status-muted: var(--muted-foreground);
   --color-status-completed: var(--on-surface-variant);
-  --color-status-urgent: var(--error);
+  --color-status-urgent: var(--destructive);
 
   /* Border Radius - Ethereal Archive */
   --radius-sm: 0.125rem;   /* DEFAULT */

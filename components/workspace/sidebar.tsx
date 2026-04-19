@@ -16,7 +16,7 @@ export function Sidebar() {
         <WorkspaceNavList variant="sidebar" />
       </nav>
 
-      <div className="mt-auto rounded-2xl border border-outline-variant/12 bg-surface-container-lowest/80 px-4 py-4 shadow-[0_18px_40px_-32px_rgba(0,81,177,0.35)]">
+      <div className="mt-auto rounded-2xl border border-outline-variant/12 bg-surface-container-lowest/80 px-4 py-4 shadow-[var(--shadow-elevation-3)]">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant/65">
           Assistant
         </p>
