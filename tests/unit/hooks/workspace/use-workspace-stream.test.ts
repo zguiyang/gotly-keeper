@@ -110,7 +110,20 @@ function createTodoReviewResult(): WorkspaceRunResult {
       summary: '最近待办集中在发布准备。',
       nextActions: ['确认发布时间'],
       sourceAssetIds: ['todo_1'],
-      sources: [{ id: 'todo_1', title: '发布上线', timeText: null, dueAt: null }],
+      sources: [
+        {
+          id: 'todo_1',
+          originalText: '发布上线',
+          title: '发布上线',
+          excerpt: '确认发布时间',
+          type: 'todo',
+          url: null,
+          timeText: null,
+          dueAt: null,
+          completed: false,
+          createdAt: new Date('2026-04-18T10:00:00.000Z'),
+        },
+      ],
       generatedAt: new Date('2026-04-18T10:00:00.000Z'),
     },
   }

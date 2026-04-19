@@ -1,12 +1,11 @@
-import { assetTypePresentation } from '@/config/ui/asset-presentation'
 import {
   type AssetListItem,
   type BookmarkSummaryResult,
   type NoteSummaryResult,
   type TodoReviewResult,
 } from '@/shared/assets/assets.types'
-import { formatAbsoluteTime } from '@/shared/time/formatters'
 
+import { WorkspaceActionableAssetList } from './workspace-actionable-assets'
 import {
   workspaceMetaTextClassName,
   workspacePillClassName,
@@ -77,57 +76,29 @@ export function WorkspaceQueryResultsPanel({
         <div className="flex-1 h-px bg-border/20" />
       </div>
       <p className="mb-4 text-sm leading-6 text-on-surface-variant/75">{queryDescription}</p>
-      {results.length === 0 ? (
-        <p className="text-sm text-on-surface-variant">
-          没有找到相关内容。可以换个关键词，或先在上方保存一条新记录。
-        </p>
-      ) : (
-        <div>
-          {results.map((asset) => {
-            const presentation = assetTypePresentation[asset.type]
-            return (
-              <RecentItem
-                key={asset.id}
-                icon={presentation.icon}
-                iconBg={presentation.iconBg}
-                iconColor={presentation.iconColor}
-                title={asset.title}
-                excerpt={asset.excerpt}
-                time={formatAbsoluteTime(asset.createdAt)}
-                type={presentation.label}
-                timeText={asset.timeText}
-              />
-            )
-          })}
-        </div>
-      )}
+      <WorkspaceActionableAssetList
+        assets={results}
+        emptyMessage="没有找到相关内容。可以换个关键词，或先在上方保存一条新记录。"
+      />
     </section>
   )
 }
 
-type SummaryPanelBaseProps<TSource extends { id: string }> = {
+type SummaryPanelBaseProps = {
   title: string
   headline: string
   summary: string
   points: string[]
-  sources: TSource[]
-  renderSourceText: (source: TSource) => React.ReactNode
-  sourceTextClassName?: string
+  sources: AssetListItem[]
 }
 
-function SummaryPanelBase<TSource extends { id: string }>({
+function SummaryPanelBase({
   title,
   headline,
   summary,
   points,
   sources,
-  renderSourceText,
-  sourceTextClassName,
-}: SummaryPanelBaseProps<TSource>) {
-  const sourceTextClass = sourceTextClassName
-    ? `text-sm leading-6 text-on-surface-variant/80 ${sourceTextClassName}`
-    : 'text-sm leading-6 text-on-surface-variant/80'
-
+}: SummaryPanelBaseProps) {
   return (
     <section className="mb-8">
       <div className="flex items-center gap-4 mb-2">
@@ -157,13 +128,10 @@ function SummaryPanelBase<TSource extends { id: string }>({
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-on-surface-variant/75">
               来源
             </p>
-            <div className="space-y-1">
-              {sources.map((source) => (
-                <p key={source.id} className={sourceTextClass}>
-                  {renderSourceText(source)}
-                </p>
-              ))}
-            </div>
+            <WorkspaceActionableAssetList
+              assets={sources}
+              emptyMessage="没有可操作的来源。"
+            />
           </div>
         ) : null}
       </div>
@@ -179,9 +147,6 @@ export function WorkspaceTodoReviewPanel({ review }: { review: TodoReviewResult 
       summary={review.summary}
       points={review.nextActions}
       sources={review.sources}
-      renderSourceText={(source) =>
-        source.timeText ? `${source.title} · ${source.timeText}` : source.title
-      }
     />
   )
 }
@@ -194,7 +159,6 @@ export function WorkspaceNoteSummaryPanel({ summary }: { summary: NoteSummaryRes
       summary={summary.summary}
       points={summary.keyPoints}
       sources={summary.sources}
-      renderSourceText={(source) => source.title}
     />
   )
 }
@@ -207,10 +171,6 @@ export function WorkspaceBookmarkSummaryPanel({ summary }: { summary: BookmarkSu
       summary={summary.summary}
       points={summary.keyPoints}
       sources={summary.sources}
-      sourceTextClassName="break-words"
-      renderSourceText={(source) =>
-        source.url ? `${source.title} · ${source.url}` : source.title
-      }
     />
   )
 }

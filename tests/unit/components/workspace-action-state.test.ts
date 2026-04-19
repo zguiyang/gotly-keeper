@@ -42,7 +42,7 @@ const mockTodoReview: TodoReviewResult = {
   summary: 'Test Summary',
   nextActions: ['Action 1', 'Action 2'],
   sourceAssetIds: ['1'],
-  sources: [{ id: '1', title: 'Test', timeText: null, dueAt: null }],
+  sources: [mockAssetListItem],
   generatedAt: new Date(),
 }
 
@@ -51,7 +51,7 @@ const mockNoteSummary: NoteSummaryResult = {
   summary: 'Note Summary',
   keyPoints: ['Point 1', 'Point 2'],
   sourceAssetIds: ['1'],
-  sources: [{ id: '1', title: 'Test', createdAt: new Date() }],
+  sources: [mockAssetListItem],
   generatedAt: new Date(),
 }
 
@@ -60,7 +60,7 @@ const mockBookmarkSummary: BookmarkSummaryResult = {
   summary: 'Bookmark Summary',
   keyPoints: ['Point 1'],
   sourceAssetIds: ['1'],
-  sources: [{ id: '1', title: 'Test', url: 'https://example.com', createdAt: new Date() }],
+  sources: [{ ...mockAssetListItem, type: 'link', url: 'https://example.com' }],
   generatedAt: new Date(),
 }
 

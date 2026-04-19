@@ -12,7 +12,7 @@ import { getAiProvider } from '../../lib/ai/ai-provider'
 import { NOTE_SUMMARY_LIMIT, NOTE_SUMMARY_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
 
 import type { NoteListItem } from '@/server/services/notes'
-import type { AssetListItem, NoteSummaryResult, NoteSummarySource } from '@/shared/assets/assets.types'
+import type { AssetListItem, NoteSummaryResult } from '@/shared/assets/assets.types'
 
 type NoteSummaryPromptItem = {
   id: string
@@ -71,15 +71,9 @@ function getFallbackNoteSummary(notes: AssetListItem[]): NoteSummaryOutput {
 function mapSummarySources(
   notes: AssetListItem[],
   sourceAssetIds: string[]
-): NoteSummarySource[] {
+): AssetListItem[] {
   const requested = new Set(sourceAssetIds)
-  return notes
-    .filter((note) => requested.has(note.id))
-    .map((note) => ({
-      id: note.id,
-      title: note.title,
-      createdAt: note.createdAt,
-    }))
+  return notes.filter((note) => requested.has(note.id))
 }
 
 function normalizeNoteSummaryOutput(

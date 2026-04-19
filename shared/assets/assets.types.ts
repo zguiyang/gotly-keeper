@@ -28,12 +28,7 @@ export type AssetQueryResult = {
   results: AssetListItem[]
 }
 
-export type TodoReviewSource = {
-  id: string
-  title: string
-  timeText: string | null
-  dueAt: Date | null
-}
+export type TodoReviewSource = AssetListItem
 
 export type TodoReviewResult = {
   headline: string
@@ -44,11 +39,7 @@ export type TodoReviewResult = {
   generatedAt: Date
 }
 
-export type NoteSummarySource = {
-  id: string
-  title: string
-  createdAt: Date
-}
+export type NoteSummarySource = AssetListItem
 
 export type NoteSummaryResult = {
   headline: string
@@ -59,12 +50,7 @@ export type NoteSummaryResult = {
   generatedAt: Date
 }
 
-export type BookmarkSummarySource = {
-  id: string
-  title: string
-  url: string | null
-  createdAt: Date
-}
+export type BookmarkSummarySource = AssetListItem
 
 export type BookmarkSummaryResult = {
   headline: string

@@ -12,7 +12,7 @@ import { getAiProvider } from '../../lib/ai/ai-provider'
 import { TODO_REVIEW_LIMIT, TODO_REVIEW_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
 
 import type { TodoListItem } from '@/server/services/todos'
-import type { AssetListItem, TodoReviewResult, TodoReviewSource } from '@/shared/assets/assets.types'
+import type { AssetListItem, TodoReviewResult } from '@/shared/assets/assets.types'
 
 export type TodoReviewPromptItem = {
   id: string
@@ -75,16 +75,9 @@ function getFallbackTodoReview(todos: AssetListItem[]): TodoReviewOutput {
 function mapReviewSources(
   todos: AssetListItem[],
   sourceAssetIds: string[]
-): TodoReviewSource[] {
+): AssetListItem[] {
   const requested = new Set(sourceAssetIds)
-  return todos
-    .filter((todo) => requested.has(todo.id))
-    .map((todo) => ({
-      id: todo.id,
-      title: todo.title,
-      timeText: todo.timeText,
-      dueAt: todo.dueAt,
-    }))
+  return todos.filter((todo) => requested.has(todo.id))
 }
 
 function normalizeTodoReviewOutput(

@@ -12,7 +12,7 @@ import { nowIso, dayjs } from '@/shared/time/dayjs'
 
 
 import type { BookmarkListItem } from '@/server/services/bookmarks'
-import type { AssetListItem, BookmarkSummaryResult, BookmarkSummarySource } from '@/shared/assets/assets.types'
+import type { AssetListItem, BookmarkSummaryResult } from '@/shared/assets/assets.types'
 
 type BookmarkSummaryPromptItem = {
   id: string
@@ -28,6 +28,8 @@ function toAssetListItem(bookmark: BookmarkListItem): AssetListItem {
     title: bookmark.title,
     excerpt: bookmark.excerpt,
     type: 'link',
+    note: bookmark.note,
+    summary: bookmark.summary,
     url: bookmark.url,
     timeText: null,
     dueAt: null,
@@ -75,16 +77,9 @@ function getFallbackBookmarkSummary(bookmarks: AssetListItem[]): BookmarkSummary
 function mapSummarySources(
   bookmarks: AssetListItem[],
   sourceAssetIds: string[]
-): BookmarkSummarySource[] {
+): AssetListItem[] {
   const requested = new Set(sourceAssetIds)
-  return bookmarks
-    .filter((bookmark) => requested.has(bookmark.id))
-    .map((bookmark) => ({
-      id: bookmark.id,
-      title: bookmark.title,
-      url: bookmark.url,
-      createdAt: bookmark.createdAt,
-    }))
+  return bookmarks.filter((bookmark) => requested.has(bookmark.id))
 }
 
 function normalizeBookmarkSummaryOutput(
