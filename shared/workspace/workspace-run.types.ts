@@ -22,14 +22,10 @@ export type WorkspaceAgentTimeFilter =
     }
 
 export type WorkspaceAgentToolName =
-  | 'create_note'
-  | 'create_todo'
-  | 'create_bookmark'
+  | 'create_workspace_asset'
   | 'search_workspace'
   | 'summarize_workspace'
-  | 'inspect_workspace_context'
   | 'get_workspace_capabilities'
-  | 'ask_clarifying_question'
 
 export type WorkspaceAgentTraceEvent =
   | {
@@ -38,6 +34,18 @@ export type WorkspaceAgentTraceEvent =
       rawInputPreview: string
       normalizedRequest: string
       removedNoise?: string[]
+    }
+  | {
+      type: 'intent_identified'
+      title: '识别意图'
+      operation: 'create' | 'search' | 'summarize' | 'capabilities'
+      assetType: 'note' | 'todo' | 'link' | 'mixed' | null
+      publicReason: string
+    }
+  | {
+      type: 'parameters_collected'
+      title: '收集参数'
+      parameters: Record<string, unknown>
     }
   | {
       type: 'time_resolved'
@@ -57,11 +65,6 @@ export type WorkspaceAgentTraceEvent =
       toolName: WorkspaceAgentToolName
       publicArgs: Record<string, unknown>
       resultSummary: string
-    }
-  | {
-      type: 'clarification_needed'
-      title: '需要确认'
-      question: string
     }
   | {
       type: 'finalized'
@@ -95,15 +98,6 @@ export type WorkspaceAgentStructuredResult =
   | {
       kind: 'capabilities'
       items: string[]
-    }
-  | {
-      kind: 'context'
-      recentAssetCount: number
-      unfinishedTodoCount: number
-    }
-  | {
-      kind: 'clarification'
-      question: string
     }
 
 export type WorkspaceAgentToolOutput = {

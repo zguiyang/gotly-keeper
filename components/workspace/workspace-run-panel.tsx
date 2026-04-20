@@ -17,16 +17,23 @@ function getTraceEventBody(event: WorkspaceAgentTraceEvent) {
         : '未使用时间过滤'
   }
 
+  if (event.type === 'intent_identified') {
+    return event.publicReason
+  }
+
+  if (event.type === 'parameters_collected') {
+    return Object.entries(event.parameters)
+      .filter(([, value]) => value !== null && value !== undefined && value !== '')
+      .map(([key, value]) => `${key}: ${String(value)}`)
+      .join(' · ')
+  }
+
   if (event.type === 'tool_selected') {
     return event.publicReason
   }
 
   if (event.type === 'tool_executed') {
     return event.resultSummary
-  }
-
-  if (event.type === 'clarification_needed') {
-    return event.question
   }
 
   return event.summary
