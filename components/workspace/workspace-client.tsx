@@ -29,10 +29,6 @@ function QuickInputSuggestions({
   onSuggestionClick: (text: string) => void
   hidden: boolean
 }) {
-  if (hidden) {
-    return null
-  }
-
   const suggestions = [
     '帮我找一下上周收藏的文章',
     '记一下首页文案方向',
@@ -40,7 +36,7 @@ function QuickInputSuggestions({
   ]
 
   return (
-    <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+    <div className={`mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 ${hidden ? 'hidden' : ''}`}>
       <span className="shrink-0 text-[11px] font-medium tracking-[0.04em] text-on-surface-variant/50 uppercase">
         试试这样说
       </span>
