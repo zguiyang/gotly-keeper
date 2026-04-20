@@ -87,7 +87,7 @@ describe('assets-search.service', () => {
     warnSpy.mockRestore()
   })
 
-  it('applies timeFilter when typeHint is todo and timeHint is provided', async () => {
+  it('applies exact agent time range for todo search', async () => {
     const mockAsset = makeAsset({
       id: 'todo-1',
       type: 'todo',
@@ -112,14 +112,20 @@ describe('assets-search.service', () => {
       userId: 'user1',
       query: '测试',
       typeHint: 'todo',
-      timeHint: '今天',
+      timeFilter: {
+        kind: 'exact_range',
+        phrase: '今天',
+        startIso: '2026-04-14T16:00:00.000Z',
+        endIso: '2026-04-15T16:00:00.000Z',
+        basis: '今天 = anchor day',
+      },
     })
 
     expect(result.length).toBe(1)
     expect(result[0].id).toBe('todo-1')
   })
 
-  it('filters out assets outside time range when timeFilter is applied', async () => {
+  it('filters out assets outside exact time range', async () => {
     const insideRange = makeAsset({
       id: 'todo-in',
       type: 'todo',
@@ -150,14 +156,20 @@ describe('assets-search.service', () => {
       userId: 'user1',
       query: '测试',
       typeHint: 'todo',
-      timeHint: '今天',
+      timeFilter: {
+        kind: 'exact_range',
+        phrase: '今天',
+        startIso: '2026-04-14T16:00:00.000Z',
+        endIso: '2026-04-15T16:00:00.000Z',
+        basis: '今天 = anchor day',
+      },
     })
 
     expect(result.length).toBe(1)
     expect(result[0].id).toBe('todo-in')
   })
 
-  it('applies timeFilter for non-todo assets by createdAt', async () => {
+  it('applies exact agent time range without parsing natural language', async () => {
     const insideRange = makeAsset({
       id: 'note-in',
       type: 'note',
@@ -185,8 +197,13 @@ describe('assets-search.service', () => {
       userId: 'user1',
       query: '测试',
       typeHint: 'note',
-      timeRangeStartIso: '2026-04-14T16:00:00.000Z',
-      timeRangeEndIso: '2026-04-16T16:00:00.000Z',
+      timeFilter: {
+        kind: 'exact_range',
+        phrase: '今天',
+        startIso: '2026-04-14T16:00:00.000Z',
+        endIso: '2026-04-15T16:00:00.000Z',
+        basis: '今天 = anchor day',
+      },
     })
 
     expect(result.length).toBe(1)
@@ -194,8 +211,28 @@ describe('assets-search.service', () => {
     const keywordCall = vi.mocked(keywordSearch.searchByKeyword).mock.calls[0][0]
     expect(keywordCall.timeRangeHint).toEqual({
       startsAt: new Date('2026-04-14T16:00:00.000Z'),
-      endsAt: new Date('2026-04-16T16:00:00.000Z'),
+      endsAt: new Date('2026-04-15T16:00:00.000Z'),
     })
+  })
+
+  it('does not convert vague agent time filters into hidden date ranges', async () => {
+    vi.mocked(semanticSearch.searchByEmbedding).mockResolvedValue([])
+    vi.mocked(keywordSearch.searchByKeyword).mockResolvedValue([])
+    vi.mocked(searchRanker.mergeSearchResults).mockReturnValue([])
+
+    await searchAssets({
+      userId: 'user1',
+      query: '收藏的文章',
+      typeHint: 'link',
+      timeFilter: {
+        kind: 'vague',
+        phrase: '最近',
+        reason: '最近没有固定数学边界',
+      },
+    })
+
+    const keywordCall = vi.mocked(keywordSearch.searchByKeyword).mock.calls[0][0]
+    expect(keywordCall.timeRangeHint).toBeNull()
   })
 
   it('calls mergeSearchResults with semantic and keyword candidates', async () => {

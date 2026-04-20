@@ -5,7 +5,7 @@ type SearchLogHint = AssetListItem['type'] | null | undefined
 export type SearchPathLogInput = {
   query: string
   typeHint?: SearchLogHint
-  timeHint?: string | null
+  timeFilterKind?: 'none' | 'exact_range' | 'vague'
   completionHint?: 'complete' | 'incomplete' | null
   timeFilterApplied: boolean
   semanticAttempted: boolean
@@ -19,7 +19,7 @@ export function buildSearchPathLog(input: SearchPathLogInput) {
   return {
     queryLength: input.query.length,
     typeHint: input.typeHint ?? null,
-    timeHintPresent: Boolean(input.timeHint),
+    timeFilterKind: input.timeFilterKind ?? 'none',
     completionHint: input.completionHint ?? null,
     timeFilterApplied: input.timeFilterApplied,
     semanticAttempted: input.semanticAttempted,

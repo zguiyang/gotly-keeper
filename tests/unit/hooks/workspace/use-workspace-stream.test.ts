@@ -7,13 +7,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useWorkspaceStream } from '@/hooks/workspace/use-workspace-stream'
 
 import type {
+  WorkspaceAgentToolOutput,
   WorkspaceRunRequest,
   WorkspaceRunResult,
-  WorkspaceRunStage,
 } from '@/shared/workspace/workspace-run.types'
 import type { UIMessage } from 'ai'
 
-type WorkspaceMessage = UIMessage<{ stage?: WorkspaceRunStage }>
+type WorkspaceMessage = UIMessage<WorkspaceRunRequest>
 
 const chatMock = vi.hoisted(() => ({
   implementation: null as null | ((helpers: {
@@ -95,14 +95,13 @@ vi.mock('@ai-sdk/react', () => ({
 }))
 
 function createAssistantMessage(options: {
-  stage?: WorkspaceRunStage
   text?: string
   result?: WorkspaceRunResult
+  trace?: WorkspaceAgentToolOutput['trace']
 }): WorkspaceMessage {
   return {
     id: Math.random().toString(36).slice(2),
     role: 'assistant',
-    metadata: options.stage ? { stage: options.stage } : undefined,
     parts: [
       ...(options.text ? [{ type: 'text' as const, text: options.text, state: 'done' as const }] : []),
       ...(options.result
@@ -112,7 +111,10 @@ function createAssistantMessage(options: {
               toolCallId: 'tool-call-1',
               state: 'output-available' as const,
               input: { query: 'query' },
-              output: options.result,
+              output: {
+                result: options.result,
+                trace: options.trace ?? [],
+              },
             },
           ]
         : []),
@@ -125,6 +127,13 @@ function createQueryResult(): WorkspaceRunResult {
     kind: 'query',
     query: '帮我找上周收藏的文章',
     queryDescription: '书签 · 上周',
+    timeFilter: {
+      kind: 'exact_range',
+      phrase: '上周',
+      startIso: '2026-04-06T00:00:00.000Z',
+      endIso: '2026-04-13T00:00:00.000Z',
+      basis: '上周 = 上一个自然周',
+    },
     results: [
       {
         id: 'asset_1',
@@ -232,7 +241,7 @@ describe('useWorkspaceStream', () => {
 
       setError(undefined)
       setStatus('streaming')
-      setMessages([createAssistantMessage({ stage: 'structuring', text: '正在结构化理解请求' })])
+      setMessages([createAssistantMessage({ text: '正在结构化理解请求' })])
 
       await deferred.promise
 
@@ -249,8 +258,7 @@ describe('useWorkspaceStream', () => {
     })
 
     expect(hook.result.current.state.status).toBe('streaming')
-    expect(hook.result.current.state.stage).toBe('structuring')
-    expect(hook.result.current.state.stageMessage).toBe('正在结构化理解请求')
+    expect(hook.result.current.state.assistantText).toBe('正在结构化理解请求')
 
     deferred.resolve()
 
@@ -259,8 +267,7 @@ describe('useWorkspaceStream', () => {
     })
 
     expect(hook.result.current.state.status).toBe('success')
-    expect(hook.result.current.state.stage).toBe(null)
-    expect(hook.result.current.state.stageMessage).toBe(null)
+    expect(hook.result.current.state.assistantText).toBe(null)
     expect(hook.result.current.state.result?.kind).toBe('query')
   })
 
@@ -334,7 +341,7 @@ describe('useWorkspaceStream', () => {
     })
 
     expect(hook.result.current.state.status).toBe('streaming')
-    expect(hook.result.current.state.stage).toBe('understanding')
+    expect(hook.result.current.state.assistantText).toBe(null)
     expect(hook.result.current.state.result).toBe(null)
 
     secondRequestDeferred.resolve()
@@ -342,6 +349,60 @@ describe('useWorkspaceStream', () => {
     await act(async () => {
       await secondSubmission
     })
+  })
+
+  it('extracts assistant text, trace events, and tool result', async () => {
+    chatMock.implementation = async ({ setMessages, setStatus }) => {
+      setStatus('ready')
+      setMessages([
+        {
+          id: 'assistant-msg',
+          role: 'assistant',
+          parts: [
+            { type: 'text', text: '我找到了 2 条相关书签。', state: 'done' },
+            {
+              type: 'data-workspace-trace',
+              data: {
+                type: 'tool_executed',
+                title: '执行工具',
+                toolName: 'search_workspace',
+                publicArgs: { query: '收藏的文章', timeFilterKind: 'vague' },
+                resultSummary: '找到 2 条结果',
+              },
+            },
+            {
+              type: 'tool-search_workspace',
+              state: 'output-available',
+              output: {
+                result: {
+                  kind: 'query',
+                  query: '收藏的文章',
+                  queryDescription: '书签',
+                  results: [],
+                  timeFilter: {
+                    kind: 'vague',
+                    phrase: '最近',
+                    reason: '最近没有固定数学边界',
+                  },
+                },
+                trace: [],
+              },
+            },
+          ],
+        } as WorkspaceMessage,
+      ])
+    }
+
+    const hook = renderHook(() => useWorkspaceStream())
+    activeHook = hook
+
+    await act(async () => {
+      await hook.result.current.submitInput('帮我找最近收藏的文章')
+    })
+
+    expect(hook.result.current.state.assistantText).toBe('我找到了 2 条相关书签。')
+    expect(hook.result.current.state.traceEvents).toHaveLength(1)
+    expect(hook.result.current.state.result?.kind).toBe('query')
   })
 
   it('maps transport errors into launcher error state', async () => {

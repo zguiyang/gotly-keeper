@@ -2,20 +2,34 @@
 
 import { AnimatePresence, motion } from 'motion/react'
 
-import type { WorkspaceRunStage } from '@/shared/workspace/workspace-run.types'
+import type { WorkspaceAgentTraceEvent } from '@/shared/workspace/workspace-run.types'
 
-const stageLabels: Record<WorkspaceRunStage, string> = {
-  understanding: '正在理解你的需求',
-  structuring: '正在梳理信息结构',
-  executing: '已选择合适的处理方式，正在执行',
-  finalizing: '正在整理结果',
-}
+function getTraceEventBody(event: WorkspaceAgentTraceEvent) {
+  if (event.type === 'input_normalized') {
+    return event.normalizedRequest
+  }
 
-const stageProgress: Record<WorkspaceRunStage, number> = {
-  understanding: 0.25,
-  structuring: 0.5,
-  executing: 0.75,
-  finalizing: 1,
+  if (event.type === 'time_resolved') {
+    return event.resolution.kind === 'exact_range'
+      ? `${event.phrase} · ${event.resolution.basis}`
+      : event.resolution.kind === 'vague'
+        ? `${event.phrase} · ${event.resolution.reason}`
+        : '未使用时间过滤'
+  }
+
+  if (event.type === 'tool_selected') {
+    return event.publicReason
+  }
+
+  if (event.type === 'tool_executed') {
+    return event.resultSummary
+  }
+
+  if (event.type === 'clarification_needed') {
+    return event.question
+  }
+
+  return event.summary
 }
 
 function PulsingDots() {
@@ -42,12 +56,16 @@ function PulsingDots() {
 }
 
 export function WorkspaceRunPanel({
-  stage,
-  message,
+  status,
+  assistantText,
+  traceEvents,
 }: {
-  stage: WorkspaceRunStage
-  message: string | null
+  status: 'streaming' | 'success' | 'error'
+  assistantText: string | null
+  traceEvents: WorkspaceAgentTraceEvent[]
 }) {
+  const showStreamingDots = status === 'streaming'
+
   return (
     <motion.section
       layout
@@ -63,26 +81,33 @@ export function WorkspaceRunPanel({
       <div className="p-5">
         <div className="flex items-center justify-between">
           <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
-            AI 正在处理
+            AI 工作链
           </h2>
-          <PulsingDots />
+          {showStreamingDots ? <PulsingDots /> : null}
         </div>
 
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={stage}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 8 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
-            className="mt-3 text-sm text-on-surface"
-          >
-            {stageLabels[stage]}
-          </motion.p>
-        </AnimatePresence>
+        {assistantText ? (
+          <p className="mt-3 text-sm text-on-surface">{assistantText}</p>
+        ) : null}
+
+        {traceEvents.length > 0 ? (
+          <ol className="mt-3 space-y-2">
+            {traceEvents.map((event, index) => (
+              <li
+                key={`${event.type}-${index}`}
+                className="rounded-xl border border-border/20 bg-surface-container p-3"
+              >
+                <p className="text-xs font-medium text-on-surface">{event.title}</p>
+                <p className="mt-1 text-xs text-on-surface-variant/80">
+                  {getTraceEventBody(event)}
+                </p>
+              </li>
+            ))}
+          </ol>
+        ) : null}
 
         <AnimatePresence>
-          {message && (
+          {!assistantText && traceEvents.length === 0 ? (
             <motion.p
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
@@ -90,21 +115,11 @@ export function WorkspaceRunPanel({
               transition={{ duration: 0.2 }}
               className="mt-2 overflow-hidden text-xs text-on-surface-variant/70"
             >
-              {message}
+              正在准备执行。
             </motion.p>
-          )}
+          ) : null}
         </AnimatePresence>
       </div>
-
-      <motion.div
-        className="h-1 origin-left bg-primary/30"
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: stageProgress[stage] }}
-        transition={{
-          duration: 0.5,
-          ease: [0.16, 1, 0.3, 1],
-        }}
-      />
     </motion.section>
   )
 }

@@ -2,8 +2,8 @@
 import { requireWorkspaceUserAccess } from '@/server/modules/auth/workspace-session'
 import {
   QUICK_ACTION_PROMPTS,
-  streamWorkspaceRun,
-} from '@/server/modules/workspace/workspace-stream'
+  streamWorkspaceAgentRun,
+} from '@/server/modules/workspace-agent'
 
 import type { WorkspaceRunRequest } from '@/shared/workspace/workspace-run.types'
 
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     return Response.json({ error: '请输入有效内容。' }, { status: 400 })
   }
 
-  const result = streamWorkspaceRun({
+  const result = await streamWorkspaceAgentRun({
     userId: user.id,
     request: body,
   })

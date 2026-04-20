@@ -35,8 +35,8 @@ describe('prompt-template', () => {
   })
 
   it('renders AI system prompts from markdown template files', async () => {
-    await expect(renderPrompt('ai/parsed-command.system', {})).resolves.toContain(
-      'ParsedCommand'
+    await expect(renderPrompt('workspace-agent/main.system', {})).resolves.toContain(
+      'Gotly Workspace Agent System Prompt'
     )
     await expect(renderPrompt('bookmark/content-summary.system', {})).resolves.toContain(
       '网页摘要助手'

@@ -12,7 +12,6 @@ import { searchByKeyword } from './keyword-search.service'
 import { logSearchPath } from './search.logging'
 import { normalizeSearchText } from './search.query-parser'
 import { mergeSearchResults } from './search.ranker'
-import { parseSearchTimeHint } from './search.time-hint'
 import { matchesSearchTimeHint } from './search.time-match'
 import { searchByEmbedding } from './semantic-search.service'
 
@@ -24,13 +23,30 @@ function clampAssetListLimit(limit = ASSET_SEARCH_LIMIT_DEFAULT) {
   return Math.min(Math.max(ASSET_LIST_LIMIT_MIN, limit), ASSET_LIST_LIMIT_MAX)
 }
 
+function getExactTimeRange(timeFilter: SearchAssetsOptions['timeFilter']) {
+  if (!timeFilter || timeFilter.kind !== 'exact_range') {
+    return null
+  }
+
+  const startsAt = new Date(timeFilter.startIso)
+  const endsAt = new Date(timeFilter.endIso)
+
+  if (
+    Number.isNaN(startsAt.getTime()) ||
+    Number.isNaN(endsAt.getTime()) ||
+    startsAt.getTime() >= endsAt.getTime()
+  ) {
+    return null
+  }
+
+  return { startsAt, endsAt }
+}
+
 export async function searchAssets({
   userId,
   query,
   typeHint,
-  timeHint,
-  timeRangeStartIso,
-  timeRangeEndIso,
+  timeFilter,
   completionHint,
   includeArchived = false,
   limit = ASSET_SEARCH_LIMIT_DEFAULT,
@@ -38,24 +54,9 @@ export async function searchAssets({
   const trimmed = query.trim()
   if (!trimmed) return []
 
-  const normalizedRangeHint =
-    timeRangeStartIso && timeRangeEndIso
-      ? {
-          startsAt: new Date(timeRangeStartIso),
-          endsAt: new Date(timeRangeEndIso),
-        }
-      : null
-
-  const hasValidNormalizedRange =
-    normalizedRangeHint !== null &&
-    !Number.isNaN(normalizedRangeHint.startsAt.getTime()) &&
-    !Number.isNaN(normalizedRangeHint.endsAt.getTime()) &&
-    normalizedRangeHint.startsAt.getTime() < normalizedRangeHint.endsAt.getTime()
-
-  const timeRangeHint = hasValidNormalizedRange
-    ? normalizedRangeHint
-    : parseSearchTimeHint(timeHint)
-  const timeFilter = timeRangeHint ? { rangeHint: timeRangeHint, timeHint } : null
+  const timeRangeHint = getExactTimeRange(timeFilter)
+  const timeHint = timeFilter?.kind === 'exact_range' ? timeFilter.phrase : null
+  const timeFilterApplied = Boolean(timeRangeHint)
 
   let semanticResults: Awaited<ReturnType<typeof searchByEmbedding>> = []
   let semanticFailed = false
@@ -72,8 +73,7 @@ export async function searchAssets({
       })
     ).filter(
       (result) =>
-        !timeFilter ||
-        matchesSearchTimeHint(result.asset, timeFilter.rangeHint, timeFilter.timeHint)
+        !timeRangeHint || matchesSearchTimeHint(result.asset, timeRangeHint, timeHint)
     )
   } catch (error) {
     semanticFailed = true
@@ -98,12 +98,7 @@ export async function searchAssets({
 
   const filteredKeywordCandidates = keywordCandidates.filter(
     (candidate) =>
-      !timeFilter ||
-      matchesSearchTimeHint(
-        candidate.asset,
-        timeFilter.rangeHint,
-        timeFilter.timeHint
-      )
+      !timeRangeHint || matchesSearchTimeHint(candidate.asset, timeRangeHint, timeHint)
   )
 
   const ranked = mergeSearchResults(
@@ -117,9 +112,9 @@ export async function searchAssets({
   logSearchPath({
     query: trimmed,
     typeHint,
-    timeHint,
+    timeFilterKind: timeFilter?.kind ?? 'none',
     completionHint,
-    timeFilterApplied: Boolean(timeFilter),
+    timeFilterApplied,
     semanticAttempted: true,
     semanticFailed,
     semanticCandidateCount: semanticResults.length,

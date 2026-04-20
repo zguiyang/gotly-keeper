@@ -3,29 +3,29 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { POST } from '@/app/api/workspace/run/route'
 
 const requireWorkspaceUserAccessMock = vi.hoisted(() => vi.fn())
-const streamWorkspaceRunMock = vi.hoisted(() => vi.fn())
+const streamWorkspaceAgentRunMock = vi.hoisted(() => vi.fn())
 const streamResponse = vi.hoisted(() => new Response('stream'))
 
 vi.mock('@/server/modules/auth/workspace-session', () => ({
   requireWorkspaceUserAccess: requireWorkspaceUserAccessMock,
 }))
 
-vi.mock('@/server/modules/workspace/workspace-stream', () => ({
+vi.mock('@/server/modules/workspace-agent', () => ({
   QUICK_ACTION_PROMPTS: {
     'review-todos': '请复盘我当前未完成的待办，提炼重点、风险和下一步行动。',
     'summarize-notes': '请总结我最近的笔记，提炼关键信息和下一步行动。',
     'summarize-bookmarks': '请总结我最近收藏的书签，提炼值得关注的主题和下一步行动。',
   },
-  streamWorkspaceRun: streamWorkspaceRunMock,
+  streamWorkspaceAgentRun: streamWorkspaceAgentRunMock,
 }))
 
 describe('/api/workspace/run POST', () => {
   beforeEach(() => {
     requireWorkspaceUserAccessMock.mockReset()
-    streamWorkspaceRunMock.mockReset()
+    streamWorkspaceAgentRunMock.mockReset()
 
     requireWorkspaceUserAccessMock.mockResolvedValue({ id: 'user_123' })
-    streamWorkspaceRunMock.mockReturnValue(streamResponse)
+    streamWorkspaceAgentRunMock.mockResolvedValue(streamResponse)
   })
 
   it('rejects empty input payload', async () => {
@@ -38,7 +38,7 @@ describe('/api/workspace/run POST', () => {
 
     expect(res.status).toBe(400)
     await expect(res.json()).resolves.toEqual({ error: '请输入有效内容。' })
-    expect(streamWorkspaceRunMock).not.toHaveBeenCalled()
+    expect(streamWorkspaceAgentRunMock).not.toHaveBeenCalled()
   })
 
   it('forwards authenticated input requests into workspace stream', async () => {
@@ -51,7 +51,7 @@ describe('/api/workspace/run POST', () => {
 
     expect(res).toBe(streamResponse)
     expect(requireWorkspaceUserAccessMock).toHaveBeenCalledTimes(1)
-    expect(streamWorkspaceRunMock).toHaveBeenCalledWith({
+    expect(streamWorkspaceAgentRunMock).toHaveBeenCalledWith({
       userId: 'user_123',
       request: { kind: 'input', text: '帮我记一下发布清单' },
     })
@@ -65,7 +65,7 @@ describe('/api/workspace/run POST', () => {
 
     await POST(req)
 
-    expect(streamWorkspaceRunMock).toHaveBeenCalledWith({
+    expect(streamWorkspaceAgentRunMock).toHaveBeenCalledWith({
       userId: 'user_123',
       request: { kind: 'quick-action', action: 'summarize-notes' },
     })
@@ -81,7 +81,7 @@ describe('/api/workspace/run POST', () => {
 
     expect(res.status).toBe(400)
     await expect(res.json()).resolves.toEqual({ error: '请求参数无效。' })
-    expect(streamWorkspaceRunMock).not.toHaveBeenCalled()
+    expect(streamWorkspaceAgentRunMock).not.toHaveBeenCalled()
   })
 
   it('rejects quick-action values from prototype keys', async () => {
@@ -94,7 +94,7 @@ describe('/api/workspace/run POST', () => {
 
     expect(res.status).toBe(400)
     await expect(res.json()).resolves.toEqual({ error: '请求参数无效。' })
-    expect(streamWorkspaceRunMock).not.toHaveBeenCalled()
+    expect(streamWorkspaceAgentRunMock).not.toHaveBeenCalled()
   })
 
   it('returns the stream response directly without provider-gating in route', async () => {
@@ -106,6 +106,6 @@ describe('/api/workspace/run POST', () => {
     const res = await POST(req)
 
     expect(res).toBe(streamResponse)
-    expect(streamWorkspaceRunMock).toHaveBeenCalledTimes(1)
+    expect(streamWorkspaceAgentRunMock).toHaveBeenCalledTimes(1)
   })
 })

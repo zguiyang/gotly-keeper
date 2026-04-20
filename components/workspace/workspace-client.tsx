@@ -105,7 +105,11 @@ export function WorkspaceClient({
     document.querySelector<HTMLInputElement>('[name="workspace-query"]')?.focus()
   }
 
-  const hasResult = state.result?.kind && state.result.kind !== 'created'
+  const hasResult =
+    state.result?.kind === 'query' ||
+    state.result?.kind === 'todo-review' ||
+    state.result?.kind === 'note-summary' ||
+    state.result?.kind === 'bookmark-summary'
 
   return (
     <>
@@ -163,11 +167,12 @@ export function WorkspaceClient({
       />
 
       <AnimatePresence mode="wait">
-        {state.status === 'streaming' && state.stage && (
+        {(state.status === 'streaming' || state.traceEvents.length > 0 || state.assistantText) && (
           <WorkspaceRunPanel
             key="run-panel"
-            stage={state.stage}
-            message={state.stageMessage}
+            status={state.status === 'idle' ? 'success' : state.status}
+            assistantText={state.assistantText}
+            traceEvents={state.traceEvents}
           />
         )}
       </AnimatePresence>

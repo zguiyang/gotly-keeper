@@ -16,7 +16,7 @@ import { scoreAssetForQuery } from './search.query-parser'
 import type { KeywordCandidate, SearchAssetsOptions } from './search.types'
 import type { AssetListItem } from '@/shared/assets/assets.types'
 
-type KeywordSearchOptions = Omit<SearchAssetsOptions, 'query' | 'timeHint'> & {
+type KeywordSearchOptions = Omit<SearchAssetsOptions, 'query' | 'timeFilter'> & {
   terms: string[]
   timeRangeHint?: { startsAt: Date; endsAt: Date } | null
 }

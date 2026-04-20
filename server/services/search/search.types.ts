@@ -1,17 +1,14 @@
-import type { assetSummaryTargetSchema } from '@/server/lib/ai/ai-schema'
 import type { AssetListItem } from '@/shared/assets/assets.types'
-import type { z } from 'zod'
+import type { WorkspaceAgentTimeFilter } from '@/shared/workspace/workspace-run.types'
 
 export type AssetType = AssetListItem['type']
-export type AssetSummaryTarget = z.infer<typeof assetSummaryTargetSchema>
+export type AssetSummaryTarget = 'todos' | 'notes' | 'bookmarks'
 
 export type SearchAssetsOptions = {
   userId: string
   query: string
   typeHint?: AssetType | null
-  timeHint?: string | null
-  timeRangeStartIso?: string | null
-  timeRangeEndIso?: string | null
+  timeFilter?: WorkspaceAgentTimeFilter | null
   completionHint?: 'complete' | 'incomplete' | null
   includeArchived?: boolean
   limit?: number
@@ -21,9 +18,7 @@ export type SearchAssetsCommand = {
   kind: 'search'
   query: string
   typeHint: AssetType | null
-  timeHint: string | null
-  timeRangeStartIso: string | null
-  timeRangeEndIso: string | null
+  timeFilter: WorkspaceAgentTimeFilter | null
   completionHint: 'complete' | 'incomplete' | null
 }
 
@@ -37,9 +32,7 @@ export type QueryParseResult = {
   normalizedQuery: string
   terms: string[]
   typeHint: AssetType | null
-  timeHint: string | null
-  timeRangeStartIso: string | null
-  timeRangeEndIso: string | null
+  timeFilter: WorkspaceAgentTimeFilter | null
   completionHint: 'complete' | 'incomplete' | null
 }
 
@@ -62,7 +55,7 @@ export type RankResult = {
 export type SearchPathLog = {
   query: string
   typeHint: AssetType | null
-  timeHint: string | null
+  timeFilterKind: 'none' | 'exact_range' | 'vague'
   completionHint: 'complete' | 'incomplete' | null
   timeFilterApplied: boolean
   semanticAttempted: boolean

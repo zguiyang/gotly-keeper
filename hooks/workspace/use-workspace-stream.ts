@@ -5,20 +5,21 @@ import { DefaultChatTransport, type UIMessage } from 'ai'
 import { useCallback, useMemo } from 'react'
 
 import type {
+  WorkspaceAgentToolOutput,
+  WorkspaceAgentTraceEvent,
   WorkspaceRunRequest,
   WorkspaceRunResult,
-  WorkspaceRunStage,
 } from '@/shared/workspace/workspace-run.types'
 
 export type WorkspaceRunUiState = {
   status: 'idle' | 'streaming' | 'success' | 'error'
-  stage: WorkspaceRunStage | null
-  stageMessage: string | null
+  assistantText: string | null
+  traceEvents: WorkspaceAgentTraceEvent[]
   result: WorkspaceRunResult | null
   errorMessage: string | null
 }
 
-type WorkspaceLauncherMessageMetadata = WorkspaceRunRequest | { stage?: WorkspaceRunStage }
+type WorkspaceLauncherMessageMetadata = WorkspaceRunRequest
 
 type WorkspaceLauncherMessage = UIMessage<WorkspaceLauncherMessageMetadata>
 
@@ -59,7 +60,10 @@ function isWorkspaceRunResult(value: unknown): value is WorkspaceRunResult {
     value.kind === 'query' ||
     value.kind === 'todo-review' ||
     value.kind === 'note-summary' ||
-    value.kind === 'bookmark-summary'
+    value.kind === 'bookmark-summary' ||
+    value.kind === 'capabilities' ||
+    value.kind === 'context' ||
+    value.kind === 'clarification'
   )
 }
 
@@ -80,42 +84,58 @@ function getResultFromMessage(
     if (
       toolPart.type.startsWith('tool-') &&
       toolPart.state === 'output-available' &&
-      isWorkspaceRunResult(toolPart.output)
+      toolPart.output &&
+      typeof toolPart.output === 'object' &&
+      'result' in toolPart.output &&
+      isWorkspaceRunResult((toolPart.output as WorkspaceAgentToolOutput).result)
     ) {
-      return toolPart.output
+      return (toolPart.output as WorkspaceAgentToolOutput).result
     }
   }
 
   return null
 }
 
-function getStageMessage(message: WorkspaceLauncherMessage | null): string | null {
+function getAssistantText(message: WorkspaceLauncherMessage | null): string | null {
   if (!message) {
     return null
   }
 
-  for (const part of [...message.parts].reverse()) {
-    if (part.type === 'text') {
-      const text = part.text.trim()
-      if (text.length > 0) {
-        return text
-      }
+  const text = message.parts
+    .filter((part) => part.type === 'text')
+    .map((part) => part.text.trim())
+    .filter(Boolean)
+    .join('\n\n')
+
+  return text || null
+}
+
+function getTraceEvents(message: WorkspaceLauncherMessage | null): WorkspaceAgentTraceEvent[] {
+  if (!message) {
+    return []
+  }
+
+  const events: WorkspaceAgentTraceEvent[] = []
+
+  for (const part of message.parts) {
+    if (part.type === 'data-workspace-trace' && 'data' in part) {
+      events.push(part.data as WorkspaceAgentTraceEvent)
+    }
+
+    const toolPart = part as WorkspaceToolPart
+    if (
+      toolPart.type.startsWith('tool-') &&
+      toolPart.state === 'output-available' &&
+      toolPart.output &&
+      typeof toolPart.output === 'object' &&
+      'trace' in toolPart.output &&
+      Array.isArray((toolPart.output as WorkspaceAgentToolOutput).trace)
+    ) {
+      events.push(...(toolPart.output as WorkspaceAgentToolOutput).trace)
     }
   }
 
-  return null
-}
-
-function getStageFromMessage(
-  message: WorkspaceLauncherMessage | null
-): WorkspaceRunStage | null {
-  const metadata = message?.metadata
-
-  if (metadata && 'stage' in metadata && metadata.stage) {
-    return metadata.stage
-  }
-
-  return null
+  return events
 }
 
 function toWorkspaceRunUiState(options: {
@@ -129,8 +149,8 @@ function toWorkspaceRunUiState(options: {
   if (options.status === 'error') {
     return {
       status: 'error',
-      stage: null,
-      stageMessage: null,
+      assistantText: null,
+      traceEvents: [],
       result: null,
       errorMessage: options.error?.message ?? '处理失败，请重试。',
     }
@@ -139,8 +159,8 @@ function toWorkspaceRunUiState(options: {
   if (options.status === 'submitted' || options.status === 'streaming') {
     return {
       status: 'streaming',
-      stage: getStageFromMessage(latestAssistantMessage) ?? 'understanding',
-      stageMessage: getStageMessage(latestAssistantMessage),
+      assistantText: getAssistantText(latestAssistantMessage),
+      traceEvents: getTraceEvents(latestAssistantMessage),
       result: null,
       errorMessage: null,
     }
@@ -149,8 +169,8 @@ function toWorkspaceRunUiState(options: {
   if (result) {
     return {
       status: 'success',
-      stage: null,
-      stageMessage: null,
+      assistantText: getAssistantText(latestAssistantMessage),
+      traceEvents: getTraceEvents(latestAssistantMessage),
       result,
       errorMessage: null,
     }
@@ -158,8 +178,8 @@ function toWorkspaceRunUiState(options: {
 
   return {
     status: 'idle',
-    stage: null,
-    stageMessage: null,
+    assistantText: getAssistantText(latestAssistantMessage),
+    traceEvents: getTraceEvents(latestAssistantMessage),
     result: null,
     errorMessage: null,
   }
