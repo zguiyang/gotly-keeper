@@ -157,30 +157,45 @@ describe('assets-search.service', () => {
     expect(result[0].id).toBe('todo-in')
   })
 
-  it('does not apply timeFilter when typeHint is not todo', async () => {
-    const mockAsset = makeAsset({
-      id: 'note-1',
+  it('applies timeFilter for non-todo assets by createdAt', async () => {
+    const insideRange = makeAsset({
+      id: 'note-in',
       type: 'note',
+      createdAt: new Date('2026-04-15T02:00:00.000Z'),
     })
 
     vi.mocked(semanticSearch.searchByEmbedding).mockResolvedValue([
-      makeSemanticAsset({ id: 'note-1', type: 'note' }),
+      makeSemanticAsset({
+        id: 'note-in',
+        type: 'note',
+        createdAt: new Date('2026-04-15T02:00:00.000Z'),
+      }),
+      makeSemanticAsset({
+        id: 'note-out',
+        type: 'note',
+        createdAt: new Date('2026-04-18T02:00:00.000Z'),
+      }),
     ])
     vi.mocked(keywordSearch.searchByKeyword).mockResolvedValue([])
     vi.mocked(searchRanker.mergeSearchResults).mockReturnValue([
-      { asset: mockAsset, score: 10, source: 'semantic' as const },
+      { asset: insideRange, score: 10, source: 'semantic' as const },
     ])
 
     const result = await searchAssets({
       userId: 'user1',
       query: '测试',
       typeHint: 'note',
-      timeHint: '今天',
+      timeRangeStartIso: '2026-04-14T16:00:00.000Z',
+      timeRangeEndIso: '2026-04-16T16:00:00.000Z',
     })
 
     expect(result.length).toBe(1)
-    const semanticCall = vi.mocked(semanticSearch.searchByEmbedding).mock.calls[0][0]
-    expect(semanticCall.limit).toBeDefined()
+    expect(result[0].id).toBe('note-in')
+    const keywordCall = vi.mocked(keywordSearch.searchByKeyword).mock.calls[0][0]
+    expect(keywordCall.timeRangeHint).toEqual({
+      startsAt: new Date('2026-04-14T16:00:00.000Z'),
+      endsAt: new Date('2026-04-16T16:00:00.000Z'),
+    })
   })
 
   it('calls mergeSearchResults with semantic and keyword candidates', async () => {

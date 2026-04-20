@@ -2,12 +2,31 @@ import { ASIA_SHANGHAI_TIME_ZONE } from '@/server/lib/config/time'
 import { renderPrompt } from '@/server/lib/prompt-template'
 import { nowIso, formatShanghaiTime } from '@/shared/time/dayjs'
 
+async function buildComposedSystemPrompt(
+  scopedSystemPromptPath: string,
+  vars: Record<string, unknown> = {}
+): Promise<string> {
+  const [globalSystemPrompt, scopedSystemPrompt] = await Promise.all([
+    renderPrompt('ai/global.system', {}),
+    renderPrompt(scopedSystemPromptPath, vars),
+  ])
+
+  return [globalSystemPrompt, scopedSystemPrompt].join('\n\n')
+}
+
+export async function buildWorkspaceSystemPrompt(
+  scopedSystemPromptPath: string,
+  vars: Record<string, unknown> = {}
+): Promise<string> {
+  return buildComposedSystemPrompt(scopedSystemPromptPath, vars)
+}
+
 export async function buildAssetInterpreterPrompt(
   trimmed: string,
   now?: Date
 ): Promise<string> {
   const [systemTemplate, userTemplate] = await Promise.all([
-    renderPrompt('ai/asset-interpreter.system', {}),
+    buildComposedSystemPrompt('ai/asset-interpreter.system'),
     renderPrompt('ai/asset-interpreter.user', {
       nowIso: nowIso(now),
       timezone: ASIA_SHANGHAI_TIME_ZONE,
@@ -24,5 +43,5 @@ export async function buildAssetInterpreterPrompt(
 }
 
 export async function buildParsedCommandSystemPrompt(): Promise<string> {
-  return renderPrompt('ai/parsed-command.system', {})
+  return buildComposedSystemPrompt('ai/parsed-command.system')
 }

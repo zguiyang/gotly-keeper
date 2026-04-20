@@ -55,6 +55,8 @@ export const searchCommandPayloadSchema = z.object({
   query: z.string().min(1).nullable(),
   typeHint: parsedCommandAssetTypeSchema.nullable(),
   timeHint: z.string().min(1).nullable(),
+  timeRangeStartIso: z.string().datetime().nullable(),
+  timeRangeEndIso: z.string().datetime().nullable(),
   completionHint: parsedCommandCompletionHintSchema.nullable(),
 })
 

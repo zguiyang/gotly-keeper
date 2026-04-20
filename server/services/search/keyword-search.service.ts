@@ -42,18 +42,27 @@ export async function searchByKeyword({
       ? [ASSET_LIFECYCLE_STATUS.ACTIVE, ASSET_LIFECYCLE_STATUS.ARCHIVED]
       : [ASSET_LIFECYCLE_STATUS.ACTIVE]
 
+    const noteConditions: SQL[] = [
+      eq(notes.userId, userId),
+      noteStatuses.length === 1
+        ? eq(notes.lifecycleStatus, noteStatuses[0])
+        : inArray(notes.lifecycleStatus, noteStatuses),
+    ]
+
+    if (timeRangeHint) {
+      noteConditions.push(
+        and(
+          sql`${notes.createdAt} >= ${timeRangeHint.startsAt}`,
+          sql`${notes.createdAt} < ${timeRangeHint.endsAt}`
+        ) as SQL
+      )
+    }
+
     tasks.push(
       db
         .select()
         .from(notes)
-        .where(
-          and(
-            eq(notes.userId, userId),
-            noteStatuses.length === 1
-              ? eq(notes.lifecycleStatus, noteStatuses[0])
-              : inArray(notes.lifecycleStatus, noteStatuses)
-          )
-        )
+        .where(and(...noteConditions))
         .orderBy(desc(notes.createdAt))
         .limit(clampedLimit)
         .then((rows) =>
@@ -78,18 +87,27 @@ export async function searchByKeyword({
       ? [ASSET_LIFECYCLE_STATUS.ACTIVE, ASSET_LIFECYCLE_STATUS.ARCHIVED]
       : [ASSET_LIFECYCLE_STATUS.ACTIVE]
 
+    const bookmarkConditions: SQL[] = [
+      eq(bookmarks.userId, userId),
+      bookmarkStatuses.length === 1
+        ? eq(bookmarks.lifecycleStatus, bookmarkStatuses[0])
+        : inArray(bookmarks.lifecycleStatus, bookmarkStatuses),
+    ]
+
+    if (timeRangeHint) {
+      bookmarkConditions.push(
+        and(
+          sql`${bookmarks.createdAt} >= ${timeRangeHint.startsAt}`,
+          sql`${bookmarks.createdAt} < ${timeRangeHint.endsAt}`
+        ) as SQL
+      )
+    }
+
     tasks.push(
       db
         .select()
         .from(bookmarks)
-        .where(
-          and(
-            eq(bookmarks.userId, userId),
-            bookmarkStatuses.length === 1
-              ? eq(bookmarks.lifecycleStatus, bookmarkStatuses[0])
-              : inArray(bookmarks.lifecycleStatus, bookmarkStatuses)
-          )
-        )
+        .where(and(...bookmarkConditions))
         .orderBy(desc(bookmarks.createdAt))
         .limit(clampedLimit)
         .then((rows) =>
@@ -139,6 +157,13 @@ export async function searchByKeyword({
         and(
           sql`${todos.dueAt} >= ${startsAt}`,
           sql`${todos.dueAt} < ${endsAt}`
+        ) as SQL
+      )
+    } else if (timeRangeHint) {
+      todoConditions.push(
+        and(
+          sql`${todos.createdAt} >= ${timeRangeHint.startsAt}`,
+          sql`${todos.createdAt} < ${timeRangeHint.endsAt}`
         ) as SQL
       )
     }

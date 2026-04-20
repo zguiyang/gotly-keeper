@@ -29,6 +29,8 @@ export async function searchAssets({
   query,
   typeHint,
   timeHint,
+  timeRangeStartIso,
+  timeRangeEndIso,
   completionHint,
   includeArchived = false,
   limit = ASSET_SEARCH_LIMIT_DEFAULT,
@@ -36,11 +38,24 @@ export async function searchAssets({
   const trimmed = query.trim()
   if (!trimmed) return []
 
-  const timeRangeHint = parseSearchTimeHint(timeHint)
-  const timeFilter =
-    timeRangeHint && typeHint === 'todo'
-      ? { rangeHint: timeRangeHint, timeHint }
+  const normalizedRangeHint =
+    timeRangeStartIso && timeRangeEndIso
+      ? {
+          startsAt: new Date(timeRangeStartIso),
+          endsAt: new Date(timeRangeEndIso),
+        }
       : null
+
+  const hasValidNormalizedRange =
+    normalizedRangeHint !== null &&
+    !Number.isNaN(normalizedRangeHint.startsAt.getTime()) &&
+    !Number.isNaN(normalizedRangeHint.endsAt.getTime()) &&
+    normalizedRangeHint.startsAt.getTime() < normalizedRangeHint.endsAt.getTime()
+
+  const timeRangeHint = hasValidNormalizedRange
+    ? normalizedRangeHint
+    : parseSearchTimeHint(timeHint)
+  const timeFilter = timeRangeHint ? { rangeHint: timeRangeHint, timeHint } : null
 
   let semanticResults: Awaited<ReturnType<typeof searchByEmbedding>> = []
   let semanticFailed = false

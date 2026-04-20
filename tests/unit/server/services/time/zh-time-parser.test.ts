@@ -105,6 +105,48 @@ describe('zh-time-parser', () => {
       expect(result.rangeHint!.endsAt.getTime()).toBe(dayjs.tz('2026-04-27', SHANGHAI_TZ).toDate().getTime())
     })
 
+    it('parses 上周 and returns previous week range', () => {
+      const now = dayjs.tz('2026-04-15T10:00:00', SHANGHAI_TZ).toDate()
+      const result = parseZhTimeText('上周', now)
+      expect(result.timeText).toBe('上周')
+      expect(result.dueAt).toBeNull()
+      expect(result.rangeHint).not.toBeNull()
+      expect(result.rangeHint!.startsAt.getTime()).toBe(dayjs.tz('2026-04-06', SHANGHAI_TZ).toDate().getTime())
+      expect(result.rangeHint!.endsAt.getTime()).toBe(dayjs.tz('2026-04-13', SHANGHAI_TZ).toDate().getTime())
+    })
+
+    it('parses 上个月 and returns previous month range', () => {
+      const now = dayjs.tz('2026-04-15T10:00:00', SHANGHAI_TZ).toDate()
+      const result = parseZhTimeText('上个月', now)
+      expect(result.timeText).toBe('上个月')
+      expect(result.dueAt).toBeNull()
+      expect(result.rangeHint).not.toBeNull()
+      expect(result.rangeHint!.startsAt.getTime()).toBe(dayjs.tz('2026-03-01', SHANGHAI_TZ).toDate().getTime())
+      expect(result.rangeHint!.endsAt.getTime()).toBe(dayjs.tz('2026-04-01', SHANGHAI_TZ).toDate().getTime())
+    })
+
+    it('distinguishes 过去3天 and 前3天 range semantics', () => {
+      const now = dayjs.tz('2026-04-15T10:00:00', SHANGHAI_TZ).toDate()
+
+      const past = parseZhTimeText('过去3天', now)
+      expect(past.rangeHint).not.toBeNull()
+      expect(past.rangeHint!.startsAt.getTime()).toBe(dayjs.tz('2026-04-13', SHANGHAI_TZ).toDate().getTime())
+      expect(past.rangeHint!.endsAt.getTime()).toBe(dayjs.tz('2026-04-16', SHANGHAI_TZ).toDate().getTime())
+
+      const previous = parseZhTimeText('前3天', now)
+      expect(previous.rangeHint).not.toBeNull()
+      expect(previous.rangeHint!.startsAt.getTime()).toBe(dayjs.tz('2026-04-12', SHANGHAI_TZ).toDate().getTime())
+      expect(previous.rangeHint!.endsAt.getTime()).toBe(dayjs.tz('2026-04-15', SHANGHAI_TZ).toDate().getTime())
+    })
+
+    it('parses 大前天 as three days ago', () => {
+      const now = dayjs.tz('2026-04-15T10:00:00', SHANGHAI_TZ).toDate()
+      const result = parseZhTimeText('大前天', now)
+      expect(result.timeText).toBe('大前天')
+      expect(result.rangeHint).not.toBeNull()
+      expect(result.rangeHint!.startsAt.getTime()).toBe(dayjs.tz('2026-04-12', SHANGHAI_TZ).toDate().getTime())
+    })
+
     it('parses 今天上午 with time-of-day', () => {
       const now = dayjs.tz('2026-04-15T10:00:00', SHANGHAI_TZ).toDate()
       const result = parseZhTimeText('今天上午', now)

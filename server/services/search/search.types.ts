@@ -10,6 +10,8 @@ export type SearchAssetsOptions = {
   query: string
   typeHint?: AssetType | null
   timeHint?: string | null
+  timeRangeStartIso?: string | null
+  timeRangeEndIso?: string | null
   completionHint?: 'complete' | 'incomplete' | null
   includeArchived?: boolean
   limit?: number
@@ -20,6 +22,8 @@ export type SearchAssetsCommand = {
   query: string
   typeHint: AssetType | null
   timeHint: string | null
+  timeRangeStartIso: string | null
+  timeRangeEndIso: string | null
   completionHint: 'complete' | 'incomplete' | null
 }
 
@@ -34,6 +38,8 @@ export type QueryParseResult = {
   terms: string[]
   typeHint: AssetType | null
   timeHint: string | null
+  timeRangeStartIso: string | null
+  timeRangeEndIso: string | null
   completionHint: 'complete' | 'incomplete' | null
 }
 

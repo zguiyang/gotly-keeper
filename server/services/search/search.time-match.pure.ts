@@ -3,6 +3,7 @@ import { type AssetTimeRangeHint } from '@/server/lib/config/time'
 export type SearchTimeCandidate = {
   dueAt: Date | null
   timeText: string | null
+  createdAt?: Date
 }
 
 export function getSearchTimeTextAliases(timeHint: string | null | undefined) {
@@ -26,6 +27,16 @@ export function matchesSearchTimeHint(
     if (
       dueTime >= rangeHint.startsAt.getTime() &&
       dueTime < rangeHint.endsAt.getTime()
+    ) {
+      return true
+    }
+  }
+
+  if (asset.createdAt) {
+    const createdTime = asset.createdAt.getTime()
+    if (
+      createdTime >= rangeHint.startsAt.getTime() &&
+      createdTime < rangeHint.endsAt.getTime()
     ) {
       return true
     }

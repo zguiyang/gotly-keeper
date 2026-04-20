@@ -247,6 +247,8 @@ describe('createWorkspaceTools', () => {
       query: 'landing page',
       typeHint: 'link',
       timeHint: '上周',
+      timeRangeStartIso: null,
+      timeRangeEndIso: null,
       completionHint: 'incomplete',
     })
     expect(output).toEqual({

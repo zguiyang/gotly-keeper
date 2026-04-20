@@ -3,6 +3,7 @@ import 'server-only'
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
+import { buildWorkspaceSystemPrompt } from '@/server/lib/ai'
 import { renderPrompt } from '@/server/lib/prompt-template'
 import { searchAssets } from '@/server/services/search/assets-search.service'
 import { listIncompleteTodos } from '@/server/services/todos'
@@ -125,7 +126,7 @@ export async function reviewWorkspaceUnfinishedTodosInternal(
 
   try {
     const [systemPrompt, userPrompt] = await Promise.all([
-      renderPrompt('workspace/todo-review.system', {}),
+      buildWorkspaceSystemPrompt('workspace/todo-review.system'),
       renderPrompt('workspace/todo-review.user', {
         payloadJson: JSON.stringify({
           currentTime: nowIso(),

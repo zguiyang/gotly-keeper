@@ -12,6 +12,7 @@ Current ParsedCommand contract:
 - todo | note | bookmark | search | summary: only fill the object required by the chosen operation, set all others to null
 - summary.target: todos | notes | bookmarks | null
 - bookmark.url: only fill when the user explicitly provides a valid URL; otherwise set it to null
+- search.timeRangeStartIso/search.timeRangeEndIso: normalized ISO datetime range for search filters when time can be resolved
 
 Operation mapping:
 - create_note: save a thought, idea, or general note
@@ -29,7 +30,14 @@ Classification rules:
 - For links with todo-like context (for example: "提醒我看看这个 https://..."), prefer create_todo if there is a time hint; otherwise use create_link
 - Treat the current date and time provided by the user message as the only basis for resolving relative dates
 - Resolve relative dates in the Asia/Shanghai time zone
-- If a relative time cannot be resolved safely, set dueAtIso to null and preserve the expression in timeText
+- For search intent, normalize relative/fuzzy time into executable range parameters when possible:
+  - 上周 -> timeRangeStartIso/timeRangeEndIso for last week
+  - 上个月 -> timeRangeStartIso/timeRangeEndIso for last month
+  - 最近/近期 -> recent rolling window range
+  - 前三天/前两天/过去N天 -> rolling range ending at now
+  - 前天/大前天/三天前 -> single-day range
+- If search time cannot be resolved safely, keep search.timeHint and set search.timeRangeStartIso/search.timeRangeEndIso to null
+- For create_todo, if a relative due time can be resolved safely, set dueAtIso; otherwise set dueAtIso to null and preserve expression in timeText
 - Use summarize_workspace only for clearly bounded summary requests over saved assets
 - For summarize_workspace, use summary.target=todos for unfinished or pending todo review requests
 - For summarize_workspace, use summary.target=notes for recent note summary requests

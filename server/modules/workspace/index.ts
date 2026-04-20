@@ -48,6 +48,7 @@ import {
   updateTodo,
   type TodoListItem,
 } from '@/server/services/todos'
+import { parseSearchTimeText } from '@/server/services/search/search.time-hint'
 import {
   ASSET_LIFECYCLE_STATUS,
   type AssetLifecycleStatus,
@@ -246,6 +247,7 @@ function buildHeuristicWorkspaceCommand(text: string): ParsedCommand {
   }
 
   if (hasSearchIntent(trimmedText)) {
+    const parsedTime = parseSearchTimeText(trimmedText)
     return parsedCommandSchema.parse({
       confidence: 0,
       originalText: trimmedText,
@@ -259,7 +261,9 @@ function buildHeuristicWorkspaceCommand(text: string): ParsedCommand {
       search: {
         query: trimmedText,
         typeHint: detectSearchTypeHint(trimmedText),
-        timeHint: detectTimeHint(trimmedText),
+        timeHint: parsedTime.timeText ?? detectTimeHint(trimmedText),
+        timeRangeStartIso: parsedTime.rangeHint?.startsAt.toISOString() ?? null,
+        timeRangeEndIso: parsedTime.rangeHint?.endsAt.toISOString() ?? null,
         completionHint: null,
       },
       summary: null,
@@ -290,6 +294,7 @@ function buildHeuristicWorkspaceCommand(text: string): ParsedCommand {
   }
 
   if (classification.kind === 'todo') {
+    const parsedTime = parseSearchTimeText(trimmedText)
     return parsedCommandSchema.parse({
       confidence: 0,
       originalText: trimmedText,
@@ -300,8 +305,8 @@ function buildHeuristicWorkspaceCommand(text: string): ParsedCommand {
       todo: {
         title: trimmedText,
         content: null,
-        timeText: detectTimeHint(trimmedText),
-        dueAtIso: null,
+        timeText: parsedTime.timeText ?? detectTimeHint(trimmedText),
+        dueAtIso: parsedTime.dueAt?.toISOString() ?? null,
       },
       note: null,
       bookmark: null,
@@ -1031,6 +1036,8 @@ export async function searchWorkspaceAssets(input: {
   query: string
   typeHint?: 'todo' | 'note' | 'link' | null
   timeHint?: string | null
+  timeRangeStartIso?: string | null
+  timeRangeEndIso?: string | null
   completionHint?: 'complete' | 'incomplete' | null
 }): Promise<AssetListItem[]> {
   return searchAssets({
@@ -1038,6 +1045,8 @@ export async function searchWorkspaceAssets(input: {
     query: input.query,
     typeHint: input.typeHint ?? null,
     timeHint: input.timeHint ?? null,
+    timeRangeStartIso: input.timeRangeStartIso ?? null,
+    timeRangeEndIso: input.timeRangeEndIso ?? null,
     completionHint: input.completionHint ?? null,
   })
 }
@@ -1131,6 +1140,8 @@ export async function executeWorkspaceCommand(input: {
       query,
       typeHint: command.search?.typeHint ?? null,
       timeHint: command.search?.timeHint ?? null,
+      timeRangeStartIso: command.search?.timeRangeStartIso ?? null,
+      timeRangeEndIso: command.search?.timeRangeEndIso ?? null,
       completionHint: command.search?.completionHint ?? null,
     })
 

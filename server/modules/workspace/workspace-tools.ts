@@ -56,6 +56,8 @@ const searchAssetsToolInputSchema = z.object({
   query: z.string().trim().min(1),
   typeHint: searchCommandPayloadSchema.shape.typeHint.optional(),
   timeHint: searchCommandPayloadSchema.shape.timeHint.optional(),
+  timeRangeStartIso: searchCommandPayloadSchema.shape.timeRangeStartIso.optional(),
+  timeRangeEndIso: searchCommandPayloadSchema.shape.timeRangeEndIso.optional(),
   completionHint: searchCommandPayloadSchema.shape.completionHint.optional(),
 })
 
@@ -145,6 +147,8 @@ function getSearchAssetsToolInput(command: Extract<ParsedCommand, { operation: '
     query: command.search?.query ?? command.originalText,
     typeHint: command.search?.typeHint ?? null,
     timeHint: command.search?.timeHint ?? null,
+    timeRangeStartIso: command.search?.timeRangeStartIso ?? null,
+    timeRangeEndIso: command.search?.timeRangeEndIso ?? null,
     completionHint: command.search?.completionHint ?? null,
   })
 }
@@ -218,12 +222,21 @@ function createWorkspaceToolExecutors(userId: string) {
         })
       )
     },
-    search_assets: async ({ query, typeHint, timeHint, completionHint }: SearchAssetsToolInput) => {
+    search_assets: async ({
+      query,
+      typeHint,
+      timeHint,
+      timeRangeStartIso,
+      timeRangeEndIso,
+      completionHint,
+    }: SearchAssetsToolInput) => {
       const results = await searchWorkspaceAssets({
         userId,
         query,
         typeHint: typeHint ?? null,
         timeHint: timeHint ?? null,
+        timeRangeStartIso: timeRangeStartIso ?? null,
+        timeRangeEndIso: timeRangeEndIso ?? null,
         completionHint: completionHint ?? null,
       })
 

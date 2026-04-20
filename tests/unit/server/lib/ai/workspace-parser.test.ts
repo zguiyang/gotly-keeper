@@ -103,6 +103,8 @@ describe('workspace-parser', () => {
       query: '帮我找上周收藏的文章',
       typeHint: 'link',
       timeHint: '上周',
+      timeRangeStartIso: expect.any(String),
+      timeRangeEndIso: expect.any(String),
       completionHint: null,
     })
     expect(result.rawInput).toBe('帮我找上周收藏的文章')

@@ -2,7 +2,7 @@ import 'server-only'
 
 import { z } from 'zod'
 
-import { runAiGeneration } from '@/server/lib/ai'
+import { buildWorkspaceSystemPrompt, runAiGeneration } from '@/server/lib/ai'
 import { renderPrompt } from '@/server/lib/prompt-template'
 import { writeBookmarkEnrichResult } from '@/server/modules/workspace/bookmark-enrich.module'
 import { dequeueBookmarkEnrichTask } from '@/server/services/bookmark/bookmark-queue.service'
@@ -144,7 +144,7 @@ async function generateContentSummary(
     return description
   }
 
-  const systemPrompt = await renderPrompt('bookmark/content-summary.system', {})
+  const systemPrompt = await buildWorkspaceSystemPrompt('bookmark/content-summary.system')
   const aiResult = await runAiGeneration({
     schema: bookmarkSummarySchema,
     systemPrompt,

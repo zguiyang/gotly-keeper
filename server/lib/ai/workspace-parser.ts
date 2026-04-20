@@ -2,6 +2,7 @@ import 'server-only'
 
 import { runAiGeneration } from './ai-runner'
 import { parsedCommandSchema } from './ai-schema'
+import { parseSearchTimeText } from '@/server/services/search/search.time-hint'
 import {
   buildAssetInterpreterPrompt,
   buildParsedCommandSystemPrompt,
@@ -88,7 +89,8 @@ function hasSummaryIntent(text: string): boolean {
 
 function buildFallbackCommand(originalText: string, confidence: number): ParsedCommand {
   const url = extractUrl(originalText)
-  const timeHint = detectTimeHint(originalText)
+  const parsedTime = parseSearchTimeText(originalText)
+  const timeHint = parsedTime.timeText ?? detectTimeHint(originalText)
 
   if (hasSummaryIntent(originalText)) {
     return parsedCommandSchema.parse({
@@ -124,6 +126,8 @@ function buildFallbackCommand(originalText: string, confidence: number): ParsedC
         query: originalText,
         typeHint: detectSearchTypeHint(originalText),
         timeHint,
+        timeRangeStartIso: parsedTime.rangeHint?.startsAt.toISOString() ?? null,
+        timeRangeEndIso: parsedTime.rangeHint?.endsAt.toISOString() ?? null,
         completionHint: null,
       },
       summary: null,
@@ -142,7 +146,7 @@ function buildFallbackCommand(originalText: string, confidence: number): ParsedC
         title: originalText,
         content: null,
         timeText: timeHint,
-        dueAtIso: null,
+        dueAtIso: parsedTime.dueAt?.toISOString() ?? null,
       },
       note: null,
       bookmark: null,
@@ -184,7 +188,7 @@ function buildFallbackCommand(originalText: string, confidence: number): ParsedC
         title: originalText,
         content: null,
         timeText: timeHint,
-        dueAtIso: null,
+        dueAtIso: parsedTime.dueAt?.toISOString() ?? null,
       },
       note: null,
       bookmark: null,

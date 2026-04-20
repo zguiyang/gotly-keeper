@@ -3,6 +3,7 @@ import 'server-only'
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
+import { buildWorkspaceSystemPrompt } from '@/server/lib/ai'
 import { renderPrompt } from '@/server/lib/prompt-template'
 import { listNotes } from '@/server/services/notes'
 import { searchAssets } from '@/server/services/search/assets-search.service'
@@ -120,7 +121,7 @@ export async function summarizeWorkspaceRecentNotesInternal(
 
   try {
     const [systemPrompt, userPrompt] = await Promise.all([
-      renderPrompt('workspace/note-summary.system', {}),
+      buildWorkspaceSystemPrompt('workspace/note-summary.system'),
       renderPrompt('workspace/note-summary.user', {
         payloadJson: JSON.stringify({
           currentTime: nowIso(),

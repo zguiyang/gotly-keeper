@@ -3,7 +3,7 @@ import 'server-only'
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
-import { getAiProvider } from '@/server/lib/ai'
+import { buildWorkspaceSystemPrompt, getAiProvider } from '@/server/lib/ai'
 import { BOOKMARK_SUMMARY_LIMIT, BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS } from '@/server/lib/config/ai'
 import { renderPrompt } from '@/server/lib/prompt-template'
 import { listBookmarks } from '@/server/services/bookmarks'
@@ -126,7 +126,7 @@ export async function summarizeWorkspaceRecentBookmarksInternal(
 
   try {
     const [systemPrompt, userPrompt] = await Promise.all([
-      renderPrompt('workspace/bookmark-summary.system', {}),
+      buildWorkspaceSystemPrompt('workspace/bookmark-summary.system'),
       renderPrompt('workspace/bookmark-summary.user', {
         payloadJson: JSON.stringify({
           currentTime: nowIso(),

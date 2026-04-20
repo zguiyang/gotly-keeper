@@ -125,6 +125,8 @@ describe('runWorkspaceCommand', () => {
         query: '文章',
         typeHint: 'link',
         timeHint: '上周',
+        timeRangeStartIso: '2026-04-06T00:00:00.000Z',
+        timeRangeEndIso: '2026-04-13T00:00:00.000Z',
         completionHint: null,
       },
       summary: null,
@@ -141,6 +143,8 @@ describe('runWorkspaceCommand', () => {
       query: '文章',
       typeHint: 'link',
       timeHint: '上周',
+      timeRangeStartIso: '2026-04-06T00:00:00.000Z',
+      timeRangeEndIso: '2026-04-13T00:00:00.000Z',
       completionHint: null,
     })
     expect(createNoteMock).not.toHaveBeenCalled()
