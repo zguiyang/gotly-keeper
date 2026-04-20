@@ -405,6 +405,44 @@ describe('useWorkspaceStream', () => {
     expect(hook.result.current.state.result?.kind).toBe('query')
   })
 
+  it('maps tool output errors into launcher error state', async () => {
+    chatMock.implementation = async ({ setMessages, setStatus }) => {
+      setStatus('ready')
+      setMessages([
+        {
+          id: 'assistant-msg',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'data-workspace-trace',
+              data: {
+                type: 'finalized',
+                title: '整理结果',
+                summary: '已接收请求，正在调用智能体。',
+              },
+            },
+            {
+              type: 'tool-create_workspace_asset',
+              state: 'output-error',
+              errorText: 'Invalid input for tool create_workspace_asset',
+            },
+          ],
+        } as WorkspaceMessage,
+      ])
+    }
+
+    const hook = renderHook(() => useWorkspaceStream())
+    activeHook = hook
+
+    await act(async () => {
+      await hook.result.current.submitInput('记一下：首页文案方向')
+    })
+
+    expect(hook.result.current.state.status).toBe('error')
+    expect(hook.result.current.state.traceEvents).toHaveLength(1)
+    expect(hook.result.current.state.errorMessage).toBe('AI 工具调用参数不完整，请换个说法重试。')
+  })
+
   it('maps transport errors into launcher error state', async () => {
     chatMock.implementation = async ({ setError, setStatus }) => {
       const error = new Error('网络异常')

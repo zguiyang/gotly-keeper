@@ -39,6 +39,14 @@ const timeFilterSchema = z.discriminatedUnion('kind', [
 const assetTypeSchema = z.enum(['todo', 'note', 'link']).nullable()
 const completionHintSchema = z.enum(['complete', 'incomplete']).nullable()
 
+function nullableInputToNull(value: string | null | undefined) {
+  return typeof value === 'string' && value.trim().length === 0 ? null : value
+}
+
+const nullableStringInputSchema = z.union([z.string().min(1), z.literal(''), z.null()])
+const nullableUrlInputSchema = z.union([z.url(), z.literal(''), z.null()])
+const nullableDateTimeInputSchema = z.union([z.string().datetime(), z.literal(''), z.null()])
+
 function traceInput(
   rawInputPreview: string,
   normalizedRequest: string
@@ -114,12 +122,12 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
         rawInputPreview: z.string().min(1),
         normalizedRequest: z.string().min(1),
         assetType: z.enum(['note', 'todo', 'link']),
-        title: z.string().min(1).nullable(),
-        content: z.string().min(1).nullable(),
-        url: z.url().nullable(),
-        note: z.string().min(1).nullable(),
-        timeText: z.string().min(1).nullable(),
-        dueAtIso: z.string().datetime().nullable(),
+        title: nullableStringInputSchema,
+        content: nullableStringInputSchema,
+        url: nullableUrlInputSchema,
+        note: nullableStringInputSchema,
+        timeText: nullableStringInputSchema,
+        dueAtIso: nullableDateTimeInputSchema,
         publicReason: z.string().min(1),
       }),
       execute: async ({
@@ -134,30 +142,36 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
         dueAtIso,
         publicReason,
       }) => {
+        const normalizedTitle = nullableInputToNull(title)
+        const normalizedContent = nullableInputToNull(content)
+        const normalizedUrl = nullableInputToNull(url)
+        const normalizedNote = nullableInputToNull(note)
+        const normalizedTimeText = nullableInputToNull(timeText)
+        const normalizedDueAtIso = nullableInputToNull(dueAtIso)
         const created =
           assetType === 'todo'
             ? await createWorkspaceTodo({
                 userId,
                 rawInput: rawInputPreview,
-                title: title ?? normalizedRequest,
-                content,
-                timeText,
-                dueAt: dueAtIso ? new Date(dueAtIso) : null,
+                title: normalizedTitle ?? normalizedRequest,
+                content: normalizedContent,
+                timeText: normalizedTimeText,
+                dueAt: normalizedDueAtIso ? new Date(normalizedDueAtIso) : null,
               })
-            : assetType === 'link' && url
+            : assetType === 'link' && normalizedUrl
               ? await createWorkspaceLink({
                   userId,
                   rawInput: rawInputPreview,
-                  url,
-                  title,
-                  note,
+                  url: normalizedUrl,
+                  title: normalizedTitle,
+                  note: normalizedNote,
                   summary: null,
                 })
               : await createWorkspaceNote({
                   userId,
                   rawInput: rawInputPreview,
-                  title,
-                  content: content ?? normalizedRequest,
+                  title: normalizedTitle,
+                  content: normalizedContent ?? normalizedRequest,
                   summary: null,
                 })
 
@@ -170,11 +184,11 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
           }),
           traceParameters({
             assetType,
-            title,
-            content,
-            url,
-            timeText,
-            dueAtIso,
+            title: normalizedTitle,
+            content: normalizedContent,
+            url: normalizedUrl,
+            timeText: normalizedTimeText,
+            dueAtIso: normalizedDueAtIso,
           }),
           {
             type: 'tool_selected',
@@ -184,7 +198,7 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
           },
           traceTool(
             'create_workspace_asset',
-            { assetType: created.asset.type, title, timeText },
+            { assetType: created.asset.type, title: normalizedTitle, timeText: normalizedTimeText },
             created.asset.type === 'todo'
               ? '已保存待办'
               : created.asset.type === 'link'
@@ -200,7 +214,7 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
       inputSchema: z.object({
         rawInputPreview: z.string().min(1),
         normalizedRequest: z.string().min(1),
-        query: z.string().min(1).nullable().optional(),
+        query: nullableStringInputSchema.optional(),
         typeHint: assetTypeSchema.optional(),
         completionHint: completionHintSchema.optional(),
         timeFilter: timeFilterSchema.optional(),
@@ -215,7 +229,8 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
         timeFilter,
         publicReason,
       }) => {
-        const normalizedQuery = query?.trim() || normalizedRequest.trim() || rawInputPreview.trim()
+        const normalizedQuery =
+          nullableInputToNull(query)?.trim() || normalizedRequest.trim() || rawInputPreview.trim()
         const normalizedTimeFilter =
           (timeFilter as WorkspaceAgentTimeFilter | undefined) ?? ({ kind: 'none' } as const)
         const results = await searchWorkspaceAssets({
@@ -291,7 +306,7 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
         rawInputPreview: z.string().min(1),
         normalizedRequest: z.string().min(1),
         target: z.enum(['todos', 'notes', 'bookmarks']),
-        query: z.string().min(1).nullable(),
+        query: nullableStringInputSchema,
         limit: z.number().int().positive().max(50).optional(),
         publicReason: z.string().min(1),
       }),
@@ -302,20 +317,21 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
         query,
         publicReason,
       }) => {
+        const normalizedQuery = nullableInputToNull(query)
         const result =
           target === 'todos'
             ? {
                 kind: 'todo-review' as const,
-                review: await reviewWorkspaceUnfinishedTodos({ userId, query }),
+                review: await reviewWorkspaceUnfinishedTodos({ userId, query: normalizedQuery }),
               }
             : target === 'notes'
               ? {
                   kind: 'note-summary' as const,
-                  summary: await summarizeWorkspaceRecentNotes({ userId, query }),
+                  summary: await summarizeWorkspaceRecentNotes({ userId, query: normalizedQuery }),
                 }
               : {
                   kind: 'bookmark-summary' as const,
-                  summary: await summarizeWorkspaceRecentBookmarks({ userId, query }),
+                  summary: await summarizeWorkspaceRecentBookmarks({ userId, query: normalizedQuery }),
                 }
 
         return toToolOutput(result, [
@@ -326,14 +342,14 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
               target === 'todos' ? 'todo' : target === 'bookmarks' ? 'link' : 'note',
             publicReason,
           }),
-          traceParameters({ target, query }),
+          traceParameters({ target, query: normalizedQuery }),
           {
             type: 'tool_selected',
             title: '选择工具',
             toolName: 'summarize_workspace',
             publicReason,
           },
-          traceTool('summarize_workspace', { target, query }, '已生成总结'),
+          traceTool('summarize_workspace', { target, query: normalizedQuery }, '已生成总结'),
         ])
       },
     }),

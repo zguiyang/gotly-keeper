@@ -27,6 +27,7 @@ type WorkspaceToolPart = {
   type: string
   state?: string
   output?: unknown
+  errorText?: unknown
 }
 
 function isWorkspaceRunRequest(value: unknown): value is WorkspaceRunRequest {
@@ -94,6 +95,27 @@ function getResultFromMessage(
   return null
 }
 
+function getToolErrorFromMessage(message: WorkspaceLauncherMessage | null): string | null {
+  if (!message) {
+    return null
+  }
+
+  for (const part of [...message.parts].reverse()) {
+    const toolPart = part as WorkspaceToolPart
+
+    if (
+      toolPart.type.startsWith('tool-') &&
+      toolPart.state === 'output-error'
+    ) {
+      return typeof toolPart.errorText === 'string'
+        ? toolPart.errorText
+        : 'AI 工具执行失败。'
+    }
+  }
+
+  return null
+}
+
 function getAssistantText(message: WorkspaceLauncherMessage | null): string | null {
   if (!message) {
     return null
@@ -143,6 +165,7 @@ function toWorkspaceRunUiState(options: {
 }): WorkspaceRunUiState {
   const latestAssistantMessage = getLatestAssistantMessage(options.messages)
   const result = getResultFromMessage(latestAssistantMessage)
+  const toolError = getToolErrorFromMessage(latestAssistantMessage)
 
   if (options.status === 'error') {
     return {
@@ -151,6 +174,16 @@ function toWorkspaceRunUiState(options: {
       traceEvents: [],
       result: null,
       errorMessage: options.error?.message ?? '处理失败，请重试。',
+    }
+  }
+
+  if (toolError) {
+    return {
+      status: 'error',
+      assistantText: getAssistantText(latestAssistantMessage),
+      traceEvents: getTraceEvents(latestAssistantMessage),
+      result: null,
+      errorMessage: 'AI 工具调用参数不完整，请换个说法重试。',
     }
   }
 

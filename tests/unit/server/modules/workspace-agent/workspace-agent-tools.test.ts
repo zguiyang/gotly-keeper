@@ -1,8 +1,22 @@
+import { asSchema } from 'ai'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createWorkspaceAgentTools } from '@/server/modules/workspace-agent/workspace-agent-tools'
 
 import type { WorkspaceAgentToolOutput } from '@/server/modules/workspace-agent/workspace-agent.types'
+
+type SafeParseResult<T> =
+  | { success: true; data: T }
+  | { success: false }
+
+async function safeParseToolInput<T>(
+  schema: unknown,
+  input: unknown
+): Promise<SafeParseResult<T>> {
+  return (schema as {
+    safeParseAsync: (value: unknown) => Promise<SafeParseResult<T>>
+  }).safeParseAsync(input)
+}
 
 const createWorkspaceNoteMock = vi.hoisted(() => vi.fn())
 const createWorkspaceTodoMock = vi.hoisted(() => vi.fn())
@@ -110,6 +124,81 @@ describe('createWorkspaceAgentTools', () => {
     })
     expect(output.trace.some((event: WorkspaceAgentToolOutput['trace'][number]) => event.type === 'tool_executed')).toBe(true)
     expect(JSON.stringify(output)).not.toContain('apiKey')
+  })
+
+  it('create_workspace_asset accepts empty nullable fields from model output', async () => {
+    createWorkspaceNoteMock.mockResolvedValue({
+      kind: 'created',
+      asset: {
+        id: 'note_1',
+        type: 'note',
+        title: '首页文案方向',
+        excerpt: '首页文案方向',
+        originalText: '首页文案方向',
+        url: null,
+        timeText: null,
+        dueAt: null,
+        completed: false,
+        createdAt: new Date('2026-04-20T10:00:00.000Z'),
+      },
+    })
+
+    const tools = createWorkspaceAgentTools({ userId: 'user_1' })
+    const input = {
+      rawInputPreview: '记一下：首页文案方向',
+      normalizedRequest: '首页文案方向',
+      assetType: 'note',
+      title: '首页文案方向',
+      content: '首页文案方向',
+      url: '',
+      note: '',
+      timeText: '',
+      dueAtIso: '',
+      publicReason: '保存为笔记',
+    }
+
+    const parsed = await safeParseToolInput<Parameters<
+      NonNullable<typeof tools.create_workspace_asset.execute>
+    >[0]>(tools.create_workspace_asset.inputSchema, input)
+
+    expect(parsed.success).toBe(true)
+    if (!parsed.success) {
+      return
+    }
+
+    const output = (await tools.create_workspace_asset.execute!(
+      parsed.data,
+      { toolCallId: 'tool_1', messages: [] }
+    )) as WorkspaceAgentToolOutput
+
+    expect(createWorkspaceNoteMock).toHaveBeenCalledWith({
+      userId: 'user_1',
+      rawInput: '记一下：首页文案方向',
+      title: '首页文案方向',
+      content: '首页文案方向',
+      summary: null,
+    })
+    expect(output.result.kind).toBe('created')
+  })
+
+  it('create_workspace_asset accepts empty nullable fields through AI SDK validation', async () => {
+    const tools = createWorkspaceAgentTools({ userId: 'user_1' })
+    const input = {
+      rawInputPreview: '记一下：首页文案方向',
+      normalizedRequest: '首页文案方向',
+      assetType: 'note',
+      title: '首页文案方向',
+      content: '首页文案方向',
+      url: '',
+      note: '',
+      timeText: '',
+      dueAtIso: '',
+      publicReason: '保存为笔记',
+    }
+
+    const validated = await asSchema(tools.create_workspace_asset.inputSchema).validate?.(input)
+
+    expect(validated?.success).toBe(true)
   })
 
   it('create_workspace_asset stores todo due dates when the agent resolves time', async () => {
@@ -229,6 +318,43 @@ describe('createWorkspaceAgentTools', () => {
         limit: 20,
         publicReason: '用户要总结笔记，最近按默认数量处理。',
       },
+      { toolCallId: 'tool_1', messages: [] }
+    )) as WorkspaceAgentToolOutput
+
+    expect(summarizeWorkspaceRecentNotesMock).toHaveBeenCalledWith({
+      userId: 'user_1',
+      query: null,
+    })
+    expect(output.result.kind).toBe('note-summary')
+  })
+
+  it('summarize_workspace treats empty query as no query', async () => {
+    summarizeWorkspaceRecentNotesMock.mockResolvedValue({
+      title: '最近笔记重点',
+      bullets: ['首页方向更明确'],
+      actionItems: ['整理首页文案'],
+      sourceCount: 3,
+    })
+
+    const tools = createWorkspaceAgentTools({ userId: 'user_1' })
+    const parsed = await safeParseToolInput<Parameters<
+      NonNullable<typeof tools.summarize_workspace.execute>
+    >[0]>(tools.summarize_workspace.inputSchema, {
+      rawInputPreview: '总结最近笔记重点',
+      normalizedRequest: '总结最近笔记重点',
+      target: 'notes',
+      query: '',
+      limit: 20,
+      publicReason: '用户要总结笔记，最近按默认数量处理。',
+    })
+
+    expect(parsed.success).toBe(true)
+    if (!parsed.success) {
+      return
+    }
+
+    const output = (await tools.summarize_workspace.execute!(
+      parsed.data,
       { toolCallId: 'tool_1', messages: [] }
     )) as WorkspaceAgentToolOutput
 
