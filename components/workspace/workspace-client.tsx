@@ -1,6 +1,7 @@
 'use client'
 
 import { Sparkles } from 'lucide-react'
+import { AnimatePresence } from 'motion/react'
 import { useCallback, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -189,9 +190,15 @@ export function WorkspaceClient({
         ) : null}
       </section>
 
-      {state.status === 'streaming' && state.stage ? (
-        <WorkspaceRunPanel stage={state.stage} message={state.stageMessage} />
-      ) : null}
+      <AnimatePresence mode="wait">
+        {state.status === 'streaming' && state.stage && (
+          <WorkspaceRunPanel
+            key="run-panel"
+            stage={state.stage}
+            message={state.stageMessage}
+          />
+        )}
+      </AnimatePresence>
 
       {state.result?.kind === 'query' ? (
         <WorkspaceQueryResultsPanel
