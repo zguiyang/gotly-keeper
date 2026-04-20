@@ -23,7 +23,7 @@ export async function createWorkspaceAgent({ userId }: { userId: string }) {
     model,
     instructions,
     tools: createWorkspaceAgentTools({ userId }),
-    stopWhen: stepCountIs(8),
+    stopWhen: stepCountIs(2),
     temperature: 0,
     maxRetries: 1,
     providerOptions: {

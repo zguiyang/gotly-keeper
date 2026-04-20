@@ -61,9 +61,7 @@ function isWorkspaceRunResult(value: unknown): value is WorkspaceRunResult {
     value.kind === 'todo-review' ||
     value.kind === 'note-summary' ||
     value.kind === 'bookmark-summary' ||
-    value.kind === 'capabilities' ||
-    value.kind === 'context' ||
-    value.kind === 'clarification'
+    value.kind === 'capabilities'
   )
 }
 
