@@ -47,6 +47,11 @@ const nullableStringInputSchema = z.union([z.string().min(1), z.literal(''), z.n
 const nullableUrlInputSchema = z.union([z.url(), z.literal(''), z.null()])
 const nullableDateTimeInputSchema = z.union([z.string().datetime(), z.literal(''), z.null()])
 
+function normalizedMetaText(value: string | null | undefined, fallback: string) {
+  const normalizedValue = nullableInputToNull(value)?.trim()
+  return normalizedValue && normalizedValue.length > 0 ? normalizedValue : fallback
+}
+
 function traceInput(
   rawInputPreview: string,
   normalizedRequest: string
@@ -119,8 +124,8 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
       description:
         '保存一条 workspace 资产。assetType 决定保存为笔记、待办或书签；信息不完整时优先用安全默认值执行。',
       inputSchema: z.object({
-        rawInputPreview: z.string().min(1),
-        normalizedRequest: z.string().min(1),
+        rawInputPreview: nullableStringInputSchema.optional(),
+        normalizedRequest: nullableStringInputSchema.optional(),
         assetType: z.enum(['note', 'todo', 'link']),
         title: nullableStringInputSchema,
         content: nullableStringInputSchema,
@@ -128,7 +133,7 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
         note: nullableStringInputSchema,
         timeText: nullableStringInputSchema,
         dueAtIso: nullableDateTimeInputSchema,
-        publicReason: z.string().min(1),
+        publicReason: nullableStringInputSchema.optional(),
       }),
       execute: async ({
         rawInputPreview,
@@ -142,6 +147,9 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
         dueAtIso,
         publicReason,
       }) => {
+        const normalizedRawInputPreview = normalizedMetaText(rawInputPreview, '用户输入')
+        const normalizedRequestText = normalizedMetaText(normalizedRequest, normalizedRawInputPreview)
+        const normalizedPublicReason = normalizedMetaText(publicReason, '按默认规则执行。')
         const normalizedTitle = nullableInputToNull(title)
         const normalizedContent = nullableInputToNull(content)
         const normalizedUrl = nullableInputToNull(url)
@@ -152,8 +160,8 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
           assetType === 'todo'
             ? await createWorkspaceTodo({
                 userId,
-                rawInput: rawInputPreview,
-                title: normalizedTitle ?? normalizedRequest,
+                rawInput: normalizedRawInputPreview,
+                title: normalizedTitle ?? normalizedRequestText,
                 content: normalizedContent,
                 timeText: normalizedTimeText,
                 dueAt: normalizedDueAtIso ? new Date(normalizedDueAtIso) : null,
@@ -161,7 +169,7 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
             : assetType === 'link' && normalizedUrl
               ? await createWorkspaceLink({
                   userId,
-                  rawInput: rawInputPreview,
+                  rawInput: normalizedRawInputPreview,
                   url: normalizedUrl,
                   title: normalizedTitle,
                   note: normalizedNote,
@@ -169,18 +177,18 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
                 })
               : await createWorkspaceNote({
                   userId,
-                  rawInput: rawInputPreview,
+                  rawInput: normalizedRawInputPreview,
                   title: normalizedTitle,
-                  content: normalizedContent ?? normalizedRequest,
+                  content: normalizedContent ?? normalizedRequestText,
                   summary: null,
                 })
 
         return toToolOutput(toCreatedResultWithNotice(created), [
-          traceInput(rawInputPreview, normalizedRequest),
+          traceInput(normalizedRawInputPreview, normalizedRequestText),
           traceIntent({
             operation: 'create',
             assetType: created.asset.type,
-            publicReason,
+            publicReason: normalizedPublicReason,
           }),
           traceParameters({
             assetType,
@@ -194,7 +202,7 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
             type: 'tool_selected',
             title: '选择工具',
             toolName: 'create_workspace_asset',
-            publicReason,
+            publicReason: normalizedPublicReason,
           },
           traceTool(
             'create_workspace_asset',
@@ -212,13 +220,13 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
     search_workspace: tool({
       description: '查询用户已保存的笔记、待办或书签。时间过滤必须由 agent 传入结构化 timeFilter。',
       inputSchema: z.object({
-        rawInputPreview: z.string().min(1),
-        normalizedRequest: z.string().min(1),
+        rawInputPreview: nullableStringInputSchema.optional(),
+        normalizedRequest: nullableStringInputSchema.optional(),
         query: nullableStringInputSchema.optional(),
         typeHint: assetTypeSchema.optional(),
         completionHint: completionHintSchema.optional(),
         timeFilter: timeFilterSchema.optional(),
-        publicReason: z.string().min(1),
+        publicReason: nullableStringInputSchema.optional(),
       }),
       execute: async ({
         rawInputPreview,
@@ -229,8 +237,11 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
         timeFilter,
         publicReason,
       }) => {
+        const normalizedRawInputPreview = normalizedMetaText(rawInputPreview, '用户输入')
+        const normalizedRequestText = normalizedMetaText(normalizedRequest, normalizedRawInputPreview)
+        const normalizedPublicReason = normalizedMetaText(publicReason, '按默认规则执行。')
         const normalizedQuery =
-          nullableInputToNull(query)?.trim() || normalizedRequest.trim() || rawInputPreview.trim()
+          nullableInputToNull(query)?.trim() || normalizedRequestText.trim() || normalizedRawInputPreview.trim()
         const normalizedTimeFilter =
           (timeFilter as WorkspaceAgentTimeFilter | undefined) ?? ({ kind: 'none' } as const)
         const results = await searchWorkspaceAssets({
@@ -257,11 +268,11 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
             timeFilter: normalizedTimeFilter,
           },
           [
-            traceInput(rawInputPreview, normalizedRequest),
+            traceInput(normalizedRawInputPreview, normalizedRequestText),
             traceIntent({
               operation: 'search',
               assetType: typeHint ?? 'mixed',
-              publicReason,
+              publicReason: normalizedPublicReason,
             }),
             traceParameters({
               query: normalizedQuery,
@@ -283,7 +294,7 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
               type: 'tool_selected',
               title: '选择工具',
               toolName: 'search_workspace',
-              publicReason,
+              publicReason: normalizedPublicReason,
             },
             traceTool(
               'search_workspace',
@@ -303,12 +314,12 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
     summarize_workspace: tool({
       description: '总结或复盘已保存的待办、笔记或书签。',
       inputSchema: z.object({
-        rawInputPreview: z.string().min(1),
-        normalizedRequest: z.string().min(1),
+        rawInputPreview: nullableStringInputSchema.optional(),
+        normalizedRequest: nullableStringInputSchema.optional(),
         target: z.enum(['todos', 'notes', 'bookmarks']),
         query: nullableStringInputSchema,
         limit: z.number().int().positive().max(50).optional(),
-        publicReason: z.string().min(1),
+        publicReason: nullableStringInputSchema.optional(),
       }),
       execute: async ({
         rawInputPreview,
@@ -317,6 +328,9 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
         query,
         publicReason,
       }) => {
+        const normalizedRawInputPreview = normalizedMetaText(rawInputPreview, '用户输入')
+        const normalizedRequestText = normalizedMetaText(normalizedRequest, normalizedRawInputPreview)
+        const normalizedPublicReason = normalizedMetaText(publicReason, '按默认规则执行。')
         const normalizedQuery = nullableInputToNull(query)
         const result =
           target === 'todos'
@@ -335,19 +349,19 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
                 }
 
         return toToolOutput(result, [
-          traceInput(rawInputPreview, normalizedRequest),
+          traceInput(normalizedRawInputPreview, normalizedRequestText),
           traceIntent({
             operation: 'summarize',
             assetType:
               target === 'todos' ? 'todo' : target === 'bookmarks' ? 'link' : 'note',
-            publicReason,
+            publicReason: normalizedPublicReason,
           }),
           traceParameters({ target, query: normalizedQuery }),
           {
             type: 'tool_selected',
             title: '选择工具',
             toolName: 'summarize_workspace',
-            publicReason,
+            publicReason: normalizedPublicReason,
           },
           traceTool('summarize_workspace', { target, query: normalizedQuery }, '已生成总结'),
         ])
@@ -357,33 +371,38 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
     get_workspace_capabilities: tool({
       description: '说明当前 workspace agent 能做什么。',
       inputSchema: z.object({
-        rawInputPreview: z.string().min(1),
-        normalizedRequest: z.string().min(1),
-        publicReason: z.string().min(1),
+        rawInputPreview: nullableStringInputSchema.optional(),
+        normalizedRequest: nullableStringInputSchema.optional(),
+        publicReason: nullableStringInputSchema.optional(),
       }),
-      execute: async ({ rawInputPreview, normalizedRequest, publicReason }) =>
-        toToolOutput(
+      execute: async ({ rawInputPreview, normalizedRequest, publicReason }) => {
+        const normalizedRawInputPreview = normalizedMetaText(rawInputPreview, '用户输入')
+        const normalizedRequestText = normalizedMetaText(normalizedRequest, normalizedRawInputPreview)
+        const normalizedPublicReason = normalizedMetaText(publicReason, '按默认规则执行。')
+
+        return toToolOutput(
           {
             kind: 'capabilities',
             items: ['保存笔记', '创建待办', '收藏链接', '搜索工作区内容', '总结笔记、待办和书签'],
           },
           [
-            traceInput(rawInputPreview, normalizedRequest),
+            traceInput(normalizedRawInputPreview, normalizedRequestText),
             traceIntent({
               operation: 'capabilities',
               assetType: null,
-              publicReason,
+              publicReason: normalizedPublicReason,
             }),
             traceParameters({}),
             {
               type: 'tool_selected',
               title: '选择工具',
               toolName: 'get_workspace_capabilities',
-              publicReason,
+              publicReason: normalizedPublicReason,
             },
             traceTool('get_workspace_capabilities', {}, '已整理当前能力'),
           ]
-        ),
+        )
+      },
     }),
 
   }

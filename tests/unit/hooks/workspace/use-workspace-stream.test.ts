@@ -443,6 +443,73 @@ describe('useWorkspaceStream', () => {
     expect(hook.result.current.state.errorMessage).toBe('AI 工具调用参数不完整，请换个说法重试。')
   })
 
+  it('maps non-parameter tool errors into generic launcher error state', async () => {
+    chatMock.implementation = async ({ setMessages, setStatus }) => {
+      setStatus('ready')
+      setMessages([
+        {
+          id: 'assistant-msg',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'tool-search_workspace',
+              state: 'output-error',
+              errorText: 'Tool execution timed out',
+            },
+          ],
+        } as WorkspaceMessage,
+      ])
+    }
+
+    const hook = renderHook(() => useWorkspaceStream())
+    activeHook = hook
+
+    await act(async () => {
+      await hook.result.current.submitInput('找一下我的笔记')
+    })
+
+    expect(hook.result.current.state.status).toBe('error')
+    expect(hook.result.current.state.errorMessage).toBe('AI 工具执行失败，请稍后重试。')
+  })
+
+  it('prefers successful result when tool error and result both exist', async () => {
+    chatMock.implementation = async ({ setMessages, setStatus }) => {
+      setStatus('ready')
+      setMessages([
+        {
+          id: 'assistant-msg',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'tool-create_workspace_asset',
+              state: 'output-error',
+              errorText: 'Invalid input for tool create_workspace_asset',
+            },
+            {
+              type: 'tool-search_workspace',
+              state: 'output-available',
+              output: {
+                result: createQueryResult(),
+                trace: [],
+              },
+            },
+          ],
+        } as WorkspaceMessage,
+      ])
+    }
+
+    const hook = renderHook(() => useWorkspaceStream())
+    activeHook = hook
+
+    await act(async () => {
+      await hook.result.current.submitInput('帮我找上周收藏的文章')
+    })
+
+    expect(hook.result.current.state.status).toBe('success')
+    expect(hook.result.current.state.result?.kind).toBe('query')
+    expect(hook.result.current.state.errorMessage).toBe(null)
+  })
+
   it('maps transport errors into launcher error state', async () => {
     chatMock.implementation = async ({ setError, setStatus }) => {
       const error = new Error('网络异常')

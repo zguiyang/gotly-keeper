@@ -201,6 +201,83 @@ describe('createWorkspaceAgentTools', () => {
     expect(validated?.success).toBe(true)
   })
 
+  it('create_workspace_asset falls back meta fields when model omits them', async () => {
+    createWorkspaceNoteMock.mockResolvedValue({
+      kind: 'created',
+      asset: {
+        id: 'note_1',
+        type: 'note',
+        title: '首页文案方向',
+        excerpt: '首页文案方向',
+        originalText: '首页文案方向',
+        url: null,
+        timeText: null,
+        dueAt: null,
+        completed: false,
+        createdAt: new Date('2026-04-20T10:00:00.000Z'),
+      },
+    })
+
+    const tools = createWorkspaceAgentTools({ userId: 'user_1' })
+    const parsed = await safeParseToolInput<Parameters<
+      NonNullable<typeof tools.create_workspace_asset.execute>
+    >[0]>(tools.create_workspace_asset.inputSchema, {
+      assetType: 'note',
+      title: '首页文案方向',
+      content: '首页文案方向',
+      url: null,
+      note: null,
+      timeText: null,
+      dueAtIso: null,
+    })
+
+    expect(parsed.success).toBe(true)
+    if (!parsed.success) {
+      return
+    }
+
+    const output = (await tools.create_workspace_asset.execute!(
+      parsed.data,
+      { toolCallId: 'tool_1', messages: [] }
+    )) as WorkspaceAgentToolOutput
+
+    expect(createWorkspaceNoteMock).toHaveBeenCalledWith({
+      userId: 'user_1',
+      rawInput: '用户输入',
+      title: '首页文案方向',
+      content: '首页文案方向',
+      summary: null,
+    })
+    expect(output.trace[0]).toMatchObject({
+      type: 'input_normalized',
+      rawInputPreview: '用户输入',
+      normalizedRequest: '用户输入',
+    })
+    expect(output.trace[1]).toMatchObject({
+      type: 'intent_identified',
+      publicReason: '按默认规则执行。',
+    })
+  })
+
+  it('create_workspace_asset still requires assetType', async () => {
+    const tools = createWorkspaceAgentTools({ userId: 'user_1' })
+    const parsed = await safeParseToolInput(
+      tools.create_workspace_asset.inputSchema,
+      {
+        rawInputPreview: '记一下：首页文案方向',
+        normalizedRequest: '首页文案方向',
+        title: '首页文案方向',
+        content: '首页文案方向',
+        url: null,
+        note: null,
+        timeText: null,
+        dueAtIso: null,
+      }
+    )
+
+    expect(parsed.success).toBe(false)
+  })
+
   it('create_workspace_asset stores todo due dates when the agent resolves time', async () => {
     createWorkspaceTodoMock.mockResolvedValue({
       kind: 'created',
@@ -363,5 +440,20 @@ describe('createWorkspaceAgentTools', () => {
       query: null,
     })
     expect(output.result.kind).toBe('note-summary')
+  })
+
+  it('summarize_workspace still requires target', async () => {
+    const tools = createWorkspaceAgentTools({ userId: 'user_1' })
+    const parsed = await safeParseToolInput(
+      tools.summarize_workspace.inputSchema,
+      {
+        rawInputPreview: '总结最近笔记重点',
+        normalizedRequest: '总结最近笔记重点',
+        query: '',
+        limit: 20,
+      }
+    )
+
+    expect(parsed.success).toBe(false)
   })
 })
