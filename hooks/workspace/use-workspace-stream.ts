@@ -116,6 +116,22 @@ function getToolErrorFromMessage(message: WorkspaceLauncherMessage | null): stri
   return null
 }
 
+function toToolErrorMessage(toolError: string): string {
+  const normalizedError = toolError.toLowerCase()
+  const isParameterError =
+    normalizedError.includes('invalid input') ||
+    normalizedError.includes('missing required') ||
+    normalizedError.includes('required') ||
+    normalizedError.includes('schema') ||
+    normalizedError.includes('validation') ||
+    normalizedError.includes('expected') ||
+    normalizedError.includes('zod')
+
+  return isParameterError
+    ? 'AI 工具调用参数不完整，请换个说法重试。'
+    : 'AI 工具执行失败，请稍后重试。'
+}
+
 function getAssistantText(message: WorkspaceLauncherMessage | null): string | null {
   if (!message) {
     return null
@@ -177,16 +193,6 @@ function toWorkspaceRunUiState(options: {
     }
   }
 
-  if (toolError) {
-    return {
-      status: 'error',
-      assistantText: getAssistantText(latestAssistantMessage),
-      traceEvents: getTraceEvents(latestAssistantMessage),
-      result: null,
-      errorMessage: 'AI 工具调用参数不完整，请换个说法重试。',
-    }
-  }
-
   if (options.status === 'submitted' || options.status === 'streaming') {
     return {
       status: 'streaming',
@@ -204,6 +210,16 @@ function toWorkspaceRunUiState(options: {
       traceEvents: getTraceEvents(latestAssistantMessage),
       result,
       errorMessage: null,
+    }
+  }
+
+  if (toolError) {
+    return {
+      status: 'error',
+      assistantText: getAssistantText(latestAssistantMessage),
+      traceEvents: getTraceEvents(latestAssistantMessage),
+      result: null,
+      errorMessage: toToolErrorMessage(toolError),
     }
   }
 
