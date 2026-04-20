@@ -12,78 +12,53 @@ import { formatAbsoluteTime } from '@/shared/time/formatters'
 
 import {
   RecentItem,
-  WorkspaceBookmarkSummaryPanel,
-  WorkspaceNoteSummaryPanel,
-  WorkspaceQueryResultsPanel,
-  WorkspaceTodoReviewPanel,
+  WorkspaceBookmarkSummaryContent,
+  WorkspaceNoteSummaryContent,
+  WorkspaceQueryResultsContent,
+  WorkspaceTodoReviewContent,
 } from './workspace-result-panels'
 import { WorkspaceRunPanel } from './workspace-run-panel'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
 import type { WorkspaceRunResult } from '@/shared/workspace/workspace-run.types'
 
-function QuickActionChips({
-  onChipClick,
-  onReviewTodos,
-  onSummarizeBookmarks,
-  onSummarizeNotes,
-  disabled,
+function QuickInputSuggestions({
+  onSuggestionClick,
+  hidden,
 }: {
-  onChipClick: (text: string) => void
-  onReviewTodos: () => void
-  onSummarizeBookmarks: () => void
-  onSummarizeNotes: () => void
-  disabled: boolean
+  onSuggestionClick: (text: string) => void
+  hidden: boolean
 }) {
-  const chips = [
+  if (hidden) {
+    return null
+  }
+
+  const suggestions = [
     '帮我找一下上周收藏的文章',
-    '把这个链接收起来，后面再看',
     '记一下首页文案方向',
+    '总结最近笔记重点',
   ]
 
   return (
-    <div className="mt-5 flex flex-wrap gap-2.5">
-      {chips.map((chip, index) => (
-        <Button
+    <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+      <span className="shrink-0 text-[11px] font-medium tracking-[0.04em] text-on-surface-variant/50 uppercase">
+        试试这样说
+      </span>
+      {suggestions.map((suggestion, index) => (
+        <button
           type="button"
           key={index}
-          onClick={() => onChipClick(chip)}
-          variant="outline"
-          size="sm"
-          className="rounded-full text-[11px] tracking-[0.02em] text-on-surface-variant"
+          onClick={() => onSuggestionClick(suggestion)}
+          className="group flex items-center gap-1.5 text-left"
         >
-          {chip}
-        </Button>
+          {index > 0 && (
+            <span className="text-[10px] text-on-surface-variant/30">·</span>
+          )}
+          <span className="text-[13px] text-on-surface-variant/60 group-hover:text-on-surface-variant transition-colors duration-150">
+            {suggestion}
+          </span>
+        </button>
       ))}
-      <Button
-        type="button"
-        onClick={onReviewTodos}
-        disabled={disabled}
-        size="sm"
-        className="rounded-full text-[11px] tracking-[0.02em]"
-      >
-        复盘未完成待办
-      </Button>
-      <Button
-        type="button"
-        onClick={onSummarizeNotes}
-        disabled={disabled}
-        variant="secondary"
-        size="sm"
-        className="rounded-full text-[11px] tracking-[0.02em]"
-      >
-        总结最近笔记
-      </Button>
-      <Button
-        type="button"
-        onClick={onSummarizeBookmarks}
-        disabled={disabled}
-        variant="secondary"
-        size="sm"
-        className="rounded-full text-[11px] tracking-[0.02em]"
-      >
-        总结最近书签
-      </Button>
     </div>
   )
 }
@@ -104,10 +79,10 @@ export function WorkspaceClient({
     setRecentItems((items) => [
       result.asset,
       ...items.filter((item) => item.id !== result.asset.id),
-    ].slice(0, 6))
+    ].slice(0, 10))
   }, [])
 
-  const { state, submitInput, triggerQuickAction } = useWorkspaceStream({
+  const { state, submitInput } = useWorkspaceStream({
     onResult: handleWorkspaceResult,
   })
 
@@ -129,9 +104,12 @@ export function WorkspaceClient({
     }
   }
 
-  function handleChipClick(text: string) {
+  function handleSuggestionClick(text: string) {
     setInputValue(text)
+    document.querySelector<HTMLInputElement>('[name="workspace-query"]')?.focus()
   }
+
+  const hasResult = state.result?.kind && state.result.kind !== 'created'
 
   return (
     <>
@@ -142,16 +120,9 @@ export function WorkspaceClient({
         <p className="mt-2 max-w-3xl text-[15px] leading-7 text-on-surface-variant">
           先收好，之后找回。Gotly 负责整理，你负责创造。
         </p>
-        <QuickActionChips
-          onChipClick={handleChipClick}
-          onReviewTodos={() => triggerQuickAction('review-todos')}
-          onSummarizeBookmarks={() => triggerQuickAction('summarize-bookmarks')}
-          onSummarizeNotes={() => triggerQuickAction('summarize-notes')}
-          disabled={state.status === 'streaming'}
-        />
       </div>
 
-      <section className="mb-8">
+      <section className="mb-6">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
             <Sparkles className="w-5 h-5 text-on-surface-variant/50" />
@@ -190,6 +161,11 @@ export function WorkspaceClient({
         ) : null}
       </section>
 
+      <QuickInputSuggestions
+        onSuggestionClick={handleSuggestionClick}
+        hidden={state.status === 'streaming'}
+      />
+
       <AnimatePresence mode="wait">
         {state.status === 'streaming' && state.stage && (
           <WorkspaceRunPanel
@@ -200,19 +176,29 @@ export function WorkspaceClient({
         )}
       </AnimatePresence>
 
-      {state.result?.kind === 'query' ? (
-        <WorkspaceQueryResultsPanel
-          results={state.result.results}
-        />
-      ) : state.result?.kind === 'todo-review' ? (
-        <WorkspaceTodoReviewPanel review={state.result.review} />
-      ) : state.result?.kind === 'note-summary' ? (
-        <WorkspaceNoteSummaryPanel summary={state.result.summary} />
-      ) : state.result?.kind === 'bookmark-summary' ? (
-        <WorkspaceBookmarkSummaryPanel summary={state.result.summary} />
+      {hasResult ? (
+        <section className="mt-8">
+          <div className="mb-3 flex items-center gap-3">
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/70">
+              本次处理
+            </h2>
+            <div className="flex-1 h-px bg-border/20" />
+          </div>
+          <div className="rounded-2xl border border-border/10 bg-surface-container-lowest p-4 shadow-[var(--shadow-soft)]">
+            {state.result?.kind === 'query' ? (
+              <WorkspaceQueryResultsContent results={state.result.results} />
+            ) : state.result?.kind === 'todo-review' ? (
+              <WorkspaceTodoReviewContent review={state.result.review} />
+            ) : state.result?.kind === 'note-summary' ? (
+              <WorkspaceNoteSummaryContent summary={state.result.summary} />
+            ) : state.result?.kind === 'bookmark-summary' ? (
+              <WorkspaceBookmarkSummaryContent summary={state.result.summary} />
+            ) : null}
+          </div>
+        </section>
       ) : null}
 
-      <section>
+      <section className="mt-8">
         <div className="flex items-center gap-4 mb-2">
           <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
             最近捕获

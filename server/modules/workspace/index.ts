@@ -964,7 +964,7 @@ export async function listWorkspaceRecentAssets(
   userId: string,
   limit?: number
 ): Promise<AssetListItem[]> {
-  return listWorkspaceAssets({ userId, limit: limit ?? 6 })
+  return listWorkspaceAssets({ userId, limit: limit ?? 10 })
 }
 
 export async function listWorkspaceTodoAssets(

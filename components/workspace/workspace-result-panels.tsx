@@ -59,79 +59,41 @@ export function RecentItem({
   )
 }
 
-export function WorkspaceQueryResultsPanel({
+export function WorkspaceQueryResultsContent({
   results,
 }: {
   results: AssetListItem[]
 }) {
   return (
-    <section className="mb-8">
-      <div className="flex items-center gap-4 mb-2">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
-          查询结果
-        </h2>
-        <div className="flex-1 h-px bg-border/20" />
-      </div>
-      <WorkspaceActionableAssetList
-        assets={results}
-        emptyMessage="没有找到相关内容。可以换个关键词，或先在上方保存一条新记录。"
-      />
-    </section>
+    <WorkspaceActionableAssetList
+      assets={results}
+      emptyMessage="没有找到相关内容。可以换个关键词，或先在上方保存一条新记录。"
+    />
   )
 }
 
-type SummaryPanelBaseProps = {
-  title: string
-  sources: AssetListItem[]
-  emptyMessage: string
-}
-
-function SummaryPanelBase({
-  title,
-  sources,
-  emptyMessage,
-}: SummaryPanelBaseProps) {
+export function WorkspaceTodoReviewContent({ review }: { review: TodoReviewResult }) {
   return (
-    <section className="mb-8">
-      <div className="flex items-center gap-4 mb-2">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
-          {title}
-        </h2>
-        <div className="flex-1 h-px bg-border/20" />
-      </div>
-      <WorkspaceActionableAssetList
-        assets={sources}
-        emptyMessage={emptyMessage}
-      />
-    </section>
-  )
-}
-
-export function WorkspaceTodoReviewPanel({ review }: { review: TodoReviewResult }) {
-  return (
-    <SummaryPanelBase
-      title="待办复盘"
-      sources={review.sources}
+    <WorkspaceActionableAssetList
+      assets={review.sources}
       emptyMessage="没有可操作的待办。"
     />
   )
 }
 
-export function WorkspaceNoteSummaryPanel({ summary }: { summary: NoteSummaryResult }) {
+export function WorkspaceNoteSummaryContent({ summary }: { summary: NoteSummaryResult }) {
   return (
-    <SummaryPanelBase
-      title="笔记摘要"
-      sources={summary.sources}
+    <WorkspaceActionableAssetList
+      assets={summary.sources}
       emptyMessage="没有可操作的笔记。"
     />
   )
 }
 
-export function WorkspaceBookmarkSummaryPanel({ summary }: { summary: BookmarkSummaryResult }) {
+export function WorkspaceBookmarkSummaryContent({ summary }: { summary: BookmarkSummaryResult }) {
   return (
-    <SummaryPanelBase
-      title="书签摘要"
-      sources={summary.sources}
+    <WorkspaceActionableAssetList
+      assets={summary.sources}
       emptyMessage="没有可操作的书签。"
     />
   )
