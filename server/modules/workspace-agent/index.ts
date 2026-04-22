@@ -1,15 +1,17 @@
-export {
-  QUICK_ACTION_PROMPTS,
-  resolveWorkspaceAgentPrompt,
-  streamWorkspaceAgentRun,
-} from './workspace-agent-stream'
-export { createWorkspaceAgent } from './workspace-agent'
-export { createWorkspaceAgentTools } from './workspace-agent-tools'
+export { parseWorkspaceTask } from './workspace-task-parser'
+export { routeWorkspaceTask } from './workspace-task-router'
+export { runWorkspace } from './workspace-runner'
+export { buildFallbackAnswer, composeWorkspaceAnswer } from './workspace-compose'
+export { executeWorkspaceTool, workspaceTools } from './workspace-tools'
 export type {
-  WorkspaceAgentRequest,
-  WorkspaceAgentStructuredResult,
-  WorkspaceAgentTimeFilter,
-  WorkspaceAgentToolName,
-  WorkspaceAgentToolOutput,
-  WorkspaceAgentTraceEvent,
-} from './workspace-agent.types'
+  WorkspaceExecutionPlan,
+  WorkspaceIntent,
+  WorkspaceRunEvent,
+  WorkspaceRunPhase,
+  WorkspaceRunResult,
+  WorkspaceTarget,
+  WorkspaceTask,
+  WorkspaceTool,
+  WorkspaceToolContext,
+  WorkspaceToolResult,
+} from './types'
