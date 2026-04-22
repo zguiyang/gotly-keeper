@@ -259,9 +259,27 @@ describe('createWorkspaceAgentTools', () => {
     })
   })
 
-  it('create_workspace_asset still requires assetType', async () => {
+  it('create_workspace_asset infers note assetType when the model omits it', async () => {
+    createWorkspaceNoteMock.mockResolvedValue({
+      kind: 'created',
+      asset: {
+        id: 'note_1',
+        type: 'note',
+        title: '首页文案方向',
+        excerpt: '首页文案方向',
+        originalText: '首页文案方向',
+        url: null,
+        timeText: null,
+        dueAt: null,
+        completed: false,
+        createdAt: new Date('2026-04-20T10:00:00.000Z'),
+      },
+    })
+
     const tools = createWorkspaceAgentTools({ userId: 'user_1' })
-    const parsed = await safeParseToolInput(
+    const parsed = await safeParseToolInput<Parameters<
+      NonNullable<typeof tools.create_workspace_asset.execute>
+    >[0]>(
       tools.create_workspace_asset.inputSchema,
       {
         rawInputPreview: '记一下：首页文案方向',
@@ -275,7 +293,29 @@ describe('createWorkspaceAgentTools', () => {
       }
     )
 
-    expect(parsed.success).toBe(false)
+    expect(parsed.success).toBe(true)
+    if (!parsed.success) {
+      return
+    }
+
+    const output = (await tools.create_workspace_asset.execute!(
+      parsed.data,
+      { toolCallId: 'tool_1', messages: [] }
+    )) as WorkspaceAgentToolOutput
+
+    expect(createWorkspaceNoteMock).toHaveBeenCalledWith({
+      userId: 'user_1',
+      rawInput: '记一下：首页文案方向',
+      title: '首页文案方向',
+      content: '首页文案方向',
+      summary: null,
+    })
+    expect(output.trace[2]).toMatchObject({
+      type: 'parameters_collected',
+      parameters: expect.objectContaining({
+        assetType: 'note',
+      }),
+    })
   })
 
   it('create_workspace_asset stores todo due dates when the agent resolves time', async () => {
@@ -442,9 +482,18 @@ describe('createWorkspaceAgentTools', () => {
     expect(output.result.kind).toBe('note-summary')
   })
 
-  it('summarize_workspace still requires target', async () => {
+  it('summarize_workspace infers notes target when the model omits it', async () => {
+    summarizeWorkspaceRecentNotesMock.mockResolvedValue({
+      title: '最近笔记重点',
+      bullets: ['首页方向更明确'],
+      actionItems: ['整理首页文案'],
+      sourceCount: 3,
+    })
+
     const tools = createWorkspaceAgentTools({ userId: 'user_1' })
-    const parsed = await safeParseToolInput(
+    const parsed = await safeParseToolInput<Parameters<
+      NonNullable<typeof tools.summarize_workspace.execute>
+    >[0]>(
       tools.summarize_workspace.inputSchema,
       {
         rawInputPreview: '总结最近笔记重点',
@@ -454,6 +503,64 @@ describe('createWorkspaceAgentTools', () => {
       }
     )
 
-    expect(parsed.success).toBe(false)
+    expect(parsed.success).toBe(true)
+    if (!parsed.success) {
+      return
+    }
+
+    const output = (await tools.summarize_workspace.execute!(
+      parsed.data,
+      { toolCallId: 'tool_1', messages: [] }
+    )) as WorkspaceAgentToolOutput
+
+    expect(summarizeWorkspaceRecentNotesMock).toHaveBeenCalledWith({
+      userId: 'user_1',
+      query: null,
+    })
+    expect(output.result.kind).toBe('note-summary')
+    expect(output.trace[2]).toMatchObject({
+      type: 'parameters_collected',
+      parameters: expect.objectContaining({
+        target: 'notes',
+      }),
+    })
+  })
+
+  it('summarize_workspace infers bookmarks target from bookmark language', async () => {
+    summarizeWorkspaceRecentBookmarksMock.mockResolvedValue({
+      title: '最近收藏重点',
+      bullets: ['关注 AI SDK 更新'],
+      actionItems: ['回看收藏文章'],
+      sourceCount: 2,
+    })
+
+    const tools = createWorkspaceAgentTools({ userId: 'user_1' })
+    const parsed = await safeParseToolInput<Parameters<
+      NonNullable<typeof tools.summarize_workspace.execute>
+    >[0]>(
+      tools.summarize_workspace.inputSchema,
+      {
+        rawInputPreview: '总结最近收藏的文章',
+        normalizedRequest: '总结最近收藏的文章',
+        query: '',
+        limit: 20,
+      }
+    )
+
+    expect(parsed.success).toBe(true)
+    if (!parsed.success) {
+      return
+    }
+
+    const output = (await tools.summarize_workspace.execute!(
+      parsed.data,
+      { toolCallId: 'tool_1', messages: [] }
+    )) as WorkspaceAgentToolOutput
+
+    expect(summarizeWorkspaceRecentBookmarksMock).toHaveBeenCalledWith({
+      userId: 'user_1',
+      query: null,
+    })
+    expect(output.result.kind).toBe('bookmark-summary')
   })
 })
