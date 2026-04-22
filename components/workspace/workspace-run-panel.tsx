@@ -2,41 +2,22 @@
 
 import { AnimatePresence, motion } from 'motion/react'
 
-import type { WorkspaceAgentTraceEvent } from '@/shared/workspace/workspace-run.types'
+import type { WorkspaceRunApiPhase } from '@/shared/workspace/workspace-runner.types'
 
-function getTraceEventBody(event: WorkspaceAgentTraceEvent) {
-  if (event.type === 'input_normalized') {
-    return event.normalizedRequest
+function getPhaseTitle(phase: WorkspaceRunApiPhase['phase']) {
+  if (phase === 'parse') {
+    return '理解请求'
   }
 
-  if (event.type === 'time_resolved') {
-    return event.resolution.kind === 'exact_range'
-      ? `${event.phrase} · ${event.resolution.basis}`
-      : event.resolution.kind === 'vague'
-        ? `${event.phrase} · ${event.resolution.reason}`
-        : '未使用时间过滤'
+  if (phase === 'route') {
+    return '选择操作'
   }
 
-  if (event.type === 'intent_identified') {
-    return event.publicReason
+  if (phase === 'execute') {
+    return '执行工具'
   }
 
-  if (event.type === 'parameters_collected') {
-    return Object.entries(event.parameters)
-      .filter(([, value]) => value !== null && value !== undefined && value !== '')
-      .map(([key, value]) => `${key}: ${String(value)}`)
-      .join(' · ')
-  }
-
-  if (event.type === 'tool_selected') {
-    return event.publicReason
-  }
-
-  if (event.type === 'tool_executed') {
-    return event.resultSummary
-  }
-
-  return event.summary
+  return '整理结果'
 }
 
 function PulsingDots() {
@@ -45,7 +26,7 @@ function PulsingDots() {
       {[0, 1, 2].map((i) => (
         <motion.span
           key={i}
-          className="w-1.5 h-1.5 rounded-full bg-primary/60"
+          className="h-1.5 w-1.5 rounded-full bg-primary/60"
           animate={{
             opacity: [0.3, 1, 0.3],
             scale: [1, 1.3, 1],
@@ -65,11 +46,11 @@ function PulsingDots() {
 export function WorkspaceRunPanel({
   status,
   assistantText,
-  traceEvents,
+  phases,
 }: {
   status: 'streaming' | 'success' | 'error'
   assistantText: string | null
-  traceEvents: WorkspaceAgentTraceEvent[]
+  phases: WorkspaceRunApiPhase[]
 }) {
   const showStreamingDots = status === 'streaming'
 
@@ -97,16 +78,16 @@ export function WorkspaceRunPanel({
           <p className="mt-3 text-sm text-on-surface">{assistantText}</p>
         ) : null}
 
-        {traceEvents.length > 0 ? (
+        {phases.length > 0 ? (
           <ol className="mt-3 space-y-2">
-            {traceEvents.map((event, index) => (
+            {phases.map((phase, index) => (
               <li
-                key={`${event.type}-${index}`}
+                key={`${phase.phase}-${index}`}
                 className="rounded-xl border border-border/20 bg-surface-container p-3"
               >
-                <p className="text-xs font-medium text-on-surface">{event.title}</p>
+                <p className="text-xs font-medium text-on-surface">{getPhaseTitle(phase.phase)}</p>
                 <p className="mt-1 text-xs text-on-surface-variant/80">
-                  {getTraceEventBody(event)}
+                  {phase.message ?? '处理中'}
                 </p>
               </li>
             ))}
@@ -114,7 +95,7 @@ export function WorkspaceRunPanel({
         ) : null}
 
         <AnimatePresence>
-          {!assistantText && traceEvents.length === 0 ? (
+          {!assistantText && phases.length === 0 ? (
             <motion.p
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}

@@ -12,15 +12,12 @@ import { formatAbsoluteTime } from '@/shared/time/formatters'
 
 import {
   RecentItem,
-  WorkspaceBookmarkSummaryContent,
-  WorkspaceNoteSummaryContent,
   WorkspaceQueryResultsContent,
-  WorkspaceTodoReviewContent,
 } from './workspace-result-panels'
 import { WorkspaceRunPanel } from './workspace-run-panel'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
-import type { WorkspaceRunResult } from '@/shared/workspace/workspace-run.types'
+import type { WorkspaceRunApiResponse } from '@/shared/workspace/workspace-runner.types'
 
 function QuickInputSuggestions({
   onSuggestionClick,
@@ -67,14 +64,15 @@ export function WorkspaceClient({
   const [inputValue, setInputValue] = useState('')
   const [recentItems, setRecentItems] = useState(recentAssets)
 
-  const handleWorkspaceResult = useCallback((result: WorkspaceRunResult) => {
-    if (result.kind !== 'created') {
+  const handleWorkspaceResult = useCallback((result: WorkspaceRunApiResponse['data']) => {
+    if (result.kind !== 'mutation' || result.action !== 'create' || !result.item) {
       return
     }
 
+    const createdItem = result.item
     setRecentItems((items) => [
-      result.asset,
-      ...items.filter((item) => item.id !== result.asset.id),
+      createdItem,
+      ...items.filter((item) => item.id !== createdItem.id),
     ].slice(0, 10))
   }, [])
 
@@ -105,11 +103,7 @@ export function WorkspaceClient({
     document.querySelector<HTMLInputElement>('[name="workspace-query"]')?.focus()
   }
 
-  const hasResult =
-    state.result?.kind === 'query' ||
-    state.result?.kind === 'todo-review' ||
-    state.result?.kind === 'note-summary' ||
-    state.result?.kind === 'bookmark-summary'
+  const hasResult = state.result?.kind === 'query'
 
   return (
     <>
@@ -150,10 +144,6 @@ export function WorkspaceClient({
           <p className="mt-2 px-4 text-xs text-on-surface-variant/60" aria-live="polite">
             {state.errorMessage}
           </p>
-        ) : state.result?.kind === 'created' && state.result.notice ? (
-          <p className="mt-2 px-4 text-xs text-on-surface-variant/60" aria-live="polite">
-            {state.result.notice}
-          </p>
         ) : inputValue ? (
           <p className="mt-2 px-4 text-xs text-on-surface-variant/60">
             输入后会保存到知识库，查询结果会出现在这里
@@ -167,12 +157,12 @@ export function WorkspaceClient({
       />
 
       <AnimatePresence mode="wait">
-        {(state.status === 'streaming' || state.traceEvents.length > 0 || state.assistantText) && (
+        {(state.status === 'streaming' || state.phases.length > 0 || state.assistantText) && (
           <WorkspaceRunPanel
             key="run-panel"
             status={state.status === 'idle' ? 'success' : state.status}
             assistantText={state.assistantText}
-            traceEvents={state.traceEvents}
+            phases={state.phases}
           />
         )}
       </AnimatePresence>
@@ -187,13 +177,7 @@ export function WorkspaceClient({
           </div>
           <div className="rounded-2xl border border-border/10 bg-surface-container-lowest p-4 shadow-[var(--shadow-soft)]">
             {state.result?.kind === 'query' ? (
-              <WorkspaceQueryResultsContent results={state.result.results} />
-            ) : state.result?.kind === 'todo-review' ? (
-              <WorkspaceTodoReviewContent review={state.result.review} />
-            ) : state.result?.kind === 'note-summary' ? (
-              <WorkspaceNoteSummaryContent summary={state.result.summary} />
-            ) : state.result?.kind === 'bookmark-summary' ? (
-              <WorkspaceBookmarkSummaryContent summary={state.result.summary} />
+              <WorkspaceQueryResultsContent results={state.result.items} />
             ) : null}
           </div>
         </section>

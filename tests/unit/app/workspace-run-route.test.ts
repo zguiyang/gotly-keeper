@@ -3,29 +3,42 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { POST } from '@/app/api/workspace/run/route'
 
 const requireWorkspaceUserAccessMock = vi.hoisted(() => vi.fn())
-const streamWorkspaceAgentRunMock = vi.hoisted(() => vi.fn())
-const streamResponse = vi.hoisted(() => new Response('stream'))
+const runWorkspaceMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/modules/auth/workspace-session', () => ({
   requireWorkspaceUserAccess: requireWorkspaceUserAccessMock,
 }))
 
-vi.mock('@/server/modules/workspace-agent', () => ({
-  QUICK_ACTION_PROMPTS: {
-    'review-todos': '请复盘我当前未完成的待办，提炼重点、风险和下一步行动。',
-    'summarize-notes': '请总结我最近的笔记，提炼关键信息和下一步行动。',
-    'summarize-bookmarks': '请总结我最近收藏的书签，提炼值得关注的主题和下一步行动。',
-  },
-  streamWorkspaceAgentRun: streamWorkspaceAgentRunMock,
+vi.mock('@/server/modules/workspace-agent/workspace-runner', () => ({
+  runWorkspace: runWorkspaceMock,
 }))
 
 describe('/api/workspace/run POST', () => {
   beforeEach(() => {
-    requireWorkspaceUserAccessMock.mockReset()
-    streamWorkspaceAgentRunMock.mockReset()
-
+    vi.clearAllMocks()
     requireWorkspaceUserAccessMock.mockResolvedValue({ id: 'user_123' })
-    streamWorkspaceAgentRunMock.mockResolvedValue(streamResponse)
+    runWorkspaceMock.mockResolvedValue({
+      ok: true,
+      phase: 'completed',
+      task: {
+        intent: 'query',
+        target: 'notes',
+      },
+      plan: {
+        intent: 'query',
+        target: 'notes',
+        toolName: 'search_notes',
+        toolInput: {},
+        needsCompose: false,
+      },
+      data: {
+        ok: true,
+        target: 'notes',
+        items: [],
+        total: 0,
+      },
+      answer: '已找到 0 条笔记。',
+    })
   })
 
   it('rejects empty input payload', async () => {
@@ -38,26 +51,37 @@ describe('/api/workspace/run POST', () => {
 
     expect(res.status).toBe(400)
     await expect(res.json()).resolves.toEqual({ error: '请输入有效内容。' })
-    expect(streamWorkspaceAgentRunMock).not.toHaveBeenCalled()
+    expect(runWorkspaceMock).not.toHaveBeenCalled()
   })
 
-  it('forwards authenticated input requests into workspace stream', async () => {
+  it('forwards authenticated input requests into the workspace runner', async () => {
     const req = new Request('http://localhost/api/workspace/run', {
       method: 'POST',
-      body: JSON.stringify({ kind: 'input', text: '帮我记一下发布清单' }),
+      body: JSON.stringify({ kind: 'input', text: '帮我找一下最近笔记' }),
     })
 
     const res = await POST(req)
+    const payload = await res.json()
 
-    expect(res).toBe(streamResponse)
     expect(requireWorkspaceUserAccessMock).toHaveBeenCalledTimes(1)
-    expect(streamWorkspaceAgentRunMock).toHaveBeenCalledWith({
+    expect(runWorkspaceMock).toHaveBeenCalledWith({
+      message: '帮我找一下最近笔记',
       userId: 'user_123',
-      request: { kind: 'input', text: '帮我记一下发布清单' },
+      onEvent: expect.any(Function),
+    })
+    expect(payload).toMatchObject({
+      ok: true,
+      answer: '已找到 0 条笔记。',
+      data: {
+        kind: 'query',
+        target: 'notes',
+        items: [],
+        total: 0,
+      },
     })
   })
 
-  it('forwards quick actions without doing route-level classification', async () => {
+  it('translates quick actions into normalized runner input', async () => {
     const req = new Request('http://localhost/api/workspace/run', {
       method: 'POST',
       body: JSON.stringify({ kind: 'quick-action', action: 'summarize-notes' }),
@@ -65,9 +89,10 @@ describe('/api/workspace/run POST', () => {
 
     await POST(req)
 
-    expect(streamWorkspaceAgentRunMock).toHaveBeenCalledWith({
+    expect(runWorkspaceMock).toHaveBeenCalledWith({
+      message: '总结最近笔记重点',
       userId: 'user_123',
-      request: { kind: 'quick-action', action: 'summarize-notes' },
+      onEvent: expect.any(Function),
     })
   })
 
@@ -81,31 +106,33 @@ describe('/api/workspace/run POST', () => {
 
     expect(res.status).toBe(400)
     await expect(res.json()).resolves.toEqual({ error: '请求参数无效。' })
-    expect(streamWorkspaceAgentRunMock).not.toHaveBeenCalled()
+    expect(runWorkspaceMock).not.toHaveBeenCalled()
   })
 
-  it('rejects quick-action values from prototype keys', async () => {
+  it('returns normalized error payloads from the runner', async () => {
+    runWorkspaceMock.mockResolvedValueOnce({
+      ok: false,
+      phase: 'tool_failed',
+      message: 'tool failed',
+    })
+
     const req = new Request('http://localhost/api/workspace/run', {
       method: 'POST',
-      body: JSON.stringify({ kind: 'quick-action', action: 'toString' }),
+      body: JSON.stringify({ kind: 'input', text: '创建待办' }),
     })
 
     const res = await POST(req)
+    const payload = await res.json()
 
-    expect(res.status).toBe(400)
-    await expect(res.json()).resolves.toEqual({ error: '请求参数无效。' })
-    expect(streamWorkspaceAgentRunMock).not.toHaveBeenCalled()
-  })
-
-  it('returns the stream response directly without provider-gating in route', async () => {
-    const req = new Request('http://localhost/api/workspace/run', {
-      method: 'POST',
-      body: JSON.stringify({ kind: 'input', text: '总结一下最近内容' }),
+    expect(payload).toEqual({
+      ok: false,
+      phases: [],
+      answer: null,
+      data: {
+        kind: 'error',
+        phase: 'tool_failed',
+        message: 'tool failed',
+      },
     })
-
-    const res = await POST(req)
-
-    expect(res).toBe(streamResponse)
-    expect(streamWorkspaceAgentRunMock).toHaveBeenCalledTimes(1)
   })
 })
