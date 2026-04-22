@@ -23,7 +23,8 @@ export async function createWorkspaceAgent({ userId }: { userId: string }) {
     model,
     instructions,
     tools: createWorkspaceAgentTools({ userId }),
-    stopWhen: stepCountIs(2),
+    // Allow one repair step when the first tool call is missing or invalid.
+    stopWhen: stepCountIs(3),
     temperature: 0,
     maxRetries: 1,
     providerOptions: {

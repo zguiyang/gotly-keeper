@@ -47,7 +47,7 @@ describe('createWorkspaceAgent', () => {
     createWorkspaceAgentToolsMock.mockReset()
   })
 
-  it('configures a short MVP tool loop', async () => {
+  it('configures a tool loop with room for one repair step', async () => {
     const model = { modelId: 'test-model' }
     const tools = { search_workspace: {} }
 
@@ -58,13 +58,13 @@ describe('createWorkspaceAgent', () => {
     const agent = await createWorkspaceAgent({ userId: 'user_1' })
 
     expect(agent).toBe(constructedAgents[0])
-    expect(stepCountIsMock).toHaveBeenCalledWith(2)
+    expect(stepCountIsMock).toHaveBeenCalledWith(3)
     expect(toolLoopAgentMock).toHaveBeenCalledWith(
       expect.objectContaining({
         model,
         instructions: 'system prompt',
         tools,
-        stopWhen: { kind: 'stepCountIs', count: 2 },
+        stopWhen: { kind: 'stepCountIs', count: 3 },
         temperature: 0,
         maxRetries: 1,
       })

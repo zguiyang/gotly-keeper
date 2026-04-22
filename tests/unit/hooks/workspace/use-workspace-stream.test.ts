@@ -472,6 +472,64 @@ describe('useWorkspaceStream', () => {
     expect(hook.result.current.state.errorMessage).toBe('AI 工具执行失败，请稍后重试。')
   })
 
+  it('treats completed assistant text without a tool result as an incomplete structured run', async () => {
+    chatMock.implementation = async ({ setMessages, setStatus }) => {
+      setStatus('ready')
+      setMessages([
+        {
+          id: 'assistant-msg',
+          role: 'assistant',
+          parts: [{ type: 'text', text: '我先帮你整理一下这个请求。', state: 'done' }],
+        } as WorkspaceMessage,
+      ])
+    }
+
+    const hook = renderHook(() => useWorkspaceStream())
+    activeHook = hook
+
+    await act(async () => {
+      await hook.result.current.submitInput('帮我找一下最近的笔记')
+    })
+
+    expect(hook.result.current.state.status).toBe('error')
+    expect(hook.result.current.state.result).toBe(null)
+    expect(hook.result.current.state.assistantText).toBe('我先帮你整理一下这个请求。')
+    expect(hook.result.current.state.errorMessage).toBe('AI 本次未完成结构化处理，请重试。')
+  })
+
+  it('treats trace-only completion without a tool result as an incomplete structured run', async () => {
+    chatMock.implementation = async ({ setMessages, setStatus }) => {
+      setStatus('ready')
+      setMessages([
+        {
+          id: 'assistant-msg',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'data-workspace-trace',
+              data: {
+                type: 'finalized',
+                title: '整理结果',
+                summary: '已接收请求，正在调用智能体。',
+              },
+            },
+          ],
+        } as WorkspaceMessage,
+      ])
+    }
+
+    const hook = renderHook(() => useWorkspaceStream())
+    activeHook = hook
+
+    await act(async () => {
+      await hook.result.current.submitInput('帮我总结下最近收藏')
+    })
+
+    expect(hook.result.current.state.status).toBe('error')
+    expect(hook.result.current.state.traceEvents).toHaveLength(1)
+    expect(hook.result.current.state.errorMessage).toBe('AI 本次未完成结构化处理，请重试。')
+  })
+
   it('prefers successful result when tool error and result both exist', async () => {
     chatMock.implementation = async ({ setMessages, setStatus }) => {
       setStatus('ready')

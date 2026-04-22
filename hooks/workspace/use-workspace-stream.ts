@@ -116,6 +116,10 @@ function getToolErrorFromMessage(message: WorkspaceLauncherMessage | null): stri
   return null
 }
 
+function hasStartedWorkspaceRun(messages: WorkspaceLauncherMessage[]): boolean {
+  return messages.some((message) => message.role === 'user' || message.role === 'assistant')
+}
+
 function toToolErrorMessage(toolError: string): string {
   const normalizedError = toolError.toLowerCase()
   const isParameterError =
@@ -182,6 +186,7 @@ function toWorkspaceRunUiState(options: {
   const latestAssistantMessage = getLatestAssistantMessage(options.messages)
   const result = getResultFromMessage(latestAssistantMessage)
   const toolError = getToolErrorFromMessage(latestAssistantMessage)
+  const hasStartedRun = hasStartedWorkspaceRun(options.messages)
 
   if (options.status === 'error') {
     return {
@@ -220,6 +225,16 @@ function toWorkspaceRunUiState(options: {
       traceEvents: getTraceEvents(latestAssistantMessage),
       result: null,
       errorMessage: toToolErrorMessage(toolError),
+    }
+  }
+
+  if (hasStartedRun) {
+    return {
+      status: 'error',
+      assistantText: getAssistantText(latestAssistantMessage),
+      traceEvents: getTraceEvents(latestAssistantMessage),
+      result: null,
+      errorMessage: 'AI 本次未完成结构化处理，请重试。',
     }
   }
 

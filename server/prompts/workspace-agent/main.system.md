@@ -39,7 +39,8 @@ Hard requirements:
 
 - Never omit meta fields. Always provide `rawInputPreview`, `normalizedRequest`, and `publicReason`.
 - For unavailable optional values, use explicit safe values (`null`, `""`, `none`, or `vague` as required by schema).
-- `create_workspace_asset.assetType` and `summarize_workspace.target` must be explicit and cannot be omitted.
+- Prefer explicit `create_workspace_asset.assetType` and `summarize_workspace.target`.
+- If either field is missing, choose the safest deterministic default from the request instead of stopping.
 - If the selected tool fails with parameter validation, repair missing/invalid fields and retry the same tool once. This single retry still counts as one tool path for the request.
 
 ## Default Behavior

@@ -38,6 +38,11 @@ const timeFilterSchema = z.discriminatedUnion('kind', [
 
 const assetTypeSchema = z.enum(['todo', 'note', 'link']).nullable()
 const completionHintSchema = z.enum(['complete', 'incomplete']).nullable()
+const summaryTargetSchema = z.enum(['todos', 'notes', 'bookmarks'])
+const URL_REGEX = /https?:\/\/[^\s]+/i
+const TODO_KEYWORDS = ['记得', '提醒', '待办', '要', '处理', '发', '提交', '整理', '预订', '回复']
+const NOTE_KEYWORDS = ['笔记', '记一下', '记录', '想法', '草稿', '备忘']
+const BOOKMARK_KEYWORDS = ['书签', '收藏', '链接', '文章', '网址']
 
 function nullableInputToNull(value: string | null | undefined) {
   return typeof value === 'string' && value.trim().length === 0 ? null : value
@@ -50,6 +55,70 @@ const nullableDateTimeInputSchema = z.union([z.string().datetime(), z.literal(''
 function normalizedMetaText(value: string | null | undefined, fallback: string) {
   const normalizedValue = nullableInputToNull(value)?.trim()
   return normalizedValue && normalizedValue.length > 0 ? normalizedValue : fallback
+}
+
+function inferAssetType(input: {
+  assetType: 'note' | 'todo' | 'link' | null | undefined
+  rawInputPreview: string
+  normalizedRequest: string
+  url: string | null
+  timeText: string | null
+  dueAtIso: string | null
+}): 'note' | 'todo' | 'link' {
+  if (input.assetType) {
+    return input.assetType
+  }
+
+  if (input.url || URL_REGEX.test(input.rawInputPreview) || URL_REGEX.test(input.normalizedRequest)) {
+    return 'link'
+  }
+
+  if (
+    input.timeText ||
+    input.dueAtIso ||
+    TODO_KEYWORDS.some(
+      (keyword) => input.rawInputPreview.includes(keyword) || input.normalizedRequest.includes(keyword)
+    )
+  ) {
+    return 'todo'
+  }
+
+  if (
+    NOTE_KEYWORDS.some(
+      (keyword) => input.rawInputPreview.includes(keyword) || input.normalizedRequest.includes(keyword)
+    )
+  ) {
+    return 'note'
+  }
+
+  return 'note'
+}
+
+function inferSummaryTarget(input: {
+  target: 'todos' | 'notes' | 'bookmarks' | null | undefined
+  rawInputPreview: string
+  normalizedRequest: string
+  query: string | null
+}): 'todos' | 'notes' | 'bookmarks' {
+  if (input.target) {
+    return input.target
+  }
+
+  const combinedText = [input.rawInputPreview, input.normalizedRequest, input.query ?? '']
+    .filter(Boolean)
+    .join(' ')
+
+  if (combinedText.includes('待办')) {
+    return 'todos'
+  }
+
+  if (
+    BOOKMARK_KEYWORDS.some((keyword) => combinedText.includes(keyword))
+  ) {
+    return 'bookmarks'
+  }
+
+  return 'notes'
 }
 
 function traceInput(
@@ -126,7 +195,7 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
       inputSchema: z.object({
         rawInputPreview: nullableStringInputSchema.optional(),
         normalizedRequest: nullableStringInputSchema.optional(),
-        assetType: z.enum(['note', 'todo', 'link']),
+        assetType: z.enum(['note', 'todo', 'link']).optional().nullable(),
         title: nullableStringInputSchema,
         content: nullableStringInputSchema,
         url: nullableUrlInputSchema,
@@ -156,8 +225,16 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
         const normalizedNote = nullableInputToNull(note)
         const normalizedTimeText = nullableInputToNull(timeText)
         const normalizedDueAtIso = nullableInputToNull(dueAtIso)
+        const resolvedAssetType = inferAssetType({
+          assetType,
+          rawInputPreview: normalizedRawInputPreview,
+          normalizedRequest: normalizedRequestText,
+          url: normalizedUrl,
+          timeText: normalizedTimeText,
+          dueAtIso: normalizedDueAtIso,
+        })
         const created =
-          assetType === 'todo'
+          resolvedAssetType === 'todo'
             ? await createWorkspaceTodo({
                 userId,
                 rawInput: normalizedRawInputPreview,
@@ -166,7 +243,7 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
                 timeText: normalizedTimeText,
                 dueAt: normalizedDueAtIso ? new Date(normalizedDueAtIso) : null,
               })
-            : assetType === 'link' && normalizedUrl
+            : resolvedAssetType === 'link' && normalizedUrl
               ? await createWorkspaceLink({
                   userId,
                   rawInput: normalizedRawInputPreview,
@@ -191,7 +268,7 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
             publicReason: normalizedPublicReason,
           }),
           traceParameters({
-            assetType,
+            assetType: resolvedAssetType,
             title: normalizedTitle,
             content: normalizedContent,
             url: normalizedUrl,
@@ -316,7 +393,7 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
       inputSchema: z.object({
         rawInputPreview: nullableStringInputSchema.optional(),
         normalizedRequest: nullableStringInputSchema.optional(),
-        target: z.enum(['todos', 'notes', 'bookmarks']),
+        target: summaryTargetSchema.optional().nullable(),
         query: nullableStringInputSchema,
         limit: z.number().int().positive().max(50).optional(),
         publicReason: nullableStringInputSchema.optional(),
@@ -332,13 +409,19 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
         const normalizedRequestText = normalizedMetaText(normalizedRequest, normalizedRawInputPreview)
         const normalizedPublicReason = normalizedMetaText(publicReason, '按默认规则执行。')
         const normalizedQuery = nullableInputToNull(query)
+        const resolvedTarget = inferSummaryTarget({
+          target,
+          rawInputPreview: normalizedRawInputPreview,
+          normalizedRequest: normalizedRequestText,
+          query: normalizedQuery,
+        })
         const result =
-          target === 'todos'
+          resolvedTarget === 'todos'
             ? {
                 kind: 'todo-review' as const,
                 review: await reviewWorkspaceUnfinishedTodos({ userId, query: normalizedQuery }),
               }
-            : target === 'notes'
+            : resolvedTarget === 'notes'
               ? {
                   kind: 'note-summary' as const,
                   summary: await summarizeWorkspaceRecentNotes({ userId, query: normalizedQuery }),
@@ -353,17 +436,17 @@ export function createWorkspaceAgentTools({ userId }: { userId: string }) {
           traceIntent({
             operation: 'summarize',
             assetType:
-              target === 'todos' ? 'todo' : target === 'bookmarks' ? 'link' : 'note',
+              resolvedTarget === 'todos' ? 'todo' : resolvedTarget === 'bookmarks' ? 'link' : 'note',
             publicReason: normalizedPublicReason,
           }),
-          traceParameters({ target, query: normalizedQuery }),
+          traceParameters({ target: resolvedTarget, query: normalizedQuery }),
           {
             type: 'tool_selected',
             title: '选择工具',
             toolName: 'summarize_workspace',
             publicReason: normalizedPublicReason,
           },
-          traceTool('summarize_workspace', { target, query: normalizedQuery }, '已生成总结'),
+          traceTool('summarize_workspace', { target: resolvedTarget, query: normalizedQuery }, '已生成总结'),
         ])
       },
     }),
