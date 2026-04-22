@@ -71,13 +71,23 @@ const workspaceTimeRangeSchema = z.object({
   endAt: z.string().datetime().nullable().optional(),
 })
 
-const workspaceTaskShapeSchema = z.object({
+const workspaceTaskPayloadSchema = z.object({
+  title: z.string().min(1).max(200).nullable().optional(),
+  content: z.string().min(1).nullable().optional(),
+  details: z.string().min(1).nullable().optional(),
+  dueAt: z.string().datetime().nullable().optional(),
+  url: z.url().nullable().optional(),
+  summary: z.string().min(1).nullable().optional(),
+  status: z.enum(['open', 'done']).nullable().optional(),
+})
+
+export const workspaceTaskOutputSchema = z.object({
   intent: workspaceIntentSchema,
   target: workspaceTargetSchema.nullable().optional(),
   timeRange: workspaceTimeRangeSchema.nullable().optional(),
   query: z.string().min(1).nullable().optional(),
   subjectHint: z.string().min(1).nullable().optional(),
-  payload: z.record(z.string(), z.unknown()).nullable().optional(),
+  payload: workspaceTaskPayloadSchema.nullable().optional(),
 })
 
 export const workspaceTaskSchema = z.preprocess((input) => {
@@ -105,7 +115,7 @@ export const workspaceTaskSchema = z.preprocess((input) => {
     payload: hasPayload ? normalizePayload(raw.payload) : undefined,
     timeRange: hasTimeRange ? normalizedTimeRange : undefined,
   }
-}, workspaceTaskShapeSchema)
+}, workspaceTaskOutputSchema)
 
 export class WorkspaceTaskValidationError extends Error {
   readonly issues: string[]

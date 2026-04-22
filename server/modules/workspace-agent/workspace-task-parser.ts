@@ -4,7 +4,7 @@ import { renderPrompt } from '@/server/lib/prompt-template'
 import { buildWorkspaceSystemPrompt } from '@/server/lib/ai/ai.prompts'
 import { runAiGeneration } from '@/server/lib/ai/ai-runner'
 
-import { validateWorkspaceTask, workspaceTaskSchema } from './workspace-task'
+import { validateWorkspaceTask, workspaceTaskOutputSchema } from './workspace-task'
 
 import type { WorkspaceTask } from './types'
 
@@ -35,7 +35,7 @@ export async function parseWorkspaceTask(input: {
   ])
 
   const result = await runAiGeneration({
-    schema: workspaceTaskSchema,
+    schema: workspaceTaskOutputSchema,
     systemPrompt,
     userPrompt,
   })

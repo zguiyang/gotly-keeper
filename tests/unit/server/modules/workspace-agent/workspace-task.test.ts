@@ -87,4 +87,26 @@ describe('workspaceTask', () => {
       timeRange: null,
     })
   })
+
+  it('accepts create payloads with only supported fields', () => {
+    const task = validateWorkspaceTask({
+      intent: 'create',
+      target: 'todos',
+      payload: {
+        title: '准备方案',
+        details: '整理 workspace 新流程',
+        dueAt: '2026-04-23T09:00:00.000Z',
+      },
+    })
+
+    expect(task).toEqual({
+      intent: 'create',
+      target: 'todos',
+      payload: {
+        title: '准备方案',
+        details: '整理 workspace 新流程',
+        dueAt: '2026-04-23T09:00:00.000Z',
+      },
+    })
+  })
 })
