@@ -6,6 +6,45 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useWorkspaceStream } from '@/hooks/workspace/use-workspace-stream'
 
+import type { AssetListItem } from '@/shared/assets/assets.types'
+import type { WorkspaceRunStreamEvent } from '@/shared/workspace/workspace-runner.types'
+
+function createAsset(overrides: Partial<AssetListItem>): AssetListItem {
+  return {
+    id: 'asset_1',
+    originalText: '测试内容',
+    title: '测试标题',
+    excerpt: '测试摘要',
+    type: 'note',
+    content: null,
+    note: null,
+    summary: null,
+    url: null,
+    timeText: null,
+    dueAt: null,
+    completed: false,
+    createdAt: new Date('2026-04-23T00:00:00.000Z'),
+    ...overrides,
+  }
+}
+
+function createSseResponse(events: WorkspaceRunStreamEvent[]) {
+  const body = events
+    .map((event) => `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`)
+    .join('')
+
+  return new Response(body, {
+    status: 200,
+    headers: {
+      'content-type': 'text/event-stream',
+    },
+  })
+}
+
+function serializeForStream<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
+}
+
 function renderHook<T>(useHook: () => T) {
   const container = document.createElement('div')
   const root = createRoot(container)
@@ -55,26 +94,36 @@ describe('useWorkspaceStream', () => {
 
   it('submits input requests and stores successful query results', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          ok: true,
-          phases: [
-            { phase: 'parse', status: 'done', message: '已理解请求' },
-            { phase: 'route', status: 'done', message: '已选择 search_notes' },
-          ],
-          answer: '已找到 1 条笔记。',
-          data: {
-            kind: 'query',
-            target: 'notes',
-            items: [{ id: 'note_1', type: 'note' }],
-            total: 1,
+      createSseResponse([
+        {
+          type: 'phase',
+          phase: { phase: 'parse', status: 'done', message: '已理解请求' },
+        },
+        {
+          type: 'phase',
+          phase: { phase: 'route', status: 'active', message: '正在选择操作' },
+        },
+        {
+          type: 'result',
+          response: {
+            ok: true,
+            phases: [
+              { phase: 'parse', status: 'done', message: '已理解请求' },
+              { phase: 'route', status: 'done', message: '已选择 search_notes' },
+            ],
+            answer: '已找到 1 条笔记。',
+            data: {
+              kind: 'query',
+              target: 'notes',
+              items: [createAsset({ id: 'note_1', type: 'note' })],
+              total: 1,
+            },
           },
-        }),
-        { status: 200 }
-      )
+        },
+      ])
     )
 
-    const hook = renderHook(() => useWorkspaceStream({ phasePlaybackDelayMs: 0 }))
+    const hook = renderHook(() => useWorkspaceStream())
     activeHook = hook
 
     await act(async () => {
@@ -89,7 +138,7 @@ describe('useWorkspaceStream', () => {
     expect(hook.result.current.state.result).toEqual({
       kind: 'query',
       target: 'notes',
-      items: [{ id: 'note_1', type: 'note' }],
+      items: [serializeForStream(createAsset({ id: 'note_1', type: 'note' }))],
       total: 1,
     })
   })
@@ -99,7 +148,7 @@ describe('useWorkspaceStream', () => {
       new Response(JSON.stringify({ error: '请输入有效内容。' }), { status: 400 })
     )
 
-    const hook = renderHook(() => useWorkspaceStream({ phasePlaybackDelayMs: 0 }))
+    const hook = renderHook(() => useWorkspaceStream())
     activeHook = hook
 
     await act(async () => {
@@ -113,23 +162,25 @@ describe('useWorkspaceStream', () => {
   it('passes successful responses to onResult', async () => {
     const onResult = vi.fn()
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          ok: true,
-          phases: [],
-          answer: '已创建待办。',
-          data: {
-            kind: 'mutation',
-            action: 'create',
-            target: 'todos',
-            item: { id: 'todo_1', type: 'todo' },
+      createSseResponse([
+        {
+          type: 'result',
+          response: {
+            ok: true,
+            phases: [],
+            answer: '已创建待办。',
+            data: {
+              kind: 'mutation',
+              action: 'create',
+              target: 'todos',
+              item: createAsset({ id: 'todo_1', type: 'todo' }),
+            },
           },
-        }),
-        { status: 200 }
-      )
+        },
+      ])
     )
 
-    const hook = renderHook(() => useWorkspaceStream({ onResult, phasePlaybackDelayMs: 0 }))
+    const hook = renderHook(() => useWorkspaceStream({ onResult }))
     activeHook = hook
 
     await act(async () => {
@@ -140,7 +191,7 @@ describe('useWorkspaceStream', () => {
       kind: 'mutation',
       action: 'create',
       target: 'todos',
-      item: { id: 'todo_1', type: 'todo' },
+      item: serializeForStream(createAsset({ id: 'todo_1', type: 'todo' })),
     })
   })
 })

@@ -1,8 +1,14 @@
 import { requireWorkspaceUserAccess } from '@/server/modules/auth/workspace-session'
 import { runWorkspace } from '@/server/modules/workspace-agent/workspace-runner'
 
+import type { WorkspaceRunResult } from '@/server/modules/workspace-agent'
 import type { AssetListItem } from '@/shared/assets/assets.types'
-import type { WorkspaceRunApiResponse, WorkspaceRunRequest } from '@/shared/workspace/workspace-runner.types'
+import type {
+  WorkspaceRunApiData,
+  WorkspaceRunApiResponse,
+  WorkspaceRunRequest,
+  WorkspaceRunStreamEvent,
+} from '@/shared/workspace/workspace-runner.types'
 
 const QUICK_ACTION_PROMPTS = {
   'review-todos': '总结最近待办重点',
@@ -46,6 +52,60 @@ function isAssetListItem(value: unknown): value is AssetListItem {
   return !!value && typeof value === 'object' && 'id' in value && 'type' in value
 }
 
+function normalizeRunResult(
+  result: WorkspaceRunResult,
+  phases: WorkspaceRunApiResponse['phases']
+): WorkspaceRunApiResponse {
+  if (!result.ok) {
+    return {
+      ok: false,
+      phases,
+      answer: null,
+      data: {
+        kind: 'error',
+        phase: result.phase,
+        message: result.message,
+      },
+    }
+  }
+
+  const data = result.data
+  const responseData: WorkspaceRunApiData =
+    data.ok && Array.isArray(data.items) && typeof data.total === 'number'
+      ? {
+          kind: 'query',
+          target: data.target,
+          items: isAssetListItemArray(data.items) ? data.items : [],
+          total: data.total,
+        }
+      : data.ok && data.action
+        ? {
+            kind: 'mutation',
+            action: data.action,
+            target:
+              data.target === 'mixed'
+                ? 'notes'
+                : data.target,
+            item: isAssetListItem(data.item) ? data.item : null,
+          }
+        : {
+            kind: 'error',
+            phase: 'tool_failed',
+            message: '工具结果格式不正确。',
+          }
+
+  return {
+    ok: responseData.kind !== 'error',
+    phases,
+    answer: result.answer,
+    data: responseData,
+  }
+}
+
+function encodeSseEvent(event: WorkspaceRunStreamEvent) {
+  return `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`
+}
+
 export async function POST(req: Request) {
   const user = await requireWorkspaceUserAccess()
 
@@ -66,59 +126,46 @@ export async function POST(req: Request) {
     return Response.json({ error: '请输入有效内容。' }, { status: 400 })
   }
 
-  const phases: WorkspaceRunApiResponse['phases'] = []
-  const result = await runWorkspace({
-    message,
-    userId: user.id,
-    onEvent: (event) => {
-      phases.push(event)
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const phases: WorkspaceRunApiResponse['phases'] = []
+
+      const writeEvent = (event: WorkspaceRunStreamEvent) => {
+        controller.enqueue(encoder.encode(encodeSseEvent(event)))
+      }
+
+      try {
+        const result = await runWorkspace({
+          message,
+          userId: user.id,
+          onEvent: (event) => {
+            phases.push(event)
+            writeEvent({ type: 'phase', phase: event })
+          },
+        })
+
+        writeEvent({
+          type: 'result',
+          response: normalizeRunResult(result, phases),
+        })
+      } catch (error) {
+        writeEvent({
+          type: 'error',
+          message: error instanceof Error ? error.message : '处理失败，请重试。',
+        })
+      } finally {
+        controller.close()
+      }
     },
   })
 
-  if (!result.ok) {
-    const response: WorkspaceRunApiResponse = {
-      ok: false,
-      phases,
-      answer: null,
-      data: {
-        kind: 'error',
-        phase: result.phase,
-        message: result.message,
-      },
-    }
-
-    return Response.json(response)
-  }
-
-  const data = result.data
-  const response: WorkspaceRunApiResponse = {
-    ok: true,
-    phases,
-    answer: result.answer,
-    data:
-      data.ok && Array.isArray(data.items) && typeof data.total === 'number'
-        ? {
-            kind: 'query',
-            target: data.target,
-            items: isAssetListItemArray(data.items) ? data.items : [],
-            total: data.total,
-          }
-        : data.ok && data.action
-          ? {
-              kind: 'mutation',
-              action: data.action,
-              target:
-                data.target === 'mixed'
-                  ? 'notes'
-                  : data.target,
-              item: isAssetListItem(data.item) ? data.item : null,
-            }
-          : {
-              kind: 'error',
-              phase: 'tool_failed',
-              message: '工具结果格式不正确。',
-            },
-  }
-
-  return Response.json(response)
+  return new Response(stream, {
+    headers: {
+      'cache-control': 'no-cache, no-transform',
+      connection: 'keep-alive',
+      'content-type': 'text/event-stream; charset=utf-8',
+      'x-accel-buffering': 'no',
+    },
+  })
 }

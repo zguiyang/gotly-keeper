@@ -13,6 +13,25 @@ vi.mock('@/server/modules/workspace-agent/workspace-runner', () => ({
   runWorkspace: runWorkspaceMock,
 }))
 
+async function readSseEvents(response: Response) {
+  const text = await response.text()
+  return text
+    .trim()
+    .split('\n\n')
+    .filter(Boolean)
+    .map((frame) => {
+      const dataLine = frame
+        .split('\n')
+        .find((line) => line.startsWith('data: '))
+
+      if (!dataLine) {
+        throw new Error(`Missing SSE data line: ${frame}`)
+      }
+
+      return JSON.parse(dataLine.slice(6)) as unknown
+    })
+}
+
 describe('/api/workspace/run POST', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -55,13 +74,44 @@ describe('/api/workspace/run POST', () => {
   })
 
   it('forwards authenticated input requests into the workspace runner', async () => {
+    runWorkspaceMock.mockImplementationOnce(({ onEvent }) => {
+      onEvent({
+        phase: 'parse',
+        status: 'done',
+        message: '已理解请求',
+      })
+
+      return Promise.resolve({
+        ok: true,
+        phase: 'completed',
+        task: {
+          intent: 'query',
+          target: 'notes',
+        },
+        plan: {
+          intent: 'query',
+          target: 'notes',
+          toolName: 'search_notes',
+          toolInput: {},
+          needsCompose: false,
+        },
+        data: {
+          ok: true,
+          target: 'notes',
+          items: [],
+          total: 0,
+        },
+        answer: '已找到 0 条笔记。',
+      })
+    })
+
     const req = new Request('http://localhost/api/workspace/run', {
       method: 'POST',
       body: JSON.stringify({ kind: 'input', text: '帮我找一下最近笔记' }),
     })
 
     const res = await POST(req)
-    const payload = await res.json()
+    const events = await readSseEvents(res)
 
     expect(requireWorkspaceUserAccessMock).toHaveBeenCalledTimes(1)
     expect(runWorkspaceMock).toHaveBeenCalledWith({
@@ -69,16 +119,30 @@ describe('/api/workspace/run POST', () => {
       userId: 'user_123',
       onEvent: expect.any(Function),
     })
-    expect(payload).toMatchObject({
-      ok: true,
-      answer: '已找到 0 条笔记。',
-      data: {
-        kind: 'query',
-        target: 'notes',
-        items: [],
-        total: 0,
+    expect(res.headers.get('content-type')).toContain('text/event-stream')
+    expect(events).toEqual([
+      {
+        type: 'phase',
+        phase: {
+          phase: 'parse',
+          status: 'done',
+          message: '已理解请求',
+        },
       },
-    })
+      expect.objectContaining({
+        type: 'result',
+        response: expect.objectContaining({
+          ok: true,
+          answer: '已找到 0 条笔记。',
+          data: {
+            kind: 'query',
+            target: 'notes',
+            items: [],
+            total: 0,
+          },
+        }),
+      }),
+    ])
   })
 
   it('translates quick actions into normalized runner input', async () => {
@@ -122,17 +186,22 @@ describe('/api/workspace/run POST', () => {
     })
 
     const res = await POST(req)
-    const payload = await res.json()
+    const events = await readSseEvents(res)
 
-    expect(payload).toEqual({
-      ok: false,
-      phases: [],
-      answer: null,
-      data: {
-        kind: 'error',
-        phase: 'tool_failed',
-        message: 'tool failed',
+    expect(events).toEqual([
+      {
+        type: 'result',
+        response: {
+          ok: false,
+          phases: [],
+          answer: null,
+          data: {
+            kind: 'error',
+            phase: 'tool_failed',
+            message: 'tool failed',
+          },
+        },
       },
-    })
+    ])
   })
 })

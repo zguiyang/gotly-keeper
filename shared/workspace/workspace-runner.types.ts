@@ -38,3 +38,17 @@ export type WorkspaceRunApiResponse = {
   answer: string | null
   data: WorkspaceRunApiData
 }
+
+export type WorkspaceRunStreamEvent =
+  | {
+      type: 'phase'
+      phase: WorkspaceRunApiPhase
+    }
+  | {
+      type: 'result'
+      response: WorkspaceRunApiResponse
+    }
+  | {
+      type: 'error'
+      message: string
+    }
