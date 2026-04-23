@@ -47,12 +47,12 @@
   --color-on-surface-variant: var(--on-surface-variant);
 
   /* Content Type Semantic Colors */
-  --color-type-note: var(--primary);
-  --color-type-note-bg: var(--primary-fixed);
-  --color-type-link: var(--secondary);
-  --color-type-link-bg: var(--secondary-fixed);
-  --color-type-todo: var(--tertiary);
-  --color-type-todo-bg: var(--tertiary-fixed);
+  --color-type-note: var(--type-note);
+  --color-type-note-bg: var(--type-note-bg);
+  --color-type-link: var(--type-link);
+  --color-type-link-bg: var(--type-link-bg);
+  --color-type-todo: var(--type-todo);
+  --color-type-todo-bg: var(--type-todo-bg);
   --color-status-pending: var(--secondary);
   --color-status-success: var(--primary);
   --color-status-error: var(--destructive);
@@ -124,6 +124,12 @@
   --input: #737686;
   --ring: #0051b1;
    --on-surface-variant: #434655;
+  --type-note: #2f3a32;
+  --type-note-bg: #f6f1e8;
+  --type-link: #3e5668;
+  --type-link-bg: #eaf1f5;
+  --type-todo: #49634a;
+  --type-todo-bg: #eef4ea;
   --chart-1: #0051b1;
   --chart-2: #0768df;
   --chart-3: #505f76;
@@ -170,6 +176,12 @@
   --input: #566166;
   --ring: #a6c8ff;
    --on-surface-variant: #9a9d9f;
+  --type-note: #d7cdbb;
+  --type-note-bg: #2b2923;
+  --type-link: #b9d0dc;
+  --type-link-bg: #1d2a31;
+  --type-todo: #c3d3bd;
+  --type-todo-bg: #202b20;
   --chart-1: #a6c8ff;
   --chart-2: #8bb3ff;
   --chart-3: #9a9d9f;

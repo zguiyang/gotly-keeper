@@ -21,7 +21,9 @@ import {
   WorkspaceFilterTabs,
   WorkspacePageHeader,
   workspacePillClassName,
-  workspaceSurfaceClassName,
+  workspaceCriticalSurfaceClassName,
+  workspaceListSurfaceClassName,
+  workspacePanelSurfaceClassName,
   WorkspaceTypeBadge,
 } from '@/components/workspace/workspace-view-primitives'
 import { assetTypePresentation } from '@/config/ui/asset-presentation'
@@ -53,7 +55,6 @@ type LifecycleModeContent = {
   emptyDescription: string
   emptyFilteredDescription: string
   lifecycleLabel: string
-  surfaceClassName: string
   statusClassName: string
   countLabel: string
   notice?: string
@@ -62,30 +63,26 @@ type LifecycleModeContent = {
 
 const MODE_CONTENT: Record<LifecycleViewMode, LifecycleModeContent> = {
   archive: {
-    eyebrow: 'Quiet Layer',
+    eyebrow: '已收起',
     title: '归档',
-    description: '把暂时不需要出现在工作台里的内容收起来，但保留它们的上下文、来源与可恢复入口。',
+    description: '把暂时不需要出现在工作台里的内容收起来，保留上下文、来源和恢复入口。',
     emptyTitle: '暂无归档内容',
     emptyDescription: '当一条内容还值得保留、但不该继续打扰当前工作时，可以先归档。',
-    emptyFilteredDescription: '这个类型暂时没有归档内容。切换到「全部」可以查看其它已收起的内容。',
+    emptyFilteredDescription: '这个类型暂时没有归档内容。切换到「全部」可以查看其他已收起的内容。',
     lifecycleLabel: '归档于',
-    surfaceClassName:
-      'border-border/15 bg-surface-container-lowest hover:border-border/28 hover:shadow-[var(--shadow-elevation-1)]',
-    statusClassName: 'border-border/10 bg-muted/35 text-on-surface-variant/80',
-    countLabel: '安静保存',
+    statusClassName: 'border-border/10 bg-muted/30 text-on-surface-variant/75',
+    countLabel: '安静收纳',
     Icon: Archive,
   },
   trash: {
-    eyebrow: 'Removal Review',
+    eyebrow: '待确认',
     title: '回收站',
-    description: '这里保留最近移除的内容。确认仍有价值就恢复；确认不再需要再永久删除。',
+    description: '这里保留最近移除的内容。确认仍有价值就恢复，确认不再需要再永久删除。',
     emptyTitle: '回收站为空',
     emptyDescription: '没有待清理内容，工作区保持干净。',
     emptyFilteredDescription: '这个类型暂时没有待清理内容。切换到「全部」可以查看其它回收站项目。',
     lifecycleLabel: '移除于',
-    surfaceClassName:
-      'border-destructive/18 bg-destructive/[0.025] hover:border-destructive/28 hover:shadow-[0_12px_28px_-22px_rgba(186,26,26,0.42)]',
-    statusClassName: 'border-destructive/15 bg-destructive/7 text-destructive',
+    statusClassName: 'border-destructive/15 bg-destructive/6 text-destructive',
     countLabel: '等待确认',
     notice: '永久删除后无法恢复。建议先确认内容已经不再需要。',
     Icon: Trash2,
@@ -139,7 +136,12 @@ function EmptyState({
       title={content.emptyTitle}
       description={isFiltered ? content.emptyFilteredDescription : content.emptyDescription}
       icon={content.Icon}
-      className="mt-8 border-border/18 bg-surface-container-lowest/85"
+      className={cn(
+        'mt-8',
+        mode === 'trash'
+          ? 'border-destructive/12 bg-destructive/[0.02] py-5 sm:py-6'
+          : 'border-border/16 bg-surface-container-lowest/85 py-7 sm:py-8'
+      )}
     />
   )
 }
@@ -147,10 +149,12 @@ function EmptyState({
 function PurgeAssetDialog({
   asset,
   disabled,
+  className,
   onConfirm,
 }: {
   asset: AssetListItem
   disabled: boolean
+  className?: string
   onConfirm: (asset: AssetListItem) => Promise<void>
 }) {
   const [open, setOpen] = useState(false)
@@ -173,7 +177,7 @@ function PurgeAssetDialog({
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger
-        render={<Button variant="destructive" size="sm" className="rounded-full" />}
+        render={<Button variant="destructive" size="sm" className={cn('rounded-full', className)} />}
         disabled={disabled || submitting}
       >
         永久删除
@@ -221,9 +225,9 @@ function LifecycleAssetItem({
   return (
     <article
       className={cn(
-        workspaceSurfaceClassName,
-        'group overflow-hidden rounded-2xl transition-[border-color,box-shadow,background-color] duration-200',
-        content.surfaceClassName
+        mode === 'trash' ? workspaceCriticalSurfaceClassName : workspaceListSurfaceClassName,
+        'group overflow-hidden transition-[border-color,box-shadow,background-color] duration-200',
+        mode === 'archive' ? 'hover:shadow-[var(--shadow-elevation-1)]' : 'hover:bg-destructive/[0.05]'
       )}
     >
       <div className="flex flex-col gap-4 px-4 py-4 sm:px-5 md:flex-row md:items-start md:justify-between md:gap-5">
@@ -295,19 +299,19 @@ function LifecycleAssetItem({
             />
           </div>
         ) : (
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 md:pt-1">
+          <div className="flex shrink-0 flex-col items-stretch gap-2 md:items-end md:pt-1">
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               size="sm"
               disabled={pending}
-              className="rounded-full bg-surface-container-lowest"
+              className="rounded-full shadow-none"
               onClick={() => onRestore(item)}
             >
               <ArchiveRestore className="size-3.5" />
               恢复
             </Button>
-            <PurgeAssetDialog asset={item} disabled={pending} onConfirm={onPurge} />
+            <PurgeAssetDialog asset={item} disabled={pending} onConfirm={onPurge} className="w-full justify-center" />
           </div>
         )}
       </div>
@@ -380,7 +384,12 @@ export function LifecycleAssetsClient({
           className="mb-6"
         />
 
-        <div className="flex flex-col gap-4 border-y border-border/10 py-4 lg:flex-row lg:items-center lg:justify-between">
+        <div
+          className={cn(
+            workspacePanelSurfaceClassName,
+            'flex flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between'
+          )}
+        >
           <div className="flex min-w-0 flex-col gap-2">
             <p className="inline-flex items-center gap-2 text-sm text-on-surface-variant">
               <span

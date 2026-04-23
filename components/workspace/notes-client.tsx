@@ -1,6 +1,6 @@
 'use client'
 
-import { FileText, NotebookPen } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,6 @@ import {
   workspaceMetaTextClassName,
   workspacePillClassName,
   WorkspacePageHeader,
-  workspaceSurfaceClassName,
 } from '@/components/workspace/workspace-view-primitives'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
@@ -30,44 +29,38 @@ function NoteCard({
   onArchive: (note: AssetListItem) => void
   onMoveToTrash: (note: AssetListItem) => void
 }) {
-  const hasTitle = note.title && note.title !== note.excerpt
-  const displayTitle = hasTitle ? note.title : '未命名笔记'
+  const titleText = note.title?.trim() ?? ''
+  const excerptText = note.excerpt?.trim() ?? ''
+  const hasTitle = titleText.length > 0 && titleText !== excerptText
 
   return (
-    <article
-      className={`${workspaceSurfaceClassName} group flex min-h-[220px] flex-col overflow-hidden rounded-2xl border-border/20 bg-surface-container-lowest p-0 transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-border/30 hover:shadow-[var(--shadow-elevation-2)]`}
-    >
-      <div className="flex items-center gap-3 border-b border-dashed border-border/20 px-4 py-3 md:px-5">
-        <div className="inline-flex items-center gap-2">
-          <NotebookPen className="size-3.5 text-on-surface-variant/80" aria-hidden="true" />
-          <span className={`${workspaceMetaTextClassName} uppercase`}>笔记卡片</span>
-        </div>
-
-        <span className={`${workspaceMetaTextClassName} ml-auto shrink-0`}>
-          {note.timeText || formatAssetRelativeTime(note.createdAt)}
+    <article className="group flex min-h-[190px] flex-col rounded-[14px] border border-border/10 bg-surface-container-lowest/85 px-4 py-4 shadow-[0_14px_32px_-28px_rgba(0,81,177,0.26)] transition-[border-color,background-color,box-shadow] duration-200 ease-out hover:border-border/15 hover:bg-surface-container-lowest hover:shadow-[0_16px_34px_-30px_rgba(0,81,177,0.3)]">
+      <div className="flex items-start gap-3">
+        <span className={`${workspaceMetaTextClassName} shrink-0`}>
+          笔记 · {note.timeText || formatAssetRelativeTime(note.createdAt)}
         </span>
 
-        <AssetActionMenu
-          actions={[
-            { label: '编辑', onClick: () => onEdit(note) },
-            { label: '归档', onClick: () => onArchive(note) },
-            { label: '移入回收站', onClick: () => onMoveToTrash(note), danger: true },
-          ]}
-        />
+        <div className="ml-auto shrink-0">
+          <AssetActionMenu
+            actions={[
+              { label: '编辑', onClick: () => onEdit(note) },
+              { label: '归档', onClick: () => onArchive(note) },
+              { label: '移入回收站', onClick: () => onMoveToTrash(note), danger: true },
+            ]}
+          />
+        </div>
       </div>
 
-      <div className="flex flex-1 flex-col px-4 py-4 md:px-5 md:py-5">
-        <h3 className="mb-2 font-headline text-[1.05rem] font-semibold leading-7 tracking-[-0.02em] text-on-surface line-clamp-2 md:text-[1.12rem]">
-          {displayTitle}
-        </h3>
+      <div className="mt-4 flex flex-1 flex-col">
+        {hasTitle ? (
+          <h3 className="font-headline text-[1.02rem] font-semibold leading-7 tracking-[-0.01em] text-on-surface line-clamp-2 md:text-[1.08rem]">
+            {titleText}
+          </h3>
+        ) : null}
 
-        <p className="flex-1 text-[14px] leading-7 text-on-surface-variant whitespace-pre-wrap md:text-[15px]">
-          {note.excerpt}
+        <p className={`flex-1 whitespace-pre-wrap leading-7 ${hasTitle ? 'mt-2 text-[14px] text-on-surface-variant md:text-[15px]' : 'text-[15px] text-on-surface md:text-[16px]'}`}>
+          {excerptText || '暂无正文'}
         </p>
-      </div>
-
-      <div className="border-t border-border/10 px-4 py-3 md:px-5">
-        <p className={`${workspaceMetaTextClassName} uppercase`}>已保存到 Workspace 笔记</p>
       </div>
     </article>
   )
@@ -146,8 +139,8 @@ export function NotesClient({ initialPage }: { initialPage: PaginatedResult<Asse
     <div className="mx-auto w-full max-w-7xl px-1 sm:px-2">
       <WorkspacePageHeader
         title="笔记"
-        eyebrow="Workspace"
-        description="从统一入口留下的想法、碎片和草稿，会被整理成便于回看的知识卡片。"
+        eyebrow="手稿"
+        description="从统一入口留下的想法、碎片和草稿，会被整理成更适合扫读的手稿版面。"
       />
 
       <div className="mb-7 flex flex-wrap items-center gap-3 md:mb-8">
@@ -156,7 +149,7 @@ export function NotesClient({ initialPage }: { initialPage: PaginatedResult<Asse
           {pageInfo.hasNextPage ? '还有更多' : '已加载全部'}
         </span>
         <p className={`${workspaceMetaTextClassName} text-on-surface-variant`}>
-          最近记录会优先展示，卡片采用瀑布流排布并随内容自动增高。
+          最近记录会优先展示，内容采用瀑布流排布并随长度自动增高。
         </p>
       </div>
 

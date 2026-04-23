@@ -31,7 +31,7 @@ function BookmarkSkeleton({ widthClassName }: { widthClassName: string }) {
 export default function Loading() {
   return (
     <div className="mx-auto w-full max-w-7xl px-1 sm:px-2">
-      <WorkspacePageHeader title="我的收藏" eyebrow="Reading Queue" description="正在加载你的链接收藏与解析状态…" />
+      <WorkspacePageHeader title="我的收藏" eyebrow="阅读队列" description="正在加载你的链接收藏与解析状态…" />
 
       <div className="mb-7 flex flex-wrap items-center gap-3 md:mb-8">
         <span className={workspacePillClassName}>加载中</span>

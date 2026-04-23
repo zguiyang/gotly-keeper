@@ -11,14 +11,18 @@ import { AssetEditDialog, type AssetEditValues } from '@/components/workspace/as
 import {
   WorkspaceEmptyState,
   workspaceMetaTextClassName,
-  workspacePillClassName,
+  workspaceContentCardSurfaceClassName,
   WorkspacePageHeader,
-  workspaceSurfaceClassName,
+  workspacePillClassName,
 } from '@/components/workspace/workspace-view-primitives'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
+import { cn } from '@/lib/utils'
 import { type AssetListItem } from '@/shared/assets/assets.types'
-import { BOOKMARK_META_STATUS } from '@/shared/assets/bookmark-meta.types'
+import {
+  BOOKMARK_META_STATUS,
+  type BookmarkMetaStatus,
+} from '@/shared/assets/bookmark-meta.types'
 import { type PaginatedResult } from '@/shared/pagination'
 import { formatBookmarkTime } from '@/shared/time/formatters'
 
@@ -30,6 +34,38 @@ function getHostname(url: string | null) {
   } catch {
     return 'saved link'
   }
+}
+
+function getBookmarkStatusMeta(status: BookmarkMetaStatus | null) {
+  if (status === BOOKMARK_META_STATUS.PENDING) {
+    return {
+      label: '解析中',
+      className: 'border-amber-500/15 bg-amber-500/8 text-amber-700',
+    }
+  }
+
+  if (status === BOOKMARK_META_STATUS.SUCCESS) {
+    return {
+      label: '已补全',
+      className: 'border-emerald-500/15 bg-emerald-500/8 text-emerald-700',
+    }
+  }
+
+  if (status === BOOKMARK_META_STATUS.FAILED) {
+    return {
+      label: '补全失败',
+      className: 'border-rose-500/15 bg-rose-500/8 text-rose-700',
+    }
+  }
+
+  if (status === BOOKMARK_META_STATUS.SKIPPED_PRIVATE_URL) {
+    return {
+      label: '私网已跳过',
+      className: 'border-slate-500/15 bg-slate-500/8 text-slate-700',
+    }
+  }
+
+  return null
 }
 
 function BookmarkItem({
@@ -46,12 +82,72 @@ function BookmarkItem({
   onMoveToTrash: (item: AssetListItem) => void
 }) {
   const status = item.bookmarkMeta?.status ?? null
+  const statusMeta = getBookmarkStatusMeta(status)
 
   return (
     <article
-      className={`${workspaceSurfaceClassName} group relative overflow-hidden rounded-2xl border-border/20 bg-surface-container-lowest p-4 transition-[box-shadow,border-color,background-color] duration-200 ease-out motion-reduce:transition-none hover:border-border/30 hover:shadow-[var(--shadow-elevation-2)] md:p-5`}
+      className={cn(
+        workspaceContentCardSurfaceClassName,
+        'group overflow-hidden transition-[border-color,box-shadow,background-color] duration-200 ease-out motion-reduce:transition-none hover:border-border/18 hover:shadow-[var(--shadow-elevation-2)]'
+      )}
     >
-      <div className="absolute right-4 top-4 z-10 flex items-center gap-1">
+      <div className="flex items-start justify-between gap-4 px-4 pt-4 md:px-5 md:pt-5">
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            {item.bookmarkMeta?.icon ? (
+              <span
+                aria-hidden="true"
+                className="size-4 shrink-0 rounded-[4px] bg-cover bg-center bg-no-repeat ring-1 ring-border/10"
+                style={{ backgroundImage: `url("${item.bookmarkMeta.icon}")` }}
+              />
+            ) : null}
+            <span className="max-w-[16rem] truncate text-[12px] font-medium text-on-surface-variant/85 sm:max-w-[20rem]">
+              {getHostname(item.url)}
+            </span>
+            {statusMeta ? (
+              <span
+                className={cn(
+                  'inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium tracking-normal',
+                  statusMeta.className
+                )}
+              >
+                {statusMeta.label}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            {item.url ? (
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group/title inline-flex items-start gap-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
+              >
+                <h3 className="font-headline text-[1.03rem] font-semibold leading-7 tracking-[-0.015em] text-on-surface transition-colors duration-150 group-hover/title:text-primary sm:text-[1.1rem] lg:text-[1.2rem]">
+                  {item.title}
+                </h3>
+                <ExternalLink className="mt-1 h-3.5 w-3.5 shrink-0 text-on-surface-variant/75 opacity-0 transition-opacity duration-150 group-hover/title:opacity-100" />
+              </a>
+            ) : (
+              <h3 className="font-headline text-[1.03rem] font-semibold leading-7 tracking-[-0.015em] text-on-surface sm:text-[1.1rem] lg:text-[1.2rem]">
+                {item.title}
+              </h3>
+            )}
+            <p className="max-w-3xl text-[14px] leading-7 text-on-surface-variant sm:text-[15px] sm:line-clamp-3">
+              {item.excerpt}
+            </p>
+          </div>
+
+          {item.url ? (
+            <div className="inline-flex items-center gap-1.5 text-[12px] text-on-surface-variant/80">
+              <Link2 className="size-3.5" aria-hidden="true" />
+              <span className="truncate">{item.url.replace(/^https?:\/\//, '')}</span>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="z-10 flex items-center gap-1">
           <Button
             type="button"
             variant="ghost"
@@ -69,67 +165,11 @@ function BookmarkItem({
               { label: '移入回收站', onClick: () => onMoveToTrash(item), danger: true },
             ]}
           />
+        </div>
       </div>
 
-      <div className="flex flex-col justify-between gap-4">
-        <div className="min-w-0 flex-1 space-y-3 pr-16">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className={`${workspacePillClassName} border-primary/10 bg-primary/8 text-primary`}>
-              {getHostname(item.url)}
-            </span>
-            {status === BOOKMARK_META_STATUS.PENDING && (
-              <span className={`${workspacePillClassName} border-status-pending/20 bg-status-pending/10 text-status-pending`}>解析中</span>
-            )}
-            {status === BOOKMARK_META_STATUS.SUCCESS && (
-              <span className={`${workspacePillClassName} border-status-success/20 bg-status-success/10 text-status-success`}>已补全</span>
-            )}
-            {status === BOOKMARK_META_STATUS.FAILED && (
-              <span className={`${workspacePillClassName} border-status-error/20 bg-status-error/10 text-status-error`}>补全失败</span>
-            )}
-            {status === BOOKMARK_META_STATUS.SKIPPED_PRIVATE_URL && (
-              <span className={`${workspacePillClassName} border-status-muted/20 bg-status-muted/10 text-status-muted`}>私网地址已跳过</span>
-            )}
-          </div>
-          {item.url ? (
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group/title inline-flex items-start gap-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
-            >
-              {item.bookmarkMeta?.icon && (
-                <span
-                  aria-hidden="true"
-                  className="mt-1 h-4 w-4 shrink-0 rounded-sm bg-cover bg-center bg-no-repeat"
-                  style={{ backgroundImage: `url("${item.bookmarkMeta.icon}")` }}
-                />
-              )}
-              <h3 className="font-headline text-[1.03rem] font-semibold leading-7 tracking-[-0.015em] text-on-surface transition-colors duration-150 group-hover/title:text-primary sm:text-[1.1rem] lg:text-[1.2rem]">
-                {item.title}
-              </h3>
-              <ExternalLink className="mt-1 h-3.5 w-3.5 shrink-0 text-on-surface-variant/75 opacity-0 transition-opacity duration-150 group-hover/title:opacity-100" />
-            </a>
-          ) : (
-            <div className="flex items-center gap-1.5">
-              <h3 className="font-headline text-[1.03rem] font-semibold leading-7 tracking-[-0.015em] text-on-surface sm:text-[1.1rem] lg:text-[1.2rem]">
-                {item.title}
-              </h3>
-            </div>
-          )}
-          <p className="max-w-3xl text-[14px] leading-7 text-on-surface-variant sm:text-[15px] sm:line-clamp-3">
-            {item.excerpt}
-          </p>
-          {item.url ? (
-            <div className="inline-flex items-center gap-1.5 text-[12px] text-on-surface-variant/80">
-              <Link2 className="size-3.5" aria-hidden="true" />
-              <span className="truncate">{item.url.replace(/^https?:\/\//, '')}</span>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="border-t border-border/10 pt-3">
-          <p className={`${workspaceMetaTextClassName} text-right`}>{formatBookmarkTime(item.createdAt)}</p>
-        </div>
+      <div className="flex items-center justify-between gap-3 border-t border-border/10 px-4 py-3 md:px-5">
+        <p className={workspaceMetaTextClassName}>{formatBookmarkTime(item.createdAt)}</p>
       </div>
     </article>
   )
@@ -249,21 +289,17 @@ export function BookmarksClient({
     <div className="mx-auto w-full max-w-7xl px-1 sm:px-2">
       <WorkspacePageHeader
         title="我的收藏"
-        eyebrow="Reading Queue"
+        eyebrow="阅读队列"
         description="按来源与内容整理过的链接收藏，支持快速回看、二次筛选和继续深入。"
       />
 
-      <div className="mb-7 flex flex-wrap items-center gap-3 md:mb-8">
-        <span className={workspacePillClassName}>已加载 {items.length} 条</span>
-        <span className={workspacePillClassName}>
-          {pageInfo.hasNextPage ? '还有更多' : '已加载全部'}
-        </span>
-        <span className={workspacePillClassName}>已补全 {stats.completed}</span>
-        <span className={workspacePillClassName}>解析中 {stats.pending}</span>
-        <span className={workspacePillClassName}>失败 {stats.failed}</span>
-        <p className={`${workspaceMetaTextClassName} text-on-surface-variant`}>
-          卡片支持 hover 聚焦与分享反馈，行动入口在鼠标悬停时自动显现。
+      <div className="mb-7 flex flex-col gap-2 md:mb-8">
+        <p className="text-sm leading-6 text-on-surface-variant">
+          已加载 {items.length} 条
+          {pageInfo.hasNextPage ? '，还有更多' : '，已加载全部'} / 摘要已生成 {stats.completed} /
+          解析中 {stats.pending} / 失败 {stats.failed}
         </p>
+        <span className={workspacePillClassName}>按来源排序回看</span>
       </div>
 
       <div className="max-w-6xl space-y-4">
