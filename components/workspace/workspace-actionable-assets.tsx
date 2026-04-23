@@ -137,6 +137,7 @@ function ActionableAssetItem({
             <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
               {asset.type === 'link' && asset.url ? (
                 <Button
+                  nativeButton={false}
                   render={
                     <a href={asset.url} target="_blank" rel="noopener noreferrer" />
                   }

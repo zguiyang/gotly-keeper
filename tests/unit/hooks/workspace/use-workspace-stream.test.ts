@@ -12,7 +12,12 @@ function renderHook<T>(useHook: () => T) {
   let current!: T
 
   function TestComponent() {
-    current = useHook()
+    const value = useHook()
+
+    React.useEffect(() => {
+      current = value
+    }, [value])
+
     return null
   }
 
@@ -69,7 +74,7 @@ describe('useWorkspaceStream', () => {
       )
     )
 
-    const hook = renderHook(() => useWorkspaceStream())
+    const hook = renderHook(() => useWorkspaceStream({ phasePlaybackDelayMs: 0 }))
     activeHook = hook
 
     await act(async () => {
@@ -94,7 +99,7 @@ describe('useWorkspaceStream', () => {
       new Response(JSON.stringify({ error: '请输入有效内容。' }), { status: 400 })
     )
 
-    const hook = renderHook(() => useWorkspaceStream())
+    const hook = renderHook(() => useWorkspaceStream({ phasePlaybackDelayMs: 0 }))
     activeHook = hook
 
     await act(async () => {
@@ -124,7 +129,7 @@ describe('useWorkspaceStream', () => {
       )
     )
 
-    const hook = renderHook(() => useWorkspaceStream({ onResult }))
+    const hook = renderHook(() => useWorkspaceStream({ onResult, phasePlaybackDelayMs: 0 }))
     activeHook = hook
 
     await act(async () => {

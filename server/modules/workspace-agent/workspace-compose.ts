@@ -2,8 +2,8 @@ import 'server-only'
 
 import { z } from 'zod'
 
-import { buildWorkspaceSystemPrompt } from '@/server/lib/ai/ai.prompts'
 import { runAiGeneration } from '@/server/lib/ai/ai-runner'
+import { buildWorkspaceSystemPrompt } from '@/server/lib/ai/ai.prompts'
 import { NOTE_SUMMARY_MODEL_TIMEOUT_MS } from '@/server/lib/config/constants'
 import { renderPrompt } from '@/server/lib/prompt-template'
 

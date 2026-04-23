@@ -7,6 +7,7 @@ import type {
   WorkspaceRunApiResponse,
   WorkspaceRunRequest,
 } from '@/shared/workspace/workspace-runner.types'
+import type { Dispatch, SetStateAction } from 'react'
 
 export type WorkspaceRunUiState = {
   status: 'idle' | 'streaming' | 'success' | 'error'
@@ -22,6 +23,64 @@ const INITIAL_PHASES: WorkspaceRunApiPhase[] = [
   { phase: 'execute', status: 'skipped', message: '等待执行工具' },
   { phase: 'compose', status: 'skipped', message: '等待整理结果' },
 ]
+
+const PLAYBACK_PHASES: WorkspaceRunApiPhase[] = [
+  { phase: 'parse', status: 'active', message: '正在理解请求' },
+  { phase: 'route', status: 'active', message: '正在选择操作' },
+  { phase: 'execute', status: 'active', message: '正在执行工具' },
+  { phase: 'compose', status: 'active', message: '正在整理结果' },
+]
+
+const DEFAULT_PHASE_PLAYBACK_DELAY_MS = 520
+
+function sleep(ms: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+}
+
+function buildPlaybackPhases(activeIndex: number) {
+  return PLAYBACK_PHASES.map((phase, index) => {
+    if (index < activeIndex) {
+      return {
+        ...phase,
+        status: 'done' as const,
+      }
+    }
+
+    if (index === activeIndex) {
+      return phase
+    }
+
+    return {
+      ...INITIAL_PHASES[index],
+      status: 'skipped' as const,
+    }
+  })
+}
+
+async function playMinimumPhaseSequence(
+  setState: Dispatch<SetStateAction<WorkspaceRunUiState>>,
+  delayMs: number
+) {
+  if (delayMs <= 0) {
+    return
+  }
+
+  for (let index = 1; index < PLAYBACK_PHASES.length; index++) {
+    await sleep(delayMs)
+    setState((current) => {
+      if (current.status !== 'streaming') {
+        return current
+      }
+
+      return {
+        ...current,
+        phases: buildPlaybackPhases(index),
+      }
+    })
+  }
+}
 
 async function postWorkspaceRun(body: WorkspaceRunRequest) {
   const response = await fetch('/api/workspace/run', {
@@ -42,6 +101,7 @@ async function postWorkspaceRun(body: WorkspaceRunRequest) {
 
 export function useWorkspaceStream(options: {
   onResult?: (result: WorkspaceRunApiResponse['data']) => void
+  phasePlaybackDelayMs?: number
 } = {}) {
   const [state, setState] = useState<WorkspaceRunUiState>({
     status: 'idle',
@@ -62,7 +122,19 @@ export function useWorkspaceStream(options: {
       })
 
       try {
-        const response = await postWorkspaceRun(request)
+        const [responseResult] = await Promise.allSettled([
+          postWorkspaceRun(request),
+          playMinimumPhaseSequence(
+            setState,
+            options.phasePlaybackDelayMs ?? DEFAULT_PHASE_PLAYBACK_DELAY_MS
+          ),
+        ])
+
+        if (responseResult.status === 'rejected') {
+          throw responseResult.reason
+        }
+
+        const response = responseResult.value
 
         setState({
           status: response.ok ? 'success' : 'error',
