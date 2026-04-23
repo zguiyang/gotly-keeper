@@ -1,6 +1,6 @@
 'use client'
 
-import { FileText } from 'lucide-react'
+import { FileText, NotebookPen } from 'lucide-react'
 import { useState } from 'react'
 
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
@@ -8,6 +8,7 @@ import { AssetEditDialog, type AssetEditValues } from '@/components/workspace/as
 import {
   WorkspaceEmptyState,
   workspaceMetaTextClassName,
+  workspacePillClassName,
   WorkspacePageHeader,
   workspaceSurfaceClassName,
 } from '@/components/workspace/workspace-view-primitives'
@@ -27,15 +28,22 @@ function NoteCard({
   onMoveToTrash: (note: AssetListItem) => void
 }) {
   const hasTitle = note.title && note.title !== note.excerpt
+  const displayTitle = hasTitle ? note.title : '未命名笔记'
 
   return (
     <article
-      className={`${workspaceSurfaceClassName} mb-5 flex min-h-[196px] break-inside-avoid flex-col p-5 transition-transform duration-200 hover:-translate-y-0.5`}
+      className={`${workspaceSurfaceClassName} group flex min-h-[220px] flex-col overflow-hidden rounded-2xl border-border/20 bg-surface-container-lowest p-0 transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-border/30 hover:shadow-[var(--shadow-elevation-2)]`}
     >
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <span className={`${workspaceMetaTextClassName} order-2 ml-auto shrink-0`}>
+      <div className="flex items-center gap-3 border-b border-dashed border-border/20 px-4 py-3 md:px-5">
+        <div className="inline-flex items-center gap-2">
+          <NotebookPen className="size-3.5 text-on-surface-variant/80" aria-hidden="true" />
+          <span className={`${workspaceMetaTextClassName} uppercase`}>笔记卡片</span>
+        </div>
+
+        <span className={`${workspaceMetaTextClassName} ml-auto shrink-0`}>
           {note.timeText || formatAssetRelativeTime(note.createdAt)}
         </span>
+
         <AssetActionMenu
           actions={[
             { label: '编辑', onClick: () => onEdit(note) },
@@ -45,15 +53,18 @@ function NoteCard({
         />
       </div>
 
-      <div className="flex flex-1 flex-col">
-        {hasTitle && (
-          <h3 className="mb-2 text-lg font-semibold leading-7 tracking-[-0.02em] text-on-surface line-clamp-2">
-            {note.title}
-          </h3>
-        )}
-        <p className="text-[15px] leading-7 text-on-surface-variant whitespace-pre-wrap line-clamp-5">
+      <div className="flex flex-1 flex-col px-4 py-4 md:px-5 md:py-5">
+        <h3 className="mb-2 font-headline text-[1.05rem] font-semibold leading-7 tracking-[-0.02em] text-on-surface line-clamp-2 md:text-[1.12rem]">
+          {displayTitle}
+        </h3>
+
+        <p className="flex-1 text-[14px] leading-7 text-on-surface-variant whitespace-pre-wrap md:text-[15px]">
           {note.excerpt}
         </p>
+      </div>
+
+      <div className="border-t border-border/10 px-4 py-3 md:px-5">
+        <p className={`${workspaceMetaTextClassName} uppercase`}>已保存到 Workspace 笔记</p>
       </div>
     </article>
   )
@@ -74,6 +85,7 @@ export function NotesClient({ notes }: { notes: AssetListItem[] }) {
   const [items, setItems] = useState(notes)
   const [editingNote, setEditingNote] = useState<AssetListItem | null>(null)
   const { updateAsset, archiveAsset, moveToTrash } = useAssetMutations()
+  const noteCount = items.length
 
   async function submitEdit(
     note: AssetListItem,
@@ -125,22 +137,31 @@ export function NotesClient({ notes }: { notes: AssetListItem[] }) {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto w-full max-w-7xl px-1 sm:px-2">
       <WorkspacePageHeader
         title="笔记"
+        eyebrow="Workspace"
         description="从统一入口留下的想法、碎片和草稿，会被整理成便于回看的知识卡片。"
       />
 
+      <div className="mb-7 flex flex-wrap items-center gap-3 md:mb-8">
+        <span className={workspacePillClassName}>共 {noteCount} 条</span>
+        <p className={`${workspaceMetaTextClassName} text-on-surface-variant`}>
+          最近记录会优先展示，卡片采用瀑布流排布并随内容自动增高。
+        </p>
+      </div>
+
       {items.length > 0 ? (
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="columns-1 gap-4 [column-gap:1rem] md:columns-2 md:[column-gap:1.25rem] xl:columns-3 xl:[column-gap:1.5rem]">
           {items.map((note) => (
-            <NoteCard
-              key={note.id}
-              note={note}
-              onEdit={setEditingNote}
-              onArchive={handleArchive}
-              onMoveToTrash={handleMoveToTrash}
-            />
+            <div key={note.id} className="mb-4 break-inside-avoid md:mb-5 xl:mb-6">
+              <NoteCard
+                note={note}
+                onEdit={setEditingNote}
+                onArchive={handleArchive}
+                onMoveToTrash={handleMoveToTrash}
+              />
+            </div>
           ))}
         </div>
       ) : (
