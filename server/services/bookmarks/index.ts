@@ -4,7 +4,12 @@ export { type BookmarkListItem } from './bookmarks.types'
 export { type Bookmark } from './bookmarks.schema'
 
 export { createBookmark } from './bookmarks.command'
-export { listBookmarks, getBookmarkById, type BookmarkListItem as BookmarkListItemExport } from './bookmarks.query'
+export {
+  listBookmarks,
+  listBookmarksPage,
+  getBookmarkById,
+  type BookmarkListItem as BookmarkListItemExport,
+} from './bookmarks.query'
 export {
   updateBookmarkEnrichment,
   updateBookmark,

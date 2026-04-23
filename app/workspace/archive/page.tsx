@@ -1,10 +1,14 @@
 import { LifecycleAssetsClient } from '@/components/workspace/lifecycle-assets-client'
 import { requireWorkspaceUserAccess } from '@/server/modules/auth/workspace-session'
-import { listWorkspaceArchivedAssets } from '@/server/modules/workspace'
+import { listWorkspaceAssetsPage } from '@/server/modules/workspace'
+import { ASSET_LIFECYCLE_STATUS } from '@/shared/assets/asset-lifecycle.types'
 
 export default async function WorkspaceArchivePage() {
   const user = await requireWorkspaceUserAccess()
-  const assets = await listWorkspaceArchivedAssets({ userId: user.id })
+  const initialPage = await listWorkspaceAssetsPage({
+    userId: user.id,
+    lifecycleStatus: ASSET_LIFECYCLE_STATUS.ARCHIVED,
+  })
 
-  return <LifecycleAssetsClient assets={assets} mode="archive" />
+  return <LifecycleAssetsClient initialPage={initialPage} mode="archive" />
 }

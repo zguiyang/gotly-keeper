@@ -1,13 +1,15 @@
 import 'server-only'
 
-import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm'
 
 import { TODO_LIST_LIMIT_DEFAULT, TODO_LIST_LIMIT_MAX } from '@/server/lib/config/constants'
 import { db } from '@/server/lib/db'
+import { createCursorPage, clampPageSize, decodeCursor } from '@/server/services/pagination'
 import {
   ASSET_LIFECYCLE_STATUS,
   type AssetLifecycleStatus,
 } from '@/shared/assets/asset-lifecycle.types'
+import { ASIA_SHANGHAI_TIME_ZONE, dayjs } from '@/shared/time/dayjs'
 
 import { toTodoListItem } from './todos.mapper'
 import { todos } from './todos.schema'
@@ -23,12 +25,42 @@ type ListTodosOptions = {
   includeLifecycleStatuses?: AssetLifecycleStatus[]
 }
 
+type ListTodosPageOptions = {
+  userId: string
+  pageSize?: number
+  cursor?: string | null
+  lifecycleStatus?: AssetLifecycleStatus
+  includeLifecycleStatuses?: AssetLifecycleStatus[]
+}
+
+type ListTodosByDueDateOptions = {
+  userId: string
+  startsAt: Date
+  endsAt: Date
+  lifecycleStatus?: AssetLifecycleStatus
+  includeLifecycleStatuses?: AssetLifecycleStatus[]
+}
+
+type ListTodoDateMarkersOptions = ListTodosByDueDateOptions
+
+type ListUnscheduledTodosOptions = {
+  userId: string
+  limit?: number
+  lifecycleStatus?: AssetLifecycleStatus
+  includeLifecycleStatuses?: AssetLifecycleStatus[]
+}
+
 type GetTodoByIdOptions = {
   includeLifecycleStatuses?: AssetLifecycleStatus[]
 }
 
 type ListIncompleteTodosOptions = {
   includeLifecycleStatuses?: AssetLifecycleStatus[]
+}
+
+type TodoCursorPayload = {
+  createdAt: string
+  id: string
 }
 
 function resolveLifecycleStatuses(input: {
@@ -48,6 +80,32 @@ function resolveLifecycleStatuses(input: {
 
 function clampTodoListLimit(limit = TODO_LIST_LIMIT_DEFAULT) {
   return Math.min(limit, TODO_LIST_LIMIT_MAX)
+}
+
+function buildDescendingCursorCondition(cursor: TodoCursorPayload | null) {
+  if (!cursor) {
+    return null
+  }
+
+  const cursorCreatedAt = new Date(cursor.createdAt)
+  if (Number.isNaN(cursorCreatedAt.getTime())) {
+    throw new Error('INVALID_CURSOR')
+  }
+
+  return or(
+    lt(todos.createdAt, cursorCreatedAt),
+    and(eq(todos.createdAt, cursorCreatedAt), lt(todos.id, cursor.id))
+  )
+}
+
+function normalizeDateRange({ startsAt, endsAt }: { startsAt: Date; endsAt: Date }) {
+  if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime()) || startsAt >= endsAt) {
+    throw new Error('INVALID_DATE_RANGE')
+  }
+}
+
+function toDateKey(date: Date) {
+  return dayjs(date).tz(ASIA_SHANGHAI_TIME_ZONE).format('YYYY-MM-DD')
 }
 
 export async function listTodos({
@@ -71,6 +129,140 @@ export async function listTodos({
     .from(todos)
     .where(conditions)
     .orderBy(desc(todos.createdAt))
+    .limit(clampedLimit)
+
+  return rows.map(toTodoListItem)
+}
+
+export async function listTodosPage({
+  userId,
+  pageSize = TODO_LIST_LIMIT_DEFAULT,
+  cursor,
+  lifecycleStatus,
+  includeLifecycleStatuses,
+}: ListTodosPageOptions): Promise<{
+  items: TodoListItem[]
+  pageInfo: {
+    pageSize: number
+    nextCursor: string | null
+    hasNextPage: boolean
+  }
+}> {
+  const clampedPageSize = clampPageSize(pageSize, 1, TODO_LIST_LIMIT_MAX)
+  const lifecycleStatuses = resolveLifecycleStatuses({ lifecycleStatus, includeLifecycleStatuses })
+  const cursorPayload = decodeCursor<TodoCursorPayload>(cursor)
+
+  const conditions = and(
+    eq(todos.userId, userId),
+    lifecycleStatuses.length === 1
+      ? eq(todos.lifecycleStatus, lifecycleStatuses[0])
+      : inArray(todos.lifecycleStatus, lifecycleStatuses),
+    buildDescendingCursorCondition(cursorPayload) ?? undefined
+  )
+
+  const rows = await db
+    .select()
+    .from(todos)
+    .where(conditions)
+    .orderBy(desc(todos.createdAt), desc(todos.id))
+    .limit(clampedPageSize + 1)
+
+  return createCursorPage({
+    rows: rows.map(toTodoListItem),
+    pageSize: clampedPageSize,
+    getCursorPayload: (item) => ({
+      createdAt: item.createdAt.toISOString(),
+      id: item.id,
+    }),
+  })
+}
+
+export async function listTodosByDueDate({
+  userId,
+  startsAt,
+  endsAt,
+  lifecycleStatus,
+  includeLifecycleStatuses,
+}: ListTodosByDueDateOptions): Promise<TodoListItem[]> {
+  normalizeDateRange({ startsAt, endsAt })
+
+  const lifecycleStatuses = resolveLifecycleStatuses({ lifecycleStatus, includeLifecycleStatuses })
+  const conditions = and(
+    eq(todos.userId, userId),
+    lifecycleStatuses.length === 1
+      ? eq(todos.lifecycleStatus, lifecycleStatuses[0])
+      : inArray(todos.lifecycleStatus, lifecycleStatuses),
+    sql`${todos.dueAt} >= ${startsAt}`,
+    sql`${todos.dueAt} < ${endsAt}`
+  )
+
+  const rows = await db
+    .select()
+    .from(todos)
+    .where(conditions)
+    .orderBy(asc(todos.dueAt), desc(todos.createdAt))
+
+  return rows.map(toTodoListItem)
+}
+
+export async function listTodoDateMarkers({
+  userId,
+  startsAt,
+  endsAt,
+  lifecycleStatus,
+  includeLifecycleStatuses,
+}: ListTodoDateMarkersOptions): Promise<string[]> {
+  normalizeDateRange({ startsAt, endsAt })
+
+  const lifecycleStatuses = resolveLifecycleStatuses({ lifecycleStatus, includeLifecycleStatuses })
+  const rows = await db
+    .select({
+      dueAt: todos.dueAt,
+    })
+    .from(todos)
+    .where(
+      and(
+        eq(todos.userId, userId),
+        lifecycleStatuses.length === 1
+          ? eq(todos.lifecycleStatus, lifecycleStatuses[0])
+          : inArray(todos.lifecycleStatus, lifecycleStatuses),
+        sql`${todos.dueAt} >= ${startsAt}`,
+        sql`${todos.dueAt} < ${endsAt}`
+      )
+    )
+
+  return Array.from(
+    new Set(
+      rows
+        .map((row) => row.dueAt)
+        .filter((dueAt): dueAt is Date => dueAt instanceof Date && !Number.isNaN(dueAt.getTime()))
+        .map((dueAt) => toDateKey(dueAt))
+    )
+  ).sort()
+}
+
+export async function listUnscheduledTodos({
+  userId,
+  limit = TODO_LIST_LIMIT_DEFAULT,
+  lifecycleStatus,
+  includeLifecycleStatuses,
+}: ListUnscheduledTodosOptions): Promise<TodoListItem[]> {
+  const clampedLimit = clampTodoListLimit(limit)
+  const lifecycleStatuses = resolveLifecycleStatuses({ lifecycleStatus, includeLifecycleStatuses })
+
+  const rows = await db
+    .select()
+    .from(todos)
+    .where(
+      and(
+        eq(todos.userId, userId),
+        isNull(todos.dueAt),
+        lifecycleStatuses.length === 1
+          ? eq(todos.lifecycleStatus, lifecycleStatuses[0])
+          : inArray(todos.lifecycleStatus, lifecycleStatuses)
+      )
+    )
+    .orderBy(desc(todos.createdAt), desc(todos.id))
     .limit(clampedLimit)
 
   return rows.map(toTodoListItem)

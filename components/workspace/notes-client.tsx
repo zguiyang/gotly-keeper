@@ -3,6 +3,7 @@
 import { FileText, NotebookPen } from 'lucide-react'
 import { useState } from 'react'
 
+import { Button } from '@/components/ui/button'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
 import { AssetEditDialog, type AssetEditValues } from '@/components/workspace/asset-edit-dialog'
 import {
@@ -13,8 +14,10 @@ import {
   workspaceSurfaceClassName,
 } from '@/components/workspace/workspace-view-primitives'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
+import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
 import { formatAssetRelativeTime } from '@/shared/assets/asset-time-display'
 import { type AssetListItem } from '@/shared/assets/assets.types'
+import { type PaginatedResult } from '@/shared/pagination'
 
 function NoteCard({
   note,
@@ -81,8 +84,11 @@ function EmptyState() {
   )
 }
 
-export function NotesClient({ notes }: { notes: AssetListItem[] }) {
-  const [items, setItems] = useState(notes)
+export function NotesClient({ initialPage }: { initialPage: PaginatedResult<AssetListItem> }) {
+  const { items, setItems, pageInfo, loadingMore, loadMore } = useWorkspaceAssetsPage({
+    initialPage,
+    initialQuery: { type: 'note' },
+  })
   const [editingNote, setEditingNote] = useState<AssetListItem | null>(null)
   const { updateAsset, archiveAsset, moveToTrash } = useAssetMutations()
   const noteCount = items.length
@@ -145,7 +151,10 @@ export function NotesClient({ notes }: { notes: AssetListItem[] }) {
       />
 
       <div className="mb-7 flex flex-wrap items-center gap-3 md:mb-8">
-        <span className={workspacePillClassName}>共 {noteCount} 条</span>
+        <span className={workspacePillClassName}>已加载 {noteCount} 条</span>
+        <span className={workspacePillClassName}>
+          {pageInfo.hasNextPage ? '还有更多' : '已加载全部'}
+        </span>
         <p className={`${workspaceMetaTextClassName} text-on-surface-variant`}>
           最近记录会优先展示，卡片采用瀑布流排布并随内容自动增高。
         </p>
@@ -167,6 +176,19 @@ export function NotesClient({ notes }: { notes: AssetListItem[] }) {
       ) : (
         <EmptyState />
       )}
+
+      {items.length > 0 ? (
+        <div className="mt-6 flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!pageInfo.hasNextPage || loadingMore}
+            onClick={() => void loadMore()}
+          >
+            {pageInfo.hasNextPage ? (loadingMore ? '加载中...' : '加载更多') : '已加载全部'}
+          </Button>
+        </div>
+      ) : null}
 
       <AssetEditDialog
         asset={editingNote}

@@ -4,6 +4,7 @@ import { Archive, ArrowRight, CheckSquare2, FileText, Inbox, Link2, Sparkles } f
 import Link from 'next/link'
 import { useState } from 'react'
 
+import { Button } from '@/components/ui/button'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
 import { AssetEditDialog, type AssetEditValues } from '@/components/workspace/asset-edit-dialog'
 import {
@@ -18,11 +19,13 @@ import {
 import { assetTypePresentation } from '@/config/ui/asset-presentation'
 import { filterTabs, emptyFilterMessages } from '@/config/workspace/filters'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
+import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
 import {
   getAssetDateGroup,
   formatAssetRelativeTime,
 } from '@/shared/assets/asset-time-display'
 import { type AssetListItem } from '@/shared/assets/assets.types'
+import { type PaginatedResult } from '@/shared/pagination'
 
 type AssetType = 'note' | 'link' | 'todo'
 
@@ -179,16 +182,14 @@ function AssetItem({
   )
 }
 
-export function AllClient({ assets }: { assets: AssetListItem[] }) {
-  const [items, setItems] = useState(assets)
+export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetListItem> }) {
+  const { items, setItems, pageInfo, loadingMore, refreshing, loadFirstPage, loadMore } =
+    useWorkspaceAssetsPage({ initialPage })
   const [activeFilter, setActiveFilter] = useState<string>('all')
   const [editingAsset, setEditingAsset] = useState<AssetListItem | null>(null)
   const { updateAsset, archiveAsset, moveToTrash } = useAssetMutations()
 
-  const filteredAssets =
-    activeFilter === 'all'
-      ? items
-      : items.filter((asset) => asset.type === activeFilter)
+  const filteredAssets = items
 
   const todayAssets = filteredAssets.filter((asset) => getAssetDateGroup(asset.createdAt) === 'today')
   const yesterdayAssets = filteredAssets.filter((asset) => getAssetDateGroup(asset.createdAt) === 'yesterday')
@@ -207,6 +208,12 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
     { type: 'link', icon: Link2 },
     { type: 'todo', icon: CheckSquare2 },
   ]
+
+  async function handleFilterChange(nextFilter: string) {
+    const type = nextFilter === 'all' ? undefined : (nextFilter as AssetType)
+    setActiveFilter(nextFilter)
+    await loadFirstPage({ type })
+  }
 
   async function submitEdit(asset: AssetListItem, values: AssetEditValues) {
     if (asset.type === 'note') {
@@ -342,20 +349,21 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
               <Sparkles className="size-4" />
             </span>
             <span>
-              共 {totalCount} 条内容
+              已加载 {totalCount} 条内容
               {completedTodoCount > 0 ? `，${completedTodoCount} 条待办已完成` : ''}
+              {pageInfo.hasNextPage ? '，还有更多' : '，已加载全部'}
             </span>
           </div>
           <WorkspaceFilterTabs
             tabs={filterTabs}
             value={activeFilter}
-            onValueChange={setActiveFilter}
+            onValueChange={(value) => void handleFilterChange(value)}
             className="border-b-0 pb-0"
           />
         </div>
       </section>
 
-      <div className="max-w-6xl">
+      <div className={`max-w-6xl ${refreshing ? 'opacity-60' : ''}`}>
         {todayAssets.length > 0 && (
           <section aria-labelledby="today-assets">
             <h2 id="today-assets" className="sr-only">
@@ -436,6 +444,19 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
             }
           />
         )}
+
+        {hasAnyAssets ? (
+          <div className="mt-6 flex justify-center">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!pageInfo.hasNextPage || loadingMore || refreshing}
+              onClick={() => void loadMore()}
+            >
+              {pageInfo.hasNextPage ? (loadingMore ? '加载中...' : '加载更多') : '已加载全部'}
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       <AssetEditDialog

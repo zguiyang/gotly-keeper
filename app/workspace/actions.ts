@@ -6,6 +6,9 @@ import { ModuleActionError, MODULE_ACTION_ERROR_CODES } from '@/server/modules/a
 import { executeModuleAction } from '@/server/modules/actions/run-server-action'
 import { requireSignedInUser } from '@/server/modules/auth/session'
 import {
+  listWorkspaceAssetsPage,
+  listWorkspaceTodoDateMarkers,
+  listWorkspaceTodosByDate,
   archiveWorkspaceAsset,
   createWorkspaceAsset,
   moveWorkspaceAssetToTrash,
@@ -22,7 +25,12 @@ import {
   WorkspaceModuleError,
   WORKSPACE_MODULE_ERROR_CODES,
 } from '@/server/modules/workspace'
+import {
+  ASSET_LIFECYCLE_STATUS,
+  type AssetLifecycleStatus,
+} from '@/shared/assets/asset-lifecycle.types'
 import { type AssetListItem, type WorkspaceAssetActionResult } from '@/shared/assets/assets.types'
+import { type PaginatedResult } from '@/shared/pagination'
 
 type WorkspaceAssetType = 'note' | 'todo' | 'link'
 
@@ -48,6 +56,130 @@ function parseAssetType(value: unknown): WorkspaceAssetType {
   }
 
   throw new ModuleActionError('资产参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+}
+
+function parseOptionalAssetType(value: unknown): WorkspaceAssetType | undefined {
+  if (value === undefined || value === null || value === '' || value === 'all') {
+    return undefined
+  }
+
+  return parseAssetType(value)
+}
+
+function parseLifecycleStatus(value: unknown): AssetLifecycleStatus | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined
+  }
+
+  if (
+    value === ASSET_LIFECYCLE_STATUS.ACTIVE ||
+    value === ASSET_LIFECYCLE_STATUS.ARCHIVED ||
+    value === ASSET_LIFECYCLE_STATUS.TRASHED
+  ) {
+    return value
+  }
+
+  throw new ModuleActionError('列表状态参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+}
+
+function parsePageSize(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined
+  }
+
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > 100) {
+    throw new ModuleActionError('分页参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+  }
+
+  return value
+}
+
+function parseCursor(value: unknown): string | null | undefined {
+  if (value === undefined) {
+    return undefined
+  }
+
+  if (value === null || value === '') {
+    return null
+  }
+
+  if (typeof value !== 'string') {
+    throw new ModuleActionError('分页参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+  }
+
+  return value
+}
+
+function parseWorkspaceAssetsPageInput(input: unknown): {
+  type?: WorkspaceAssetType
+  lifecycleStatus?: AssetLifecycleStatus
+  pageSize?: number
+  cursor?: string | null
+} {
+  if (input === undefined || input === null) {
+    return {}
+  }
+
+  if (typeof input !== 'object') {
+    throw new ModuleActionError('分页参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+  }
+
+  return {
+    type: parseOptionalAssetType('type' in input ? input.type : undefined),
+    lifecycleStatus: parseLifecycleStatus(
+      'lifecycleStatus' in input ? input.lifecycleStatus : undefined
+    ),
+    pageSize: parsePageSize('pageSize' in input ? input.pageSize : undefined),
+    cursor: parseCursor('cursor' in input ? input.cursor : undefined),
+  }
+}
+
+function parseDateInput(value: unknown, message = '日期参数错误，请重试。'): Date {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    const date = new Date(value)
+    if (!Number.isNaN(date.getTime())) {
+      return date
+    }
+  }
+
+  throw new ModuleActionError(message, MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+}
+
+function parseDateKeyInput(value: unknown): { startsAt: Date; endsAt: Date } {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new ModuleActionError('日期参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+  }
+
+  const startsAt = new Date(`${value}T00:00:00+08:00`)
+  const endsAt = new Date(startsAt.getTime() + 24 * 60 * 60 * 1000)
+  return { startsAt, endsAt }
+}
+
+function parseTodoDateInput(input: unknown): { startsAt: Date; endsAt: Date } {
+  if (!input || typeof input !== 'object' || !('date' in input)) {
+    throw new ModuleActionError('日期参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+  }
+
+  return parseDateKeyInput(input.date)
+}
+
+function parseTodoDateMarkersInput(input: unknown): { startsAt: Date; endsAt: Date } {
+  if (!input || typeof input !== 'object' || !('startsAt' in input) || !('endsAt' in input)) {
+    throw new ModuleActionError('日期范围参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+  }
+
+  const startsAt = parseDateInput(input.startsAt, '日期范围参数错误，请重试。')
+  const endsAt = parseDateInput(input.endsAt, '日期范围参数错误，请重试。')
+
+  if (startsAt >= endsAt) {
+    throw new ModuleActionError('日期范围参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+  }
+
+  return { startsAt, endsAt }
 }
 
 function parseAssetRefInput(input: unknown): {
@@ -228,6 +360,56 @@ export async function createWorkspaceAssetAction(
 
     revalidatePath('/workspace')
     return result
+  })
+}
+
+export async function loadWorkspaceAssetsPageAction(
+  input: unknown
+): Promise<PaginatedResult<AssetListItem>> {
+  return executeModuleAction('workspace.loadAssetsPage', async () => {
+    const user = await requireSignedInUser()
+    const parsed = parseWorkspaceAssetsPageInput(input)
+
+    try {
+      return await listWorkspaceAssetsPage({
+        userId: user.id,
+        type: parsed.type,
+        lifecycleStatus: parsed.lifecycleStatus,
+        pageSize: parsed.pageSize,
+        cursor: parsed.cursor,
+      })
+    } catch (error) {
+      if (error instanceof Error && error.message === 'INVALID_CURSOR') {
+        throw new ModuleActionError('分页参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+      }
+      mapWorkspaceModuleError(error)
+    }
+  })
+}
+
+export async function loadWorkspaceTodosByDateAction(input: unknown): Promise<AssetListItem[]> {
+  return executeModuleAction('workspace.loadTodosByDate', async () => {
+    const user = await requireSignedInUser()
+    const { startsAt, endsAt } = parseTodoDateInput(input)
+
+    return listWorkspaceTodosByDate({
+      userId: user.id,
+      startsAt,
+      endsAt,
+    })
+  })
+}
+
+export async function loadWorkspaceTodoDateMarkersAction(input: unknown): Promise<string[]> {
+  return executeModuleAction('workspace.loadTodoDateMarkers', async () => {
+    const user = await requireSignedInUser()
+    const { startsAt, endsAt } = parseTodoDateMarkersInput(input)
+
+    return listWorkspaceTodoDateMarkers({
+      userId: user.id,
+      startsAt,
+      endsAt,
+    })
   })
 }
 

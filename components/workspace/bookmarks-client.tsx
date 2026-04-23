@@ -16,8 +16,10 @@ import {
   workspaceSurfaceClassName,
 } from '@/components/workspace/workspace-view-primitives'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
+import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 import { BOOKMARK_META_STATUS } from '@/shared/assets/bookmark-meta.types'
+import { type PaginatedResult } from '@/shared/pagination'
 import { formatBookmarkTime } from '@/shared/time/formatters'
 
 function getHostname(url: string | null) {
@@ -137,8 +139,15 @@ function Divider() {
   return <Separator className="mx-4 bg-border/10 md:mx-5" />
 }
 
-export function BookmarksClient({ bookmarks }: { bookmarks: AssetListItem[] }) {
-  const [items, setItems] = useState(bookmarks)
+export function BookmarksClient({
+  initialPage,
+}: {
+  initialPage: PaginatedResult<AssetListItem>
+}) {
+  const { items, setItems, pageInfo, loadingMore, loadMore } = useWorkspaceAssetsPage({
+    initialPage,
+    initialQuery: { type: 'link' },
+  })
   const [editingBookmark, setEditingBookmark] = useState<AssetListItem | null>(null)
   const { updateAsset, archiveAsset, moveToTrash } = useAssetMutations()
   const stats = useMemo(() => {
@@ -245,7 +254,10 @@ export function BookmarksClient({ bookmarks }: { bookmarks: AssetListItem[] }) {
       />
 
       <div className="mb-7 flex flex-wrap items-center gap-3 md:mb-8">
-        <span className={workspacePillClassName}>共 {items.length} 条</span>
+        <span className={workspacePillClassName}>已加载 {items.length} 条</span>
+        <span className={workspacePillClassName}>
+          {pageInfo.hasNextPage ? '还有更多' : '已加载全部'}
+        </span>
         <span className={workspacePillClassName}>已补全 {stats.completed}</span>
         <span className={workspacePillClassName}>解析中 {stats.pending}</span>
         <span className={workspacePillClassName}>失败 {stats.failed}</span>
@@ -279,6 +291,19 @@ export function BookmarksClient({ bookmarks }: { bookmarks: AssetListItem[] }) {
           />
         ) : null}
       </div>
+
+      {items.length > 0 ? (
+        <div className="mt-6 flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!pageInfo.hasNextPage || loadingMore}
+            onClick={() => void loadMore()}
+          >
+            {pageInfo.hasNextPage ? (loadingMore ? '加载中...' : '加载更多') : '已加载全部'}
+          </Button>
+        </div>
+      ) : null}
 
       <AssetEditDialog
         asset={editingBookmark}

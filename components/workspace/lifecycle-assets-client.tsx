@@ -1,7 +1,7 @@
 'use client'
 
 import { AlertTriangle, Archive, ArchiveRestore, Clock3, RotateCcw, Trash2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 import {
   AlertDialog,
@@ -26,10 +26,13 @@ import {
 } from '@/components/workspace/workspace-view-primitives'
 import { assetTypePresentation } from '@/config/ui/asset-presentation'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
+import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
 import { cn } from '@/lib/utils'
+import { ASSET_LIFECYCLE_STATUS } from '@/shared/assets/asset-lifecycle.types'
 import { formatAssetRelativeTime } from '@/shared/assets/asset-time-display'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
+import type { PaginatedResult } from '@/shared/pagination'
 import type { LucideIcon } from 'lucide-react'
 
 type AssetFilter = 'all' | 'note' | 'todo' | 'link'
@@ -313,25 +316,31 @@ function LifecycleAssetItem({
 }
 
 export function LifecycleAssetsClient({
-  assets,
+  initialPage,
   mode,
 }: {
-  assets: AssetListItem[]
+  initialPage: PaginatedResult<AssetListItem>
   mode: LifecycleViewMode
 }) {
-  const [items, setItems] = useState(assets)
+  const lifecycleStatus =
+    mode === 'archive' ? ASSET_LIFECYCLE_STATUS.ARCHIVED : ASSET_LIFECYCLE_STATUS.TRASHED
+  const { items, setItems, pageInfo, loadingMore, refreshing, loadFirstPage, loadMore } =
+    useWorkspaceAssetsPage({
+      initialPage,
+      initialQuery: { lifecycleStatus },
+    })
   const [activeFilter, setActiveFilter] = useState<AssetFilter>('all')
   const { unarchiveAsset, moveToTrash, restoreFromTrash, purgeAsset, isPending } = useAssetMutations()
   const content = MODE_CONTENT[mode]
   const SummaryIcon = content.Icon
 
-  const filtered = useMemo(() => {
-    if (activeFilter === 'all') {
-      return items
-    }
+  const filtered = items
 
-    return items.filter((item) => item.type === activeFilter)
-  }, [activeFilter, items])
+  async function handleFilterChange(nextFilter: string) {
+    const type = nextFilter === 'all' ? undefined : (nextFilter as AssetListItem['type'])
+    setActiveFilter(nextFilter as AssetFilter)
+    await loadFirstPage({ type, lifecycleStatus })
+  }
 
   async function handleUnarchive(item: AssetListItem) {
     const updated = await unarchiveAsset(item.id, item.type)
@@ -384,7 +393,8 @@ export function LifecycleAssetsClient({
                 <SummaryIcon className="size-3.5" />
               </span>
               <span>
-                {content.countLabel}：当前显示 {filtered.length} 条，共 {items.length} 条
+                {content.countLabel}：已加载 {items.length} 条
+                {pageInfo.hasNextPage ? '，还有更多' : '，已加载全部'}
               </span>
             </p>
             {content.notice ? (
@@ -397,14 +407,15 @@ export function LifecycleAssetsClient({
           <WorkspaceFilterTabs
             tabs={FILTERS}
             value={activeFilter}
-            onValueChange={setActiveFilter}
+            onValueChange={(value) => void handleFilterChange(value)}
             className="border-b-0 pb-0"
           />
         </div>
       </section>
 
+      <div className={refreshing ? 'opacity-60' : ''}>
       {filtered.length === 0 ? (
-        <EmptyState mode={mode} isFiltered={activeFilter !== 'all' && items.length > 0} />
+        <EmptyState mode={mode} isFiltered={activeFilter !== 'all'} />
       ) : (
         <div className="space-y-2.5">
           {filtered.map((item) => {
@@ -429,6 +440,20 @@ export function LifecycleAssetsClient({
           })}
         </div>
       )}
+
+      {filtered.length > 0 ? (
+        <div className="mt-6 flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!pageInfo.hasNextPage || loadingMore || refreshing}
+            onClick={() => void loadMore()}
+          >
+            {pageInfo.hasNextPage ? (loadingMore ? '加载中...' : '加载更多') : '已加载全部'}
+          </Button>
+        </div>
+      ) : null}
+      </div>
     </div>
   )
 }
