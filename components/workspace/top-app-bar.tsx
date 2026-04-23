@@ -3,6 +3,7 @@
 import { Command, Menu, Sparkles } from "lucide-react"
 import Image from "next/image"
 
+import { ThemeToggle } from "@/components/theme/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { WorkspaceNavList } from "@/components/workspace/workspace-nav-list"
@@ -59,6 +60,7 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
+        <ThemeToggle />
         <div className="ml-1 flex size-9 items-center justify-center overflow-hidden rounded-full border border-border/10 bg-muted shadow-[var(--shadow-elevation-2)]">
           {userImage ? (
             <Image

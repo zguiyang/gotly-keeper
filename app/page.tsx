@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -63,6 +64,7 @@ export default function LandingPage() {
               </nav>
 
               <div className="flex items-center gap-2 sm:gap-3">
+                <ThemeToggle />
                 <Link
                   href="/auth/sign-in"
                   className={cn(

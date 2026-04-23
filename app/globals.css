@@ -151,11 +151,11 @@
   --popover: #1a1f22;
   --popover-foreground: #f7f9fb;
   --primary: #a6c8ff;
-  --primary-foreground: #003993;
+  --primary-foreground: #071521;
    --primary-container: #1e3a5f;
    --primary-dim: #8bb3ff;
-   --primary-fixed: #dae2ff;
-   --primary-fixed-dim: #aec6ff;
+   --primary-fixed: #213349;
+   --primary-fixed-dim: #2a4568;
   --secondary: #9a9d9f;
   --secondary-foreground: #faf8fc;
    --secondary-fixed: #2a3439;
@@ -183,6 +183,11 @@
   --sidebar-accent-foreground: #c6d3ff;
   --sidebar-border: #2a3439;
   --sidebar-ring: #a6c8ff;
+  --shadow-soft: 0 18px 46px -24px rgba(0, 0, 0, 0.72);
+  --shadow-elevation-1: 0 6px 18px -14px rgba(0, 0, 0, 0.72);
+  --shadow-elevation-2: 0 12px 28px -18px rgba(0, 0, 0, 0.74);
+  --shadow-elevation-3: 0 18px 42px -22px rgba(0, 0, 0, 0.78);
+  --shadow-note-card: 0 1px 3px rgba(0, 0, 0, 0.36);
 
 }
 
