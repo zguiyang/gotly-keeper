@@ -1,11 +1,11 @@
 'use client'
 
-import { Sparkles } from 'lucide-react'
+import { Mic, Paperclip, SendHorizontal, Sparkles } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { assetTypePresentation } from '@/config/ui/asset-presentation'
 import { useWorkspaceStream } from '@/hooks/workspace/use-workspace-stream'
 import { formatAbsoluteTime } from '@/shared/time/formatters'
@@ -61,6 +61,7 @@ export function WorkspaceClient({
 }) {
   const [inputValue, setInputValue] = useState('')
   const [recentItems, setRecentItems] = useState(recentAssets)
+  const isSubmittingRef = useRef(false)
 
   const handleWorkspaceResult = useCallback((result: WorkspaceRunApiResponse['data']) => {
     if (result.kind !== 'mutation' || result.action !== 'create' || !result.item) {
@@ -84,18 +85,30 @@ export function WorkspaceClient({
     Boolean(state.assistantText)
 
   async function handleSubmit() {
+    if (isSubmittingRef.current || state.status === 'streaming') {
+      return
+    }
+
     const text = inputValue.trim()
     if (!text) {
       return
     }
 
-    await submitInput(text)
-
-    setInputValue('')
+    isSubmittingRef.current = true
+    try {
+      await submitInput(text)
+      setInputValue('')
+    } finally {
+      isSubmittingRef.current = false
+    }
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && state.status !== 'streaming') {
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.nativeEvent.isComposing) {
+      return
+    }
+
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !e.shiftKey && state.status !== 'streaming') {
       e.preventDefault()
       handleSubmit()
     }
@@ -103,7 +116,7 @@ export function WorkspaceClient({
 
   function handleSuggestionClick(text: string) {
     setInputValue(text)
-    document.querySelector<HTMLInputElement>('[name="workspace-query"]')?.focus()
+    document.querySelector<HTMLTextAreaElement>('[name="workspace-query"]')?.focus()
   }
 
   return (
@@ -122,38 +135,67 @@ export function WorkspaceClient({
         </div>
 
         <div className="relative">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 sm:pl-5">
+          <div className="pointer-events-none absolute top-4 left-4 sm:top-5 sm:left-5">
             <Sparkles className="h-4 w-4 text-on-surface-variant/70 sm:h-5 sm:w-5" />
           </div>
-          <Input
+          <Textarea
             aria-label="输入内容或搜索知识库"
-            className="h-[3.25rem] w-full rounded-full border border-border/10 bg-surface-container-lowest pl-12 pr-24 text-[15px] text-on-surface shadow-[var(--shadow-elevation-3)] transition-[box-shadow,border-color] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 focus:shadow-[var(--shadow-soft)] sm:h-[3.5rem] sm:pl-14 sm:pr-32 sm:text-base lg:h-[3.75rem]"
+            aria-keyshortcuts="Meta+Enter Control+Enter"
+            className="max-h-56 w-full resize-none overflow-y-auto rounded-[1.35rem] border border-border/10 bg-surface-container-lowest pt-4 pr-4 pb-[4.3rem] pl-12 text-[15px] leading-6 text-on-surface shadow-[var(--shadow-elevation-3)] transition-[box-shadow,border-color] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 focus:shadow-[var(--shadow-soft)] sm:max-h-64 sm:pt-5 sm:pr-5 sm:pb-[4.5rem] sm:pl-14 sm:text-base"
             name="workspace-query"
             placeholder="写一句话、粘贴链接，或直接问知识库…"
-            type="text"
             value={inputValue}
+            rows={3}
+            maxLength={6000}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
           />
+          <span
+            title="后续版本支持"
+            aria-label="上传文件（后续版本支持）"
+            className="absolute bottom-3 left-3 sm:bottom-3.5 sm:left-4"
+          >
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled
+              tabIndex={-1}
+              className="h-8 w-8 cursor-not-allowed rounded-full text-on-surface-variant/45 hover:bg-transparent hover:text-on-surface-variant/45"
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            title="语音输入"
+            aria-label="语音输入"
+            className="absolute right-[5.55rem] bottom-3 h-8 w-8 rounded-full text-on-surface-variant/75 hover:text-on-surface sm:right-[6.1rem] sm:bottom-3.5"
+          >
+            <Mic className="h-4 w-4" />
+          </Button>
           <Button
             type="button"
             onClick={handleSubmit}
             disabled={state.status === 'streaming'}
-            className="absolute inset-y-0 right-2 my-auto h-9 rounded-full px-4 sm:h-10 sm:px-5"
+            className="absolute right-3 bottom-3 h-8 rounded-full px-3 text-xs sm:right-4 sm:bottom-3.5 sm:h-9 sm:px-4 sm:text-sm"
           >
             {state.status === 'streaming' ? (
-              '处理中…'
+              '处理中'
             ) : (
               <>
-                <span className="sm:hidden">提交</span>
-                <span className="hidden sm:inline">捕获 / 查询</span>
+                <span className="sm:hidden">发送</span>
+                <span className="hidden sm:inline">发送</span>
+                <SendHorizontal className="size-3.5" />
               </>
             )}
           </Button>
         </div>
         {inputValue ? (
           <p className="mt-2 px-4 text-xs text-on-surface-variant/80">
-            Gotly 会判断这是新内容还是查询请求，结果会在下方显示。
+            Enter 换行，Cmd/Ctrl + Enter 发送。Gotly 会判断这是新内容还是查询请求，结果会在下方显示。
           </p>
         ) : null}
 
