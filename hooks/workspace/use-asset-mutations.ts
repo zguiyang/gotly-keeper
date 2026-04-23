@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 import {
   archiveWorkspaceAsset,
@@ -15,6 +16,10 @@ import { callAction } from '@/client/feedback/toast-action'
 import type { AssetListItem } from '@/shared/assets/assets.types'
 
 type MutationAction = 'update' | 'archive' | 'unarchive' | 'trash' | 'restore' | 'purge'
+
+type UndoOptions = {
+  onUndo?: (asset: AssetListItem) => void
+}
 
 type UpdateAssetInput =
   | {
@@ -98,14 +103,44 @@ export function useAssetMutations() {
   )
 
   const archiveAsset = useCallback(
-    async (assetId: string, assetType: AssetListItem['type']): Promise<AssetListItem | null> => {
-      return runMutation(assetId, 'archive', () =>
+    async (
+      assetId: string,
+      assetType: AssetListItem['type'],
+      options?: UndoOptions
+    ): Promise<AssetListItem | null> => {
+      const result = await runMutation(assetId, 'archive', () =>
         callAction(() => archiveWorkspaceAsset({ assetId, assetType }), {
           loading: '正在归档...',
-          success: '已归档',
           error: '归档失败，请重试',
         })
       )
+
+      if (result) {
+        toast.success('已归档', {
+          description: '这条内容已从当前列表移出。',
+          action: options?.onUndo
+            ? {
+                label: '撤销',
+                onClick: () => {
+                  void runMutation(assetId, 'unarchive', async () => {
+                    const restored = await callAction(
+                      () => unarchiveWorkspaceAsset({ assetId, assetType }),
+                      {
+                        loading: '正在撤销归档...',
+                        success: '已恢复到当前列表',
+                        error: '撤销失败，请重试',
+                      }
+                    )
+                    options.onUndo?.(restored)
+                    return restored
+                  })
+                },
+              }
+            : undefined,
+        })
+      }
+
+      return result
     },
     [runMutation]
   )
@@ -124,14 +159,44 @@ export function useAssetMutations() {
   )
 
   const moveToTrash = useCallback(
-    async (assetId: string, assetType: AssetListItem['type']): Promise<AssetListItem | null> => {
-      return runMutation(assetId, 'trash', () =>
+    async (
+      assetId: string,
+      assetType: AssetListItem['type'],
+      options?: UndoOptions
+    ): Promise<AssetListItem | null> => {
+      const result = await runMutation(assetId, 'trash', () =>
         callAction(() => moveWorkspaceAssetToTrash({ assetId, assetType }), {
           loading: '正在移入回收站...',
-          success: '已移入回收站',
           error: '删除失败，请重试',
         })
       )
+
+      if (result) {
+        toast.success('已移入回收站', {
+          description: '你可以撤销，或稍后在回收站恢复。',
+          action: options?.onUndo
+            ? {
+                label: '撤销',
+                onClick: () => {
+                  void runMutation(assetId, 'restore', async () => {
+                    const restored = await callAction(
+                      () => restoreWorkspaceAssetFromTrash({ assetId, assetType }),
+                      {
+                        loading: '正在撤销删除...',
+                        success: '已恢复到当前列表',
+                        error: '撤销失败，请重试',
+                      }
+                    )
+                    options.onUndo?.(restored)
+                    return restored
+                  })
+                },
+              }
+            : undefined,
+        })
+      }
+
+      return result
     },
     [runMutation]
   )

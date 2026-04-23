@@ -25,6 +25,14 @@ const INITIAL_PHASES: WorkspaceRunApiPhase[] = [
   { phase: 'compose', status: 'skipped', message: '等待整理结果' },
 ]
 
+const INITIAL_RUN_STATE: WorkspaceRunUiState = {
+  status: 'idle',
+  assistantText: null,
+  phases: [],
+  result: null,
+  errorMessage: null,
+}
+
 function mergePhase(
   phases: WorkspaceRunApiPhase[],
   nextPhase: WorkspaceRunApiPhase
@@ -44,11 +52,7 @@ export function useWorkspaceStream(options: {
   onResult?: (result: WorkspaceRunApiResponse['data']) => void
 } = {}) {
   const [state, setState] = useState<WorkspaceRunUiState>({
-    status: 'idle',
-    assistantText: null,
-    phases: [],
-    result: null,
-    errorMessage: null,
+    ...INITIAL_RUN_STATE,
   })
 
   const runRequest = useCallback(
@@ -132,9 +136,14 @@ export function useWorkspaceStream(options: {
     [runRequest]
   )
 
+  const resetRun = useCallback(() => {
+    setState({ ...INITIAL_RUN_STATE })
+  }, [])
+
   return {
     state,
     submitInput,
     triggerQuickAction,
+    resetRun,
   }
 }

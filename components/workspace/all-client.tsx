@@ -194,14 +194,26 @@ export function AllClient({ assets }: { assets: AssetListItem[] }) {
   }
 
   async function handleArchive(asset: AssetListItem) {
-    const updated = await archiveAsset(asset.id, asset.type)
+    const updated = await archiveAsset(asset.id, asset.type, {
+      onUndo: (restored) => {
+        setItems((current) =>
+          current.some((item) => item.id === restored.id) ? current : [restored, ...current]
+        )
+      },
+    })
     if (updated) {
       setItems((current) => current.filter((item) => item.id !== updated.id))
     }
   }
 
   async function handleMoveToTrash(asset: AssetListItem) {
-    const updated = await moveToTrash(asset.id, asset.type)
+    const updated = await moveToTrash(asset.id, asset.type, {
+      onUndo: (restored) => {
+        setItems((current) =>
+          current.some((item) => item.id === restored.id) ? current : [restored, ...current]
+        )
+      },
+    })
     if (updated) {
       setItems((current) => current.filter((item) => item.id !== updated.id))
     }

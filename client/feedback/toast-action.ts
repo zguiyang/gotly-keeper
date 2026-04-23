@@ -22,13 +22,17 @@ export async function callAction<T>(
 ): Promise<T> {
   if (options?.loading || options?.success || options?.error) {
     const promise = Promise.resolve().then(action)
-    toast.promise(promise, {
-      loading: options.loading,
-      success: options.success,
-      error: (error) => {
+    const toastMessages = {
+      ...(options.loading ? { loading: options.loading } : {}),
+      ...(options.success ? { success: options.success } : {}),
+      error: (error: unknown) => {
         console.error('[client-action]', error instanceof Error ? error.message : error)
         return resolveErrorMessage(error, options.error)
       },
+    }
+
+    toast.promise(promise, {
+      ...toastMessages,
     })
     return promise
   }

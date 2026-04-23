@@ -99,14 +99,26 @@ export function NotesClient({ notes }: { notes: AssetListItem[] }) {
   }
 
   async function handleArchive(note: AssetListItem) {
-    const updated = await archiveAsset(note.id, note.type)
+    const updated = await archiveAsset(note.id, note.type, {
+      onUndo: (restored) => {
+        setItems((current) =>
+          current.some((item) => item.id === restored.id) ? current : [restored, ...current]
+        )
+      },
+    })
     if (updated) {
       setItems((current) => current.filter((item) => item.id !== updated.id))
     }
   }
 
   async function handleMoveToTrash(note: AssetListItem) {
-    const updated = await moveToTrash(note.id, note.type)
+    const updated = await moveToTrash(note.id, note.type, {
+      onUndo: (restored) => {
+        setItems((current) =>
+          current.some((item) => item.id === restored.id) ? current : [restored, ...current]
+        )
+      },
+    })
     if (updated) {
       setItems((current) => current.filter((item) => item.id !== updated.id))
     }

@@ -205,14 +205,26 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
   }
 
   async function handleArchive(item: AssetListItem) {
-    const updated = await archiveAsset(item.id, item.type)
+    const updated = await archiveAsset(item.id, item.type, {
+      onUndo: (restored) => {
+        setItems((current) =>
+          current.some((entry) => entry.id === restored.id) ? current : [restored, ...current]
+        )
+      },
+    })
     if (updated) {
       setItems((current) => current.filter((entry) => entry.id !== updated.id))
     }
   }
 
   async function handleMoveToTrash(item: AssetListItem) {
-    const updated = await moveToTrash(item.id, item.type)
+    const updated = await moveToTrash(item.id, item.type, {
+      onUndo: (restored) => {
+        setItems((current) =>
+          current.some((entry) => entry.id === restored.id) ? current : [restored, ...current]
+        )
+      },
+    })
     if (updated) {
       setItems((current) => current.filter((entry) => entry.id !== updated.id))
     }

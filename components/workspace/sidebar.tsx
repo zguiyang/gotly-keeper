@@ -12,16 +12,16 @@ export function Sidebar() {
         </div>
       </div>
 
-      <nav className="space-y-0.5 flex-1">
+      <nav className="flex-1">
         <WorkspaceNavList variant="sidebar" />
       </nav>
 
-      <div className="mt-auto rounded-2xl border border-border/12 bg-surface-container-lowest/80 px-4 py-4 shadow-[var(--shadow-elevation-3)]">
+      <div className="mt-8 rounded-3xl border border-border/12 bg-surface-container-lowest/80 px-4 py-4 shadow-[var(--shadow-elevation-3)]">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant/65">
-          Assistant
+          统一入口
         </p>
         <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-          Gotly 小管家随时待命
+          一句话就能保存、整理或找回内容。
         </p>
       </div>
     </aside>
