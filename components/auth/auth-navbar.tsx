@@ -1,6 +1,7 @@
 import { CircleHelp, Archive } from "lucide-react";
 import * as React from "react";
 
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -19,15 +20,18 @@ export function AuthNavbar({ className }: AuthNavbarProps) {
           Gotly AI
         </span>
       </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="text-on-surface-variant hover:text-on-surface"
-        aria-label="帮助与反馈"
-      >
-        <CircleHelp strokeWidth={2} />
-      </Button>
+      <div className="flex items-center gap-1">
+        <ThemeToggle />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="rounded-full text-on-surface-variant hover:text-on-surface"
+          aria-label="帮助与反馈"
+        >
+          <CircleHelp strokeWidth={2} />
+        </Button>
+      </div>
     </header>
   );
 }
