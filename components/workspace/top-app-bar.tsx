@@ -30,8 +30,8 @@ export function TopAppBar({ userName, userEmail, userImage }: TopAppBarProps) {
             <div className="flex h-full flex-col">
               <div className="border-b border-border/15 px-4 py-6">
                 <div className="font-headline text-[1.9rem] font-semibold tracking-[-0.04em] text-primary">Gotly AI</div>
-                <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-on-surface-variant/75">
-                  Personal Curator
+                <div className="mt-1 text-[11px] font-medium tracking-normal text-on-surface-variant/75">
+                  工作区
                 </div>
               </div>
               <nav className="flex-1 px-2 py-4">

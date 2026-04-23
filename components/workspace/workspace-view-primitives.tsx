@@ -20,7 +20,19 @@ const workspacePillClassName =
   'inline-flex items-center rounded-full border border-border/15 bg-muted px-2.5 py-1 text-[11px] font-medium tracking-[0.02em] text-on-surface-variant/90'
 
 const workspaceSurfaceClassName =
-  'rounded-2xl border border-border/10 bg-surface-container-lowest shadow-[var(--shadow-soft)]'
+  'rounded-[14px] border border-border/10 bg-surface-container-lowest shadow-[var(--shadow-elevation-1)]'
+
+const workspacePanelSurfaceClassName =
+  'rounded-[1.5rem] border border-border/10 bg-surface-container-lowest/85 shadow-[var(--shadow-elevation-1)]'
+
+const workspaceListSurfaceClassName =
+  'rounded-[14px] border border-border/8 bg-surface-container-lowest/70 transition-colors duration-150 hover:border-border/16 hover:bg-surface-container-lowest'
+
+const workspaceContentCardSurfaceClassName =
+  'rounded-[14px] border border-border/12 bg-surface-container-lowest shadow-[var(--shadow-elevation-1)]'
+
+const workspaceCriticalSurfaceClassName =
+  'rounded-[14px] border border-destructive/18 bg-destructive/[0.035] shadow-[0_10px_24px_-22px_rgba(186,26,26,0.42)]'
 
 type WorkspacePageHeaderProps = {
   title: string
@@ -33,7 +45,7 @@ function WorkspacePageHeader({ title, description, eyebrow, className }: Workspa
   return (
     <div className={cn('mb-8 flex flex-col gap-3 sm:mb-10', className)}>
       {eyebrow ? (
-        <span className="text-[11px] font-semibold tracking-[0.16em] text-primary/75 uppercase">
+        <span className="text-[12px] font-semibold tracking-normal text-on-surface-variant/80">
           {eyebrow}
         </span>
       ) : null}
@@ -116,14 +128,13 @@ function WorkspaceEmptyState({ title, description, icon: Icon, action, className
   return (
     <Card
       className={cn(
-        'mt-10 rounded-[1.25rem] border border-dashed border-border/25 bg-surface-container-lowest/75 py-10 shadow-[0_20px_40px_-28px_rgba(0,81,177,0.34)] sm:mt-12 sm:py-12',
+        'mt-10 rounded-[1.25rem] border border-border/12 bg-surface-container-lowest/75 py-8 shadow-[var(--shadow-elevation-1)] sm:mt-12 sm:py-10',
         className
       )}
     >
       <CardContent className="flex flex-col items-center gap-5 px-6 text-center">
         {Icon ? (
-          <div className="relative flex size-12 items-center justify-center rounded-2xl bg-primary/8 text-primary shadow-[var(--shadow-elevation-2)]">
-            <span className="absolute -right-1 -top-1 size-3 rounded-full bg-primary/35 motion-safe:animate-pulse" />
+          <div className="flex size-10 items-center justify-center rounded-xl bg-muted text-on-surface-variant">
             <Icon className="size-6" />
           </div>
         ) : null}
@@ -172,6 +183,10 @@ export {
   workspacePillClassName,
   WorkspaceSectionDivider,
   WorkspaceStatCard,
+  workspaceContentCardSurfaceClassName,
+  workspaceCriticalSurfaceClassName,
+  workspaceListSurfaceClassName,
+  workspacePanelSurfaceClassName,
   workspaceSurfaceClassName,
   WorkspaceTypeBadge,
 }

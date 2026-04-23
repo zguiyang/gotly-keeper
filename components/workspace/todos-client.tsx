@@ -11,17 +11,19 @@ import {
 } from '@/client/actions/workspace-actions.client'
 import { Button } from '@/components/ui/button'
 import { Calendar, CalendarDayButton } from '@/components/ui/calendar'
-import { Separator } from '@/components/ui/separator'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
 import { AssetEditDialog, type AssetEditValues } from '@/components/workspace/asset-edit-dialog'
 import {
   WorkspaceEmptyState,
   workspaceMetaTextClassName,
   WorkspacePageHeader,
+  workspaceListSurfaceClassName,
+  workspacePanelSurfaceClassName,
   workspaceSurfaceClassName,
 } from '@/components/workspace/workspace-view-primitives'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useTodoCompletion } from '@/hooks/workspace/use-todo-completion'
+import { cn } from '@/lib/utils'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 
 function getDateKey(date: Date) {
@@ -46,28 +48,40 @@ function TodoDateHeader({
   selectedDate,
   selectedCount,
   scheduledCount,
+  unscheduledCount,
+  promotedUnscheduled,
 }: {
   selectedDate: Date
   selectedCount: number
   scheduledCount: number
+  unscheduledCount: number
+  promotedUnscheduled: boolean
 }) {
   const label = getSelectedDateLabel(selectedDate)
 
   return (
     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/75">Selected Day</p>
+      <div className="min-w-0">
+        <p className="text-[12px] font-semibold tracking-normal text-on-surface-variant/80">任务日</p>
         <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <h2 className="font-headline text-2xl font-semibold text-on-surface">{label}</h2>
           <span className={workspaceMetaTextClassName}>{selectedCount} 项</span>
         </div>
-        <p className="mt-1 text-sm leading-6 text-on-surface-variant/75">
-          只显示有明确日期时间的待办，未排期事项放在下方单独处理。
+        <p className="mt-1 max-w-2xl text-sm leading-6 text-on-surface-variant/75">
+          {promotedUnscheduled
+            ? '这一天没有排期，先把未排期事项处理掉。'
+            : '只显示有明确日期时间的待办，未排期事项会单独收纳。'}
         </p>
       </div>
-      <div className="flex items-center gap-2 rounded-full border border-border/10 bg-muted/45 px-3 py-1.5 text-[12px] text-on-surface-variant">
-        <span className="size-2 rounded-full bg-primary" />
-        已排期 {scheduledCount} 项
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/10 bg-surface-container-lowest/75 px-3 py-2 text-[12px] text-on-surface-variant">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-primary" />
+          当前 {selectedCount} 项
+        </span>
+        <span className="size-1 rounded-full bg-border/40" aria-hidden="true" />
+        <span>已排期 {scheduledCount} 项</span>
+        <span className="size-1 rounded-full bg-border/40" aria-hidden="true" />
+        <span>未排期 {unscheduledCount} 项</span>
       </div>
     </div>
   )
@@ -92,9 +106,12 @@ function TodoItemComponent({
 
   return (
     <article
-      className={`group -mx-2 flex items-start justify-between gap-3 rounded-xl px-2.5 py-3.5 transition-[background-color,opacity,transform] duration-150 hover:bg-surface-container-lowest/80 sm:-mx-3 sm:px-3 ${
-        item.completed ? 'opacity-80' : 'hover:-translate-y-px'
-      }`}
+      className={cn(
+        workspaceListSurfaceClassName,
+        'group flex items-start justify-between gap-3 px-3 py-3.5 transition-[background-color,border-color,opacity] duration-150 sm:px-4',
+        item.completed ? 'border-border/8 bg-muted/30 opacity-75' : 'hover:-translate-y-px',
+        pending && 'opacity-60'
+      )}
     >
       <div className="flex min-w-0 flex-1 items-start gap-3.5">
         <Button
@@ -103,11 +120,12 @@ function TodoItemComponent({
           disabled={pending}
           variant="ghost"
           size="icon-sm"
-          className={`mt-0.5 shrink-0 rounded-full ring-1 ring-border/10 ${
+          className={cn(
+            'mt-0.5 shrink-0 rounded-full ring-1 ring-border/10',
             item.completed
               ? 'bg-primary/8 text-primary hover:bg-primary/10 hover:text-primary'
               : 'bg-muted/55 text-on-surface-variant/75 hover:bg-primary/8 hover:text-primary'
-          }`}
+          )}
           aria-label={item.completed ? '标记为未完成' : '标记为已完成'}
           title={item.completed ? '标记为未完成' : '标记为已完成'}
         >
@@ -119,11 +137,12 @@ function TodoItemComponent({
         </Button>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <h4
-            className={`text-[16px] font-semibold leading-7 tracking-normal sm:text-[17px] ${
+            className={cn(
+              'text-[15px] font-semibold leading-6 tracking-normal sm:text-[16px]',
               item.completed
                 ? 'text-on-surface-variant line-through decoration-on-surface-variant/45'
                 : 'text-on-surface'
-            }`}
+            )}
           >
             {item.title}
           </h4>
@@ -134,7 +153,9 @@ function TodoItemComponent({
             </span>
           </div>
           {note ? (
-            <p className="max-w-3xl text-sm leading-6 text-on-surface-variant line-clamp-2">{note}</p>
+            <p className="max-w-3xl text-sm leading-6 text-on-surface-variant line-clamp-1 sm:line-clamp-2">
+              {note}
+            </p>
           ) : null}
         </div>
       </div>
@@ -152,6 +173,8 @@ function TodoItemComponent({
 }
 
 function TodoDateList({
+  title,
+  description,
   items,
   emptyMessage,
   pendingIds,
@@ -159,7 +182,10 @@ function TodoDateList({
   onEdit,
   onArchive,
   onMoveToTrash,
+  tone = 'default',
 }: {
+  title: string
+  description: string
   items: AssetListItem[]
   emptyMessage: string
   pendingIds: Set<string>
@@ -167,39 +193,51 @@ function TodoDateList({
   onEdit: (item: AssetListItem) => void
   onArchive: (item: AssetListItem) => void
   onMoveToTrash: (item: AssetListItem) => void
+  tone?: 'default' | 'muted'
 }) {
-  if (items.length === 0) {
-    return (
-      <div className={`${workspaceSurfaceClassName} flex min-h-[17rem] items-center justify-center p-8 text-center`}>
-        <div className="max-w-sm">
-          <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-primary/7 text-primary">
-            <Check className="size-5" />
-          </div>
-          <p className="mt-4 text-base font-semibold text-on-surface">这一天很清爽</p>
-          <p className="mt-2 text-sm leading-6 text-on-surface-variant/75">{emptyMessage}</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className={`${workspaceSurfaceClassName} border-primary/12 bg-primary/4`}>
-      <TodoSection
-        items={items}
-        emptyMessage={emptyMessage}
-        pendingIds={pendingIds}
-        onToggleTodo={onToggleTodo}
-        onEdit={onEdit}
-        onArchive={onArchive}
-        onMoveToTrash={onMoveToTrash}
-      />
+    <div
+      className={cn(
+        workspaceSurfaceClassName,
+        'overflow-hidden',
+        tone === 'muted' && 'border-border/12 bg-muted/20'
+      )}
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-border/8 px-4 py-3 sm:px-5">
+        <div className="min-w-0">
+          <h3 className="font-headline text-base font-semibold text-on-surface">{title}</h3>
+          <p className="mt-0.5 text-[12px] leading-5 text-on-surface-variant/75">{description}</p>
+        </div>
+        <span
+          className={cn(
+            workspaceMetaTextClassName,
+            'shrink-0 rounded-full border border-border/10 bg-muted/35 px-2.5 py-1'
+          )}
+        >
+          {items.length} 项
+        </span>
+      </div>
+
+      {items.length === 0 ? (
+        <div className="px-4 py-5 sm:px-5 sm:py-6">
+          <p className="text-sm leading-6 text-on-surface-variant/75">{emptyMessage}</p>
+        </div>
+      ) : (
+        <TodoSection
+          items={items}
+          pendingIds={pendingIds}
+          onToggleTodo={onToggleTodo}
+          onEdit={onEdit}
+          onArchive={onArchive}
+          onMoveToTrash={onMoveToTrash}
+        />
+      )}
     </div>
   )
 }
 
 function TodoSection({
   items,
-  emptyMessage,
   pendingIds,
   onToggleTodo,
   onEdit,
@@ -207,35 +245,24 @@ function TodoSection({
   onMoveToTrash,
 }: {
   items: AssetListItem[]
-  emptyMessage: string
   pendingIds: Set<string>
   onToggleTodo: (item: AssetListItem) => void
   onEdit: (item: AssetListItem) => void
   onArchive: (item: AssetListItem) => void
   onMoveToTrash: (item: AssetListItem) => void
 }) {
-  if (items.length === 0) {
-    return (
-      <div className="py-8 text-center">
-        <p className="text-sm text-on-surface-variant/75">{emptyMessage}</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-0 p-2 sm:p-3">
-      {items.map((item, index) => (
-        <div key={item.id}>
-          <TodoItemComponent
-            item={item}
-            pending={pendingIds.has(item.id)}
-            onToggle={onToggleTodo}
-            onEdit={onEdit}
-            onArchive={onArchive}
-            onMoveToTrash={onMoveToTrash}
-          />
-          {index < items.length - 1 && <Separator className="mx-3 bg-border/10" />}
-        </div>
+    <div className="space-y-2.5 p-3 sm:p-4">
+      {items.map((item) => (
+        <TodoItemComponent
+          key={item.id}
+          item={item}
+          pending={pendingIds.has(item.id)}
+          onToggle={onToggleTodo}
+          onEdit={onEdit}
+          onArchive={onArchive}
+          onMoveToTrash={onMoveToTrash}
+        />
       ))}
     </div>
   )
@@ -243,6 +270,7 @@ function TodoSection({
 
 function TodoCalendarPanel({
   selectedDate,
+  selectedCount,
   scheduledDateKeys,
   scheduledCount,
   unscheduledCount,
@@ -250,6 +278,7 @@ function TodoCalendarPanel({
   onMonthChange,
 }: {
   selectedDate: Date
+  selectedCount: number
   scheduledDateKeys: Set<string>
   scheduledCount: number
   unscheduledCount: number
@@ -268,9 +297,9 @@ function TodoCalendarPanel({
   }
 
   return (
-    <aside className={`${workspaceSurfaceClassName} p-4 sm:p-5 xl:sticky xl:top-24`}>
+    <aside className={cn(workspacePanelSurfaceClassName, 'p-4 sm:p-5 xl:sticky xl:top-24')}>
       <div className="mb-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/75">Calendar</p>
+        <p className="text-[12px] font-semibold tracking-normal text-on-surface-variant/80">日历</p>
         <h2 className="mt-2 font-headline text-xl font-semibold text-on-surface">按日期查看</h2>
         <p className="mt-1 text-sm leading-6 text-on-surface-variant/75">有圆点的日期表示当天存在待办。</p>
       </div>
@@ -287,16 +316,22 @@ function TodoCalendarPanel({
         components={{ DayButton: DayButtonWithTodoMarker }}
       />
 
-      <div className="mt-5 grid grid-cols-2 gap-2.5">
-        <div className="rounded-xl border border-border/10 bg-muted/35 px-3 py-3">
+      <div className="mt-5 grid grid-cols-3 gap-2">
+        <div className="rounded-xl border border-border/10 bg-muted/35 px-3 py-2.5">
+          <p className={workspaceMetaTextClassName}>当前</p>
+          <p className="mt-1 font-mono text-lg font-semibold leading-none text-on-surface tabular-nums">
+            {selectedCount}
+          </p>
+        </div>
+        <div className="rounded-xl border border-border/10 bg-muted/35 px-3 py-2.5">
           <p className={workspaceMetaTextClassName}>已排期</p>
-          <p className="mt-1 font-mono text-xl font-semibold leading-none text-on-surface tabular-nums">
+          <p className="mt-1 font-mono text-lg font-semibold leading-none text-on-surface tabular-nums">
             {scheduledCount}
           </p>
         </div>
-        <div className="rounded-xl border border-border/10 bg-muted/35 px-3 py-3">
+        <div className="rounded-xl border border-border/10 bg-muted/35 px-3 py-2.5">
           <p className={workspaceMetaTextClassName}>未排期</p>
-          <p className="mt-1 font-mono text-xl font-semibold leading-none text-on-surface tabular-nums">
+          <p className="mt-1 font-mono text-lg font-semibold leading-none text-on-surface tabular-nums">
             {unscheduledCount}
           </p>
         </div>
@@ -329,6 +364,8 @@ export function TodosClient({
 
   const selectedItems = selectedDateTodos
   const unscheduledItems = unscheduledTodos
+  const shouldPromoteUnscheduled = selectedItems.length === 0 && unscheduledItems.length > 0
+  const visibleSelectedItems = shouldPromoteUnscheduled ? unscheduledItems : selectedItems
   const scheduledDateKeys = useMemo(
     () => new Set(dateMarkers),
     [dateMarkers]
@@ -452,7 +489,7 @@ export function TodosClient({
       <WorkspacePageHeader
         title="待办"
         description="从统一入口留下的待处理事项，会按时间线索整理成清晰、可回看的任务流。"
-        eyebrow="Task Flow"
+        eyebrow="任务计划"
       />
 
       {showEmptyState ? (
@@ -470,6 +507,8 @@ export function TodosClient({
                 selectedDate={selectedDate}
                 selectedCount={selectedItems.length}
                 scheduledCount={dateMarkers.length}
+                unscheduledCount={unscheduledItems.length}
+                promotedUnscheduled={shouldPromoteUnscheduled}
               />
               {loadingDate ? (
                 <div className={`${workspaceSurfaceClassName} flex min-h-[17rem] items-center justify-center p-8 text-sm text-on-surface-variant/75`}>
@@ -477,45 +516,45 @@ export function TodosClient({
                 </div>
               ) : (
                 <TodoDateList
-                  items={selectedItems}
+                  title={shouldPromoteUnscheduled ? '未排期待办' : '当天待办'}
+                  description={
+                    shouldPromoteUnscheduled
+                      ? '这一天没有排期，先处理这些未排期事项。'
+                      : '只显示当前选中日期的待办。'
+                  }
+                  items={visibleSelectedItems}
                   emptyMessage="这个日期没有已排期待办。可以点选带圆点的日期快速切换。"
                   pendingIds={pendingIds}
                   onToggleTodo={handleToggleTodo}
                   onEdit={setEditingTodo}
                   onArchive={handleArchive}
                   onMoveToTrash={handleMoveToTrash}
+                  tone={shouldPromoteUnscheduled ? 'muted' : 'default'}
                 />
               )}
             </section>
 
-            {unscheduledItems.length > 0 ? (
+            {unscheduledItems.length > 0 && !shouldPromoteUnscheduled ? (
               <section>
-                <div className="mb-3 flex items-center gap-3">
-                  <span className="h-8 w-1 rounded-full bg-on-surface-variant/35" />
-                  <div>
-                    <h2 className="font-headline text-base font-semibold text-on-surface">未排期</h2>
-                    <p className="mt-0.5 text-[12px] leading-5 text-on-surface-variant/70">
-                      暂时没有具体日期时间的待办
-                    </p>
-                  </div>
-                </div>
-                <div className={`${workspaceSurfaceClassName} bg-muted/30`}>
-                  <TodoSection
-                    items={unscheduledItems}
-                    emptyMessage="没有未排期待办"
-                    pendingIds={pendingIds}
-                    onToggleTodo={handleToggleTodo}
-                    onEdit={setEditingTodo}
-                    onArchive={handleArchive}
-                    onMoveToTrash={handleMoveToTrash}
-                  />
-                </div>
+                <TodoDateList
+                  title="未排期待办"
+                  description="暂时没有具体日期时间的待办。"
+                  items={unscheduledItems}
+                  emptyMessage="没有未排期待办"
+                  pendingIds={pendingIds}
+                  onToggleTodo={handleToggleTodo}
+                  onEdit={setEditingTodo}
+                  onArchive={handleArchive}
+                  onMoveToTrash={handleMoveToTrash}
+                  tone="muted"
+                />
               </section>
             ) : null}
           </div>
 
           <TodoCalendarPanel
             selectedDate={selectedDate}
+            selectedCount={selectedItems.length}
             scheduledDateKeys={scheduledDateKeys}
             scheduledCount={dateMarkers.length}
             unscheduledCount={unscheduledItems.length}

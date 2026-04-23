@@ -35,12 +35,12 @@ function LoadingCard({ height }: { height: number }) {
 export default function Loading() {
   return (
     <div className="mx-auto w-full max-w-7xl px-1 sm:px-2">
-      <WorkspacePageHeader title="笔记" eyebrow="Workspace" description="正在加载你的笔记内容…" />
+      <WorkspacePageHeader title="笔记" eyebrow="手稿" description="正在加载你的笔记内容…" />
 
       <div className="mb-7 flex flex-wrap items-center gap-3 md:mb-8">
         <span className={workspacePillClassName}>加载中</span>
         <p className={`${workspaceMetaTextClassName} text-on-surface-variant`}>
-          正在准备笔记卡片布局…
+          正在准备手稿版面…
         </p>
       </div>
 

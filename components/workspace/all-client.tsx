@@ -1,6 +1,6 @@
 'use client'
 
-import { Archive, ArrowRight, CheckSquare2, FileText, Inbox, Link2, Sparkles } from 'lucide-react'
+import { Archive, ArrowRight, CheckSquare2, FileText, Inbox, Link2 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -13,7 +13,6 @@ import {
   workspaceMetaTextClassName,
   WorkspacePageHeader,
   workspacePillClassName,
-  WorkspaceSectionDivider,
   WorkspaceTypeBadge,
 } from '@/components/workspace/workspace-view-primitives'
 import { assetTypePresentation } from '@/config/ui/asset-presentation'
@@ -35,64 +34,6 @@ const typeLabels: Record<AssetType, string> = {
   todo: '待办',
 }
 
-const typeSummary: Record<AssetType, string> = {
-  note: '想法与摘录',
-  link: '链接与来源',
-  todo: '下一步行动',
-}
-
-const typeSummaryStyles: Record<AssetType, { row: string; icon: string; mark: string }> = {
-  note: {
-    row: 'bg-primary/6',
-    icon: 'bg-primary/10 text-primary',
-    mark: 'bg-primary',
-  },
-  link: {
-    row: 'bg-secondary/7',
-    icon: 'bg-secondary/10 text-secondary',
-    mark: 'bg-secondary',
-  },
-  todo: {
-    row: 'bg-tertiary/8',
-    icon: 'bg-tertiary/12 text-tertiary',
-    mark: 'bg-tertiary',
-  },
-}
-
-function SummaryCount({
-  count,
-  icon: Icon,
-  label,
-  type,
-}: {
-  count: number
-  icon: typeof FileText
-  label: string
-  type: AssetType
-}) {
-  const styles = typeSummaryStyles[type]
-
-  return (
-    <div
-      className={`group flex items-center justify-between gap-3 rounded-2xl border border-border/10 px-3.5 py-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-border/20 hover:bg-surface-container-lowest/70 active:translate-y-px ${styles.row}`}
-    >
-      <div className="flex min-w-0 items-center gap-3">
-        <span className={`h-7 w-1 rounded-full ${styles.mark}`} />
-        <span className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${styles.icon}`}>
-          <Icon className="size-4" />
-        </span>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-on-surface">{label}</p>
-          <p className="text-[11px] text-on-surface-variant/75">{typeSummary[type]}</p>
-        </div>
-      </div>
-      <span className="font-mono text-xl font-semibold leading-none text-on-surface tabular-nums">
-        {count}
-      </span>
-    </div>
-  )
-}
-
 function TypePill({ type }: { type: AssetType }) {
   const variants: Record<AssetType, 'default' | 'secondary' | 'outline'> = {
     note: 'default',
@@ -102,6 +43,52 @@ function TypePill({ type }: { type: AssetType }) {
 
   return (
     <WorkspaceTypeBadge label={typeLabels[type]} variant={variants[type]} />
+  )
+}
+
+function ArchiveSummaryBar({
+  totalCount,
+  assetCounts,
+  completedTodoCount,
+  hasNextPage,
+}: {
+  totalCount: number
+  assetCounts: Record<AssetType, number>
+  completedTodoCount: number
+  hasNextPage: boolean
+}) {
+  const summaryItems: Array<{ type: AssetType; icon: typeof FileText }> = [
+    { type: 'note', icon: FileText },
+    { type: 'link', icon: Link2 },
+    { type: 'todo', icon: CheckSquare2 },
+  ]
+
+  return (
+    <div className="flex flex-col gap-3 rounded-[14px] border border-border/10 bg-surface-container-lowest/80 px-4 py-3 shadow-[0_18px_40px_-32px_rgba(0,81,177,0.34)] md:flex-row md:items-center md:justify-between">
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="h-8 w-1 shrink-0 rounded-full bg-primary/55" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-on-surface">
+              已加载 {totalCount} 条内容
+              {hasNextPage ? '，还有更多待载入' : '，已加载全部'}
+            </p>
+            <p className="text-[11px] text-on-surface-variant/75">
+              时间线按今天、昨天和更早分组，便于快速回看。
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {summaryItems.map(({ type, icon: Icon }) => (
+            <span key={type} className={workspacePillClassName}>
+              <Icon className="mr-1.5 size-3.5" />
+              {typeLabels[type]} {assetCounts[type]}
+            </span>
+          ))}
+          {completedTodoCount > 0 ? <span className={workspacePillClassName}>已完成 {completedTodoCount}</span> : null}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -118,6 +105,7 @@ function AssetItem({
 }) {
   const presentation = assetTypePresentation[asset.type]
   const Icon = presentation.icon
+  const timeText = asset.timeText || formatAssetRelativeTime(asset.createdAt)
   const actions = [
     { label: '编辑', onClick: () => onEdit(asset) },
     { label: '归档', onClick: () => onArchive(asset) },
@@ -125,10 +113,10 @@ function AssetItem({
   ]
 
   return (
-    <article className="group rounded-2xl border border-transparent px-3 py-4 transition-all duration-200 hover:border-border/12 hover:bg-surface-container-lowest hover:shadow-[var(--shadow-elevation-1)] sm:px-4 sm:py-5">
-      <div className="flex items-start gap-4 lg:gap-5">
+    <article className="group relative w-full min-w-0 rounded-[14px] border border-border/10 bg-surface-container-lowest/80 px-3 py-3 transition-[border-color,background-color] duration-200 hover:border-border/15 hover:bg-surface-container-lowest sm:px-4 sm:py-4">
+      <div className="flex min-w-0 items-start gap-3 sm:gap-4">
         <div
-          className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 ring-border/8 ${presentation.iconBg}`}
+          className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-border/8 ${presentation.iconBg}`}
         >
           <Icon className={`h-[18px] w-[18px] ${presentation.iconColor}`} />
         </div>
@@ -136,19 +124,17 @@ function AssetItem({
         <div className="min-w-0 flex-1">
           <div className="mb-2 flex flex-wrap items-center gap-2.5">
             <TypePill type={asset.type} />
-            {asset.completed && <span className={workspacePillClassName}>已完成</span>}
-            <span className={`${workspaceMetaTextClassName} lg:hidden`}>
-              {asset.timeText || formatAssetRelativeTime(asset.createdAt)}
-            </span>
+            {asset.completed ? <span className={workspacePillClassName}>已完成</span> : null}
+            <span className={workspaceMetaTextClassName}>{timeText}</span>
           </div>
 
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start justify-between gap-3 sm:gap-4">
             <div className="min-w-0 flex-1">
               <h3
-                className={`text-[16px] font-semibold leading-7 tracking-normal sm:text-[17px] ${
+                className={`text-[15px] font-semibold leading-7 tracking-normal sm:text-[16px] ${
                   asset.completed
                     ? 'text-on-surface-variant line-through'
-                    : 'text-on-surface group-hover:text-primary transition-colors'
+                    : 'text-on-surface transition-colors group-hover:text-primary'
                 }`}
               >
                 {asset.title}
@@ -163,22 +149,61 @@ function AssetItem({
               </p>
             </div>
 
-            <div className="hidden shrink-0 items-center gap-3 lg:flex">
-              <span className={`${workspaceMetaTextClassName} min-w-[78px] text-right`}>
-                {asset.timeText || formatAssetRelativeTime(asset.createdAt)}
-              </span>
-              <div className="opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-                <AssetActionMenu actions={actions} />
-              </div>
+            <div className="shrink-0 pt-0.5 opacity-100 transition-opacity duration-200 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100">
+              <AssetActionMenu actions={actions} />
             </div>
           </div>
         </div>
-
-        <div className="pt-0.5 lg:hidden">
-          <AssetActionMenu actions={actions} />
-        </div>
       </div>
     </article>
+  )
+}
+
+function TimelineGroup({
+  label,
+  hint,
+  count,
+  assets,
+  onEdit,
+  onArchive,
+  onMoveToTrash,
+}: {
+  label: string
+  hint: string
+  count: number
+  assets: AssetListItem[]
+  onEdit: (asset: AssetListItem) => void
+  onArchive: (asset: AssetListItem) => void
+  onMoveToTrash: (asset: AssetListItem) => void
+}) {
+  return (
+    <section className="grid w-full min-w-0 gap-3 md:grid-cols-[7rem_minmax(0,1fr)] md:gap-5">
+      <div className="relative flex min-w-0 items-center justify-between gap-3 md:block md:pt-1">
+        <div className="flex items-center gap-2 md:items-start">
+          <span className="relative flex size-3 shrink-0 items-center justify-center">
+            <span className="size-2 rounded-full bg-primary/55 ring-4 ring-surface-container-lowest" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-on-surface">{label}</p>
+            <p className="text-[11px] text-on-surface-variant/75">{hint}</p>
+          </div>
+        </div>
+        <span className={workspacePillClassName}>{count} 条</span>
+        <span className="hidden md:block md:absolute md:left-[0.35rem] md:top-7 md:h-full md:w-px md:bg-border/10" />
+      </div>
+
+      <div className="min-w-0 space-y-2">
+        {assets.map((asset) => (
+          <AssetItem
+            key={asset.id}
+            asset={asset}
+            onEdit={onEdit}
+            onArchive={onArchive}
+            onMoveToTrash={onMoveToTrash}
+          />
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -203,11 +228,11 @@ export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetL
   } satisfies Record<AssetType, number>
   const completedTodoCount = items.filter((asset) => asset.type === 'todo' && asset.completed).length
   const totalCount = items.length
-  const summaryItems: Array<{ type: AssetType; icon: typeof FileText }> = [
-    { type: 'note', icon: FileText },
-    { type: 'link', icon: Link2 },
-    { type: 'todo', icon: CheckSquare2 },
-  ]
+  const timelineGroups = [
+    { key: 'today', label: '今天', hint: '最近 24 小时', assets: todayAssets },
+    { key: 'yesterday', label: '昨天', hint: '前一天', assets: yesterdayAssets },
+    { key: 'older', label: '更早', hint: '更久以前', assets: olderAssets },
+  ].filter((group) => group.assets.length > 0)
 
   async function handleFilterChange(nextFilter: string) {
     const type = nextFilter === 'all' ? undefined : (nextFilter as AssetType)
@@ -303,57 +328,21 @@ export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetL
       <section className="mb-8 sm:mb-10">
         <WorkspacePageHeader
           title="知识库"
-          eyebrow="Personal Curator"
-          description="把最近捕获的笔记、书签和待办放在同一条时间线里。先看全局，再按类型收窄，快速找到该处理的内容。"
+          eyebrow="全部内容"
+          description="把最近捕获的笔记、书签和待办排成一条时间线。先看全局，再按类型收窄，快速找到该处理的内容。"
           className="mb-6"
         />
 
-        <div className="grid gap-3 md:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.75fr)]">
-          <div className="relative overflow-hidden rounded-[1.25rem] border border-border/10 bg-surface-container-lowest/80 px-5 py-5 shadow-[0_20px_40px_-28px_rgba(0,81,177,0.36)]">
-            <div className="relative flex min-h-32 flex-col justify-between gap-8">
-              <div className="flex items-center gap-2 text-[12px] font-medium text-on-surface-variant">
-                <span className="flex size-8 items-center justify-center rounded-2xl bg-primary/8 text-primary">
-                  <Sparkles className="size-4" />
-                </span>
-                当前知识流
-              </div>
-              <div>
-                <p className="font-mono text-5xl font-semibold leading-none tracking-normal text-on-surface tabular-nums">
-                  {totalCount}
-                </p>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-on-surface-variant">
-                  {totalCount > 0
-                    ? '内容已经进入同一条时间线，可以继续按类型收窄。'
-                    : '还没有内容进入时间线，先从启动台保存第一条记录。'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-2">
-            {summaryItems.map(({ type, icon }) => (
-              <SummaryCount
-                key={type}
-                count={assetCounts[type]}
-                icon={icon}
-                label={typeLabels[type]}
-                type={type}
-              />
-            ))}
-          </div>
+        <div className="mt-1">
+          <ArchiveSummaryBar
+            totalCount={totalCount}
+            assetCounts={assetCounts}
+            completedTodoCount={completedTodoCount}
+            hasNextPage={pageInfo.hasNextPage}
+          />
         </div>
 
         <div className="mt-5 flex flex-col gap-4 border-y border-border/10 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-sm text-on-surface-variant">
-            <span className="flex size-8 items-center justify-center rounded-full bg-primary/8 text-primary">
-              <Sparkles className="size-4" />
-            </span>
-            <span>
-              已加载 {totalCount} 条内容
-              {completedTodoCount > 0 ? `，${completedTodoCount} 条待办已完成` : ''}
-              {pageInfo.hasNextPage ? '，还有更多' : '，已加载全部'}
-            </span>
-          </div>
           <WorkspaceFilterTabs
             tabs={filterTabs}
             value={activeFilter}
@@ -363,66 +352,19 @@ export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetL
         </div>
       </section>
 
-      <div className={`max-w-6xl ${refreshing ? 'opacity-60' : ''}`}>
-        {todayAssets.length > 0 && (
-          <section aria-labelledby="today-assets">
-            <h2 id="today-assets" className="sr-only">
-              今天的内容
-            </h2>
-            <WorkspaceSectionDivider label="今天" />
-            <div className="grid gap-2">
-              {todayAssets.map((asset) => (
-                <AssetItem
-                  key={asset.id}
-                  asset={asset}
-                  onEdit={setEditingAsset}
-                  onArchive={handleArchive}
-                  onMoveToTrash={handleMoveToTrash}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {yesterdayAssets.length > 0 && (
-          <section aria-labelledby="yesterday-assets">
-            <h2 id="yesterday-assets" className="sr-only">
-              昨天的内容
-            </h2>
-            <WorkspaceSectionDivider label="昨天" />
-            <div className="grid gap-2">
-              {yesterdayAssets.map((asset) => (
-                <AssetItem
-                  key={asset.id}
-                  asset={asset}
-                  onEdit={setEditingAsset}
-                  onArchive={handleArchive}
-                  onMoveToTrash={handleMoveToTrash}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {olderAssets.length > 0 && (
-          <section aria-labelledby="older-assets">
-            <h2 id="older-assets" className="sr-only">
-              更早的内容
-            </h2>
-            <WorkspaceSectionDivider label="更早" />
-            <div className="grid gap-2">
-              {olderAssets.map((asset) => (
-                <AssetItem
-                  key={asset.id}
-                  asset={asset}
-                  onEdit={setEditingAsset}
-                  onArchive={handleArchive}
-                  onMoveToTrash={handleMoveToTrash}
-                />
-              ))}
-            </div>
-          </section>
-        )}
+      <div className={`w-full max-w-6xl min-w-0 space-y-6 overflow-hidden ${refreshing ? 'opacity-60' : ''}`}>
+        {timelineGroups.map((group) => (
+          <TimelineGroup
+            key={group.key}
+            label={group.label}
+            hint={group.hint}
+            count={group.assets.length}
+            assets={group.assets}
+            onEdit={setEditingAsset}
+            onArchive={handleArchive}
+            onMoveToTrash={handleMoveToTrash}
+          />
+        ))}
 
         {!hasAnyAssets && (
           <WorkspaceEmptyState

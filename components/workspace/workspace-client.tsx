@@ -1,6 +1,6 @@
 'use client'
 
-import { Bookmark, CheckSquare, FileText, Search, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import { useCallback, useState } from 'react'
 
@@ -12,30 +12,29 @@ import { formatAbsoluteTime } from '@/shared/time/formatters'
 
 import { RecentItem } from './workspace-result-panels'
 import { WorkspaceRunPanel } from './workspace-run-panel'
+import { workspacePillClassName } from './workspace-view-primitives'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
 import type { WorkspaceRunApiResponse } from '@/shared/workspace/workspace-runner.types'
 
-const workspaceCapabilities = [
+const commandPreviewRows = [
   {
-    icon: FileText,
-    title: '保存想法',
-    description: '写一句草稿、灵感或会议记录，Gotly 会整理成可回看的笔记。',
+    input: '粘贴一个链接',
+    target: '书签',
+    hint: '补全来源、摘要和后续可追踪信息。',
+    accent: 'bg-sky-600/60',
   },
   {
-    icon: Bookmark,
-    title: '收藏链接',
-    description: '粘贴文章或网页地址，后续可以按来源和内容继续追踪。',
+    input: '明天下午提醒我',
+    target: '待办',
+    hint: '抽取时间，并把它放进任务流。',
+    accent: 'bg-emerald-600/60',
   },
   {
-    icon: CheckSquare,
-    title: '沉淀待办',
-    description: '带有处理意图的内容会进入任务流，按时间线索归类。',
-  },
-  {
-    icon: Search,
-    title: '找回内容',
-    description: '直接问“上周收藏的文章”，在已有知识库里检索答案。',
+    input: '记录一个想法',
+    target: '笔记',
+    hint: '沉到手稿区，保留原始表达。',
+    accent: 'bg-amber-700/60',
   },
 ]
 
@@ -53,7 +52,11 @@ function QuickInputSuggestions({
   ]
 
   return (
-    <div className={`mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 px-1 ${hidden ? 'hidden' : ''}`}>
+    <div
+      className={`mt-3 flex items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
+        hidden ? 'hidden' : ''
+      }`}
+    >
       <span className="shrink-0 text-[11px] font-semibold tracking-[0.12em] text-on-surface-variant/75 uppercase">
         示例
       </span>
@@ -62,12 +65,9 @@ function QuickInputSuggestions({
           type="button"
           key={index}
           onClick={() => onSuggestionClick(suggestion)}
-          className="group flex items-center gap-1.5 text-left"
+          className="group shrink-0 rounded-full border border-border/10 bg-surface-container-lowest/80 px-3 py-2 text-left shadow-[var(--shadow-elevation-1)] transition-colors duration-150 hover:border-primary/20 hover:bg-primary/4"
         >
-          {index > 0 && (
-            <span className="text-[10px] text-on-surface-variant/55">·</span>
-          )}
-          <span className="text-[13px] text-on-surface-variant/80 group-hover:text-on-surface-variant transition-colors duration-150">
+          <span className="text-[13px] text-on-surface-variant/80 transition-colors duration-150 group-hover:text-on-surface">
             {suggestion}
           </span>
         </button>
@@ -76,27 +76,37 @@ function QuickInputSuggestions({
   )
 }
 
-function CapabilityStrip() {
+function CommandPreviewStrip() {
   return (
-    <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-      {workspaceCapabilities.map((item) => {
-        const Icon = item.icon
+    <div className="mt-5 rounded-[1.25rem] border border-border/10 bg-surface-container-lowest/72 p-4 sm:p-5">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-border/10 pb-3">
+        <span className="text-[11px] font-semibold tracking-[0.16em] text-primary/75 uppercase">
+          命令预览
+        </span>
+        <p className="text-[13px] leading-6 text-on-surface-variant/75">
+          Gotly 会先看懂输入，再决定保存、整理还是查询。
+        </p>
+      </div>
 
-        return (
-          <div
-            key={item.title}
-            className="rounded-2xl border border-border/10 bg-surface-container-lowest/70 p-4 shadow-[var(--shadow-elevation-1)]"
+      <ol className="relative mt-4 space-y-2 pl-4 before:absolute before:bottom-2 before:left-1.5 before:top-1 before:w-px before:bg-border/15">
+        {commandPreviewRows.map((item) => (
+          <li
+            key={item.input}
+            className="relative rounded-xl border border-border/10 bg-muted/22 px-3 py-2.5"
           >
-            <div className="mb-3 flex size-8 items-center justify-center rounded-xl bg-primary-fixed text-primary">
-              <Icon className="size-4" />
+            <span className={`absolute -left-[0.72rem] top-3 size-2.5 rounded-full ${item.accent}`} />
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="text-[14px] font-medium leading-6 text-on-surface">
+                {item.input}
+              </p>
+              <span className={workspacePillClassName}>{item.target}</span>
             </div>
-            <h2 className="text-sm font-semibold text-on-surface">{item.title}</h2>
-            <p className="mt-1.5 text-xs leading-5 text-on-surface-variant/70">
-              {item.description}
+            <p className="mt-0.5 text-[12px] leading-5 text-on-surface-variant/75">
+              {item.hint}
             </p>
-          </div>
-        )
-      })}
+          </li>
+        ))}
+      </ol>
     </div>
   )
 }
@@ -107,6 +117,7 @@ export function WorkspaceClient({
   recentAssets: AssetListItem[]
 }) {
   const [inputValue, setInputValue] = useState('')
+  const [submittedText, setSubmittedText] = useState('')
   const [recentItems, setRecentItems] = useState(recentAssets)
 
   const handleWorkspaceResult = useCallback((result: WorkspaceRunApiResponse['data']) => {
@@ -136,6 +147,7 @@ export function WorkspaceClient({
       return
     }
 
+    setSubmittedText(text)
     await submitInput(text)
 
     setInputValue('')
@@ -157,24 +169,24 @@ export function WorkspaceClient({
     <>
       <section className={`${hasRunPanel ? 'mb-5' : 'mb-9'} rounded-[2rem] border border-border/10 bg-muted/35 p-4 shadow-[var(--shadow-elevation-1)] sm:p-6 lg:p-8`}>
         <div className="mb-6 max-w-3xl">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/70">
-            Unified Capture
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary/70">
+            Command
           </p>
-          <h1 className="font-headline text-[2.25rem] font-semibold tracking-[-0.04em] text-on-surface lg:text-[3rem]">
+          <h1 className="font-headline text-[2rem] font-semibold tracking-[-0.02em] text-on-surface sm:text-[2.15rem] lg:text-[2.6rem]">
             先捕获，再让 Gotly 帮你整理
           </h1>
-          <p className="mt-3 max-w-2xl text-[15px] leading-7 text-on-surface-variant">
+          <p className="mt-3 max-w-2xl text-[14px] leading-6 text-on-surface-variant sm:text-[15px] sm:leading-7">
             写想法、粘贴链接、安排待办，或直接问知识库。这里是唯一入口，不需要先决定内容放在哪。
           </p>
         </div>
 
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-            <Sparkles className="w-5 h-5 text-on-surface-variant/70" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 sm:pl-5">
+            <Sparkles className="h-4 w-4 text-on-surface-variant/70 sm:h-5 sm:w-5" />
           </div>
           <Input
             aria-label="输入内容或搜索知识库"
-            className="h-[3.75rem] w-full rounded-full border border-border/10 bg-surface-container-lowest pl-14 pr-24 text-base text-on-surface shadow-[var(--shadow-elevation-3)] transition-[box-shadow,border-color] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 focus:shadow-[var(--shadow-soft)] sm:pr-36"
+            className="h-[3.25rem] w-full rounded-full border border-border/10 bg-surface-container-lowest pl-12 pr-24 text-[15px] text-on-surface shadow-[var(--shadow-elevation-3)] transition-[box-shadow,border-color] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 focus:shadow-[var(--shadow-soft)] sm:h-[3.5rem] sm:pl-14 sm:pr-32 sm:text-base lg:h-[3.75rem]"
             name="workspace-query"
             placeholder="写一句话、粘贴链接，或直接问知识库…"
             type="text"
@@ -186,13 +198,13 @@ export function WorkspaceClient({
             type="button"
             onClick={handleSubmit}
             disabled={state.status === 'streaming'}
-            className="absolute inset-y-0 right-2 my-auto h-11 rounded-full px-4 sm:px-5"
+            className="absolute inset-y-0 right-2 my-auto h-9 rounded-full px-4 sm:h-10 sm:px-5"
           >
             {state.status === 'streaming' ? (
               '处理中…'
             ) : (
               <>
-                <span className="sm:hidden">执行</span>
+                <span className="sm:hidden">提交</span>
                 <span className="hidden sm:inline">捕获 / 查询</span>
               </>
             )}
@@ -209,7 +221,7 @@ export function WorkspaceClient({
           hidden={hasRunPanel}
         />
 
-        {!hasRunPanel ? <CapabilityStrip /> : null}
+        {!hasRunPanel ? <CommandPreviewStrip /> : null}
       </section>
 
       <AnimatePresence mode="wait">
@@ -221,6 +233,7 @@ export function WorkspaceClient({
             phases={state.phases}
             result={state.result}
             errorMessage={state.errorMessage}
+            submittedText={submittedText}
           />
         )}
       </AnimatePresence>
@@ -231,7 +244,10 @@ export function WorkspaceClient({
             type="button"
             variant="ghost"
             size="sm"
-            onClick={resetRun}
+            onClick={() => {
+              resetRun()
+              setSubmittedText('')
+            }}
             className="rounded-full text-on-surface-variant hover:text-on-surface"
           >
             收起结果，查看最近捕获
