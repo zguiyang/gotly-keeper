@@ -1,6 +1,6 @@
 'use client'
 
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
 import { WorkspaceQueryResultsContent } from './workspace-result-panels'
 import { workspaceMetaTextClassName, workspacePillClassName } from './workspace-view-primitives'
@@ -87,36 +87,41 @@ function CurrentStep({
 }: {
   visiblePhase: WorkspaceRunApiPhase
 }) {
+  const prefersReducedMotion = useReducedMotion()
+  const phaseTitle = getPhaseTitle(visiblePhase.phase)
   const message = visiblePhase.message ?? getPhaseFallbackMessage(visiblePhase)
+  const lineText = message ? `${phaseTitle} · ${message}` : phaseTitle
+  const lineKey = `${visiblePhase.phase}-${message}`
 
   return (
-    <div className="flex min-h-[9.5rem] items-center justify-center">
-      <div className="w-full max-w-xl text-center">
-        <div className="mx-auto mb-5 flex h-10 w-10 items-center justify-center rounded-full bg-primary/8">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-primary/45 motion-safe:animate-ping" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
-          </span>
+    <div className="flex min-h-[6.5rem] items-center justify-start">
+      <div className="flex w-full items-center gap-3 px-1 sm:px-2">
+        <span className="relative flex h-2.5 w-2.5 shrink-0">
+          <span className="absolute inline-flex h-full w-full rounded-full bg-primary/45 motion-safe:animate-ping" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
+        </span>
+
+        <div className="relative h-7 min-w-0 flex-1" role="status" aria-live="polite" aria-atomic="true">
+          <AnimatePresence initial={false}>
+            <motion.p
+              key={lineKey}
+              initial={prefersReducedMotion
+                ? { opacity: 0 }
+                : { opacity: 0, y: 10, backgroundPosition: '100% 50%' }}
+              animate={prefersReducedMotion
+                ? { opacity: 1 }
+                : { opacity: 1, y: 0, backgroundPosition: '0% 50%' }}
+              exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
+              transition={prefersReducedMotion
+                ? { duration: 0.18, ease: 'linear' }
+                : { duration: 0.56, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute inset-0 truncate bg-gradient-to-r from-on-surface-variant/75 via-on-surface to-on-surface-variant/80 bg-[length:220%_100%] bg-clip-text text-left text-sm leading-7 text-transparent drop-shadow-[0_1px_5px_rgba(15,23,42,0.1)] dark:drop-shadow-[0_1px_7px_rgba(255,255,255,0.06)] forced-colors:bg-none forced-colors:text-[CanvasText] forced-colors:[-webkit-text-fill-color:CanvasText]"
+              title={lineText}
+            >
+              {lineText}
+            </motion.p>
+          </AnimatePresence>
         </div>
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={`${visiblePhase.phase}-${message}`}
-            initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, y: -8, filter: 'blur(4px)' }}
-            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/75">
-              Gotly 正在处理
-            </p>
-            <h2 className="mt-2 font-headline text-xl font-semibold tracking-normal text-on-surface sm:text-2xl">
-              {getPhaseTitle(visiblePhase.phase)}
-            </h2>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-on-surface-variant/75">
-              {message}
-            </p>
-          </motion.div>
-        </AnimatePresence>
       </div>
     </div>
   )
