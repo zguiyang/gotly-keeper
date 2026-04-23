@@ -13,7 +13,7 @@ export default async function WorkspaceLayout({
     <>
       <Sidebar />
       <main className="min-h-screen lg:ml-64">
-        <TopAppBar userImage={user.image} userName={user.name} />
+        <TopAppBar userEmail={user.email} userImage={user.image} userName={user.name} />
         <div className="mx-auto px-4 sm:px-6 lg:px-12 pt-8 lg:pt-12 pb-24 max-w-6xl">
           {children}
         </div>

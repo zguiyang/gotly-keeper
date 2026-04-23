@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { AccountMenu } from "@/components/account-menu";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -18,10 +19,13 @@ import {
   scenarios,
 } from "@/config/landing-page-content";
 import { cn } from "@/lib/utils";
+import { getSignedInUser } from "@/server/modules/auth/session";
 
 import styles from "./page.module.css";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const user = await getSignedInUser();
+
   return (
     <div className={styles.pageShell}>
       <div className={styles.noise} aria-hidden="true" />
@@ -65,24 +69,45 @@ export default function LandingPage() {
 
               <div className="flex items-center gap-2 sm:gap-3">
                 <ThemeToggle />
-                <Link
-                  href="/auth/sign-in"
-                  className={cn(
-                    buttonVariants({ variant: "ghost", size: "sm" }),
-                    "rounded-full px-4 text-on-surface-variant hover:text-on-surface"
-                  )}
-                >
-                  登录
-                </Link>
-                <Link
-                  href="/auth/sign-up"
-                  className={cn(
-                    buttonVariants({ variant: "outline", size: "sm" }),
-                    "rounded-full border-primary/15 bg-surface-container-lowest/70 px-4 shadow-sm"
-                  )}
-                >
-                  注册
-                </Link>
+                {user ? (
+                  <>
+                    <Link
+                      href="/workspace"
+                      className={cn(
+                        buttonVariants({ variant: "outline", size: "sm" }),
+                        "hidden rounded-full border-primary/15 bg-surface-container-lowest/70 px-4 shadow-sm sm:inline-flex"
+                      )}
+                    >
+                      进入工作区
+                    </Link>
+                    <AccountMenu
+                      userEmail={user.email}
+                      userImage={user.image}
+                      userName={user.name}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/auth/sign-in"
+                      className={cn(
+                        buttonVariants({ variant: "ghost", size: "sm" }),
+                        "rounded-full px-4 text-on-surface-variant hover:text-on-surface"
+                      )}
+                    >
+                      登录
+                    </Link>
+                    <Link
+                      href="/auth/sign-up"
+                      className={cn(
+                        buttonVariants({ variant: "outline", size: "sm" }),
+                        "rounded-full border-primary/15 bg-surface-container-lowest/70 px-4 shadow-sm"
+                      )}
+                    >
+                      注册
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -301,14 +326,20 @@ export default function LandingPage() {
           <div className={cn(styles.container, styles.bottombarInner)}>
             <div className="flex flex-col gap-3 py-6 text-sm text-on-surface-variant sm:flex-row sm:items-center sm:justify-between">
               <p>© 2026 Gotly AI. Quietly keeping what matters.</p>
-              <div className="flex items-center gap-5">
-                <Link href="/auth/sign-in" className="transition-colors hover:text-primary">
-                  登录
+              {user ? (
+                <Link href="/workspace" className="transition-colors hover:text-primary">
+                  进入工作区
                 </Link>
-                <Link href="/auth/sign-up" className="transition-colors hover:text-primary">
-                  注册
-                </Link>
-              </div>
+              ) : (
+                <div className="flex items-center gap-5">
+                  <Link href="/auth/sign-in" className="transition-colors hover:text-primary">
+                    登录
+                  </Link>
+                  <Link href="/auth/sign-up" className="transition-colors hover:text-primary">
+                    注册
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </footer>

@@ -1,8 +1,8 @@
 "use client"
 
 import { Command, Menu, Sparkles } from "lucide-react"
-import Image from "next/image"
 
+import { AccountMenu } from "@/components/account-menu"
 import { ThemeToggle } from "@/components/theme/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -10,12 +10,11 @@ import { WorkspaceNavList } from "@/components/workspace/workspace-nav-list"
 
 type TopAppBarProps = {
   userName: string
+  userEmail?: string | null
   userImage?: string | null
 }
 
-export function TopAppBar({ userName, userImage }: TopAppBarProps) {
-  const fallbackInitial = userName.trim().slice(0, 1).toUpperCase() || 'G'
-
+export function TopAppBar({ userName, userEmail, userImage }: TopAppBarProps) {
   return (
     <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between gap-4 border-b border-border/15 bg-surface/88 px-4 text-sm backdrop-blur-xl lg:px-8">
       <div className="lg:hidden flex items-center shrink-0">
@@ -61,20 +60,13 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
 
       <div className="flex items-center gap-1 shrink-0">
         <ThemeToggle />
-        <div className="ml-1 flex size-9 items-center justify-center overflow-hidden rounded-full border border-border/10 bg-muted shadow-[var(--shadow-elevation-2)]">
-          {userImage ? (
-            <Image
-              alt={`${userName} 的头像`}
-              className="size-full object-cover"
-              height={32}
-              sizes="32px"
-              src={userImage}
-              width={32}
-            />
-          ) : (
-            <span className="text-sm font-medium text-primary">{fallbackInitial}</span>
-          )}
-        </div>
+        <AccountMenu
+          className="ml-1"
+          signedOutRedirectTo="/auth/sign-in"
+          userEmail={userEmail}
+          userImage={userImage}
+          userName={userName}
+        />
       </div>
     </header>
   )
