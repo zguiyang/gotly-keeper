@@ -77,7 +77,7 @@ function BookmarkItem({
               <h3 className="text-base lg:text-xl font-bold text-on-surface group-hover/title:text-primary transition-colors cursor-pointer leading-snug line-clamp-2 lg:line-clamp-none">
                 {item.title}
               </h3>
-              <ExternalLink className="w-3.5 h-3.5 text-on-surface-variant/40 opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0" />
+              <ExternalLink className="w-3.5 h-3.5 text-on-surface-variant/75 opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0" />
             </a>
           ) : (
             <div className="flex items-center gap-1.5">

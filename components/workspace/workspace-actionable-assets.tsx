@@ -61,7 +61,7 @@ function ActionableAssetItem({
   return (
     <div
       className={`group -mx-3 rounded-lg px-3 py-4 transition-colors duration-150 hover:bg-muted/45 focus-within:bg-muted/45 ${
-        asset.completed ? 'opacity-65' : ''
+        asset.completed ? 'opacity-85' : ''
       }`}
     >
       <div className="flex items-start gap-3.5">
@@ -72,7 +72,7 @@ function ActionableAssetItem({
             disabled={pending}
             variant="ghost"
             size="icon-sm"
-            className="mt-0.5 shrink-0 text-on-surface-variant/40 hover:text-primary"
+            className="mt-0.5 shrink-0 text-on-surface-variant/75 hover:text-primary"
             aria-label={asset.completed ? '标记为未完成' : '标记为已完成'}
             title={asset.completed ? '标记为未完成' : '标记为已完成'}
           >
@@ -97,7 +97,7 @@ function ActionableAssetItem({
                   className="inline-flex max-w-full items-center gap-1.5 text-[15px] font-semibold leading-6 text-on-surface transition-colors hover:text-primary"
                 >
                   <span className="truncate">{asset.title}</span>
-                  <ExternalLink className="h-3.5 w-3.5 shrink-0 text-on-surface-variant/45" />
+                  <ExternalLink className="h-3.5 w-3.5 shrink-0 text-on-surface-variant/75" />
                 </a>
               ) : (
                 <h3
@@ -128,7 +128,7 @@ function ActionableAssetItem({
               <span className={workspacePillClassName}>
                 {presentation.label}
               </span>
-              <span className="inline-flex items-center gap-1 text-[12px] text-on-surface-variant/65">
+              <span className="inline-flex items-center gap-1 text-[12px] text-on-surface-variant/80">
                 {asset.type === 'todo' ? <Clock className="h-3 w-3" /> : null}
                 {timeText}
               </span>

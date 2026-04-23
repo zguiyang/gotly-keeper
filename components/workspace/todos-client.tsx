@@ -26,7 +26,7 @@ function SectionHeader({ label, count }: { label: string; count: number }) {
       <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant/75">
         {label}
       </span>
-      <span className="text-xs text-on-surface-variant/40">·</span>
+      <span className="text-xs text-on-surface-variant/65">·</span>
       <span className={workspaceMetaTextClassName}>{count} 项</span>
     </div>
   )
@@ -52,7 +52,7 @@ function TodoItemComponent({
   return (
     <div
       className={`group -mx-4 flex items-start justify-between rounded-2xl px-4 py-4 transition-opacity duration-150 ${
-        item.completed ? 'opacity-60' : ''
+        item.completed ? 'opacity-85' : ''
       }`}
     >
       <div className="flex min-w-0 flex-1 items-start gap-3.5">
@@ -62,7 +62,7 @@ function TodoItemComponent({
           disabled={pending}
           variant="ghost"
           size="icon-sm"
-          className="mt-0.5 shrink-0 text-on-surface-variant/40 hover:text-primary"
+          className="mt-0.5 shrink-0 text-on-surface-variant/75 hover:text-primary"
           aria-label={item.completed ? '标记为未完成' : '标记为已完成'}
           title={item.completed ? '标记为未完成' : '标记为已完成'}
         >
@@ -80,7 +80,7 @@ function TodoItemComponent({
           >
             {item.title}
           </h4>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-on-surface-variant/65">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-on-surface-variant/80">
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
               {item.timeText || '无截止日期'}
@@ -124,7 +124,7 @@ function TodoSection({
   if (items.length === 0) {
     return (
       <div className="py-8 text-center">
-        <p className="text-sm text-on-surface-variant/50">{emptyMessage}</p>
+        <p className="text-sm text-on-surface-variant/75">{emptyMessage}</p>
       </div>
     )
   }

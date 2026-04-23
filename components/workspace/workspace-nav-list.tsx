@@ -20,7 +20,7 @@ export function WorkspaceNavList({ variant }: WorkspaceNavListProps) {
     <div className="flex flex-col gap-5">
       {workspaceNavGroups.map((group) => (
         <div key={group.label} className="space-y-1">
-          <p className="px-3.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant/45">
+          <p className="px-3.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant/70">
             {group.label}
           </p>
           <div className="space-y-0.5">

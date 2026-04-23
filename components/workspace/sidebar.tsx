@@ -17,7 +17,7 @@ export function Sidebar() {
       </nav>
 
       <div className="mt-8 rounded-3xl border border-border/12 bg-surface-container-lowest/80 px-4 py-4 shadow-[var(--shadow-elevation-3)]">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant/65">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant/80">
           统一入口
         </p>
         <p className="mt-2 text-sm leading-6 text-on-surface-variant">

@@ -53,7 +53,7 @@ export function TopAppBar({ userName, userImage }: TopAppBarProps) {
           <Sparkles className="size-3.5 text-primary" />
           工作区已就绪
         </span>
-        <span className="hidden items-center gap-1.5 text-xs text-on-surface-variant/55 lg:inline-flex">
+        <span className="hidden items-center gap-1.5 text-xs text-on-surface-variant/75 lg:inline-flex">
           <Command className="size-3.5" />
           在启动台输入即可捕获或查询
         </span>

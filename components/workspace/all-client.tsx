@@ -93,7 +93,7 @@ function AssetItem({
 
               <p
                 className={`mt-1 max-w-3xl text-sm leading-6 ${
-                  asset.completed ? 'text-on-surface-variant/65' : 'text-on-surface-variant'
+                  asset.completed ? 'text-on-surface-variant/80' : 'text-on-surface-variant'
                 }`}
               >
                 {asset.excerpt}

@@ -44,6 +44,12 @@ function typeLabel(type: AssetListItem['type']): string {
   return '书签'
 }
 
+function typeBadgeVariant(type: AssetListItem['type']): 'default' | 'secondary' | 'outline' {
+  if (type === 'note') return 'default'
+  if (type === 'link') return 'secondary'
+  return 'outline'
+}
+
 function EmptyState({ mode }: { mode: LifecycleViewMode }) {
   return (
     <WorkspaceEmptyState
@@ -185,7 +191,7 @@ export function LifecycleAssetsClient({
               >
                 <div className="min-w-0 flex-1">
                   <div className="mb-2 flex items-center gap-2.5">
-                    <WorkspaceTypeBadge label={typeLabel(item.type)} variant="default" />
+                    <WorkspaceTypeBadge label={typeLabel(item.type)} variant={typeBadgeVariant(item.type)} />
                     <span className={workspaceMetaTextClassName}>
                       {formatAssetRelativeTime(item.createdAt)}
                     </span>

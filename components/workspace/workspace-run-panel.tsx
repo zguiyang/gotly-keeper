@@ -150,7 +150,7 @@ function ErrorResult({
         <p className="mt-1 text-sm leading-6 text-on-surface-variant">
           {message}
         </p>
-        <p className="mt-3 text-xs leading-5 text-on-surface-variant/65">
+        <p className="mt-3 text-xs leading-5 text-on-surface-variant/80">
           可以换成更明确的说法，比如“总结最近笔记重点”或“查找上周待办”。
         </p>
       </div>

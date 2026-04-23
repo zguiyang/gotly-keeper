@@ -54,7 +54,7 @@ function QuickInputSuggestions({
 
   return (
     <div className={`mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 px-1 ${hidden ? 'hidden' : ''}`}>
-      <span className="shrink-0 text-[11px] font-semibold tracking-[0.12em] text-on-surface-variant/50 uppercase">
+      <span className="shrink-0 text-[11px] font-semibold tracking-[0.12em] text-on-surface-variant/75 uppercase">
         示例
       </span>
       {suggestions.map((suggestion, index) => (
@@ -65,9 +65,9 @@ function QuickInputSuggestions({
           className="group flex items-center gap-1.5 text-left"
         >
           {index > 0 && (
-            <span className="text-[10px] text-on-surface-variant/30">·</span>
+            <span className="text-[10px] text-on-surface-variant/55">·</span>
           )}
-          <span className="text-[13px] text-on-surface-variant/60 group-hover:text-on-surface-variant transition-colors duration-150">
+          <span className="text-[13px] text-on-surface-variant/80 group-hover:text-on-surface-variant transition-colors duration-150">
             {suggestion}
           </span>
         </button>
@@ -170,7 +170,7 @@ export function WorkspaceClient({
 
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-            <Sparkles className="w-5 h-5 text-on-surface-variant/50" />
+            <Sparkles className="w-5 h-5 text-on-surface-variant/70" />
           </div>
           <Input
             aria-label="输入内容或搜索知识库"
@@ -199,7 +199,7 @@ export function WorkspaceClient({
           </Button>
         </div>
         {inputValue ? (
-          <p className="mt-2 px-4 text-xs text-on-surface-variant/60">
+          <p className="mt-2 px-4 text-xs text-on-surface-variant/80">
             Gotly 会判断这是新内容还是查询请求，结果会在下方显示。
           </p>
         ) : null}

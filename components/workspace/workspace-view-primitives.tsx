@@ -14,10 +14,10 @@ import { cn } from '@/lib/utils'
 
 import type { LucideIcon } from 'lucide-react'
 
-const workspaceMetaTextClassName = 'text-[11px] font-medium tracking-[0.02em] text-on-surface-variant/60'
+const workspaceMetaTextClassName = 'text-[11px] font-medium tracking-[0.02em] text-on-surface-variant/80'
 
 const workspacePillClassName =
-  'inline-flex items-center rounded-full border border-border/15 bg-muted px-2.5 py-1 text-[11px] font-medium tracking-[0.02em] text-on-surface-variant'
+  'inline-flex items-center rounded-full border border-border/15 bg-muted px-2.5 py-1 text-[11px] font-medium tracking-[0.02em] text-on-surface-variant/90'
 
 const workspaceSurfaceClassName =
   'rounded-2xl border border-border/10 bg-surface-container-lowest shadow-[var(--shadow-soft)]'
@@ -93,7 +93,7 @@ function WorkspaceFilterTabs<TValue extends string>({
 function WorkspaceSectionDivider({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-4 py-7">
-      <span className="text-[11px] font-semibold tracking-[0.18em] text-on-surface-variant/60 uppercase">
+      <span className="text-[11px] font-semibold tracking-[0.18em] text-on-surface-variant/80 uppercase">
         {label}
       </span>
       <Separator className="bg-border/10" />
@@ -118,7 +118,7 @@ function WorkspaceEmptyState({ title, description, icon: Icon, className }: Work
     >
       <CardContent className="flex flex-col items-center gap-4 px-6 text-center">
         {Icon ? (
-          <div className="flex size-12 items-center justify-center rounded-full bg-surface-container-lowest text-on-surface-variant/50 shadow-[var(--shadow-elevation-2)]">
+          <div className="flex size-12 items-center justify-center rounded-full bg-surface-container-lowest text-on-surface-variant/70 shadow-[var(--shadow-elevation-2)]">
             <Icon className="size-6" />
           </div>
         ) : null}
