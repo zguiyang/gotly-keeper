@@ -1,8 +1,8 @@
 import 'server-only'
 
-import { renderPrompt } from '@/server/lib/prompt-template'
-import { buildWorkspaceSystemPrompt } from '@/server/lib/ai/ai.prompts'
 import { runAiGeneration } from '@/server/lib/ai/ai-runner'
+import { buildWorkspaceSystemPrompt } from '@/server/lib/ai/ai.prompts'
+import { renderPrompt } from '@/server/lib/prompt-template'
 
 import { validateWorkspaceTask, workspaceTaskOutputSchema } from './workspace-task'
 

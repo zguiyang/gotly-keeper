@@ -10,10 +10,7 @@ import { assetTypePresentation } from '@/config/ui/asset-presentation'
 import { useWorkspaceStream } from '@/hooks/workspace/use-workspace-stream'
 import { formatAbsoluteTime } from '@/shared/time/formatters'
 
-import {
-  RecentItem,
-  WorkspaceQueryResultsContent,
-} from './workspace-result-panels'
+import { RecentItem } from './workspace-result-panels'
 import { WorkspaceRunPanel } from './workspace-run-panel'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
@@ -103,8 +100,6 @@ export function WorkspaceClient({
     document.querySelector<HTMLInputElement>('[name="workspace-query"]')?.focus()
   }
 
-  const hasResult = state.result?.kind === 'query'
-
   return (
     <>
       <div className="mb-8">
@@ -140,11 +135,7 @@ export function WorkspaceClient({
             {state.status === 'streaming' ? '处理中…' : '提交'}
           </Button>
         </div>
-        {state.errorMessage ? (
-          <p className="mt-2 px-4 text-xs text-on-surface-variant/60" aria-live="polite">
-            {state.errorMessage}
-          </p>
-        ) : inputValue ? (
+        {inputValue ? (
           <p className="mt-2 px-4 text-xs text-on-surface-variant/60">
             输入后会保存到知识库，查询结果会出现在这里
           </p>
@@ -157,31 +148,20 @@ export function WorkspaceClient({
       />
 
       <AnimatePresence mode="wait">
-        {(state.status === 'streaming' || state.phases.length > 0 || state.assistantText) && (
+        {(state.status === 'streaming' ||
+          state.status === 'error' ||
+          state.phases.length > 0 ||
+          state.assistantText) && (
           <WorkspaceRunPanel
             key="run-panel"
             status={state.status === 'idle' ? 'success' : state.status}
             assistantText={state.assistantText}
             phases={state.phases}
+            result={state.result}
+            errorMessage={state.errorMessage}
           />
         )}
       </AnimatePresence>
-
-      {hasResult ? (
-        <section className="mt-8">
-          <div className="mb-3 flex items-center gap-3">
-            <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/70">
-              本次处理
-            </h2>
-            <div className="flex-1 h-px bg-border/20" />
-          </div>
-          <div className="rounded-2xl border border-border/10 bg-surface-container-lowest p-4 shadow-[var(--shadow-soft)]">
-            {state.result?.kind === 'query' ? (
-              <WorkspaceQueryResultsContent results={state.result.items} />
-            ) : null}
-          </div>
-        </section>
-      ) : null}
 
       <section className="mt-8">
         <div className="flex items-center gap-4 mb-2">

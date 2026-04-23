@@ -1,11 +1,12 @@
 import 'server-only'
 
 import { composeWorkspaceAnswer } from './workspace-compose'
-import { executeWorkspaceTool } from './workspace-tools'
 import { parseWorkspaceTask } from './workspace-task-parser'
 import { WorkspaceTaskRoutingError, routeWorkspaceTask } from './workspace-task-router'
+import { executeWorkspaceTool } from './workspace-tools'
 
 import type { WorkspaceRunEvent, WorkspaceRunResult, WorkspaceTask, WorkspaceToolResult } from './types'
+import type { workspaceTools } from './workspace-tools'
 
 type RunWorkspaceInput = {
   message: string
@@ -94,7 +95,7 @@ export async function runWorkspace(input: RunWorkspaceInput): Promise<WorkspaceR
   try {
     data = await executeWorkspaceTool(
       {
-        toolName: plan.toolName as keyof typeof import('./workspace-tools').workspaceTools,
+        toolName: plan.toolName as keyof typeof workspaceTools,
         toolInput: plan.toolInput,
       },
       { userId: input.userId }
