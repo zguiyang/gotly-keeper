@@ -1,9 +1,10 @@
 import 'server-only'
 
-import { and, desc, eq, inArray } from 'drizzle-orm'
+import { and, desc, eq, inArray, lt, or } from 'drizzle-orm'
 
 import { BOOKMARK_LIST_LIMIT_DEFAULT, BOOKMARK_LIST_LIMIT_MAX } from '@/server/lib/config/constants'
 import { db } from '@/server/lib/db'
+import { createCursorPage, clampPageSize, decodeCursor } from '@/server/services/pagination'
 import {
   ASSET_LIFECYCLE_STATUS,
   type AssetLifecycleStatus,
@@ -23,8 +24,21 @@ type ListBookmarksOptions = {
   includeLifecycleStatuses?: AssetLifecycleStatus[]
 }
 
+type ListBookmarksPageOptions = {
+  userId: string
+  pageSize?: number
+  cursor?: string | null
+  lifecycleStatus?: AssetLifecycleStatus
+  includeLifecycleStatuses?: AssetLifecycleStatus[]
+}
+
 type GetBookmarkByIdOptions = {
   includeLifecycleStatuses?: AssetLifecycleStatus[]
+}
+
+type BookmarkCursorPayload = {
+  createdAt: string
+  id: string
 }
 
 function resolveLifecycleStatuses(input: {
@@ -44,6 +58,22 @@ function resolveLifecycleStatuses(input: {
 
 function clampBookmarkListLimit(limit = BOOKMARK_LIST_LIMIT_DEFAULT) {
   return Math.min(limit, BOOKMARK_LIST_LIMIT_MAX)
+}
+
+function buildDescendingCursorCondition(cursor: BookmarkCursorPayload | null) {
+  if (!cursor) {
+    return null
+  }
+
+  const cursorCreatedAt = new Date(cursor.createdAt)
+  if (Number.isNaN(cursorCreatedAt.getTime())) {
+    throw new Error('INVALID_CURSOR')
+  }
+
+  return or(
+    lt(bookmarks.createdAt, cursorCreatedAt),
+    and(eq(bookmarks.createdAt, cursorCreatedAt), lt(bookmarks.id, cursor.id))
+  )
 }
 
 export async function listBookmarks({
@@ -70,6 +100,49 @@ export async function listBookmarks({
     .limit(clampedLimit)
 
   return rows.map(toBookmarkListItem)
+}
+
+export async function listBookmarksPage({
+  userId,
+  pageSize = BOOKMARK_LIST_LIMIT_DEFAULT,
+  cursor,
+  lifecycleStatus,
+  includeLifecycleStatuses,
+}: ListBookmarksPageOptions): Promise<{
+  items: BookmarkListItem[]
+  pageInfo: {
+    pageSize: number
+    nextCursor: string | null
+    hasNextPage: boolean
+  }
+}> {
+  const clampedPageSize = clampPageSize(pageSize, 1, BOOKMARK_LIST_LIMIT_MAX)
+  const lifecycleStatuses = resolveLifecycleStatuses({ lifecycleStatus, includeLifecycleStatuses })
+  const cursorPayload = decodeCursor<BookmarkCursorPayload>(cursor)
+
+  const conditions = and(
+    eq(bookmarks.userId, userId),
+    lifecycleStatuses.length === 1
+      ? eq(bookmarks.lifecycleStatus, lifecycleStatuses[0])
+      : inArray(bookmarks.lifecycleStatus, lifecycleStatuses),
+    buildDescendingCursorCondition(cursorPayload) ?? undefined
+  )
+
+  const rows = await db
+    .select()
+    .from(bookmarks)
+    .where(conditions)
+    .orderBy(desc(bookmarks.createdAt), desc(bookmarks.id))
+    .limit(clampedPageSize + 1)
+
+  return createCursorPage({
+    rows: rows.map(toBookmarkListItem),
+    pageSize: clampedPageSize,
+    getCursorPayload: (item) => ({
+      createdAt: item.createdAt.toISOString(),
+      id: item.id,
+    }),
+  })
 }
 
 export async function getBookmarkById(

@@ -12,6 +12,7 @@ import {
   createBookmark,
   getBookmarkById,
   listBookmarks,
+  listBookmarksPage,
   moveBookmarkToTrash,
   purgeBookmark,
   restoreBookmarkFromTrash,
@@ -24,6 +25,7 @@ import {
   createNote,
   getNoteById,
   listNotes,
+  listNotesPage,
   moveNoteToTrash,
   purgeNote,
   restoreNoteFromTrash,
@@ -31,13 +33,18 @@ import {
   updateNote,
   type NoteListItem,
 } from '@/server/services/notes'
+import { createCursorPage } from '@/server/services/pagination'
 import { searchAssets } from '@/server/services/search/assets-search.service'
 import { deleteEmbeddingsForAsset } from '@/server/services/search/semantic-search.service'
 import {
   archiveTodo,
   createTodo,
   getTodoById,
+  listTodoDateMarkers,
   listTodos,
+  listTodosByDueDate,
+  listTodosPage,
+  listUnscheduledTodos,
   moveTodoToTrash,
   purgeTodo,
   restoreTodoFromTrash,
@@ -68,6 +75,7 @@ import type {
   TodoReviewResult,
   WorkspaceAssetActionResult,
 } from '@/shared/assets/assets.types'
+import type { PaginatedResult } from '@/shared/pagination'
 import type { WorkspaceAgentTimeFilter } from '@/shared/workspace/workspace-run.types'
 
 export type WorkspaceAssetItem = AssetListItem
@@ -676,6 +684,15 @@ function requireExistingAsset(asset: AssetListItem | null): AssetListItem {
   return asset
 }
 
+function compareWorkspaceAssetsDesc(a: AssetListItem, b: AssetListItem): number {
+  const createdAtDiff = b.createdAt.getTime() - a.createdAt.getTime()
+  if (createdAtDiff !== 0) {
+    return createdAtDiff
+  }
+
+  return b.id.localeCompare(a.id)
+}
+
 export async function listWorkspaceAssets(input: {
   userId: string
   type?: AssetType
@@ -712,9 +729,83 @@ export async function listWorkspaceAssets(input: {
     ...todos.map(toAssetListItemFromTodo),
   ]
 
-  items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  items.sort(compareWorkspaceAssetsDesc)
 
   return items.slice(0, limit)
+}
+
+export async function listWorkspaceAssetsPage(input: {
+  userId: string
+  type?: AssetType
+  lifecycleStatus?: AssetLifecycleStatus
+  pageSize?: number
+  cursor?: string | null
+}): Promise<PaginatedResult<AssetListItem>> {
+  const pageSize = input.pageSize ?? 50
+  const lifecycleStatus = input.lifecycleStatus ?? ASSET_LIFECYCLE_STATUS.ACTIVE
+
+  if (input.type === 'note') {
+    const page = await listNotesPage({
+      userId: input.userId,
+      pageSize,
+      cursor: input.cursor,
+      lifecycleStatus,
+    })
+    return {
+      items: page.items.map(toAssetListItemFromNote),
+      pageInfo: page.pageInfo,
+    }
+  }
+
+  if (input.type === 'link') {
+    const page = await listBookmarksPage({
+      userId: input.userId,
+      pageSize,
+      cursor: input.cursor,
+      lifecycleStatus,
+    })
+    return {
+      items: page.items.map(toAssetListItemFromBookmark),
+      pageInfo: page.pageInfo,
+    }
+  }
+
+  if (input.type === 'todo') {
+    const page = await listTodosPage({
+      userId: input.userId,
+      pageSize,
+      cursor: input.cursor,
+      lifecycleStatus,
+    })
+    return {
+      items: page.items.map(toAssetListItemFromTodo),
+      pageInfo: page.pageInfo,
+    }
+  }
+
+  const [notesPage, bookmarksPage, todosPage] = await Promise.all([
+    listNotesPage({ userId: input.userId, pageSize, cursor: input.cursor, lifecycleStatus }),
+    listBookmarksPage({ userId: input.userId, pageSize, cursor: input.cursor, lifecycleStatus }),
+    listTodosPage({ userId: input.userId, pageSize, cursor: input.cursor, lifecycleStatus }),
+  ])
+
+  const items: AssetListItem[] = [
+    ...notesPage.items.map(toAssetListItemFromNote),
+    ...bookmarksPage.items.map(toAssetListItemFromBookmark),
+    ...todosPage.items.map(toAssetListItemFromTodo),
+  ]
+
+  items.sort(compareWorkspaceAssetsDesc)
+
+  return createCursorPage({
+    rows: items,
+    pageSize,
+    getCursorPayload: (item) => ({
+      createdAt: item.createdAt.toISOString(),
+      id: item.id,
+      type: item.type,
+    }),
+  })
 }
 
 export async function listWorkspaceLinkAssets(
@@ -755,6 +846,45 @@ export async function listWorkspaceTodoAssets(
   const todos = await listTodos({
     userId,
     limit: limit ?? 50,
+    lifecycleStatus: ASSET_LIFECYCLE_STATUS.ACTIVE,
+  })
+  return todos.map(toAssetListItemFromTodo)
+}
+
+export async function listWorkspaceTodosByDate(input: {
+  userId: string
+  startsAt: Date
+  endsAt: Date
+}): Promise<AssetListItem[]> {
+  const todos = await listTodosByDueDate({
+    userId: input.userId,
+    startsAt: input.startsAt,
+    endsAt: input.endsAt,
+    lifecycleStatus: ASSET_LIFECYCLE_STATUS.ACTIVE,
+  })
+  return todos.map(toAssetListItemFromTodo)
+}
+
+export async function listWorkspaceTodoDateMarkers(input: {
+  userId: string
+  startsAt: Date
+  endsAt: Date
+}): Promise<string[]> {
+  return listTodoDateMarkers({
+    userId: input.userId,
+    startsAt: input.startsAt,
+    endsAt: input.endsAt,
+    lifecycleStatus: ASSET_LIFECYCLE_STATUS.ACTIVE,
+  })
+}
+
+export async function listWorkspaceUnscheduledTodos(input: {
+  userId: string
+  limit?: number
+}): Promise<AssetListItem[]> {
+  const todos = await listUnscheduledTodos({
+    userId: input.userId,
+    limit: input.limit ?? 50,
     lifecycleStatus: ASSET_LIFECYCLE_STATUS.ACTIVE,
   })
   return todos.map(toAssetListItemFromTodo)

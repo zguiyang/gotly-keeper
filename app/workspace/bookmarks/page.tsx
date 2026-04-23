@@ -1,11 +1,11 @@
 import { BookmarksClient } from '@/components/workspace/bookmarks-client'
 import { requireWorkspaceUserAccess } from '@/server/modules/auth/workspace-session'
-import { listWorkspaceLinkAssets } from '@/server/modules/workspace'
+import { listWorkspaceAssetsPage } from '@/server/modules/workspace'
 
 export default async function BookmarksPage() {
   const user = await requireWorkspaceUserAccess()
 
-  const bookmarks = await listWorkspaceLinkAssets(user.id)
+  const initialPage = await listWorkspaceAssetsPage({ userId: user.id, type: 'link' })
 
-  return <BookmarksClient bookmarks={bookmarks} />
+  return <BookmarksClient initialPage={initialPage} />
 }

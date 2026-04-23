@@ -1,10 +1,14 @@
 'use client'
 
-import { format, isSameDay, startOfDay } from 'date-fns'
+import { addMonths, format, isSameDay, startOfDay, startOfMonth } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { Check, Circle, Clock } from 'lucide-react'
 import { useMemo, useState, type ComponentProps } from 'react'
 
+import {
+  loadWorkspaceTodoDateMarkers,
+  loadWorkspaceTodosByDate,
+} from '@/client/actions/workspace-actions.client'
 import { Button } from '@/components/ui/button'
 import { Calendar, CalendarDayButton } from '@/components/ui/calendar'
 import { Separator } from '@/components/ui/separator'
@@ -243,12 +247,14 @@ function TodoCalendarPanel({
   scheduledCount,
   unscheduledCount,
   onSelectDate,
+  onMonthChange,
 }: {
   selectedDate: Date
   scheduledDateKeys: Set<string>
   scheduledCount: number
   unscheduledCount: number
   onSelectDate: (date: Date) => void
+  onMonthChange: (month: Date) => void
 }) {
   function DayButtonWithTodoMarker(props: ComponentProps<typeof CalendarDayButton>) {
     const hasTodo = scheduledDateKeys.has(getDateKey(props.day.date))
@@ -275,6 +281,7 @@ function TodoCalendarPanel({
         onSelect={(date) => {
           if (date) onSelectDate(date)
         }}
+        onMonthChange={onMonthChange}
         locale={zhCN}
         className="mx-auto w-full max-w-[20rem] bg-transparent p-0 [--cell-size:--spacing(9)] sm:[--cell-size:--spacing(10)] xl:[--cell-size:--spacing(8)]"
         components={{ DayButton: DayButtonWithTodoMarker }}
@@ -298,33 +305,73 @@ function TodoCalendarPanel({
   )
 }
 
-export function TodosClient({ todos }: { todos: AssetListItem[] }) {
-  const [items, setItems] = useState(todos)
+export function TodosClient({
+  selectedDate: initialSelectedDate,
+  initialSelectedDateTodos,
+  initialDateMarkers,
+  initialUnscheduledTodos,
+}: {
+  selectedDate: string
+  initialSelectedDateTodos: AssetListItem[]
+  initialDateMarkers: string[]
+  initialUnscheduledTodos: AssetListItem[]
+}) {
+  const [selectedDateTodos, setSelectedDateTodos] = useState(initialSelectedDateTodos)
+  const [dateMarkers, setDateMarkers] = useState(initialDateMarkers)
+  const [unscheduledTodos, setUnscheduledTodos] = useState(initialUnscheduledTodos)
+  const [loadingDate, setLoadingDate] = useState(false)
   const [editingTodo, setEditingTodo] = useState<AssetListItem | null>(null)
 
   const { updateAsset, archiveAsset, moveToTrash, isPending } = useAssetMutations()
   const { state, toggleCompletion } = useTodoCompletion()
-  const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()))
+  const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date(`${initialSelectedDate}T00:00:00`)))
+  const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(selectedDate))
 
-  const scheduledItems = useMemo(() => items.filter((item) => getTodoDate(item)), [items])
-  const unscheduledItems = useMemo(() => items.filter((item) => !getTodoDate(item)), [items])
-  const selectedItems = useMemo(
-    () => scheduledItems.filter((item) => {
-      const todoDate = getTodoDate(item)
-      return todoDate ? isSameDay(todoDate, selectedDate) : false
-    }),
-    [scheduledItems, selectedDate]
-  )
+  const selectedItems = selectedDateTodos
+  const unscheduledItems = unscheduledTodos
   const scheduledDateKeys = useMemo(
-    () => new Set(scheduledItems.map((item) => getDateKey(getTodoDate(item) as Date))),
-    [scheduledItems]
+    () => new Set(dateMarkers),
+    [dateMarkers]
   )
-  const showEmptyState = items.length === 0
+  const showEmptyState = selectedDateTodos.length === 0 && unscheduledTodos.length === 0
 
   function replaceItem(updated: AssetListItem) {
-    setItems((current) =>
-      current.map((item) => (item.id === updated.id ? updated : item))
-    )
+    const todoDate = getTodoDate(updated)
+
+    setSelectedDateTodos((current) => {
+      const withoutUpdated = current.filter((item) => item.id !== updated.id)
+      return todoDate && isSameDay(todoDate, selectedDate) ? [updated, ...withoutUpdated] : withoutUpdated
+    })
+
+    setUnscheduledTodos((current) => {
+      const withoutUpdated = current.filter((item) => item.id !== updated.id)
+      return todoDate ? withoutUpdated : [updated, ...withoutUpdated]
+    })
+  }
+
+  async function refreshMarkers(month = calendarMonth) {
+    const startsAt = startOfMonth(month)
+    const endsAt = startOfMonth(addMonths(month, 1))
+    const markers = await loadWorkspaceTodoDateMarkers({ startsAt, endsAt })
+    setDateMarkers(markers)
+  }
+
+  async function handleSelectDate(date: Date) {
+    const nextDate = startOfDay(date)
+    setSelectedDate(nextDate)
+    setLoadingDate(true)
+    try {
+      const todos = await loadWorkspaceTodosByDate({ date: getDateKey(nextDate) })
+      setSelectedDateTodos(todos)
+    } finally {
+      setLoadingDate(false)
+    }
+  }
+
+  async function handleMonthChange(month: Date) {
+    const nextMonth = startOfMonth(month)
+    setCalendarMonth(nextMonth)
+    await refreshMarkers(nextMonth)
   }
 
   async function handleToggleTodo(item: AssetListItem) {
@@ -357,6 +404,7 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
     })
     if (updated) {
       replaceItem(updated)
+      await refreshMarkers()
     }
     return !!updated
   }
@@ -364,26 +412,28 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
   async function handleArchive(item: AssetListItem) {
     const updated = await archiveAsset(item.id, item.type, {
       onUndo: (restored) => {
-        setItems((current) =>
-          current.some((entry) => entry.id === restored.id) ? current : [restored, ...current]
-        )
+        replaceItem(restored)
+        void refreshMarkers()
       },
     })
     if (updated) {
-      setItems((current) => current.filter((entry) => entry.id !== updated.id))
+      setSelectedDateTodos((current) => current.filter((entry) => entry.id !== updated.id))
+      setUnscheduledTodos((current) => current.filter((entry) => entry.id !== updated.id))
+      await refreshMarkers()
     }
   }
 
   async function handleMoveToTrash(item: AssetListItem) {
     const updated = await moveToTrash(item.id, item.type, {
       onUndo: (restored) => {
-        setItems((current) =>
-          current.some((entry) => entry.id === restored.id) ? current : [restored, ...current]
-        )
+        replaceItem(restored)
+        void refreshMarkers()
       },
     })
     if (updated) {
-      setItems((current) => current.filter((entry) => entry.id !== updated.id))
+      setSelectedDateTodos((current) => current.filter((entry) => entry.id !== updated.id))
+      setUnscheduledTodos((current) => current.filter((entry) => entry.id !== updated.id))
+      await refreshMarkers()
     }
   }
 
@@ -391,7 +441,7 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
   if (state.pendingId) {
     pendingIds.add(state.pendingId)
   }
-  for (const item of items) {
+  for (const item of [...selectedDateTodos, ...unscheduledTodos]) {
     if (isPending(item.id, 'update') || isPending(item.id, 'archive') || isPending(item.id, 'trash')) {
       pendingIds.add(item.id)
     }
@@ -419,17 +469,23 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
               <TodoDateHeader
                 selectedDate={selectedDate}
                 selectedCount={selectedItems.length}
-                scheduledCount={scheduledItems.length}
+                scheduledCount={dateMarkers.length}
               />
-              <TodoDateList
-                items={selectedItems}
-                emptyMessage="这个日期没有已排期待办。可以点选带圆点的日期快速切换。"
-                pendingIds={pendingIds}
-                onToggleTodo={handleToggleTodo}
-                onEdit={setEditingTodo}
-                onArchive={handleArchive}
-                onMoveToTrash={handleMoveToTrash}
-              />
+              {loadingDate ? (
+                <div className={`${workspaceSurfaceClassName} flex min-h-[17rem] items-center justify-center p-8 text-sm text-on-surface-variant/75`}>
+                  正在加载这一天的待办...
+                </div>
+              ) : (
+                <TodoDateList
+                  items={selectedItems}
+                  emptyMessage="这个日期没有已排期待办。可以点选带圆点的日期快速切换。"
+                  pendingIds={pendingIds}
+                  onToggleTodo={handleToggleTodo}
+                  onEdit={setEditingTodo}
+                  onArchive={handleArchive}
+                  onMoveToTrash={handleMoveToTrash}
+                />
+              )}
             </section>
 
             {unscheduledItems.length > 0 ? (
@@ -461,9 +517,10 @@ export function TodosClient({ todos }: { todos: AssetListItem[] }) {
           <TodoCalendarPanel
             selectedDate={selectedDate}
             scheduledDateKeys={scheduledDateKeys}
-            scheduledCount={scheduledItems.length}
+            scheduledCount={dateMarkers.length}
             unscheduledCount={unscheduledItems.length}
-            onSelectDate={(date) => setSelectedDate(startOfDay(date))}
+            onSelectDate={(date) => void handleSelectDate(date)}
+            onMonthChange={(month) => void handleMonthChange(month)}
           />
         </div>
       )}

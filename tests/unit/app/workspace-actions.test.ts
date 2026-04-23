@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   createWorkspaceAssetAction,
+  loadWorkspaceAssetsPageAction,
+  loadWorkspaceTodoDateMarkersAction,
+  loadWorkspaceTodosByDateAction,
   reviewUnfinishedTodosAction,
   setTodoCompletionAction,
   summarizeRecentBookmarksAction,
@@ -16,6 +19,9 @@ const {
   requireSignedInUserMock,
   executeModuleActionMock,
   createWorkspaceAssetMock,
+  listWorkspaceAssetsPageMock,
+  listWorkspaceTodoDateMarkersMock,
+  listWorkspaceTodosByDateMock,
   setWorkspaceTodoCompletionMock,
   reviewWorkspaceUnfinishedTodosMock,
   summarizeWorkspaceRecentNotesMock,
@@ -30,6 +36,9 @@ const {
   requireSignedInUserMock: vi.fn(),
   executeModuleActionMock: vi.fn(),
   createWorkspaceAssetMock: vi.fn(),
+  listWorkspaceAssetsPageMock: vi.fn(),
+  listWorkspaceTodoDateMarkersMock: vi.fn(),
+  listWorkspaceTodosByDateMock: vi.fn(),
   setWorkspaceTodoCompletionMock: vi.fn(),
   reviewWorkspaceUnfinishedTodosMock: vi.fn(),
   summarizeWorkspaceRecentNotesMock: vi.fn(),
@@ -64,6 +73,9 @@ vi.mock('@/server/modules/actions/run-server-action', () => ({
 
 vi.mock('@/server/modules/workspace', () => ({
   createWorkspaceAsset: createWorkspaceAssetMock,
+  listWorkspaceAssetsPage: listWorkspaceAssetsPageMock,
+  listWorkspaceTodoDateMarkers: listWorkspaceTodoDateMarkersMock,
+  listWorkspaceTodosByDate: listWorkspaceTodosByDateMock,
   setWorkspaceTodoCompletion: setWorkspaceTodoCompletionMock,
   reviewWorkspaceUnfinishedTodos: reviewWorkspaceUnfinishedTodosMock,
   summarizeWorkspaceRecentNotes: summarizeWorkspaceRecentNotesMock,
@@ -81,6 +93,9 @@ describe('workspace server actions', () => {
     requireSignedInUserMock.mockReset()
     executeModuleActionMock.mockReset()
     createWorkspaceAssetMock.mockReset()
+    listWorkspaceAssetsPageMock.mockReset()
+    listWorkspaceTodoDateMarkersMock.mockReset()
+    listWorkspaceTodosByDateMock.mockReset()
     setWorkspaceTodoCompletionMock.mockReset()
     reviewWorkspaceUnfinishedTodosMock.mockReset()
     summarizeWorkspaceRecentNotesMock.mockReset()
@@ -113,6 +128,72 @@ describe('workspace server actions', () => {
     await expect(createWorkspaceAssetAction('   ')).rejects.toThrow('先输入一句内容。')
     await expect(createWorkspaceAssetAction({})).rejects.toThrow('先输入一句内容。')
     expect(createWorkspaceAssetMock).not.toHaveBeenCalled()
+  })
+
+  it('loadWorkspaceAssetsPageAction validates input and delegates to workspace pagination', async () => {
+    const expected = {
+      items: [{ id: 'note_1', type: 'note' }],
+      pageInfo: { pageSize: 20, nextCursor: 'cursor_2', hasNextPage: true },
+    }
+    listWorkspaceAssetsPageMock.mockResolvedValue(expected)
+
+    const result = await loadWorkspaceAssetsPageAction({
+      type: 'note',
+      lifecycleStatus: 'archived',
+      pageSize: 20,
+      cursor: 'cursor_1',
+    })
+
+    expect(result).toEqual(expected)
+    expect(listWorkspaceAssetsPageMock).toHaveBeenCalledWith({
+      userId: 'user_123',
+      type: 'note',
+      lifecycleStatus: 'archived',
+      pageSize: 20,
+      cursor: 'cursor_1',
+    })
+  })
+
+  it('loadWorkspaceAssetsPageAction rejects invalid pagination input', async () => {
+    await expect(loadWorkspaceAssetsPageAction({ type: 'invalid' })).rejects.toThrow(
+      '资产参数错误，请重试。'
+    )
+    await expect(loadWorkspaceAssetsPageAction({ pageSize: 0 })).rejects.toThrow(
+      '分页参数错误，请重试。'
+    )
+    await expect(loadWorkspaceAssetsPageAction({ lifecycleStatus: 'deleted' })).rejects.toThrow(
+      '列表状态参数错误，请重试。'
+    )
+    expect(listWorkspaceAssetsPageMock).not.toHaveBeenCalled()
+  })
+
+  it('loadWorkspaceTodosByDateAction converts date key to day range', async () => {
+    const expected = [{ id: 'todo_1', type: 'todo' }]
+    listWorkspaceTodosByDateMock.mockResolvedValue(expected)
+
+    const result = await loadWorkspaceTodosByDateAction({ date: '2026-04-23' })
+
+    expect(result).toEqual(expected)
+    expect(listWorkspaceTodosByDateMock).toHaveBeenCalledWith({
+      userId: 'user_123',
+      startsAt: new Date('2026-04-23T00:00:00+08:00'),
+      endsAt: new Date('2026-04-24T00:00:00+08:00'),
+    })
+  })
+
+  it('loadWorkspaceTodoDateMarkersAction validates range and delegates', async () => {
+    const startsAt = new Date('2026-04-01T00:00:00.000Z')
+    const endsAt = new Date('2026-05-01T00:00:00.000Z')
+    listWorkspaceTodoDateMarkersMock.mockResolvedValue(['2026-04-23'])
+
+    const result = await loadWorkspaceTodoDateMarkersAction({ startsAt, endsAt })
+
+    expect(result).toEqual(['2026-04-23'])
+    expect(listWorkspaceTodoDateMarkersMock).toHaveBeenCalledWith({
+      userId: 'user_123',
+      startsAt,
+      endsAt,
+    })
   })
 
   it('setTodoCompletionAction validates payload, trims assetId, and revalidates all paths', async () => {

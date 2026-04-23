@@ -3,6 +3,9 @@
 import {
   archiveWorkspaceAssetAction,
   createWorkspaceAssetAction,
+  loadWorkspaceAssetsPageAction,
+  loadWorkspaceTodoDateMarkersAction,
+  loadWorkspaceTodosByDateAction,
   moveWorkspaceAssetToTrashAction,
   purgeWorkspaceAssetAction,
   restoreWorkspaceAssetFromTrashAction,
@@ -14,7 +17,9 @@ import {
   updateWorkspaceAssetAction,
 } from '@/app/workspace/actions'
 
+import type { AssetLifecycleStatus } from '@/shared/assets/asset-lifecycle.types'
 import type { AssetListItem, WorkspaceAssetActionResult } from '@/shared/assets/assets.types'
+import type { PaginatedResult } from '@/shared/pagination'
 
 export type { WorkspaceAssetActionResult }
 
@@ -24,6 +29,28 @@ export async function createWorkspaceAsset(
   input: unknown
 ): Promise<WorkspaceAssetActionResult> {
   return createWorkspaceAssetAction(input)
+}
+
+export async function loadWorkspaceAssetsPage(input: {
+  type?: WorkspaceAssetType
+  lifecycleStatus?: AssetLifecycleStatus
+  pageSize?: number
+  cursor?: string | null
+}): Promise<PaginatedResult<AssetListItem>> {
+  return loadWorkspaceAssetsPageAction(input)
+}
+
+export async function loadWorkspaceTodosByDate(input: {
+  date: string
+}): Promise<AssetListItem[]> {
+  return loadWorkspaceTodosByDateAction(input)
+}
+
+export async function loadWorkspaceTodoDateMarkers(input: {
+  startsAt: Date
+  endsAt: Date
+}): Promise<string[]> {
+  return loadWorkspaceTodoDateMarkersAction(input)
 }
 
 export async function setTodoCompletion(

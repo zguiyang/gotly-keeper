@@ -4,7 +4,16 @@ export { type TodoListItem } from './todos.types'
 export { type Todo } from './todos.schema'
 
 export { createTodo } from './todos.command'
-export { listTodos, listIncompleteTodos, getTodoById, type TodoListItem as TodoListItemExport } from './todos.query'
+export {
+  listTodos,
+  listTodosPage,
+  listTodosByDueDate,
+  listTodoDateMarkers,
+  listUnscheduledTodos,
+  listIncompleteTodos,
+  getTodoById,
+  type TodoListItem as TodoListItemExport,
+} from './todos.query'
 export {
   setTodoCompletion,
   updateTodo,
