@@ -24,9 +24,10 @@ describe('WorkspaceRunPanel', () => {
       />
     )
 
-    expect(html).toContain('正在调用工具')
+    expect(html).toContain('正在执行处理')
     expect(html).toContain('正在执行工具')
     expect(html).not.toContain('已理解请求')
+    expect(html).not.toContain('用户输入')
     expect(html).not.toMatch(/system prompt/i)
   })
 
