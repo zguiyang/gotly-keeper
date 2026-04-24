@@ -123,16 +123,6 @@ function AssetItem({
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="mb-2 flex flex-wrap items-center gap-2.5">
-            <TypePill type={asset.type} />
-            {asset.completed ? <span className={workspacePillClassName}>已完成</span> : null}
-            {asset.type === 'todo' ? (
-              <TodoDueTime item={asset} />
-            ) : (
-              <span className={workspaceMetaTextClassName}>{createdTimeText}</span>
-            )}
-          </div>
-
           <div className="flex min-w-0 items-start justify-between gap-3 sm:gap-4">
             <div className="min-w-0 flex-1">
               <h3
@@ -152,6 +142,16 @@ function AssetItem({
               >
                 {asset.excerpt}
               </p>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2.5">
+                {asset.type === 'todo' ? (
+                  <TodoDueTime item={asset} />
+                ) : (
+                  <span className={workspaceMetaTextClassName}>{createdTimeText}</span>
+                )}
+                <TypePill type={asset.type} />
+                {asset.completed ? <span className={workspacePillClassName}>已完成</span> : null}
+              </div>
             </div>
 
             <div className="shrink-0 pt-0.5 opacity-100 transition-opacity duration-200 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100">
