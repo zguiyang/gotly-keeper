@@ -262,6 +262,8 @@ export function WorkspaceClient({
                     time={formatAbsoluteTime(asset.createdAt)}
                     type={presentation.label}
                     timeText={asset.timeText}
+                    dueAt={asset.dueAt}
+                    assetType={asset.type}
                   />
                 )
               })}

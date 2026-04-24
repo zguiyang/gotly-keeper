@@ -5,6 +5,7 @@ import {
   type TodoReviewResult,
 } from '@/shared/assets/assets.types'
 
+import { TodoDueTime } from './todo-due-time'
 import { WorkspaceActionableAssetList } from './workspace-actionable-assets'
 import {
   workspaceMetaTextClassName,
@@ -20,6 +21,8 @@ export function RecentItem({
   time,
   type,
   timeText,
+  dueAt,
+  assetType,
 }: {
   icon: React.ElementType
   iconBg: string
@@ -29,6 +32,8 @@ export function RecentItem({
   time: string
   type: string
   timeText?: string | null
+  dueAt?: Date | string | number | null
+  assetType?: AssetListItem['type']
 }) {
   return (
     <div className="group -mx-3 rounded-2xl border-t border-border/10 px-3 py-4 transition-colors duration-150 hover:bg-muted/45 focus-within:bg-muted/45">
@@ -50,8 +55,14 @@ export function RecentItem({
           </p>
           <p className="mt-2">
             <span className={workspacePillClassName}>
-            {timeText ? `${type} · ${timeText}` : type}
+              {type}
             </span>
+            {assetType === 'todo' ? (
+              <TodoDueTime
+                item={{ dueAt, timeText }}
+                className="ml-2 inline-flex max-w-full items-center gap-1.5 align-middle text-on-surface-variant/78"
+              />
+            ) : null}
           </p>
         </div>
       </div>

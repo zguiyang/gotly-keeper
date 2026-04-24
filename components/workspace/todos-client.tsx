@@ -2,7 +2,7 @@
 
 import { addMonths, format, isSameDay, startOfDay, startOfMonth } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { Circle, CircleCheck, ListTodo } from 'lucide-react'
+import { ListTodo, Square, SquareCheck } from 'lucide-react'
 import { useMemo, useState, type ComponentProps } from 'react'
 
 import {
@@ -131,9 +131,9 @@ function TodoItemComponent({
           title={item.completed ? '标记为未完成' : '标记为已完成'}
         >
           {item.completed ? (
-            <CircleCheck className="text-primary" />
+            <SquareCheck className="text-primary" />
           ) : (
-            <Circle />
+            <Square />
           )}
         </Button>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">

@@ -53,7 +53,7 @@ describe('getTodoDueDisplay', () => {
       )
     ).toEqual({
       kind: 'unscheduled',
-      label: '无截止日期',
+      label: '暂无截止日期',
     })
   })
 
@@ -68,7 +68,7 @@ describe('getTodoDueDisplay', () => {
       )
     ).toEqual({
       kind: 'unscheduled',
-      label: '无截止日期',
+      label: '暂无截止日期',
     })
   })
 })

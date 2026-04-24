@@ -7,7 +7,7 @@ export type TodoDueDisplay = {
   label: string
 }
 
-type TodoDueInput = {
+export type TodoDueInput = {
   dueAt: Date | string | number | null | undefined
   timeText: string | null | undefined
 }
@@ -45,6 +45,6 @@ export function getTodoDueDisplay(input: TodoDueInput, now: Date = new Date()): 
 
   return {
     kind: 'unscheduled',
-    label: '无截止日期',
+    label: '暂无截止日期',
   }
 }

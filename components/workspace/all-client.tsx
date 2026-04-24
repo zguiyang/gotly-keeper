@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
 import { AssetEditDialog, type AssetEditValues } from '@/components/workspace/asset-edit-dialog'
+import { TodoDueTime } from '@/components/workspace/todo-due-time'
 import {
   WorkspaceEmptyState,
   WorkspaceFilterTabs,
@@ -105,7 +106,7 @@ function AssetItem({
 }) {
   const presentation = assetTypePresentation[asset.type]
   const Icon = presentation.icon
-  const timeText = asset.timeText || formatAssetRelativeTime(asset.createdAt)
+  const createdTimeText = formatAssetRelativeTime(asset.createdAt)
   const actions = [
     { label: '编辑', onClick: () => onEdit(asset) },
     { label: '归档', onClick: () => onArchive(asset) },
@@ -125,7 +126,11 @@ function AssetItem({
           <div className="mb-2 flex flex-wrap items-center gap-2.5">
             <TypePill type={asset.type} />
             {asset.completed ? <span className={workspacePillClassName}>已完成</span> : null}
-            <span className={workspaceMetaTextClassName}>{timeText}</span>
+            {asset.type === 'todo' ? (
+              <TodoDueTime item={asset} />
+            ) : (
+              <span className={workspaceMetaTextClassName}>{createdTimeText}</span>
+            )}
           </div>
 
           <div className="flex min-w-0 items-start justify-between gap-3 sm:gap-4">
