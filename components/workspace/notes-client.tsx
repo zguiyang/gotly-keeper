@@ -37,7 +37,7 @@ function NoteCard({
     <article className="group flex min-h-[190px] flex-col rounded-[14px] border border-border/18 bg-surface-container-lowest/90 px-4 py-4 shadow-[var(--shadow-note-card)] transition-[border-color,background-color,box-shadow] duration-200 ease-out hover:border-border/28 hover:bg-surface-container-lowest hover:shadow-[var(--shadow-elevation-1)]">
       <div className="flex items-start gap-3">
         <span className={`${workspaceMetaTextClassName} shrink-0`}>
-          笔记 · {note.timeText || formatAssetRelativeTime(note.createdAt)}
+          笔记 · {formatAssetRelativeTime(note.createdAt)}
         </span>
 
         <div className="ml-auto shrink-0">

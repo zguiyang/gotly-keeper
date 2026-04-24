@@ -81,7 +81,7 @@ function TodoDateHeader({
           当前 {selectedCount} 项
         </span>
         <span className="size-1 rounded-full bg-border/40" aria-hidden="true" />
-        <span>已排期 {scheduledCount} 项</span>
+        <span>已排期日期 {scheduledCount} 天</span>
         <span className="size-1 rounded-full bg-border/40" aria-hidden="true" />
         <span>未排期 {unscheduledCount} 项</span>
       </div>
@@ -323,7 +323,7 @@ function TodoCalendarPanel({
           </p>
         </div>
         <div className="rounded-xl border border-border/10 bg-muted/35 px-3 py-2.5">
-          <p className={workspaceMetaTextClassName}>已排期</p>
+          <p className={workspaceMetaTextClassName}>已排期日期</p>
           <p className="mt-1 font-mono text-lg font-semibold leading-none text-on-surface tabular-nums">
             {scheduledCount}
           </p>
@@ -421,7 +421,7 @@ export function TodosClient({
     item: AssetListItem,
     values: AssetEditValues
   ) {
-    if (!('timeText' in values) || !('content' in values)) {
+    if ('url' in values) {
       return false
     }
 
@@ -430,11 +430,11 @@ export function TodosClient({
       assetType: 'todo',
       rawInput: values.rawInput,
       title: values.title,
-      content: values.content,
-      ...(values.timeText !== undefined
+      content: 'content' in values ? values.content : undefined,
+      ...(('timeText' in values && values.timeText !== undefined) || ('dueAt' in values && values.dueAt !== undefined)
         ? {
-            timeText: values.timeText,
-            dueAt: values.timeText === item.timeText ? item.dueAt : null,
+            timeText: 'timeText' in values ? values.timeText : undefined,
+            dueAt: 'dueAt' in values ? values.dueAt : undefined,
           }
         : {}),
     })

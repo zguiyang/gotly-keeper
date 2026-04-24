@@ -217,25 +217,25 @@ export function WorkspaceActionableAssetList({
   async function submitEdit(asset: AssetListItem, values: AssetEditValues) {
     let updated: AssetListItem | null = null
 
-    if (asset.type === 'note' && 'content' in values && !('timeText' in values)) {
+    if (asset.type === 'note' && !('url' in values) && !('timeText' in values) && !('dueAt' in values)) {
       updated = await updateAsset({
         assetId: asset.id,
         assetType: 'note',
         rawInput: values.rawInput,
         title: values.title,
-        content: values.content,
+        content: 'content' in values ? values.content : undefined,
       })
     }
 
-    if (asset.type === 'todo' && 'content' in values && 'timeText' in values) {
+    if (asset.type === 'todo' && !('url' in values)) {
       updated = await updateAsset({
         assetId: asset.id,
         assetType: 'todo',
         rawInput: values.rawInput,
         title: values.title,
-        content: values.content,
-        timeText: values.timeText,
-        dueAt: values.timeText === asset.timeText ? asset.dueAt : null,
+        content: 'content' in values ? values.content : undefined,
+        timeText: 'timeText' in values ? values.timeText : undefined,
+        dueAt: 'dueAt' in values ? values.dueAt : undefined,
       })
     }
 

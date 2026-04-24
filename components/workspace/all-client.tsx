@@ -75,7 +75,7 @@ function ArchiveSummaryBar({
               {hasNextPage ? '，还有更多待载入' : '，已加载全部'}
             </p>
             <p className="text-[11px] text-on-surface-variant/75">
-              时间线按今天、昨天和更早分组，便于快速回看。
+              时间线按捕获时间分组，不是按待办排期排序，便于快速回看。
             </p>
           </div>
         </div>
@@ -234,9 +234,9 @@ export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetL
   const completedTodoCount = items.filter((asset) => asset.type === 'todo' && asset.completed).length
   const totalCount = items.length
   const timelineGroups = [
-    { key: 'today', label: '今天', hint: '最近 24 小时', assets: todayAssets },
-    { key: 'yesterday', label: '昨天', hint: '前一天', assets: yesterdayAssets },
-    { key: 'older', label: '更早', hint: '更久以前', assets: olderAssets },
+    { key: 'today', label: '今天', hint: '今天捕获', assets: todayAssets },
+    { key: 'yesterday', label: '昨天', hint: '昨天捕获', assets: yesterdayAssets },
+    { key: 'older', label: '更早', hint: '昨天之前捕获', assets: olderAssets },
   ].filter((group) => group.assets.length > 0)
 
   async function handleFilterChange(nextFilter: string) {
@@ -247,7 +247,7 @@ export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetL
 
   async function submitEdit(asset: AssetListItem, values: AssetEditValues) {
     if (asset.type === 'note') {
-      if (!('content' in values) || 'timeText' in values) {
+      if ('url' in values || 'timeText' in values || 'dueAt' in values) {
         return false
       }
 
@@ -265,7 +265,7 @@ export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetL
     }
 
     if (asset.type === 'todo') {
-      if (!('timeText' in values) || !('content' in values)) {
+      if ('url' in values) {
         return false
       }
 
@@ -274,11 +274,11 @@ export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetL
         assetType: 'todo',
         rawInput: values.rawInput,
         title: values.title,
-        content: values.content,
-        ...(values.timeText !== undefined
+        content: 'content' in values ? values.content : undefined,
+        ...(('timeText' in values && values.timeText !== undefined) || ('dueAt' in values && values.dueAt !== undefined)
           ? {
-              timeText: values.timeText,
-              dueAt: values.timeText === asset.timeText ? asset.dueAt : null,
+              timeText: 'timeText' in values ? values.timeText : undefined,
+              dueAt: 'dueAt' in values ? values.dueAt : undefined,
             }
           : {}),
       })
@@ -334,7 +334,7 @@ export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetL
         <WorkspacePageHeader
           title="知识库"
           eyebrow="全部内容"
-          description="把最近捕获的笔记、书签和待办排成一条时间线。先看全局，再按类型收窄，快速找到该处理的内容。"
+          description="把最近捕获的笔记、书签和待办按捕获时间排成一条时间线。先看全局，再按类型收窄，快速找到该处理的内容。"
           className="mb-6"
         />
 

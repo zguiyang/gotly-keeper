@@ -32,6 +32,23 @@ function getHostname(url: string | null) {
   }
 }
 
+async function copyBookmarkUrl(url: string) {
+  if (!navigator.clipboard?.writeText) {
+    return { ok: false as const, reason: 'clipboard-unavailable' as const }
+  }
+
+  try {
+    await navigator.clipboard.writeText(url)
+    return { ok: true as const }
+  } catch (error) {
+    if (error instanceof Error && error.name === 'NotAllowedError') {
+      return { ok: false as const, reason: 'clipboard-blocked' as const }
+    }
+
+    return { ok: false as const, reason: 'clipboard-failed' as const }
+  }
+}
+
 function BookmarkItem({
   item,
   onShare,
@@ -148,24 +165,39 @@ export function BookmarksClient({
       return
     }
 
-    try {
-      if (navigator.share) {
+    if (navigator.share) {
+      try {
         await navigator.share({
           title: item.title,
           url: item.url,
         })
         return
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          toast('已取消分享')
+          return
+        }
       }
-
-      await navigator.clipboard.writeText(item.url)
-      toast.success('链接已复制，可直接粘贴分享')
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        return
-      }
-
-      toast.error('分享失败，请稍后重试')
     }
+
+    const copyResult = await copyBookmarkUrl(item.url)
+
+    if (copyResult.ok) {
+      toast.success('链接已复制，可直接粘贴分享')
+      return
+    }
+
+    if (!navigator.share && copyResult.reason === 'clipboard-unavailable') {
+      toast.error('当前浏览器不支持系统分享，且无法复制链接')
+      return
+    }
+
+    if (copyResult.reason === 'clipboard-blocked') {
+      toast.error('无法访问剪贴板，请检查浏览器复制权限')
+      return
+    }
+
+    toast.error('复制链接失败，请稍后重试')
   }
 
   async function submitEdit(
