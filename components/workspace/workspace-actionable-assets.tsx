@@ -1,12 +1,13 @@
 'use client'
 
-import { Circle, CircleCheck, Clock, ExternalLink } from 'lucide-react'
+import { Circle, CircleCheck, ExternalLink } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
 import { AssetEditDialog, type AssetEditValues } from '@/components/workspace/asset-edit-dialog'
+import { TodoDueTime } from '@/components/workspace/todo-due-time'
 import {
   workspaceMetaTextClassName,
   workspacePillClassName,
@@ -53,10 +54,7 @@ function ActionableAssetItem({
   const presentation = assetTypePresentation[asset.type]
   const Icon = presentation.icon
   const supportingText = getAssetSupportingText(asset)
-  const timeText =
-    asset.type === 'todo'
-      ? asset.timeText || '无截止日期'
-      : asset.timeText || formatAssetRelativeTime(asset.createdAt)
+  const timeText = asset.timeText || formatAssetRelativeTime(asset.createdAt)
 
   return (
     <div
@@ -128,10 +126,13 @@ function ActionableAssetItem({
               <span className={workspacePillClassName}>
                 {presentation.label}
               </span>
-              <span className="inline-flex items-center gap-1 text-[12px] text-on-surface-variant/80">
-                {asset.type === 'todo' ? <Clock className="h-3 w-3" /> : null}
-                {timeText}
-              </span>
+              {asset.type === 'todo' ? (
+                <TodoDueTime item={asset} />
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[12px] text-on-surface-variant/80">
+                  {timeText}
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
