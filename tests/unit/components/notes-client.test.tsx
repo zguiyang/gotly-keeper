@@ -65,4 +65,21 @@ describe('NotesClient display', () => {
     expect(html).toContain('任务 5 浏览器验证</h3>')
     expect(html).toContain('你好</p>')
   })
+
+  it('renders created time as a bottom meta row and keeps action menu out of flow', () => {
+    const html = renderToStaticMarkup(
+      <NotesClient
+        initialPage={createPage([
+          createNote({
+            title: '任务 5 浏览器验证',
+            content: '你好',
+            excerpt: '你好',
+          }),
+        ])}
+      />
+    )
+
+    expect(html).toContain('class="absolute top-4 right-4 z-10 shrink-0"')
+    expect(html).toContain('创建于')
+  })
 })
