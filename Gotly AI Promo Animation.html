@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<!--
+Assumptions
+- Duration: 9.5s
+- Output ratio: 16:9 master at 1600x900, center-safe for later vertical crop
+- Product claim: one natural-language input becomes organized notes, bookmarks, and todos
+
+Reasoning
+- Beat 1 must establish "one input, auto organize" in under 3 seconds
+- Beat 2 should visualize AI judgment through parse / route / execute semantics, not fake sci-fi chrome
+- Beat 3 should land on product-faithful workspace language borrowed from the current app
+
+Scenes
+1. Input appears and anchors the single-entry story
+2. Text is semantically split and routed into note / bookmark / todo targets
+3. Targets receive fragments while phase state advances parse -> route -> execute
+4. Workspace-like result cards settle into a calm, credible product frame
+5. Logo and brand line close the sequence with a held ending frame
+
+Grammar
+- Motion verbs allowed: fade + slight rise, magnetic split, guided travel, calm settle
+- Timeline model: single deterministic RAF timeline with seekable render(t)
+- Layout model: one fixed stage, one center-safe frame, no responsive reflow inside the master canvas
+
+Borrowed UI motifs
+- Workspace entry copy: "先捕获，再让 Gotly 帮你整理"
+- Input placeholder semantics: one sentence, pasted link, or direct knowledge query
+- Run phases: parse / route / execute with calm status presentation
+
+ Red lines
+- No fake dashboards, charts, particles, or neon sci-fi affordances
+- No top/left layout animation; animate transform and opacity only
+- No scene gaps during transitions; later beats must overlap by design
+- No timer-driven chained side effects that break seeking or recording
+ - Task 3 scope only: no new scene structure, no export flow, no screenshot workflow
+-->
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gotly AI Promo Animation</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0c1017;
+        --bg-elevated: rgba(255, 255, 255, 0.06);
+        --bg-muted: rgba(255, 255, 255, 0.035);
+        --line: rgba(255, 255, 255, 0.1);
+        --line-soft: rgba(255, 255, 255, 0.06);
+        --text: #f5f7fb;
+        --text-muted: rgba(245, 247, 251, 0.7);
+        --text-soft: rgba(245, 247, 251, 0.48);
+        --accent: #86a8ff;
+        --accent-soft: rgba(134, 168, 255, 0.2);
+        --warm: #b8ffde;
+        --shadow: 0 32px 90px rgba(0, 0, 0, 0.35);
+        --progress: 0;
+        --safe-frame-x: 220px;
+        --safe-frame-y: 90px;
+        --safe-content-x: calc(var(--safe-frame-x) + 20px);
+        --safe-content-top: calc(var(--safe-frame-y) + 18px);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 18% 16%, rgba(134, 168, 255, 0.18), transparent 28%),
+          radial-gradient(circle at 82% 22%, rgba(184, 255, 222, 0.08), transparent 24%),
+          linear-gradient(180deg, #0a0e14 0%, #101521 100%);
+        color: var(--text);
+        font-family: Inter, "SF Pro Text", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+      }
+
+      #app {
+        width: 1600px;
+        height: 900px;
+        position: relative;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent 26%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+          var(--bg);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 32px;
+        box-shadow: var(--shadow);
+        transform-origin: center;
+      }
+
+      .grain {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.08;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 80px 80px;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.25));
+      }
+
+      .ambient-orb,
+      .ambient-orb::after {
+        position: absolute;
+        border-radius: 999px;
+        filter: blur(18px);
+        content: "";
+      }
+
+      .ambient-orb {
+        width: 360px;
+        height: 360px;
+        top: -120px;
+        right: -40px;
+        background: rgba(134, 168, 255, 0.14);
+      }
+
+      .ambient-orb::after {
+        width: 280px;
+        height: 280px;
+        top: 420px;
+        left: -1180px;
+        background: rgba(184, 255, 222, 0.08);
+      }
+
+      .safe-frame {
+        position: absolute;
+        left: var(--safe-frame-x);
+        right: var(--safe-frame-x);
+        top: var(--safe-frame-y);
+        bottom: var(--safe-frame-y);
+        border: 1px dashed rgba(255, 255, 255, 0.08);
+        border-radius: 28px;
+        pointer-events: none;
+      }
+
+      .masthead {
+        position: absolute;
+        top: var(--safe-content-top);
+        left: var(--safe-content-x);
+        right: var(--safe-content-x);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        pointer-events: none;
+        will-change: transform, opacity;
+      }
+
+      .logo-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .logo-wrap img,
+      .brand-logo img {
+        width: 180px;
+        height: 48px;
+        display: block;
+        opacity: 0.92;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--text-soft);
+      }
+
+      .stage-center {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 120px 120px 110px;
+      }
+
+      .stage-shell {
+        width: 1120px;
+        height: 590px;
+        position: relative;
+        border-radius: 40px;
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(16px);
+      }
+
+      .stage-layer {
+        position: absolute;
+        inset: 0;
+      }
+
+      .stage-layer--canvas {
+        z-index: 0;
+      }
+
+      .stage-layer--scene {
+        z-index: 1;
+      }
+
+      .stage-layer--brand {
+        z-index: 2;
+      }
+
+      .stage-layer--hud {
+        z-index: 3;
+      }
+
+      .stage-shell::before {
+        content: "";
+        position: absolute;
+        inset: 1px;
+        border-radius: 39px;
+        border: 1px solid rgba(255, 255, 255, 0.03);
+        pointer-events: none;
+      }
+
+      .stage-shell::after {
+        content: "";
+        position: absolute;
+        inset: 88px 104px;
+        border-radius: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        background: radial-gradient(circle at center, rgba(134, 168, 255, 0.08), rgba(134, 168, 255, 0) 58%);
+        pointer-events: none;
+      }
+
+      .brand-lockup {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        pointer-events: none;
+        opacity: 0;
+        will-change: transform, opacity;
+      }
+
+      .brand-lockup-inner {
+        width: min(820px, calc(100% - 120px));
+        padding: 42px 48px 38px;
+        border-radius: 32px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(180deg, rgba(12, 16, 23, 0.84), rgba(12, 16, 23, 0.7));
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(16px);
+        will-change: transform, opacity;
+      }
+
+      .brand-logo {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 24px;
+      }
+
+      .brand-line {
+        margin: 0;
+        font-size: 34px;
+        line-height: 1.14;
+        letter-spacing: -0.04em;
+        color: rgba(245, 247, 251, 0.98);
+      }
+
+      .brand-support {
+        margin: 12px 0 0;
+        font-size: 15px;
+        line-height: 1.6;
+        color: rgba(245, 247, 251, 0.56);
+      }
+
+      .orbit {
+        position: absolute;
+        inset: 120px 180px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        opacity: 0.8;
+        transform: scale(calc(0.985 + (var(--progress) * 0.015)));
+      }
+
+      .orbit-secondary {
+        inset: 158px 236px;
+        opacity: 0.5;
+        border-color: rgba(184, 255, 222, 0.08);
+        transform: scale(calc(1.015 - (var(--progress) * 0.015)));
+      }
+
+      .anchor-dot {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 14px;
+        height: 14px;
+        margin: -7px 0 0 -7px;
+        border-radius: 999px;
+        background: var(--accent);
+        box-shadow: 0 0 0 10px rgba(134, 168, 255, 0.12), 0 0 42px rgba(134, 168, 255, 0.35);
+      }
+
+      .corner-note {
+        position: absolute;
+        left: 44px;
+        bottom: 40px;
+        max-width: 320px;
+        font-size: 13px;
+        line-height: 1.7;
+        color: var(--text-soft);
+      }
+
+      .timeline-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        position: absolute;
+        right: 44px;
+        bottom: 40px;
+        padding: 12px 16px;
+        border-radius: 999px;
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text-soft);
+      }
+
+      .timeline-rail {
+        position: absolute;
+        left: 52px;
+        right: 52px;
+        bottom: 24px;
+        height: 4px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .timeline-rail::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        width: calc(var(--progress) * 100%);
+        border-radius: inherit;
+        background: linear-gradient(90deg, rgba(184, 255, 222, 0.65), rgba(134, 168, 255, 0.95));
+      }
+
+      .scene-root {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+
+      .input-hero,
+      .route-stage,
+      .workspace-fall {
+        position: absolute;
+        inset: 0;
+        will-change: transform, opacity;
+      }
+
+      .input-hero {
+        display: grid;
+        place-items: center;
+        padding: 56px 68px 48px;
+      }
+
+      .input-panel {
+        width: 980px;
+        padding: 28px 32px 26px;
+        border-radius: 34px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.045));
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.24);
+      }
+
+      .eyebrow {
+        margin: 0 0 10px;
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(245, 247, 251, 0.58);
+      }
+
+      .hero-title {
+        margin: 0;
+        font-size: 54px;
+        line-height: 1.04;
+        letter-spacing: -0.045em;
+      }
+
+      .hero-subtitle {
+        margin: 14px 0 0;
+        max-width: 760px;
+        font-size: 18px;
+        line-height: 1.6;
+        color: var(--text-muted);
+      }
+
+      .entry-shell {
+        position: relative;
+        margin-top: 28px;
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(12, 16, 23, 0.58);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      }
+
+      .entry-label {
+        position: absolute;
+        top: 18px;
+        left: 22px;
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(245, 247, 251, 0.42);
+      }
+
+      .entry-text {
+        margin: 0;
+        min-height: 152px;
+        padding: 50px 26px 72px;
+        font-size: 30px;
+        line-height: 1.55;
+        letter-spacing: -0.02em;
+        color: rgba(245, 247, 251, 0.95);
+      }
+
+      .entry-footer {
+        position: absolute;
+        right: 18px;
+        bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .entry-hint {
+        font-size: 13px;
+        color: rgba(245, 247, 251, 0.48);
+      }
+
+      .entry-send {
+        padding: 10px 18px;
+        border-radius: 999px;
+        border: 1px solid rgba(134, 168, 255, 0.22);
+        background: rgba(134, 168, 255, 0.12);
+        font-size: 14px;
+        color: rgba(245, 247, 251, 0.92);
+      }
+
+      .route-stage {
+        padding: 82px 82px 58px;
+      }
+
+      .phase-strip {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+      }
+
+      .phase-pill {
+        padding: 10px 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(245, 247, 251, 0.48);
+        transition: opacity 160ms linear;
+      }
+
+      .phase-pill.is-active {
+        border-color: rgba(134, 168, 255, 0.22);
+        background: rgba(134, 168, 255, 0.12);
+        color: rgba(245, 247, 251, 0.94);
+        box-shadow: 0 10px 24px rgba(134, 168, 255, 0.14);
+      }
+
+      .route-title {
+        margin: 28px 0 0;
+        text-align: center;
+        font-size: 42px;
+        line-height: 1.06;
+        letter-spacing: -0.045em;
+      }
+
+      .route-subtitle {
+        margin: 12px auto 0;
+        max-width: 620px;
+        text-align: center;
+        font-size: 17px;
+        line-height: 1.6;
+        color: var(--text-muted);
+      }
+
+      .route-grid {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+        margin-top: 42px;
+      }
+
+      .route-card {
+        position: relative;
+        min-height: 186px;
+        padding: 22px 22px 20px;
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      }
+
+      .route-card-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(245, 247, 251, 0.58);
+      }
+
+      .route-card-title {
+        margin: 18px 0 0;
+        font-size: 28px;
+        line-height: 1.12;
+        letter-spacing: -0.04em;
+      }
+
+      .route-card-meta {
+        margin-top: 10px;
+        font-size: 14px;
+        line-height: 1.6;
+        color: rgba(245, 247, 251, 0.62);
+      }
+
+      .route-card-target {
+        position: absolute;
+        left: 22px;
+        right: 22px;
+        bottom: 20px;
+        padding: 12px 14px;
+        border-radius: 18px;
+        border: 1px dashed rgba(255, 255, 255, 0.12);
+        background: rgba(12, 16, 23, 0.34);
+        font-size: 16px;
+        color: rgba(245, 247, 251, 0.86);
+      }
+
+      .chip-layer {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .route-chip {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 164px;
+        padding: 10px 18px;
+        border-radius: 999px;
+        border: 1px solid rgba(184, 255, 222, 0.14);
+        background: rgba(184, 255, 222, 0.1);
+        font-size: 15px;
+        color: rgba(245, 247, 251, 0.96);
+        box-shadow: 0 16px 36px rgba(8, 12, 18, 0.22);
+        will-change: transform, opacity;
+      }
+
+      .workspace-fall {
+        padding: 98px 90px 62px;
+      }
+
+      .workspace-board {
+        display: grid;
+        grid-template-columns: 0.96fr 1.04fr;
+        gap: 22px;
+        height: 100%;
+        padding: 28px;
+        border-radius: 34px;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.045));
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.2);
+      }
+
+      .workspace-panel,
+      .workspace-results {
+        position: relative;
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(12, 16, 23, 0.34);
+      }
+
+      .workspace-panel {
+        padding: 24px;
+      }
+
+      .workspace-results {
+        padding: 20px;
+      }
+
+      .workspace-label {
+        margin: 0;
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: rgba(245, 247, 251, 0.5);
+      }
+
+      .workspace-heading {
+        margin: 14px 0 0;
+        font-size: 30px;
+        line-height: 1.08;
+        letter-spacing: -0.04em;
+      }
+
+      .workspace-copy {
+        margin: 10px 0 0;
+        font-size: 15px;
+        line-height: 1.65;
+        color: rgba(245, 247, 251, 0.58);
+      }
+
+      .workspace-context-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .workspace-context-card {
+        padding: 12px 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .workspace-context-label {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(245, 247, 251, 0.4);
+      }
+
+      .workspace-context-value {
+        margin-top: 7px;
+        font-size: 15px;
+        color: rgba(245, 247, 251, 0.84);
+      }
+
+      .workspace-run-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .workspace-meta-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        font-size: 12px;
+        color: rgba(245, 247, 251, 0.66);
+      }
+
+      .workspace-phases {
+        display: grid;
+        gap: 12px;
+        margin-top: 24px;
+      }
+
+      .workspace-phase-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .workspace-phase-name {
+        font-size: 15px;
+        color: rgba(245, 247, 251, 0.8);
+      }
+
+      .workspace-phase-status {
+        font-size: 13px;
+        color: rgba(184, 255, 222, 0.84);
+      }
+
+      .workspace-phase-detail {
+        margin-top: 4px;
+        font-size: 12px;
+        color: rgba(245, 247, 251, 0.48);
+      }
+
+      .results-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 4px 4px 16px;
+      }
+
+      .results-title {
+        margin: 0;
+        font-size: 24px;
+        letter-spacing: -0.03em;
+      }
+
+      .results-status {
+        font-size: 13px;
+        color: rgba(245, 247, 251, 0.52);
+      }
+
+      .result-stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .result-card {
+        padding: 16px 16px 14px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.04));
+      }
+
+      .result-card.is-highlighted {
+        border-color: rgba(184, 255, 222, 0.16);
+        box-shadow: 0 18px 42px rgba(8, 12, 18, 0.22);
+      }
+
+      .result-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: rgba(134, 168, 255, 0.1);
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: rgba(245, 247, 251, 0.64);
+      }
+
+      .result-title {
+        margin: 12px 0 0;
+        font-size: 22px;
+        line-height: 1.2;
+        letter-spacing: -0.03em;
+      }
+
+      .result-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 14px;
+        margin-top: 8px;
+        font-size: 12px;
+        color: rgba(245, 247, 251, 0.5);
+      }
+
+      .result-excerpt {
+        margin: 8px 0 0;
+        font-size: 14px;
+        line-height: 1.6;
+        color: rgba(245, 247, 251, 0.62);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app" aria-label="Gotly AI promo animation stage">
+      <div class="grain"></div>
+      <div class="ambient-orb"></div>
+      <div class="safe-frame" aria-hidden="true"></div>
+
+      <header class="masthead">
+        <div class="logo-wrap">
+          <img data-logo-img alt="Gotly AI" />
+        </div>
+        <div class="badge">One Input · Organized Results</div>
+      </header>
+
+      <main class="stage-center">
+        <section class="stage-shell" aria-label="品牌化空舞台">
+          <div class="stage-layer stage-layer--canvas" aria-hidden="true">
+            <div class="orbit"></div>
+            <div class="orbit orbit-secondary"></div>
+            <div class="anchor-dot"></div>
+          </div>
+
+          <div class="stage-layer stage-layer--scene" data-layer="task-2-scene-mount">
+            <div class="scene-root">
+              <section class="input-hero" aria-label="输入 hero">
+                <div class="input-panel">
+                  <p class="eyebrow">Command</p>
+                  <h2 class="hero-title">先捕获，再让 Gotly 帮你整理</h2>
+                  <p class="hero-subtitle">一句自然语言输入，同时触发笔记、书签与待办的归位处理。</p>
+                  <div class="entry-shell">
+                    <div class="entry-label">输入内容或搜索知识库</div>
+                    <p class="entry-text">记一下下周发布节奏，顺手存下这篇文章，明天提醒我跟进</p>
+                    <div class="entry-footer">
+                      <span class="entry-hint">Cmd / Ctrl + Enter 发送</span>
+                      <span class="entry-send">发送</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="route-stage" aria-label="parse route execute 三目标分流">
+                <div class="phase-strip" aria-label="处理阶段">
+                  <div class="phase-pill" data-phase="parse">解析输入</div>
+                  <div class="phase-pill" data-phase="route">判断处理方式</div>
+                  <div class="phase-pill" data-phase="execute">执行处理</div>
+                </div>
+                <h2 class="route-title">一句输入，被拆成三个明确动作</h2>
+                <p class="route-subtitle">Gotly 先理解意图，再把同一句话稳定路由到对应目标，而不是把内容堆进一个通用收纳箱。</p>
+                <div class="route-grid">
+                  <article class="route-card">
+                    <div class="route-card-label">笔记</div>
+                    <h3 class="route-card-title">保留关键信息</h3>
+                    <div class="route-card-meta">结构化保存可复用的内容片段</div>
+                    <div class="route-card-target">下周发布节奏</div>
+                  </article>
+                  <article class="route-card">
+                    <div class="route-card-label">书签</div>
+                    <h3 class="route-card-title">顺手留住来源</h3>
+                    <div class="route-card-meta">把链接作为后续检索入口保留下来</div>
+                    <div class="route-card-target">文章链接已保存</div>
+                  </article>
+                  <article class="route-card">
+                    <div class="route-card-label">待办</div>
+                    <h3 class="route-card-title">明确下一步动作</h3>
+                    <div class="route-card-meta">带时间语义的事项直接变成跟进任务</div>
+                    <div class="route-card-target">明天跟进</div>
+                  </article>
+                  <div class="chip-layer" aria-hidden="true">
+                    <div class="route-chip" data-chip="note">下周发布节奏</div>
+                    <div class="route-chip" data-chip="bookmark">文章链接已保存</div>
+                    <div class="route-chip" data-chip="todo">明天跟进</div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="workspace-fall" aria-label="workspace 落幅">
+                <div class="workspace-board">
+                  <div class="workspace-panel">
+                    <p class="workspace-label">Workspace</p>
+                    <h2 class="workspace-heading">Run #042 已完成</h2>
+                    <p class="workspace-copy">输入已拆分并写入 3 个目标。</p>
+                    <div class="workspace-run-meta">
+                      <div class="workspace-meta-pill">输入 1 条</div>
+                      <div class="workspace-meta-pill">新增 3 条</div>
+                      <div class="workspace-meta-pill">更新时间 09:41</div>
+                    </div>
+                    <div class="workspace-context-grid">
+                      <div class="workspace-context-card">
+                        <div class="workspace-context-label">来源</div>
+                        <div class="workspace-context-value">手动输入</div>
+                      </div>
+                      <div class="workspace-context-card">
+                        <div class="workspace-context-label">入口</div>
+                        <div class="workspace-context-value">Workspace Command</div>
+                      </div>
+                      <div class="workspace-context-card">
+                        <div class="workspace-context-label">处理状态</div>
+                        <div class="workspace-context-value">Parse / Route / Execute</div>
+                      </div>
+                      <div class="workspace-context-card">
+                        <div class="workspace-context-label">写入结果</div>
+                        <div class="workspace-context-value">笔记、书签、待办</div>
+                      </div>
+                    </div>
+                    <div class="workspace-phases">
+                      <div class="workspace-phase-row">
+                        <div>
+                          <span class="workspace-phase-name">解析输入</span>
+                          <div class="workspace-phase-detail">识别到主题、链接对象与时间提醒</div>
+                        </div>
+                        <span class="workspace-phase-status">已完成</span>
+                      </div>
+                      <div class="workspace-phase-row">
+                        <div>
+                          <span class="workspace-phase-name">判断处理方式</span>
+                          <div class="workspace-phase-detail">路由到笔记、书签、待办</div>
+                        </div>
+                        <span class="workspace-phase-status">已完成</span>
+                      </div>
+                      <div class="workspace-phase-row">
+                        <div>
+                          <span class="workspace-phase-name">执行处理</span>
+                          <div class="workspace-phase-detail">写入完成，可继续编辑或跟进</div>
+                        </div>
+                        <span class="workspace-phase-status">已完成</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="workspace-results">
+                    <div class="results-header">
+                      <h3 class="results-title">本次整理结果</h3>
+                      <div class="results-status">三个结果已归位</div>
+                    </div>
+                    <div class="result-stack">
+                      <article class="result-card is-highlighted" data-result-card="note">
+                        <div class="result-pill">笔记</div>
+                        <h4 class="result-title">下周发布节奏</h4>
+                        <div class="result-meta-row">
+                          <span>状态：已保存</span>
+                          <span>更新于 09:41</span>
+                        </div>
+                        <p class="result-excerpt">记录为笔记草稿，待补充发布时间和渠道安排。</p>
+                      </article>
+                      <article class="result-card" data-result-card="bookmark">
+                        <div class="result-pill">书签</div>
+                        <h4 class="result-title">文章链接已保存</h4>
+                        <div class="result-meta-row">
+                          <span>状态：已入库</span>
+                          <span>来源：外部链接</span>
+                        </div>
+                        <p class="result-excerpt">原文入口已保留，后续可继续回看和引用。</p>
+                      </article>
+                      <article class="result-card" data-result-card="todo">
+                        <div class="result-pill">待办</div>
+                        <h4 class="result-title">明天跟进</h4>
+                        <div class="result-meta-row">
+                          <span>状态：待处理</span>
+                          <span>提醒：明天 09:00</span>
+                        </div>
+                        <p class="result-excerpt">已创建提醒项，明天回到工作台时可直接继续处理。</p>
+                      </article>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <div class="stage-layer stage-layer--brand">
+            <div class="brand-lockup">
+              <div class="brand-lockup-inner">
+                <div class="brand-logo">
+                  <img data-logo-img alt="Gotly AI" />
+                </div>
+                <h1 class="brand-line">先捕获，再让 Gotly 帮你整理</h1>
+                <p class="brand-support">把一句自然语言输入，稳定整理成可继续使用的知识与行动。</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="stage-layer stage-layer--hud">
+            <div class="corner-note">保持单一固定舞台，只在现有三段叙事上补品牌收尾与统一动势。</div>
+            <div class="timeline-status" data-phase-status>parse / route / execute</div>
+          </div>
+        </section>
+      </main>
+
+      <div class="timeline-rail" aria-hidden="true"></div>
+    </div>
+
+    <script>
+      const DURATION = 9.5;
+      const LOGO_SRC = 'public/logo.svg';
+      const SAFE_FRAME = Object.freeze({ x: 220, y: 90, contentInsetX: 20, contentInsetTop: 18 });
+      const stage = document.getElementById('app');
+      const stageShell = document.querySelector('.stage-shell');
+      const stageSceneMount = document.querySelector('[data-layer="task-2-scene-mount"]');
+      const masthead = document.querySelector('.masthead');
+      const brandLockup = document.querySelector('.brand-lockup');
+      const brandLockupInner = document.querySelector('.brand-lockup-inner');
+      const inputHero = document.querySelector('.input-hero');
+      const routeStage = document.querySelector('.route-stage');
+      const workspaceFall = document.querySelector('.workspace-fall');
+      const hudLayer = document.querySelector('.stage-layer--hud');
+      const timelineRail = document.querySelector('.timeline-rail');
+      const logoImages = Array.from(document.querySelectorAll('[data-logo-img]'));
+      const phaseStatus = document.querySelector('[data-phase-status]');
+      const phasePills = Array.from(document.querySelectorAll('[data-phase]'));
+      const routeChips = Array.from(document.querySelectorAll('[data-chip]'));
+      const resultCards = Array.from(document.querySelectorAll('[data-result-card]'));
+      let time = 0;
+      let playing = false;
+      let lastTick = null;
+
+      window.__recording = Boolean(window.__recording);
+      window.__ready = false;
+      window.__stage = { stage, stageShell, stageSceneMount };
+
+      stage.style.setProperty('--safe-frame-x', `${SAFE_FRAME.x}px`);
+      stage.style.setProperty('--safe-frame-y', `${SAFE_FRAME.y}px`);
+      stage.style.setProperty('--safe-content-x', `${SAFE_FRAME.x + SAFE_FRAME.contentInsetX}px`);
+      stage.style.setProperty('--safe-content-top', `${SAFE_FRAME.y + SAFE_FRAME.contentInsetTop}px`);
+      logoImages.forEach((image) => {
+        image.src = LOGO_SRC;
+      });
+
+      function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+      }
+
+      function clamp01(value) {
+        return clamp(value, 0, 1);
+      }
+
+      function lerp(start, end, amount) {
+        return start + (end - start) * amount;
+      }
+
+      function easeOutCubic(value) {
+        const safe = clamp01(value);
+        return 1 - Math.pow(1 - safe, 3);
+      }
+
+      function easeInOutCubic(value) {
+        const safe = clamp01(value);
+        return safe < 0.5
+          ? 4 * safe * safe * safe
+          : 1 - Math.pow(-2 * safe + 2, 3) / 2;
+      }
+
+      function segmentProgress(value, start, end) {
+        if (end <= start) {
+          return value >= end ? 1 : 0;
+        }
+
+        return clamp01((value - start) / (end - start));
+      }
+
+      function getWorkspaceChipTargets() {
+        const shellRect = stageShell.getBoundingClientRect();
+        const targets = {};
+
+        resultCards.forEach((card) => {
+          const rect = card.getBoundingClientRect();
+          targets[card.dataset.resultCard] = {
+            x: rect.left - shellRect.left + 34,
+            y: rect.top - shellRect.top + 74,
+          };
+        });
+
+        return targets;
+      }
+
+      const chipMotion = {
+        note: {
+          from: { x: 284, y: 166 },
+          mid: { x: 240, y: 258 },
+          to: { x: 168, y: 292 },
+        },
+        bookmark: {
+          from: { x: 498, y: 166 },
+          mid: { x: 520, y: 256 },
+          to: { x: 476, y: 292 },
+        },
+        todo: {
+          from: { x: 760, y: 166 },
+          mid: { x: 788, y: 258 },
+          to: { x: 782, y: 292 },
+        },
+      };
+
+      function render(t) {
+        const safeTime = clamp(t, 0, DURATION);
+        const progress = safeTime / DURATION;
+        const heroEnter = easeOutCubic(segmentProgress(safeTime, 0.12, 1.1));
+        const heroExit = easeInOutCubic(segmentProgress(safeTime, 2.85, 4.6));
+        const routeEnter = easeOutCubic(segmentProgress(safeTime, 2.3, 3.45));
+        const routePeak = 1 - easeOutCubic(segmentProgress(safeTime, 5.95, 7.2));
+        const workspaceEnter = easeOutCubic(segmentProgress(safeTime, 5.6, 6.9));
+        const workspaceSettle = easeOutCubic(segmentProgress(safeTime, 6.3, 8.2));
+        const brandQuiet = easeOutCubic(segmentProgress(safeTime, 1.8, 5.8));
+        const brandEnter = easeOutCubic(segmentProgress(safeTime, 7.2, 8.35));
+        const interfaceFade = easeOutCubic(segmentProgress(safeTime, 7.0, 8.0));
+        const finalTakeover = easeOutCubic(segmentProgress(safeTime, 8.66, 9.46));
+        const routeWeight = clamp01(segmentProgress(safeTime, 3.4, 4.5) - segmentProgress(safeTime, 5.05, 6.1) * 0.12);
+        const executeWeight = easeOutCubic(segmentProgress(safeTime, 4.9, 6.25));
+        const workspaceTargets = getWorkspaceChipTargets();
+
+        stage.style.setProperty('--progress', String(progress));
+
+        inputHero.style.opacity = String(clamp01(heroEnter * (1 - heroExit * 0.96)));
+        inputHero.style.transform = `translate3d(0, ${lerp(26, -18, heroEnter) + lerp(0, -40, heroExit)}px, 0) scale(${lerp(0.972, 1, heroEnter) - heroExit * 0.032})`;
+
+        routeStage.style.opacity = String(clamp01(routeEnter * routePeak));
+        routeStage.style.transform = `translate3d(0, ${lerp(54, 0, routeEnter) + lerp(0, -24, workspaceEnter)}px, 0) scale(${lerp(0.97, 1, routeEnter) - workspaceEnter * 0.018})`;
+
+        workspaceFall.style.opacity = String(clamp01(workspaceEnter * (1 - brandEnter * 0.34) * (1 - finalTakeover * 0.96)));
+        workspaceFall.style.transform = `translate3d(0, ${lerp(44, 0, workspaceEnter) - workspaceSettle * 8 - brandEnter * 18 - finalTakeover * 20}px, 0) scale(${lerp(0.985, 1, workspaceEnter) - finalTakeover * 0.018})`;
+        brandLockup.style.opacity = String(clamp01(brandEnter * (0.92 + brandQuiet * 0.08) + finalTakeover * 0.08));
+        brandLockup.style.transform = `translate3d(0, ${lerp(22, 0, brandEnter) - finalTakeover * 6}px, 0)`;
+        brandLockupInner.style.opacity = String(clamp01(0.94 + finalTakeover * 0.06));
+        brandLockupInner.style.transform = `translate3d(0, ${lerp(8, 0, brandEnter) - finalTakeover * 4}px, 0) scale(${1 - finalTakeover * 0.004})`;
+        masthead.style.opacity = String(clamp01((1 - interfaceFade * 0.82) * (1 - finalTakeover * 0.98)));
+        masthead.style.transform = `translate3d(0, ${interfaceFade * -10 - finalTakeover * 18}px, 0)`;
+        hudLayer.style.opacity = String(clamp01((1 - interfaceFade * 0.92) * (1 - finalTakeover * 0.99)));
+        hudLayer.style.transform = `translate3d(0, ${interfaceFade * 12 + finalTakeover * 18}px, 0)`;
+        timelineRail.style.opacity = String(clamp01((1 - interfaceFade * 0.88) * (1 - finalTakeover)));
+
+        const activePhase = executeWeight > 0.7 ? 'execute' : routeWeight > 0.42 ? 'route' : 'parse';
+        phaseStatus.textContent = activePhase === 'execute'
+          ? '执行处理中'
+          : activePhase === 'route'
+            ? '判断处理方式中'
+            : '解析输入中';
+        phasePills.forEach((pill) => {
+          pill.classList.toggle('is-active', pill.dataset.phase === activePhase);
+        });
+
+        routeChips.forEach((chip) => {
+          const config = chipMotion[chip.dataset.chip];
+          const appear = easeOutCubic(segmentProgress(safeTime, 3.0, 3.7));
+          const split = easeInOutCubic(segmentProgress(safeTime, 3.35, 4.35));
+          const arrive = easeOutCubic(segmentProgress(safeTime, 4.15, 5.2));
+          const handoff = easeInOutCubic(segmentProgress(safeTime, 5.18, 6.5));
+          const exit = easeOutCubic(segmentProgress(safeTime, 6.55, 7.05));
+
+          const midX = lerp(config.from.x, config.mid.x, split);
+          const midY = lerp(config.from.y, config.mid.y, split);
+          const routeX = lerp(midX, config.to.x, arrive);
+          const routeY = lerp(midY, config.to.y, arrive);
+          const nextTarget = workspaceTargets[chip.dataset.chip] ?? config.to;
+          const x = lerp(routeX, nextTarget.x, handoff);
+          const y = lerp(routeY, nextTarget.y, handoff);
+          const opacity = clamp01(appear * (1 - exit));
+          const scale = lerp(0.92, 1, appear) + handoff * 0.02 - exit * 0.08;
+
+          chip.style.opacity = String(opacity);
+          chip.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+        });
+      }
+
+      function tick(now) {
+        if (lastTick === null) {
+          lastTick = now;
+          window.__ready = true;
+          render(time);
+          requestAnimationFrame(tick);
+          return;
+        }
+
+        const dt = (now - lastTick) / 1000;
+        lastTick = now;
+
+        if (playing) {
+          let nextTime = time + dt;
+          if (nextTime >= DURATION) {
+            nextTime = window.__recording ? DURATION - 0.001 : 0;
+          }
+          time = nextTime;
+          render(time);
+        }
+
+        requestAnimationFrame(tick);
+      }
+
+      window.__seek = (nextTime) => {
+        time = clamp(Number(nextTime) || 0, 0, DURATION);
+        lastTick = null;
+        render(time);
+      };
+
+      render(0);
+      window.__ready = true;
+      playing = true;
+      requestAnimationFrame(tick);
+
+      document.fonts.ready.then(() => {
+        render(time);
+      });
+    </script>
+  </body>
+</html>
