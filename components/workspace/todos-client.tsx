@@ -2,7 +2,7 @@
 
 import { addMonths, format, isSameDay, startOfDay, startOfMonth } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { Circle, CircleCheck, Clock, ListTodo } from 'lucide-react'
+import { Circle, CircleCheck, ListTodo } from 'lucide-react'
 import { useMemo, useState, type ComponentProps } from 'react'
 
 import {
@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Calendar, CalendarDayButton } from '@/components/ui/calendar'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
 import { AssetEditDialog, type AssetEditValues } from '@/components/workspace/asset-edit-dialog'
+import { TodoDueTime } from '@/components/workspace/todo-due-time'
 import {
   WorkspaceEmptyState,
   workspaceMetaTextClassName,
@@ -146,11 +147,8 @@ function TodoItemComponent({
           >
             {item.title}
           </h4>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-on-surface-variant/80">
-            <span className="inline-flex h-6 items-center gap-1 rounded-full border border-border/10 bg-muted/45 px-2">
-              <Clock className="size-3" />
-              {item.timeText || '无截止日期'}
-            </span>
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <TodoDueTime item={item} />
           </div>
           {note ? (
             <p className="max-w-3xl text-sm leading-6 text-on-surface-variant line-clamp-1 sm:line-clamp-2">
