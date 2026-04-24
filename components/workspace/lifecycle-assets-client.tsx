@@ -3,18 +3,17 @@
 import { AlertTriangle, Archive, ArchiveRestore, Clock3, RotateCcw, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
 import {
   WorkspaceEmptyState,
@@ -175,28 +174,28 @@ function PurgeAssetDialog({
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger
         render={<Button variant="destructive" size="sm" className={cn('rounded-full', className)} />}
         disabled={disabled || submitting}
       >
         永久删除
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>确认永久删除</AlertDialogTitle>
-          <AlertDialogDescription>
+      </DialogTrigger>
+      <DialogContent showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>确认永久删除</DialogTitle>
+          <DialogDescription>
             删除后无法恢复，{asset.title} 将从系统中彻底移除。
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" disabled={submitting} onClick={() => void handleConfirm()}>
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <DialogClose render={<Button type="button" variant="outline" />}>取消</DialogClose>
+          <Button type="button" variant="destructive" disabled={submitting} onClick={() => void handleConfirm()}>
             {submitting ? '删除中...' : '永久删除'}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
