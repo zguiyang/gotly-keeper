@@ -69,7 +69,7 @@ const MODE_CONTENT: Record<LifecycleViewMode, LifecycleModeContent> = {
     emptyDescription: '当一条内容还值得保留、但不该继续打扰当前工作时，可以先归档。',
     emptyFilteredDescription: '这个类型暂时没有归档内容。切换到「全部」可以查看其他已收起的内容。',
     lifecycleLabel: '归档于',
-    statusClassName: 'border-border/10 bg-muted/30 text-on-surface-variant/75',
+    statusClassName: 'border-border/22 bg-muted/55 text-on-surface-variant',
     countLabel: '安静收纳',
     Icon: Archive,
   },
@@ -81,7 +81,7 @@ const MODE_CONTENT: Record<LifecycleViewMode, LifecycleModeContent> = {
     emptyDescription: '没有待清理内容，工作区保持干净。',
     emptyFilteredDescription: '这个类型暂时没有待清理内容。切换到「全部」可以查看其它回收站项目。',
     lifecycleLabel: '移除于',
-    statusClassName: 'border-destructive/15 bg-destructive/6 text-destructive',
+    statusClassName: 'border-destructive/24 bg-destructive/10 text-destructive',
     countLabel: '等待确认',
     notice: '永久删除后无法恢复。建议先确认内容已经不再需要。',
     Icon: Trash2,
@@ -138,8 +138,8 @@ function EmptyState({
       className={cn(
         'mt-8',
         mode === 'trash'
-          ? 'border-destructive/12 bg-destructive/[0.02] py-5 sm:py-6'
-          : 'border-border/16 bg-surface-container-lowest/85 py-7 sm:py-8'
+          ? 'border-destructive/22 bg-destructive/[0.035] py-5 sm:py-6'
+          : 'border-border/22 bg-surface-container-lowest/90 py-7 sm:py-8'
       )}
     />
   )
@@ -226,7 +226,7 @@ function LifecycleAssetItem({
       className={cn(
         mode === 'trash' ? workspaceCriticalSurfaceClassName : workspaceListSurfaceClassName,
         'group overflow-hidden transition-[border-color,box-shadow,background-color] duration-200',
-        mode === 'archive' ? 'hover:shadow-[var(--shadow-elevation-1)]' : 'hover:bg-destructive/[0.05]'
+        mode === 'archive' ? 'hover:shadow-[var(--shadow-elevation-1)]' : 'hover:bg-destructive/[0.06]'
       )}
     >
       <div className="flex flex-col gap-4 px-4 py-4 sm:px-5 md:flex-row md:items-start md:justify-between md:gap-5">
@@ -394,7 +394,7 @@ export function LifecycleAssetsClient({
               <span
                 className={cn(
                   'flex size-7 shrink-0 items-center justify-center rounded-full',
-                  mode === 'trash' ? 'bg-destructive/8 text-destructive' : 'bg-primary/8 text-primary'
+                  mode === 'trash' ? 'bg-destructive/10 text-destructive' : 'bg-primary/12 text-primary'
                 )}
                 aria-hidden="true"
               >
@@ -406,7 +406,7 @@ export function LifecycleAssetsClient({
               </span>
             </p>
             {content.notice ? (
-              <p className="inline-flex items-start gap-2 rounded-xl border border-destructive/15 bg-destructive/5 px-3 py-2 text-[12px] leading-5 text-destructive">
+              <p className="inline-flex items-start gap-2 rounded-xl border border-destructive/24 bg-destructive/8 px-3 py-2 text-[12px] leading-5 text-destructive">
                 <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                 {content.notice}
               </p>

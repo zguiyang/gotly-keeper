@@ -17,22 +17,22 @@ import type { LucideIcon } from 'lucide-react'
 const workspaceMetaTextClassName = 'text-[11px] font-medium tracking-normal text-on-surface-variant/80'
 
 const workspacePillClassName =
-  'inline-flex items-center rounded-full border border-border/15 bg-muted px-2.5 py-1 text-[11px] font-medium tracking-[0.02em] text-on-surface-variant/90'
+  'inline-flex items-center rounded-full border border-border/25 bg-muted/70 px-2.5 py-1 text-[11px] font-medium tracking-[0.02em] text-on-surface-variant'
 
 const workspaceSurfaceClassName =
-  'rounded-[14px] border border-border/10 bg-surface-container-lowest shadow-[var(--shadow-elevation-1)]'
+  'rounded-[14px] border border-border/20 bg-surface-container-lowest shadow-[var(--shadow-elevation-1)]'
 
 const workspacePanelSurfaceClassName =
-  'rounded-[1.5rem] border border-border/10 bg-surface-container-lowest/85 shadow-[var(--shadow-elevation-1)]'
+  'rounded-[1.5rem] border border-border/20 bg-surface-container-lowest/90 shadow-[var(--shadow-elevation-1)]'
 
 const workspaceListSurfaceClassName =
-  'rounded-[14px] border border-border/8 bg-surface-container-lowest/70 transition-colors duration-150 hover:border-border/16 hover:bg-surface-container-lowest'
+  'rounded-[14px] border border-border/18 bg-surface-container-lowest/78 transition-colors duration-150 hover:border-border/28 hover:bg-surface-container-lowest'
 
 const workspaceContentCardSurfaceClassName =
-  'rounded-[14px] border border-border/12 bg-surface-container-lowest shadow-[var(--shadow-elevation-1)]'
+  'rounded-[14px] border border-border/20 bg-surface-container-lowest shadow-[var(--shadow-elevation-1)]'
 
 const workspaceCriticalSurfaceClassName =
-  'rounded-[14px] border border-destructive/18 bg-destructive/[0.035] shadow-[0_10px_24px_-22px_rgba(186,26,26,0.42)]'
+  'rounded-[14px] border border-destructive/24 bg-destructive/[0.045] shadow-[var(--shadow-elevation-1)]'
 
 type WorkspacePageHeaderProps = {
   title: string
@@ -87,7 +87,7 @@ function WorkspaceFilterTabs<TValue extends string>({
       size="sm"
       spacing={2}
       className={cn(
-        'flex flex-wrap items-center gap-2 border-b border-border/10 pb-4 sm:gap-2.5',
+        'flex flex-wrap items-center gap-2 border-b border-border/18 pb-4 sm:gap-2.5',
         className
       )}
       aria-label="内容筛选"
@@ -96,7 +96,7 @@ function WorkspaceFilterTabs<TValue extends string>({
         <ToggleGroupItem
           key={tab.key}
           value={tab.key}
-          className="h-8 rounded-full px-3.5 text-[12px] tracking-normal data-[pressed]:border-primary/20 data-[pressed]:bg-primary/8 data-[pressed]:text-primary"
+          className="h-8 rounded-full px-3.5 text-[12px] tracking-normal data-[pressed]:border-primary/30 data-[pressed]:bg-primary/12 data-[pressed]:text-primary"
         >
           {tab.label}
         </ToggleGroupItem>
@@ -111,7 +111,7 @@ function WorkspaceSectionDivider({ label }: { label: string }) {
       <span className="text-[12px] font-semibold tracking-[0.12em] text-on-surface-variant/80 uppercase">
         {label}
       </span>
-      <Separator className="bg-border/10" />
+      <Separator className="bg-border/18" />
     </div>
   )
 }

@@ -34,7 +34,7 @@ function NoteCard({
   const hasTitle = titleText.length > 0 && titleText !== excerptText
 
   return (
-    <article className="group flex min-h-[190px] flex-col rounded-[14px] border border-border/10 bg-surface-container-lowest/85 px-4 py-4 shadow-[0_14px_32px_-28px_rgba(0,81,177,0.26)] transition-[border-color,background-color,box-shadow] duration-200 ease-out hover:border-border/15 hover:bg-surface-container-lowest hover:shadow-[0_16px_34px_-30px_rgba(0,81,177,0.3)]">
+    <article className="group flex min-h-[190px] flex-col rounded-[14px] border border-border/18 bg-surface-container-lowest/90 px-4 py-4 shadow-[var(--shadow-note-card)] transition-[border-color,background-color,box-shadow] duration-200 ease-out hover:border-border/28 hover:bg-surface-container-lowest hover:shadow-[var(--shadow-elevation-1)]">
       <div className="flex items-start gap-3">
         <span className={`${workspaceMetaTextClassName} shrink-0`}>
           笔记 · {note.timeText || formatAssetRelativeTime(note.createdAt)}

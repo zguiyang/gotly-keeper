@@ -65,7 +65,7 @@ function ArchiveSummaryBar({
   ]
 
   return (
-    <div className="flex flex-col gap-3 rounded-[14px] border border-border/10 bg-surface-container-lowest/80 px-4 py-3 shadow-[0_18px_40px_-32px_rgba(0,81,177,0.34)] md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-col gap-3 rounded-[14px] border border-border/20 bg-surface-container-lowest/90 px-4 py-3 shadow-[var(--shadow-elevation-1)] md:flex-row md:items-center md:justify-between">
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <span className="h-8 w-1 shrink-0 rounded-full bg-primary/55" />
@@ -114,7 +114,7 @@ function AssetItem({
   ]
 
   return (
-    <article className="group relative w-full min-w-0 rounded-[14px] border border-border/10 bg-surface-container-lowest/80 px-3 py-3 transition-[border-color,background-color] duration-200 hover:border-border/15 hover:bg-surface-container-lowest sm:px-4 sm:py-4">
+    <article className="group relative w-full min-w-0 rounded-[14px] border border-border/18 bg-surface-container-lowest/85 px-3 py-3 transition-[border-color,background-color] duration-200 hover:border-border/28 hover:bg-surface-container-lowest sm:px-4 sm:py-4">
       <div className="flex min-w-0 items-start gap-3 sm:gap-4">
         <div
           className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-border/8 ${presentation.iconBg}`}
