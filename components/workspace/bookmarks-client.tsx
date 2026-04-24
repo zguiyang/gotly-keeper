@@ -1,7 +1,7 @@
 'use client'
 
 import { Link2, Share2, Bookmark, ExternalLink } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -19,10 +19,6 @@ import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
 import { cn } from '@/lib/utils'
 import { type AssetListItem } from '@/shared/assets/assets.types'
-import {
-  BOOKMARK_META_STATUS,
-  type BookmarkMetaStatus,
-} from '@/shared/assets/bookmark-meta.types'
 import { type PaginatedResult } from '@/shared/pagination'
 import { formatBookmarkTime } from '@/shared/time/formatters'
 
@@ -34,38 +30,6 @@ function getHostname(url: string | null) {
   } catch {
     return 'saved link'
   }
-}
-
-function getBookmarkStatusMeta(status: BookmarkMetaStatus | null) {
-  if (status === BOOKMARK_META_STATUS.PENDING) {
-    return {
-      label: '解析中',
-      className: 'border-amber-500/15 bg-amber-500/8 text-amber-700',
-    }
-  }
-
-  if (status === BOOKMARK_META_STATUS.SUCCESS) {
-    return {
-      label: '已补全',
-      className: 'border-emerald-500/15 bg-emerald-500/8 text-emerald-700',
-    }
-  }
-
-  if (status === BOOKMARK_META_STATUS.FAILED) {
-    return {
-      label: '补全失败',
-      className: 'border-rose-500/15 bg-rose-500/8 text-rose-700',
-    }
-  }
-
-  if (status === BOOKMARK_META_STATUS.SKIPPED_PRIVATE_URL) {
-    return {
-      label: '私网已跳过',
-      className: 'border-slate-500/15 bg-slate-500/8 text-slate-700',
-    }
-  }
-
-  return null
 }
 
 function BookmarkItem({
@@ -81,9 +45,6 @@ function BookmarkItem({
   onArchive: (item: AssetListItem) => void
   onMoveToTrash: (item: AssetListItem) => void
 }) {
-  const status = item.bookmarkMeta?.status ?? null
-  const statusMeta = getBookmarkStatusMeta(status)
-
   return (
     <article
       className={cn(
@@ -104,16 +65,6 @@ function BookmarkItem({
             <span className="max-w-[16rem] truncate text-[12px] font-medium text-on-surface-variant/85 sm:max-w-[20rem]">
               {getHostname(item.url)}
             </span>
-            {statusMeta ? (
-              <span
-                className={cn(
-                  'inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium tracking-normal',
-                  statusMeta.className
-                )}
-              >
-                {statusMeta.label}
-              </span>
-            ) : null}
           </div>
 
           <div className="space-y-2">
@@ -190,24 +141,6 @@ export function BookmarksClient({
   })
   const [editingBookmark, setEditingBookmark] = useState<AssetListItem | null>(null)
   const { updateAsset, archiveAsset, moveToTrash } = useAssetMutations()
-  const stats = useMemo(() => {
-    return items.reduce(
-      (result, item) => {
-        const status = item.bookmarkMeta?.status
-
-        if (status === BOOKMARK_META_STATUS.SUCCESS) {
-          result.completed += 1
-        } else if (status === BOOKMARK_META_STATUS.PENDING) {
-          result.pending += 1
-        } else if (status === BOOKMARK_META_STATUS.FAILED) {
-          result.failed += 1
-        }
-
-        return result
-      },
-      { completed: 0, pending: 0, failed: 0 }
-    )
-  }, [items])
 
   async function handleShare(item: AssetListItem) {
     if (!item.url) {
@@ -296,8 +229,7 @@ export function BookmarksClient({
       <div className="mb-7 flex flex-col gap-2 md:mb-8">
         <p className="text-sm leading-6 text-on-surface-variant">
           已加载 {items.length} 条
-          {pageInfo.hasNextPage ? '，还有更多' : '，已加载全部'} / 摘要已生成 {stats.completed} /
-          解析中 {stats.pending} / 失败 {stats.failed}
+          {pageInfo.hasNextPage ? '，还有更多' : '，已加载全部'}
         </p>
         <span className={workspacePillClassName}>按来源排序回看</span>
       </div>
