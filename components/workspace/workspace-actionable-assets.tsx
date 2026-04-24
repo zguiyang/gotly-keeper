@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, Circle, Clock, ExternalLink } from 'lucide-react'
+import { Circle, CircleCheck, Clock, ExternalLink } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -76,7 +76,7 @@ function ActionableAssetItem({
             aria-label={asset.completed ? '标记为未完成' : '标记为已完成'}
             title={asset.completed ? '标记为未完成' : '标记为已完成'}
           >
-            {asset.completed ? <Check className="text-primary" /> : <Circle />}
+            {asset.completed ? <CircleCheck className="text-primary" /> : <Circle />}
           </Button>
         ) : (
           <div

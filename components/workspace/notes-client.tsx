@@ -1,6 +1,6 @@
 'use client'
 
-import { FileText } from 'lucide-react'
+import { NotepadText } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -71,7 +71,7 @@ function EmptyState() {
     <WorkspaceEmptyState
       title="暂无笔记"
       description="从启动台/统一入口保存一条文本记录"
-      icon={FileText}
+      icon={NotepadText}
       className="mt-20 py-16"
     />
   )

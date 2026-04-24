@@ -1,22 +1,22 @@
-import { FileText, Link2, StickyNote } from 'lucide-react'
+import { Bookmark, ListTodo, NotepadText } from 'lucide-react'
 
 export const assetTypePresentation = {
   note: {
-    icon: FileText,
+    icon: NotepadText,
     iconBg: 'bg-type-note-bg',
     iconColor: 'text-type-note',
     markerClassName: 'bg-type-note',
     label: '笔记',
   },
   link: {
-    icon: Link2,
+    icon: Bookmark,
     iconBg: 'bg-type-link-bg',
     iconColor: 'text-type-link',
     markerClassName: 'bg-type-link',
     label: '书签',
   },
   todo: {
-    icon: StickyNote,
+    icon: ListTodo,
     iconBg: 'bg-type-todo-bg',
     iconColor: 'text-type-todo',
     markerClassName: 'bg-type-todo',
