@@ -11,15 +11,16 @@ type NoteListRow = Partial<Pick<
 >> & Pick<Note, 'id' | 'originalText' | 'createdAt' | 'updatedAt'>
 
 export function toNoteListItem(note: NoteListRow): NoteListItem {
-  const title = note.title?.trim() || note.originalText.slice(0, 32)
-  const excerpt = note.summary?.trim() || note.content?.trim() || note.originalText
+  const content = note.content ?? note.originalText
+  const title = note.title?.trim() || content.split('\n').find((line) => line.trim().length > 0)?.trim()?.slice(0, 32) || note.originalText.slice(0, 32)
+  const excerpt = content
 
   return {
     id: note.id,
     originalText: note.originalText,
     title,
     excerpt,
-    content: note.content?.trim() || null,
+    content,
     summary: note.summary?.trim() || null,
     lifecycleStatus: note.lifecycleStatus ?? ASSET_LIFECYCLE_STATUS.ACTIVE,
     archivedAt: note.archivedAt ?? null,

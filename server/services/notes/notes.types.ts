@@ -7,7 +7,7 @@ export type NoteListItem = {
   originalText: string
   title: string
   excerpt: string
-  content: string | null
+  content: string
   summary: string | null
   lifecycleStatus: AssetLifecycleStatus
   archivedAt: Date | null

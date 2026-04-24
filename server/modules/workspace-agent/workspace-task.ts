@@ -162,6 +162,14 @@ function applyBusinessRules(task: WorkspaceTask) {
   }
 
   if (
+    task.intent === 'create' &&
+    task.target === 'notes' &&
+    typeof task.payload?.content !== 'string'
+  ) {
+    issues.push('note create payload requires content')
+  }
+
+  if (
     task.timeRange?.type === 'custom' &&
     !task.timeRange.startAt &&
     !task.timeRange.endAt

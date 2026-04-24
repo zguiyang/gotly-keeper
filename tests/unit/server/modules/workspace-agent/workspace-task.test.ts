@@ -111,4 +111,32 @@ describe('workspaceTask', () => {
       },
     })
   })
+
+  it('requires markdown content when creating notes', () => {
+    expect(() =>
+      validateWorkspaceTask({
+        intent: 'create',
+        target: 'notes',
+        payload: {
+          title: '旧标题字段',
+        },
+      })
+    ).toThrow('note create payload requires content')
+
+    expect(
+      validateWorkspaceTask({
+        intent: 'create',
+        target: 'notes',
+        payload: {
+          content: '# 轻笔记\n\n记录核心结论',
+        },
+      })
+    ).toEqual({
+      intent: 'create',
+      target: 'notes',
+      payload: {
+        content: '# 轻笔记\n\n记录核心结论',
+      },
+    })
+  })
 })

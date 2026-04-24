@@ -281,10 +281,9 @@ describe('workspace server actions', () => {
     expect(updateWorkspaceNoteMock).toHaveBeenCalledWith({
       userId: 'user_123',
       assetId: 'note_1',
-      rawInput: '需求评审\n\n补充边界条件',
+      rawInput: '  需求评审\n\n补充边界条件  ',
       title: '需求评审',
-      content: '补充边界条件',
-      summary: '补充边界条件',
+      content: '  补充边界条件  ',
     })
   })
 
@@ -353,7 +352,6 @@ describe('workspace server actions', () => {
       rawInput: '保留原正文',
       title: '只改标题',
       content: undefined,
-      summary: undefined,
     })
   })
 

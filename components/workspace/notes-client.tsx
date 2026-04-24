@@ -1,12 +1,18 @@
 'use client'
 
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { NotepadText } from 'lucide-react'
-import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
-import { AssetEditDialog, type AssetEditValues } from '@/components/workspace/asset-edit-dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { NoteInlineEditor } from '@/components/workspace/note-inline-editor'
+import { NoteMarkdown } from '@/components/workspace/note-markdown'
 import {
   WorkspaceEmptyState,
   workspaceMetaTextClassName,
@@ -14,63 +20,177 @@ import {
   WorkspacePageHeader,
 } from '@/components/workspace/workspace-view-primitives'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
+import { useNoteInlineEdit } from '@/hooks/workspace/use-note-inline-edit'
 import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
+import { cn } from '@/lib/utils'
 import { formatAssetRelativeTime } from '@/shared/assets/asset-time-display'
 import { type AssetListItem } from '@/shared/assets/assets.types'
 import { type PaginatedResult } from '@/shared/pagination'
 
+function NoteCardContextMenu({
+  disabled,
+  onArchive,
+  onMoveToTrash,
+  children,
+}: {
+  disabled: boolean
+  onArchive: () => void
+  onMoveToTrash: () => void
+  children: ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  const [anchor, setAnchor] = useState({ x: 0, y: 0 })
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
+
+  useEffect(() => {
+    if (open) {
+      triggerRef.current?.focus()
+    }
+  }, [open])
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <div
+        onContextMenu={(event) => {
+          if (disabled) {
+            return
+          }
+
+          event.preventDefault()
+          setAnchor({ x: event.clientX, y: event.clientY })
+          setOpen(true)
+        }}
+      >
+        {children}
+      </div>
+
+      <DropdownMenuTrigger
+        ref={triggerRef}
+        render={
+          <button
+            type="button"
+            className="pointer-events-none fixed h-px w-px opacity-0"
+            style={{ left: anchor.x, top: anchor.y }}
+          />
+        }
+      />
+      <DropdownMenuContent align="start" sideOffset={6} className="min-w-[152px]">
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={onArchive} className="text-[12px]">
+            归档
+          </DropdownMenuItem>
+          <DropdownMenuItem variant="destructive" onClick={onMoveToTrash} className="text-[12px]">
+            移入回收站
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 function NoteCard({
   note,
-  onEdit,
+  isEditing,
+  editLocked,
+  onStartEdit,
+  onStopEdit,
+  onSave,
   onArchive,
   onMoveToTrash,
 }: {
   note: AssetListItem
-  onEdit: (note: AssetListItem) => void
+  isEditing: boolean
+  editLocked: boolean
+  onStartEdit: (noteId: string) => void
+  onStopEdit: () => void
+  onSave: (note: AssetListItem, markdown: string) => Promise<boolean>
   onArchive: (note: AssetListItem) => void
   onMoveToTrash: (note: AssetListItem) => void
 }) {
-  const titleText = note.title?.trim() ?? ''
-  const excerptText = note.excerpt?.trim() ?? ''
-  const contentText = note.content?.trim() || excerptText
-  const fallbackTitle = note.originalText.trim().slice(0, 32)
-  const hasTitle =
-    titleText.length > 0 &&
-    titleText !== excerptText &&
-    titleText !== contentText &&
-    titleText !== fallbackTitle
+  const contentText = note.content ?? note.originalText ?? '暂无正文'
+  const updatedAt = note.updatedAt ?? note.createdAt
+  const { markdown, setMarkdown, status, errorMessage, saveNow, isDirty } = useNoteInlineEdit({
+    initialMarkdown: contentText === '暂无正文' ? '' : contentText,
+    onSave: (nextMarkdown) => onSave(note, nextMarkdown),
+  })
+
+  async function handleBlur() {
+    const saved = await saveNow()
+    if (!isDirty || saved) {
+      onStopEdit()
+    }
+  }
+
+  async function handleSubmitShortcut() {
+    const saved = await saveNow()
+    if (!isDirty || saved) {
+      onStopEdit()
+    }
+  }
 
   return (
-    <article className="group relative flex min-h-[190px] flex-col rounded-[14px] border border-border/18 bg-surface-container-lowest/90 px-4 py-4 shadow-[var(--shadow-note-card)] transition-[border-color,background-color,box-shadow] duration-200 ease-out hover:border-border/28 hover:bg-surface-container-lowest hover:shadow-[var(--shadow-elevation-1)]">
-      <div className="absolute top-4 right-4 z-10 shrink-0">
-          <AssetActionMenu
-            actions={[
-              { label: '编辑', onClick: () => onEdit(note) },
-              { label: '归档', onClick: () => onArchive(note) },
-              { label: '移入回收站', onClick: () => onMoveToTrash(note), danger: true },
-            ]}
-          />
-      </div>
-
-      <div className="flex flex-1 flex-col pr-11">
-        {hasTitle ? (
+    <NoteCardContextMenu
+      disabled={isEditing}
+      onArchive={() => onArchive(note)}
+      onMoveToTrash={() => onMoveToTrash(note)}
+    >
+      <article
+        className={cn(
+          'group relative flex min-h-[190px] flex-col rounded-[14px] border px-4 py-4 shadow-[var(--shadow-note-card)] transition-[border-color,background-color,box-shadow] duration-200 ease-out',
+          isEditing
+            ? 'border-primary/28 bg-background shadow-[var(--shadow-elevation-1)]'
+            : 'border-border/18 bg-surface-container-lowest/90 hover:border-border/28 hover:bg-surface-container-lowest hover:shadow-[var(--shadow-elevation-1)]',
+          !isEditing && !editLocked ? 'cursor-text' : undefined
+        )}
+        onClick={() => {
+          if (!isEditing && !editLocked) {
+            onStartEdit(note.id)
+          }
+        }}
+      >
+        <div className="flex flex-1 flex-col">
+        {isEditing ? (
           <>
-            <h3 className="font-headline text-[0.98rem] font-semibold leading-7 tracking-[-0.01em] text-on-surface line-clamp-2 md:text-[1.04rem]">
-              {titleText}
-            </h3>
-            <Separator className="mt-3 mb-3 bg-border/12" />
+            <NoteInlineEditor
+              markdown={markdown}
+              ariaLabel="编辑笔记"
+              onMarkdownChange={setMarkdown}
+              onBlur={() => {
+                void handleBlur()
+              }}
+              onSubmitShortcut={() => {
+                void handleSubmitShortcut()
+              }}
+              className="min-h-[220px] flex-1"
+            />
+            {status !== 'idle' || errorMessage ? (
+              <span
+                className={cn(
+                  workspaceMetaTextClassName,
+                  'mt-3 block',
+                  status === 'error' ? 'text-destructive' : 'text-on-surface-variant'
+                )}
+              >
+                {status === 'saving'
+                  ? '正在保存...'
+                  : status === 'saved'
+                    ? '已保存'
+                    : errorMessage}
+              </span>
+            ) : null}
           </>
-        ) : null}
+        ) : (
+          <NoteMarkdown markdown={contentText} className="flex-1" />
+        )}
 
-        <p className={`flex-1 whitespace-pre-wrap leading-7 ${hasTitle ? 'text-[14px] text-on-surface-variant md:text-[15px]' : 'text-[15px] text-on-surface md:text-[16px]'}`}>
-          {contentText || '暂无正文'}
-        </p>
-
-        <span className={`${workspaceMetaTextClassName} mt-4 block text-on-surface-variant`}>
-          创建于 {formatAssetRelativeTime(note.createdAt)}
-        </span>
-      </div>
-    </article>
+          {!isEditing ? (
+            <div className={`${workspaceMetaTextClassName} mt-4 text-on-surface-variant`}>
+              <span>更新于 {formatAssetRelativeTime(updatedAt)}</span>
+            </div>
+          ) : null}
+        </div>
+      </article>
+    </NoteCardContextMenu>
   )
 }
 
@@ -90,31 +210,37 @@ export function NotesClient({ initialPage }: { initialPage: PaginatedResult<Asse
     initialPage,
     initialQuery: { type: 'note' },
   })
-  const [editingNote, setEditingNote] = useState<AssetListItem | null>(null)
   const { updateAsset, archiveAsset, moveToTrash } = useAssetMutations()
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const noteCount = items.length
 
-  async function submitEdit(
-    note: AssetListItem,
-    values: AssetEditValues
-  ) {
-    if ('url' in values || 'timeText' in values || 'dueAt' in values) {
-      return false
+  async function saveNote(note: AssetListItem, markdown: string) {
+    const nextContent = markdown
+
+    if (!nextContent.trim()) {
+      throw new Error('请至少填写一点内容。')
     }
 
-    const updated = await updateAsset({
-      assetId: note.id,
-      assetType: 'note',
-      rawInput: values.rawInput,
-      title: values.title,
-      content: 'content' in values ? values.content : undefined,
-    })
-
-    if (updated) {
-      setItems((current) => current.map((item) => (item.id === updated.id ? updated : item)))
+    if (nextContent === (note.content ?? note.originalText)) {
+      return true
     }
 
-    return !!updated
+    const updated = await updateAsset(
+      {
+        assetId: note.id,
+        assetType: 'note',
+        rawInput: nextContent,
+        content: nextContent,
+      },
+      { silent: true }
+    )
+
+    if (!updated) {
+      throw new Error('保存失败，请重试。')
+    }
+
+    setItems((current) => current.map((item) => (item.id === updated.id ? updated : item)))
+    return true
   }
 
   async function handleArchive(note: AssetListItem) {
@@ -167,7 +293,11 @@ export function NotesClient({ initialPage }: { initialPage: PaginatedResult<Asse
             <div key={note.id} className="mb-4 break-inside-avoid md:mb-5 xl:mb-6">
               <NoteCard
                 note={note}
-                onEdit={setEditingNote}
+                isEditing={editingNoteId === note.id}
+                editLocked={editingNoteId !== null && editingNoteId !== note.id}
+                onStartEdit={setEditingNoteId}
+                onStopEdit={() => setEditingNoteId(null)}
+                onSave={saveNote}
                 onArchive={handleArchive}
                 onMoveToTrash={handleMoveToTrash}
               />
@@ -191,13 +321,6 @@ export function NotesClient({ initialPage }: { initialPage: PaginatedResult<Asse
         </div>
       ) : null}
 
-      <AssetEditDialog
-        asset={editingNote}
-        onOpenChange={(open) => {
-          if (!open) setEditingNote(null)
-        }}
-        onSubmit={submitEdit}
-      />
     </div>
   )
 }

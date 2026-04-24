@@ -122,15 +122,14 @@ describe('workspaceTools', () => {
   it('create_note returns a normalized mutation envelope', async () => {
     mocks.createWorkspaceNote.mockResolvedValue({
       kind: 'created',
-      asset: { id: 'note_1', type: 'note', title: '会议纪要' },
+      asset: { id: 'note_1', type: 'note', content: '# 会议纪要\n\n同步本周发布计划' },
     })
 
     const result = await executeWorkspaceTool(
       {
         toolName: 'create_note',
         toolInput: {
-          title: '会议纪要',
-          content: '同步本周发布计划',
+          content: '# 会议纪要\n\n同步本周发布计划',
         },
       },
       { userId: 'user_1' }
@@ -138,16 +137,14 @@ describe('workspaceTools', () => {
 
     expect(mocks.createWorkspaceNote).toHaveBeenCalledWith({
       userId: 'user_1',
-      rawInput: '同步本周发布计划',
-      title: '会议纪要',
-      content: '同步本周发布计划',
-      summary: null,
+      rawInput: '# 会议纪要\n\n同步本周发布计划',
+      content: '# 会议纪要\n\n同步本周发布计划',
     })
     expect(result).toEqual({
       ok: true,
       target: 'notes',
       action: 'create',
-      item: { id: 'note_1', type: 'note', title: '会议纪要' },
+      item: { id: 'note_1', type: 'note', content: '# 会议纪要\n\n同步本周发布计划' },
     })
   })
 

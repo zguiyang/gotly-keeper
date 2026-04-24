@@ -45,7 +45,6 @@ const getRecentItemsInputSchema = z.object({
 })
 
 const createNoteInputSchema = z.object({
-  title: z.string().trim().min(1).max(120).nullable().optional(),
   content: z.string().trim().min(1),
 })
 
@@ -263,9 +262,7 @@ export const workspaceTools = {
       const result = await createWorkspaceNote({
         userId: context.userId,
         rawInput: input.content,
-        title: input.title ?? null,
         content: input.content,
-        summary: null,
       })
 
       return toMutationResult('notes', 'create', result.asset)

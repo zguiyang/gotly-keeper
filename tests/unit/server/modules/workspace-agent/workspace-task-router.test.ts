@@ -75,6 +75,26 @@ describe('routeWorkspaceTask', () => {
     })
   })
 
+  it('routes note creation with markdown content only', () => {
+    const plan = routeWorkspaceTask({
+      intent: 'create',
+      target: 'notes',
+      payload: {
+        content: '# 轻笔记\n\n记录核心结论',
+      },
+    })
+
+    expect(plan).toEqual({
+      intent: 'create',
+      target: 'notes',
+      toolName: 'create_note',
+      toolInput: {
+        content: '# 轻笔记\n\n记录核心结论',
+      },
+      needsCompose: false,
+    })
+  })
+
   it('falls back to recent items when target is missing', () => {
     const plan = routeWorkspaceTask({
       intent: 'query',
