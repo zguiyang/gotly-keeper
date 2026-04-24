@@ -4,6 +4,7 @@ import { NotepadText } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
 import { AssetEditDialog, type AssetEditValues } from '@/components/workspace/asset-edit-dialog'
 import {
@@ -31,7 +32,13 @@ function NoteCard({
 }) {
   const titleText = note.title?.trim() ?? ''
   const excerptText = note.excerpt?.trim() ?? ''
-  const hasTitle = titleText.length > 0 && titleText !== excerptText
+  const contentText = note.content?.trim() || excerptText
+  const fallbackTitle = note.originalText.trim().slice(0, 32)
+  const hasTitle =
+    titleText.length > 0 &&
+    titleText !== excerptText &&
+    titleText !== contentText &&
+    titleText !== fallbackTitle
 
   return (
     <article className="group flex min-h-[190px] flex-col rounded-[14px] border border-border/18 bg-surface-container-lowest/90 px-4 py-4 shadow-[var(--shadow-note-card)] transition-[border-color,background-color,box-shadow] duration-200 ease-out hover:border-border/28 hover:bg-surface-container-lowest hover:shadow-[var(--shadow-elevation-1)]">
@@ -53,13 +60,16 @@ function NoteCard({
 
       <div className="mt-4 flex flex-1 flex-col">
         {hasTitle ? (
-          <h3 className="font-headline text-[1.02rem] font-semibold leading-7 tracking-[-0.01em] text-on-surface line-clamp-2 md:text-[1.08rem]">
-            {titleText}
-          </h3>
+          <>
+            <h3 className="font-headline text-[0.98rem] font-semibold leading-7 tracking-[-0.01em] text-on-surface line-clamp-2 md:text-[1.04rem]">
+              {titleText}
+            </h3>
+            <Separator className="mt-3 mb-3 bg-border/12" />
+          </>
         ) : null}
 
-        <p className={`flex-1 whitespace-pre-wrap leading-7 ${hasTitle ? 'mt-2 text-[14px] text-on-surface-variant md:text-[15px]' : 'text-[15px] text-on-surface md:text-[16px]'}`}>
-          {excerptText || '暂无正文'}
+        <p className={`flex-1 whitespace-pre-wrap leading-7 ${hasTitle ? 'text-[14px] text-on-surface-variant md:text-[15px]' : 'text-[15px] text-on-surface md:text-[16px]'}`}>
+          {contentText || '暂无正文'}
         </p>
       </div>
     </article>
@@ -90,7 +100,7 @@ export function NotesClient({ initialPage }: { initialPage: PaginatedResult<Asse
     note: AssetListItem,
     values: AssetEditValues
   ) {
-    if (!('content' in values) || 'timeText' in values) {
+    if ('url' in values || 'timeText' in values || 'dueAt' in values) {
       return false
     }
 
@@ -99,7 +109,7 @@ export function NotesClient({ initialPage }: { initialPage: PaginatedResult<Asse
       assetType: 'note',
       rawInput: values.rawInput,
       title: values.title,
-      content: values.content,
+      content: 'content' in values ? values.content : undefined,
     })
 
     if (updated) {
