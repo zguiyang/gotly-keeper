@@ -64,7 +64,11 @@ function getFallbackNoteSummary(notes: AssetListItem[]): NoteSummaryOutput {
     summary: notes.length
       ? `最近有 ${notes.length} 条笔记，先回看最靠前的几条内容。`
       : '目前没有可总结的笔记。',
-    keyPoints: notes.slice(0, 3).map((note) => note.title),
+    keyPoints: notes
+      .slice(0, 3)
+      .map((note) => note.excerpt || note.originalText)
+      .map((text) => text.split('\n').find((line) => line.trim().length > 0)?.trim() || text)
+      .map((text) => text.slice(0, 140)),
     sourceAssetIds: notes.slice(0, 5).map((note) => note.id),
   }
 }

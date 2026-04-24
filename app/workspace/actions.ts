@@ -267,10 +267,9 @@ function parseUpdateAssetInput(input: unknown):
     return {
       assetId: base.assetId,
       assetType: 'note',
-      rawInput: rawInput.trim(),
+      rawInput,
       title,
-      content,
-      summary: content,
+      content: 'content' in input && typeof input.content === 'string' ? (input.content.trim() ? input.content : null) : undefined,
     }
   }
 

@@ -30,18 +30,30 @@ function normalizeOptionalField(value?: string | null): string | null | undefine
   return trimmed ? trimmed : null
 }
 
-export function normalizeNoteWriteInput(input: NoteWriteInput): NormalizedNoteWriteInput {
-  const originalText = ('rawInput' in input ? input.rawInput : input.text).trim()
+function normalizeOptionalMarkdownField(value?: string | null): string | null | undefined {
+  if (value === undefined) {
+    return undefined
+  }
 
-  if (!originalText) {
+  return value && value.trim() ? value : null
+}
+
+export function normalizeNoteWriteInput(input: NoteWriteInput): NormalizedNoteWriteInput {
+  const sourceText = 'rawInput' in input ? input.rawInput : input.text
+
+  if (!sourceText.trim()) {
     throw new Error('EMPTY_INPUT')
   }
 
+  const originalText = sourceText
+
   if ('rawInput' in input) {
+    const normalizedContent = normalizeOptionalMarkdownField(input.content) ?? originalText
+
     return {
       originalText,
       title: normalizeOptionalField(input.title),
-      content: normalizeOptionalField(input.content),
+      content: normalizedContent,
       summary: normalizeOptionalField(input.summary),
       usesStructuredFields: true,
     }

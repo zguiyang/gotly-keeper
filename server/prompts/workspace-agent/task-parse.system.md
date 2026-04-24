@@ -34,6 +34,7 @@ Do not include explanations.
 - `query` is for explicit search terms.
 - `subjectHint` is for referential descriptions such as "那个待办" or "昨天那条笔记".
 - `payload` is only for `create` and `update`.
+- For note creation, `payload` must contain only markdown `content` as the primary note body. Do not invent `title` or `summary`.
 
 ## Time Context Rules
 
@@ -63,7 +64,7 @@ Do not include explanations.
 
 ## Payload Examples
 
-- create note: `{ "title": "...", "content": "..." }`
+- create note: `{ "content": "# 标题\n\n正文 markdown" }`
 - create todo: `{ "title": "...", "details": "...", "timeText": "...", "dueAt": "..." }`
 - create bookmark: `{ "url": "...", "title": "...", "summary": "..." }`
 - update todo: `{ "title": "...", "details": "...", "timeText": "...", "dueAt": "...", "status": "open|done" }`

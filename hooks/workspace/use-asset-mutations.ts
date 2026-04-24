@@ -21,6 +21,14 @@ type UndoOptions = {
   onUndo?: (asset: AssetListItem) => void
 }
 
+type MutationRunOptions = {
+  throwOnError?: boolean
+}
+
+type UpdateAssetOptions = {
+  silent?: boolean
+}
+
 type UpdateAssetInput =
   | {
       assetId: string
@@ -73,7 +81,12 @@ export function useAssetMutations() {
   }, [])
 
   const runMutation = useCallback(
-    async <T>(assetId: string, action: MutationAction, runner: () => Promise<T>): Promise<T | null> => {
+    async <T>(
+      assetId: string,
+      action: MutationAction,
+      runner: () => Promise<T>,
+      options?: MutationRunOptions
+    ): Promise<T | null> => {
       setError(null)
       setPendingFor(assetId, action, true)
       try {
@@ -83,6 +96,9 @@ export function useAssetMutations() {
       } catch (mutationError) {
         setPendingFor(assetId, action, false)
         setError(mutationError instanceof Error ? mutationError.message : '操作失败，请重试。')
+        if (options?.throwOnError) {
+          throw mutationError
+        }
         return null
       }
     },
@@ -90,7 +106,13 @@ export function useAssetMutations() {
   )
 
   const updateAsset = useCallback(
-    async (input: UpdateAssetInput): Promise<AssetListItem | null> => {
+    async (input: UpdateAssetInput, options?: UpdateAssetOptions): Promise<AssetListItem | null> => {
+      if (options?.silent) {
+        return runMutation(input.assetId, 'update', () => updateWorkspaceAsset(input), {
+          throwOnError: true,
+        })
+      }
+
       return runMutation(input.assetId, 'update', () =>
         callAction(() => updateWorkspaceAsset(input), {
           loading: '正在更新...',

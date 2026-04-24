@@ -65,7 +65,7 @@ describe('notes.mutation', () => {
     })
 
     expect(mocks.setMock).toHaveBeenCalledWith({
-      originalText: '更新后的会议纪要',
+      originalText: '  更新后的会议纪要  ',
       title: '新纪要标题',
       content: '补充联调风险和 blocker',
       summary: '联调继续推进，先解决鉴权回调问题。',
@@ -81,7 +81,7 @@ describe('notes.mutation', () => {
     await updateNote({ userId: 'u1', noteId: 'note_1', text: '  仅保留原始文本  ' })
 
     expect(mocks.setMock).toHaveBeenCalledWith({
-      originalText: '仅保留原始文本',
+      originalText: '  仅保留原始文本  ',
       title: null,
       content: null,
       summary: null,
@@ -99,9 +99,28 @@ describe('notes.mutation', () => {
     })
 
     expect(mocks.setMock).toHaveBeenCalledWith({
-      originalText: '保留已有结构化字段',
+      originalText: '  保留已有结构化字段  ',
       title: undefined,
-      content: undefined,
+      content: '  保留已有结构化字段  ',
+      summary: undefined,
+      updatedAt: fixedNow,
+    })
+  })
+
+  it('preserves markdown-significant whitespace in note content updates', async () => {
+    mocks.returningMock.mockResolvedValue([{ id: 'note_1' }])
+
+    await updateNote({
+      userId: 'u1',
+      noteId: 'note_1',
+      rawInput: '代码块示例',
+      content: '    const answer = 42',
+    })
+
+    expect(mocks.setMock).toHaveBeenCalledWith({
+      originalText: '代码块示例',
+      title: undefined,
+      content: '    const answer = 42',
       summary: undefined,
       updatedAt: fixedNow,
     })
