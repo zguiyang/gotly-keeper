@@ -14,6 +14,7 @@ import { Calendar, CalendarDayButton } from '@/components/ui/calendar'
 import { AssetActionMenu } from '@/components/workspace/asset-action-menu'
 import { AssetEditDialog, type AssetEditValues } from '@/components/workspace/asset-edit-dialog'
 import { TodoDueTime } from '@/components/workspace/todo-due-time'
+import { WorkspaceTodosDateLoading } from '@/components/workspace/workspace-loading-states'
 import {
   WorkspaceEmptyState,
   workspaceMetaTextClassName,
@@ -509,9 +510,7 @@ export function TodosClient({
                 promotedUnscheduled={shouldPromoteUnscheduled}
               />
               {loadingDate ? (
-                <div className={`${workspaceSurfaceClassName} flex min-h-[17rem] items-center justify-center p-8 text-sm text-on-surface-variant/75`}>
-                  正在加载这一天的待办...
-                </div>
+                <WorkspaceTodosDateLoading />
               ) : (
                 <TodoDateList
                   title={shouldPromoteUnscheduled ? '未排期待办' : '当天待办'}
