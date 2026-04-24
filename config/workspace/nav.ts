@@ -1,4 +1,4 @@
-import { Bot, FileText, CheckSquare, Bookmark, Package, Archive, Trash2 } from 'lucide-react'
+import { Archive, Bookmark, Bot, Library, ListTodo, NotepadText, Trash2 } from 'lucide-react'
 import { type LucideIcon } from 'lucide-react'
 
 export interface WorkspaceNavItem {
@@ -17,14 +17,14 @@ export const workspaceNavGroups: WorkspaceNavGroup[] = [
     label: '工作台',
     items: [
       { icon: Bot, label: '启动台', href: '/workspace' },
-      { icon: Package, label: '知识库', href: '/workspace/all' },
+      { icon: Library, label: '知识库', href: '/workspace/all' },
     ],
   },
   {
     label: '内容类型',
     items: [
-      { icon: FileText, label: '笔记', href: '/workspace/notes' },
-      { icon: CheckSquare, label: '待办', href: '/workspace/todos' },
+      { icon: NotepadText, label: '笔记', href: '/workspace/notes' },
+      { icon: ListTodo, label: '待办', href: '/workspace/todos' },
       { icon: Bookmark, label: '书签', href: '/workspace/bookmarks' },
     ],
   },

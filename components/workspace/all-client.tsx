@@ -1,6 +1,6 @@
 'use client'
 
-import { Archive, ArrowRight, CheckSquare2, FileText, Inbox, Link2 } from 'lucide-react'
+import { Archive, ArrowRight, Bookmark, Inbox, ListTodo, NotepadText } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -57,10 +57,10 @@ function ArchiveSummaryBar({
   completedTodoCount: number
   hasNextPage: boolean
 }) {
-  const summaryItems: Array<{ type: AssetType; icon: typeof FileText }> = [
-    { type: 'note', icon: FileText },
-    { type: 'link', icon: Link2 },
-    { type: 'todo', icon: CheckSquare2 },
+  const summaryItems: Array<{ type: AssetType; icon: typeof NotepadText }> = [
+    { type: 'note', icon: NotepadText },
+    { type: 'link', icon: Bookmark },
+    { type: 'todo', icon: ListTodo },
   ]
 
   return (
