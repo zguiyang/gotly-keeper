@@ -75,6 +75,7 @@ const workspaceTaskPayloadSchema = z.object({
   title: z.string().min(1).max(200).nullable().optional(),
   content: z.string().min(1).nullable().optional(),
   details: z.string().min(1).nullable().optional(),
+  timeText: z.string().min(1).nullable().optional(),
   dueAt: z.string().datetime().nullable().optional(),
   url: z.url().nullable().optional(),
   summary: z.string().min(1).nullable().optional(),

@@ -3,6 +3,7 @@ import 'server-only'
 import { runAiGeneration } from '@/server/lib/ai/ai-runner'
 import { buildWorkspaceSystemPrompt } from '@/server/lib/ai/ai.prompts'
 import { renderPrompt } from '@/server/lib/prompt-template'
+import { ASIA_SHANGHAI_TIME_ZONE, dayjs } from '@/shared/time/dayjs'
 
 import { validateWorkspaceTask, workspaceTaskOutputSchema } from './workspace-task'
 
@@ -12,6 +13,18 @@ export class WorkspaceTaskParseError extends Error {
   constructor(message: string) {
     super(message)
     this.name = 'WorkspaceTaskParseError'
+  }
+}
+
+function buildTimeContext(now: Date = new Date()) {
+  const shanghaiTime = dayjs(now).tz(ASIA_SHANGHAI_TIME_ZONE)
+
+  return {
+    currentDateTime: shanghaiTime.format('YYYY-MM-DD HH:mm:ss'),
+    currentIsoUtc: shanghaiTime.toDate().toISOString(),
+    timezone: ASIA_SHANGHAI_TIME_ZONE,
+    utcOffset: shanghaiTime.format('Z'),
+    weekday: shanghaiTime.format('dddd'),
   }
 }
 
@@ -31,6 +44,7 @@ export async function parseWorkspaceTask(input: {
         userId: input.userId,
         message: trimmedMessage,
       }),
+      timeContextJson: JSON.stringify(buildTimeContext()),
     }),
   ])
 

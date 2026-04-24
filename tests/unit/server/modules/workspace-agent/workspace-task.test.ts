@@ -95,6 +95,7 @@ describe('workspaceTask', () => {
       payload: {
         title: '准备方案',
         details: '整理 workspace 新流程',
+        timeText: '下周三下午',
         dueAt: '2026-04-23T09:00:00.000Z',
       },
     })
@@ -105,6 +106,7 @@ describe('workspaceTask', () => {
       payload: {
         title: '准备方案',
         details: '整理 workspace 新流程',
+        timeText: '下周三下午',
         dueAt: '2026-04-23T09:00:00.000Z',
       },
     })

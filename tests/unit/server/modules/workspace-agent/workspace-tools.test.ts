@@ -151,6 +151,41 @@ describe('workspaceTools', () => {
     })
   })
 
+  it('create_todo forwards the original time phrase with the normalized due date', async () => {
+    mocks.createWorkspaceTodo.mockResolvedValue({
+      kind: 'created',
+      asset: { id: 'todo_1', type: 'todo', title: '交周报' },
+    })
+
+    const result = await executeWorkspaceTool(
+      {
+        toolName: 'create_todo',
+        toolInput: {
+          title: '交周报',
+          details: '发给项目群',
+          timeText: '下周三下午',
+          dueAt: '2026-04-29T07:00:00.000Z',
+        },
+      },
+      { userId: 'user_1' }
+    )
+
+    expect(mocks.createWorkspaceTodo).toHaveBeenCalledWith({
+      userId: 'user_1',
+      rawInput: '交周报',
+      title: '交周报',
+      content: '发给项目群',
+      timeText: '下周三下午',
+      dueAt: new Date('2026-04-29T07:00:00.000Z'),
+    })
+    expect(result).toEqual({
+      ok: true,
+      target: 'todos',
+      action: 'create',
+      item: { id: 'todo_1', type: 'todo', title: '交周报' },
+    })
+  })
+
   it('update_todo resolves a todo by query and marks it complete', async () => {
     mocks.searchWorkspaceAssets.mockResolvedValue([
       { id: 'todo_1', type: 'todo', createdAt: new Date('2026-04-22T10:00:00.000Z') },

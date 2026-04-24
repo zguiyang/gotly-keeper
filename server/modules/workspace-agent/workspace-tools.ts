@@ -52,6 +52,7 @@ const createNoteInputSchema = z.object({
 const createTodoInputSchema = z.object({
   title: z.string().trim().min(1).max(120),
   details: z.string().trim().nullable().optional(),
+  timeText: z.string().trim().nullable().optional(),
   dueAt: z.string().datetime().nullable().optional(),
 })
 
@@ -70,6 +71,7 @@ const updateTodoInputSchema = z.object({
   patch: z.object({
     title: z.string().trim().min(1).max(120).nullable().optional(),
     details: z.string().trim().nullable().optional(),
+    timeText: z.string().trim().nullable().optional(),
     dueAt: z.string().datetime().nullable().optional(),
     status: z.enum(['open', 'done']).nullable().optional(),
   }),
@@ -278,7 +280,7 @@ export const workspaceTools = {
         rawInput: input.title,
         title: input.title,
         content: input.details ?? null,
-        timeText: null,
+        timeText: input.timeText ?? null,
         dueAt: input.dueAt ? new Date(input.dueAt) : null,
       })
 
@@ -315,6 +317,7 @@ export const workspaceTools = {
       const hasFieldPatch =
         input.patch.title !== undefined ||
         input.patch.details !== undefined ||
+        input.patch.timeText !== undefined ||
         input.patch.dueAt !== undefined
 
       if (hasFieldPatch) {
@@ -324,7 +327,7 @@ export const workspaceTools = {
           rawInput: input.patch.title ?? input.selector.subjectHint ?? input.selector.query ?? '更新待办',
           title: input.patch.title ?? null,
           content: input.patch.details ?? null,
-          timeText: null,
+          timeText: input.patch.timeText ?? null,
           dueAt: input.patch.dueAt ? new Date(input.patch.dueAt) : null,
         })
       }
