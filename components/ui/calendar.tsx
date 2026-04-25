@@ -2,6 +2,7 @@
 
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 import * as React from "react"
+import { format as formatDate } from "date-fns"
 import {
   DayPicker,
   getDefaultClassNames,
@@ -198,7 +199,7 @@ function CalendarDayButton({
     <Button
       variant="ghost"
       size="icon"
-      data-day={day.date.toLocaleDateString(locale?.code)}
+      data-day={formatDate(day.date, "yyyy/M/d")}
       data-selected-single={
         modifiers.selected &&
         !modifiers.range_start &&
