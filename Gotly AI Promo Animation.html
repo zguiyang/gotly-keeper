@@ -41,19 +41,19 @@ Borrowed UI motifs
     <title>Gotly AI Promo Animation</title>
     <style>
       :root {
-        color-scheme: dark;
-        --bg: #0c1017;
-        --bg-elevated: rgba(255, 255, 255, 0.06);
-        --bg-muted: rgba(255, 255, 255, 0.035);
-        --line: rgba(255, 255, 255, 0.1);
-        --line-soft: rgba(255, 255, 255, 0.06);
-        --text: #f5f7fb;
-        --text-muted: rgba(245, 247, 251, 0.7);
-        --text-soft: rgba(245, 247, 251, 0.48);
-        --accent: #86a8ff;
-        --accent-soft: rgba(134, 168, 255, 0.2);
-        --warm: #b8ffde;
-        --shadow: 0 32px 90px rgba(0, 0, 0, 0.35);
+        color-scheme: light;
+        --bg: #f6f1e8;
+        --bg-elevated: rgba(255, 255, 255, 0.78);
+        --bg-muted: rgba(255, 255, 255, 0.52);
+        --line: rgba(54, 45, 33, 0.12);
+        --line-soft: rgba(54, 45, 33, 0.08);
+        --text: #1f1a15;
+        --text-muted: rgba(31, 26, 21, 0.68);
+        --text-soft: rgba(31, 26, 21, 0.46);
+        --accent: #4f73d9;
+        --accent-soft: rgba(79, 115, 217, 0.14);
+        --warm: #d4864e;
+        --shadow: 0 30px 80px rgba(78, 58, 36, 0.14);
         --progress: 0;
         --safe-frame-x: 220px;
         --safe-frame-y: 90px;
@@ -70,16 +70,20 @@ Borrowed UI motifs
         width: 100%;
         height: 100%;
         margin: 0;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
 
       body {
         display: grid;
         place-items: center;
         overflow: hidden;
+        padding: 20px;
         background:
-          radial-gradient(circle at 18% 16%, rgba(134, 168, 255, 0.18), transparent 28%),
-          radial-gradient(circle at 82% 22%, rgba(184, 255, 222, 0.08), transparent 24%),
-          linear-gradient(180deg, #0a0e14 0%, #101521 100%);
+          radial-gradient(circle at 16% 12%, rgba(79, 115, 217, 0.12), transparent 28%),
+          radial-gradient(circle at 82% 18%, rgba(212, 134, 78, 0.12), transparent 24%),
+          linear-gradient(180deg, #fbf8f2 0%, #efe6d9 100%);
         color: var(--text);
         font-family: Inter, "SF Pro Text", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
       }
@@ -90,10 +94,10 @@ Borrowed UI motifs
         position: relative;
         overflow: hidden;
         background:
-          radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent 26%),
-          linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+          radial-gradient(circle at top left, rgba(79, 115, 217, 0.08), transparent 24%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(250, 246, 239, 0.98)),
           var(--bg);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(54, 45, 33, 0.08);
         border-radius: 32px;
         box-shadow: var(--shadow);
         transform-origin: center;
@@ -103,10 +107,10 @@ Borrowed UI motifs
         position: absolute;
         inset: 0;
         pointer-events: none;
-        opacity: 0.08;
+        opacity: 0.02;
         background-image:
-          linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+          linear-gradient(rgba(54, 45, 33, 0.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(54, 45, 33, 0.025) 1px, transparent 1px);
         background-size: 80px 80px;
         mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.25));
       }
@@ -124,7 +128,7 @@ Borrowed UI motifs
         height: 360px;
         top: -120px;
         right: -40px;
-        background: rgba(134, 168, 255, 0.14);
+        background: rgba(79, 115, 217, 0.08);
       }
 
       .ambient-orb::after {
@@ -132,7 +136,7 @@ Borrowed UI motifs
         height: 280px;
         top: 420px;
         left: -1180px;
-        background: rgba(184, 255, 222, 0.08);
+        background: rgba(212, 134, 78, 0.07);
       }
 
       .safe-frame {
@@ -141,9 +145,10 @@ Borrowed UI motifs
         right: var(--safe-frame-x);
         top: var(--safe-frame-y);
         bottom: var(--safe-frame-y);
-        border: 1px dashed rgba(255, 255, 255, 0.08);
+        border: 1px dashed rgba(54, 45, 33, 0.1);
         border-radius: 28px;
         pointer-events: none;
+        opacity: 0;
       }
 
       .masthead {
@@ -156,6 +161,7 @@ Borrowed UI motifs
         justify-content: space-between;
         pointer-events: none;
         will-change: transform, opacity;
+        opacity: 0;
       }
 
       .logo-wrap {
@@ -179,7 +185,7 @@ Borrowed UI motifs
         padding: 10px 14px;
         border-radius: 999px;
         border: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.03);
+        background: rgba(255, 255, 255, 0.5);
         font-size: 12px;
         letter-spacing: 0.14em;
         text-transform: uppercase;
@@ -198,10 +204,13 @@ Borrowed UI motifs
         width: 1120px;
         height: 590px;
         position: relative;
+        --stage-safe-x: 28px;
+        --stage-safe-top: 22px;
+        --stage-safe-bottom: 26px;
         border-radius: 40px;
-        border: 1px solid var(--line);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(248, 242, 233, 0.96));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
         backdrop-filter: blur(16px);
       }
 
@@ -231,23 +240,23 @@ Borrowed UI motifs
         position: absolute;
         inset: 1px;
         border-radius: 39px;
-        border: 1px solid rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(54, 45, 33, 0.04);
         pointer-events: none;
       }
 
       .stage-shell::after {
-        content: "";
-        position: absolute;
-        inset: 88px 104px;
-        border-radius: 30px;
-        border: 1px solid rgba(255, 255, 255, 0.04);
-        background: radial-gradient(circle at center, rgba(134, 168, 255, 0.08), rgba(134, 168, 255, 0) 58%);
-        pointer-events: none;
-      }
+         content: "";
+         position: absolute;
+         inset: 88px 104px;
+         border-radius: 30px;
+         border: 1px solid rgba(54, 45, 33, 0.03);
+         background: radial-gradient(circle at center, rgba(79, 115, 217, 0.045), rgba(79, 115, 217, 0) 58%);
+         pointer-events: none;
+        }
 
       .brand-lockup {
         position: absolute;
-        inset: 0;
+        inset: var(--stage-safe-top) var(--stage-safe-x) var(--stage-safe-bottom);
         display: grid;
         place-items: center;
         text-align: center;
@@ -260,9 +269,9 @@ Borrowed UI motifs
         width: min(820px, calc(100% - 120px));
         padding: 42px 48px 38px;
         border-radius: 32px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: linear-gradient(180deg, rgba(12, 16, 23, 0.84), rgba(12, 16, 23, 0.7));
-        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 241, 233, 0.95));
+        box-shadow: 0 24px 70px rgba(78, 58, 36, 0.12);
         backdrop-filter: blur(16px);
         will-change: transform, opacity;
       }
@@ -278,21 +287,21 @@ Borrowed UI motifs
         font-size: 34px;
         line-height: 1.14;
         letter-spacing: -0.04em;
-        color: rgba(245, 247, 251, 0.98);
+        color: rgba(31, 26, 21, 0.98);
       }
 
       .brand-support {
         margin: 12px 0 0;
         font-size: 15px;
         line-height: 1.6;
-        color: rgba(245, 247, 251, 0.56);
+        color: rgba(31, 26, 21, 0.58);
       }
 
       .orbit {
         position: absolute;
         inset: 120px 180px;
         border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(54, 45, 33, 0.08);
         opacity: 0.8;
         transform: scale(calc(0.985 + (var(--progress) * 0.015)));
       }
@@ -300,7 +309,7 @@ Borrowed UI motifs
       .orbit-secondary {
         inset: 158px 236px;
         opacity: 0.5;
-        border-color: rgba(184, 255, 222, 0.08);
+        border-color: rgba(212, 134, 78, 0.12);
         transform: scale(calc(1.015 - (var(--progress) * 0.015)));
       }
 
@@ -313,7 +322,7 @@ Borrowed UI motifs
         margin: -7px 0 0 -7px;
         border-radius: 999px;
         background: var(--accent);
-        box-shadow: 0 0 0 10px rgba(134, 168, 255, 0.12), 0 0 42px rgba(134, 168, 255, 0.35);
+        box-shadow: 0 0 0 10px rgba(79, 115, 217, 0.12), 0 0 36px rgba(79, 115, 217, 0.2);
       }
 
       .corner-note {
@@ -324,6 +333,7 @@ Borrowed UI motifs
         font-size: 13px;
         line-height: 1.7;
         color: var(--text-soft);
+        opacity: 0;
       }
 
       .timeline-status {
@@ -338,9 +348,10 @@ Borrowed UI motifs
         font-size: 12px;
         letter-spacing: 0.12em;
         text-transform: uppercase;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: rgba(255, 255, 255, 0.56);
         color: var(--text-soft);
+        opacity: 0;
       }
 
       .timeline-rail {
@@ -351,7 +362,8 @@ Borrowed UI motifs
         height: 4px;
         border-radius: 999px;
         overflow: hidden;
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(54, 45, 33, 0.08);
+        opacity: 0;
       }
 
       .timeline-rail::after {
@@ -360,7 +372,7 @@ Borrowed UI motifs
         inset: 0;
         width: calc(var(--progress) * 100%);
         border-radius: inherit;
-        background: linear-gradient(90deg, rgba(184, 255, 222, 0.65), rgba(134, 168, 255, 0.95));
+        background: linear-gradient(90deg, rgba(212, 134, 78, 0.72), rgba(79, 115, 217, 0.94));
       }
 
       .scene-root {
@@ -373,23 +385,25 @@ Borrowed UI motifs
       .route-stage,
       .workspace-fall {
         position: absolute;
-        inset: 0;
+        inset: var(--stage-safe-top) var(--stage-safe-x) var(--stage-safe-bottom);
         will-change: transform, opacity;
+        opacity: 0;
       }
 
       .input-hero {
         display: grid;
         place-items: center;
-        padding: 56px 68px 48px;
+        padding: 64px 82px 52px;
+        isolation: isolate;
       }
 
       .input-panel {
         width: 980px;
         padding: 28px 32px 26px;
         border-radius: 34px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.045));
-        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.24);
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(247, 242, 235, 0.92));
+        box-shadow: 0 26px 72px rgba(78, 58, 36, 0.12);
       }
 
       .eyebrow {
@@ -397,7 +411,7 @@ Borrowed UI motifs
         font-size: 12px;
         letter-spacing: 0.18em;
         text-transform: uppercase;
-        color: rgba(245, 247, 251, 0.58);
+        color: rgba(31, 26, 21, 0.46);
       }
 
       .hero-title {
@@ -405,23 +419,25 @@ Borrowed UI motifs
         font-size: 54px;
         line-height: 1.04;
         letter-spacing: -0.045em;
+        text-wrap: pretty;
       }
 
       .hero-subtitle {
         margin: 14px 0 0;
-        max-width: 760px;
-        font-size: 18px;
-        line-height: 1.6;
+        max-width: 700px;
+        font-size: 17px;
+        line-height: 1.55;
         color: var(--text-muted);
+        text-wrap: pretty;
       }
 
       .entry-shell {
         position: relative;
         margin-top: 28px;
         border-radius: 28px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(12, 16, 23, 0.58);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: rgba(255, 255, 255, 0.8);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
       }
 
       .entry-label {
@@ -431,7 +447,7 @@ Borrowed UI motifs
         font-size: 12px;
         letter-spacing: 0.12em;
         text-transform: uppercase;
-        color: rgba(245, 247, 251, 0.42);
+        color: rgba(31, 26, 21, 0.38);
       }
 
       .entry-text {
@@ -441,7 +457,7 @@ Borrowed UI motifs
         font-size: 30px;
         line-height: 1.55;
         letter-spacing: -0.02em;
-        color: rgba(245, 247, 251, 0.95);
+        color: rgba(31, 26, 21, 0.95);
       }
 
       .entry-footer {
@@ -455,20 +471,21 @@ Borrowed UI motifs
 
       .entry-hint {
         font-size: 13px;
-        color: rgba(245, 247, 251, 0.48);
+        color: rgba(31, 26, 21, 0.46);
       }
 
       .entry-send {
         padding: 10px 18px;
         border-radius: 999px;
-        border: 1px solid rgba(134, 168, 255, 0.22);
-        background: rgba(134, 168, 255, 0.12);
+        border: 1px solid rgba(79, 115, 217, 0.18);
+        background: rgba(79, 115, 217, 0.12);
         font-size: 14px;
-        color: rgba(245, 247, 251, 0.92);
+        color: rgba(31, 26, 21, 0.88);
       }
 
       .route-stage {
-        padding: 82px 82px 58px;
+        padding: 88px 88px 62px;
+        isolation: isolate;
       }
 
       .phase-strip {
@@ -480,55 +497,57 @@ Borrowed UI motifs
       .phase-pill {
         padding: 10px 16px;
         border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: rgba(255, 255, 255, 0.52);
         font-size: 12px;
         letter-spacing: 0.12em;
         text-transform: uppercase;
-        color: rgba(245, 247, 251, 0.48);
+        color: rgba(31, 26, 21, 0.46);
         transition: opacity 160ms linear;
       }
 
       .phase-pill.is-active {
-        border-color: rgba(134, 168, 255, 0.22);
-        background: rgba(134, 168, 255, 0.12);
-        color: rgba(245, 247, 251, 0.94);
-        box-shadow: 0 10px 24px rgba(134, 168, 255, 0.14);
+        border-color: rgba(79, 115, 217, 0.18);
+        background: rgba(79, 115, 217, 0.12);
+        color: rgba(31, 26, 21, 0.88);
+        box-shadow: 0 10px 24px rgba(79, 115, 217, 0.12);
       }
 
       .route-title {
         margin: 28px 0 0;
         text-align: center;
-        font-size: 42px;
-        line-height: 1.06;
+        font-size: 38px;
+        line-height: 1.12;
         letter-spacing: -0.045em;
+        text-wrap: pretty;
       }
 
       .route-subtitle {
         margin: 12px auto 0;
-        max-width: 620px;
+        max-width: 680px;
         text-align: center;
-        font-size: 17px;
-        line-height: 1.6;
+        font-size: 15px;
+        line-height: 1.56;
         color: var(--text-muted);
+        text-wrap: pretty;
       }
 
       .route-grid {
         position: relative;
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 18px;
-        margin-top: 42px;
+        gap: 20px;
+        margin-top: 36px;
       }
 
       .route-card {
         position: relative;
-        min-height: 186px;
-        padding: 22px 22px 20px;
+        min-height: 212px;
+        padding: 20px 20px 18px;
         border-radius: 28px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(246, 240, 232, 0.9));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
       }
 
       .route-card-label {
@@ -537,25 +556,26 @@ Borrowed UI motifs
         gap: 8px;
         padding: 8px 12px;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(79, 115, 217, 0.08);
         font-size: 12px;
         letter-spacing: 0.12em;
         text-transform: uppercase;
-        color: rgba(245, 247, 251, 0.58);
+        color: rgba(31, 26, 21, 0.54);
       }
 
       .route-card-title {
         margin: 18px 0 0;
-        font-size: 28px;
-        line-height: 1.12;
+        font-size: 24px;
+        line-height: 1.18;
         letter-spacing: -0.04em;
+        text-wrap: pretty;
       }
 
       .route-card-meta {
         margin-top: 10px;
-        font-size: 14px;
-        line-height: 1.6;
-        color: rgba(245, 247, 251, 0.62);
+        font-size: 13px;
+        line-height: 1.55;
+        color: rgba(31, 26, 21, 0.56);
       }
 
       .route-card-target {
@@ -565,10 +585,11 @@ Borrowed UI motifs
         bottom: 20px;
         padding: 12px 14px;
         border-radius: 18px;
-        border: 1px dashed rgba(255, 255, 255, 0.12);
-        background: rgba(12, 16, 23, 0.34);
-        font-size: 16px;
-        color: rgba(245, 247, 251, 0.86);
+        border: 1px dashed rgba(54, 45, 33, 0.16);
+        background: rgba(250, 245, 237, 0.96);
+        font-size: 15px;
+        line-height: 1.3;
+        color: rgba(31, 26, 21, 0.82);
       }
 
       .chip-layer {
@@ -587,44 +608,51 @@ Borrowed UI motifs
         min-width: 164px;
         padding: 10px 18px;
         border-radius: 999px;
-        border: 1px solid rgba(184, 255, 222, 0.14);
-        background: rgba(184, 255, 222, 0.1);
+        border: 1px solid rgba(212, 134, 78, 0.16);
+        background: rgba(255, 252, 248, 0.98);
         font-size: 15px;
-        color: rgba(245, 247, 251, 0.96);
-        box-shadow: 0 16px 36px rgba(8, 12, 18, 0.22);
+        color: rgba(31, 26, 21, 0.92);
+        box-shadow: 0 16px 36px rgba(78, 58, 36, 0.12);
         will-change: transform, opacity;
       }
 
       .workspace-fall {
-        padding: 98px 90px 62px;
+        padding: 42px 54px 28px;
+        isolation: isolate;
+        transform-origin: top left;
       }
 
       .workspace-board {
         display: grid;
         grid-template-columns: 0.96fr 1.04fr;
-        gap: 22px;
+        gap: 14px;
         height: 100%;
-        padding: 28px;
+        padding: 18px;
         border-radius: 34px;
-        border: 1px solid rgba(255, 255, 255, 0.09);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.045));
-        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(247, 241, 233, 0.9));
+        box-shadow: 0 28px 80px rgba(78, 58, 36, 0.12);
       }
 
       .workspace-panel,
       .workspace-results {
         position: relative;
+        overflow: hidden;
         border-radius: 28px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(12, 16, 23, 0.34);
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: rgba(255, 255, 255, 0.78);
+        will-change: transform, opacity;
       }
 
       .workspace-panel {
-        padding: 24px;
+        padding: 16px;
       }
 
       .workspace-results {
-        padding: 20px;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        min-height: 0;
+        padding: 14px;
       }
 
       .workspace-label {
@@ -632,170 +660,189 @@ Borrowed UI motifs
         font-size: 12px;
         letter-spacing: 0.16em;
         text-transform: uppercase;
-        color: rgba(245, 247, 251, 0.5);
+        color: rgba(31, 26, 21, 0.46);
       }
 
       .workspace-heading {
         margin: 14px 0 0;
-        font-size: 30px;
-        line-height: 1.08;
+        font-size: 24px;
+        line-height: 1.12;
         letter-spacing: -0.04em;
+        text-wrap: pretty;
       }
 
       .workspace-copy {
         margin: 10px 0 0;
-        font-size: 15px;
-        line-height: 1.65;
-        color: rgba(245, 247, 251, 0.58);
+        font-size: 13px;
+        line-height: 1.45;
+        color: rgba(31, 26, 21, 0.58);
       }
 
       .workspace-context-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-        margin-top: 18px;
+        gap: 6px;
+        margin-top: 12px;
       }
 
       .workspace-context-card {
-        padding: 12px 14px;
+        padding: 8px 10px;
         border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.035);
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: rgba(247, 241, 233, 0.8);
       }
 
       .workspace-context-label {
         font-size: 11px;
         letter-spacing: 0.12em;
         text-transform: uppercase;
-        color: rgba(245, 247, 251, 0.4);
+        color: rgba(31, 26, 21, 0.38);
       }
 
       .workspace-context-value {
-        margin-top: 7px;
-        font-size: 15px;
-        color: rgba(245, 247, 251, 0.84);
+        margin-top: 6px;
+        font-size: 13px;
+        line-height: 1.35;
+        color: rgba(31, 26, 21, 0.82);
       }
 
       .workspace-run-meta {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 18px;
+        gap: 8px;
+        margin-top: 12px;
       }
 
       .workspace-meta-pill {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 8px 12px;
+        padding: 7px 10px;
         border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.04);
-        font-size: 12px;
-        color: rgba(245, 247, 251, 0.66);
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: rgba(255, 255, 255, 0.62);
+        font-size: 11px;
+        color: rgba(31, 26, 21, 0.64);
       }
 
       .workspace-phases {
         display: grid;
-        gap: 12px;
-        margin-top: 24px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 14px;
       }
 
       .workspace-phase-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 14px 16px;
+        gap: 8px;
+        min-width: 0;
+        padding: 8px 10px;
         border-radius: 18px;
-        background: rgba(255, 255, 255, 0.04);
+        background: rgba(247, 241, 233, 0.84);
       }
 
       .workspace-phase-name {
-        font-size: 15px;
-        color: rgba(245, 247, 251, 0.8);
+        display: block;
+        min-width: 0;
+        font-size: 12px;
+        line-height: 1.2;
+        color: rgba(31, 26, 21, 0.78);
       }
 
       .workspace-phase-status {
-        font-size: 13px;
-        color: rgba(184, 255, 222, 0.84);
+        flex: none;
+        font-size: 11px;
+        color: rgba(212, 134, 78, 0.88);
       }
 
       .workspace-phase-detail {
-        margin-top: 4px;
-        font-size: 12px;
-        color: rgba(245, 247, 251, 0.48);
+        display: none;
       }
 
       .results-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 18px;
-        padding: 4px 4px 16px;
+        gap: 12px;
+        padding: 0 0 10px;
       }
 
       .results-title {
         margin: 0;
-        font-size: 24px;
+        font-size: 18px;
         letter-spacing: -0.03em;
       }
 
       .results-status {
-        font-size: 13px;
-        color: rgba(245, 247, 251, 0.52);
+        font-size: 12px;
+        color: rgba(31, 26, 21, 0.48);
       }
 
       .result-stack {
         display: grid;
-        gap: 12px;
+        grid-template-rows: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        min-height: 0;
       }
 
       .result-card {
-        padding: 16px 16px 14px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        min-height: 0;
+        padding: 12px 12px 10px;
         border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.04));
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 241, 233, 0.88));
+        will-change: transform, opacity;
       }
 
       .result-card.is-highlighted {
-        border-color: rgba(184, 255, 222, 0.16);
-        box-shadow: 0 18px 42px rgba(8, 12, 18, 0.22);
+        border-color: rgba(212, 134, 78, 0.16);
+        box-shadow: 0 18px 42px rgba(78, 58, 36, 0.12);
       }
 
       .result-pill {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 7px 10px;
+        padding: 6px 9px;
         border-radius: 999px;
-        background: rgba(134, 168, 255, 0.1);
-        font-size: 12px;
+        background: rgba(79, 115, 217, 0.1);
+        font-size: 11px;
         letter-spacing: 0.1em;
         text-transform: uppercase;
-        color: rgba(245, 247, 251, 0.64);
+        color: rgba(31, 26, 21, 0.58);
       }
 
       .result-title {
-        margin: 12px 0 0;
-        font-size: 22px;
+        margin: 10px 0 0;
+        font-size: 16px;
         line-height: 1.2;
         letter-spacing: -0.03em;
+        text-wrap: pretty;
       }
 
       .result-meta-row {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px 14px;
-        margin-top: 8px;
-        font-size: 12px;
-        color: rgba(245, 247, 251, 0.5);
+        gap: 6px 10px;
+        margin-top: 6px;
+        font-size: 11px;
+        color: rgba(31, 26, 21, 0.48);
       }
 
       .result-excerpt {
-        margin: 8px 0 0;
-        font-size: 14px;
-        line-height: 1.6;
-        color: rgba(245, 247, 251, 0.62);
+        margin: 6px 0 0;
+        font-size: 11px;
+        line-height: 1.4;
+        color: rgba(31, 26, 21, 0.58);
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
       }
     </style>
   </head>
@@ -991,8 +1038,11 @@ Borrowed UI motifs
 
     <script>
       const DURATION = 9.5;
+      const MASTER_WIDTH = 1600;
+      const MASTER_HEIGHT = 900;
       const LOGO_SRC = 'public/logo.svg';
       const SAFE_FRAME = Object.freeze({ x: 220, y: 90, contentInsetX: 20, contentInsetTop: 18 });
+      const STAGE_SAFE = Object.freeze({ x: 28, top: 22, bottom: 26 });
       const stage = document.getElementById('app');
       const stageShell = document.querySelector('.stage-shell');
       const stageSceneMount = document.querySelector('[data-layer="task-2-scene-mount"]');
@@ -1002,13 +1052,17 @@ Borrowed UI motifs
       const inputHero = document.querySelector('.input-hero');
       const routeStage = document.querySelector('.route-stage');
       const workspaceFall = document.querySelector('.workspace-fall');
+      const workspacePanel = document.querySelector('.workspace-panel');
+      const workspaceResults = document.querySelector('.workspace-results');
       const hudLayer = document.querySelector('.stage-layer--hud');
       const timelineRail = document.querySelector('.timeline-rail');
       const logoImages = Array.from(document.querySelectorAll('[data-logo-img]'));
       const phaseStatus = document.querySelector('[data-phase-status]');
       const phasePills = Array.from(document.querySelectorAll('[data-phase]'));
+      const routeGrid = document.querySelector('.route-grid');
       const routeChips = Array.from(document.querySelectorAll('[data-chip]'));
       const resultCards = Array.from(document.querySelectorAll('[data-result-card]'));
+      let workspaceTargetsCache = {};
       let time = 0;
       let playing = false;
       let lastTick = null;
@@ -1025,6 +1079,19 @@ Borrowed UI motifs
         image.src = LOGO_SRC;
       });
 
+      function fitStage() {
+        const viewportPadding = 32;
+        const scale = Math.min(
+          (window.innerWidth - viewportPadding * 2) / MASTER_WIDTH,
+          (window.innerHeight - viewportPadding * 2) / MASTER_HEIGHT,
+          1
+        );
+
+        const safeScale = Math.max(scale, 0.5);
+        stage.style.transform = 'none';
+        stage.style.zoom = String(safeScale);
+      }
+
       function clamp(value, min, max) {
         return Math.min(Math.max(value, min), max);
       }
@@ -1035,6 +1102,18 @@ Borrowed UI motifs
 
       function lerp(start, end, amount) {
         return start + (end - start) * amount;
+      }
+
+      function clampToStageSafe(x, y, width = 0, height = 0, containerWidth = routeStage.clientWidth, containerHeight = routeStage.clientHeight) {
+        const left = 0;
+        const top = 0;
+        const right = Math.max(left, containerWidth - width);
+        const bottom = Math.max(top, containerHeight - height);
+
+        return {
+          x: clamp(x, left, right),
+          y: clamp(y, top, bottom),
+        };
       }
 
       function easeOutCubic(value) {
@@ -1057,19 +1136,39 @@ Borrowed UI motifs
         return clamp01((value - start) / (end - start));
       }
 
-      function getWorkspaceChipTargets() {
-        const shellRect = stageShell.getBoundingClientRect();
+      function fadeWindow(value, enterStart, enterEnd, exitStart, exitEnd) {
+        const enter = easeOutCubic(segmentProgress(value, enterStart, enterEnd));
+        const exit = easeInOutCubic(segmentProgress(value, exitStart, exitEnd));
+        return clamp01(enter * (1 - exit));
+      }
+
+      function getRelativeOffset(node, ancestor) {
+        let x = 0;
+        let y = 0;
+        let current = node;
+
+        while (current && current !== ancestor) {
+          x += current.offsetLeft;
+          y += current.offsetTop;
+          current = current.offsetParent;
+        }
+
+        return { x, y };
+      }
+
+      function cacheWorkspaceChipTargets() {
         const targets = {};
+        const routeGridOffset = getRelativeOffset(routeGrid, stageShell);
 
         resultCards.forEach((card) => {
-          const rect = card.getBoundingClientRect();
+          const rect = getRelativeOffset(card, stageShell);
           targets[card.dataset.resultCard] = {
-            x: rect.left - shellRect.left + 34,
-            y: rect.top - shellRect.top + 74,
+            x: rect.x + 34 - routeGridOffset.x,
+            y: rect.y + 74 - routeGridOffset.y,
           };
         });
 
-        return targets;
+        workspaceTargetsCache = targets;
       }
 
       const chipMotion = {
@@ -1093,39 +1192,42 @@ Borrowed UI motifs
       function render(t) {
         const safeTime = clamp(t, 0, DURATION);
         const progress = safeTime / DURATION;
-        const heroEnter = easeOutCubic(segmentProgress(safeTime, 0.12, 1.1));
-        const heroExit = easeInOutCubic(segmentProgress(safeTime, 2.85, 4.6));
-        const routeEnter = easeOutCubic(segmentProgress(safeTime, 2.3, 3.45));
-        const routePeak = 1 - easeOutCubic(segmentProgress(safeTime, 5.95, 7.2));
-        const workspaceEnter = easeOutCubic(segmentProgress(safeTime, 5.6, 6.9));
-        const workspaceSettle = easeOutCubic(segmentProgress(safeTime, 6.3, 8.2));
-        const brandQuiet = easeOutCubic(segmentProgress(safeTime, 1.8, 5.8));
-        const brandEnter = easeOutCubic(segmentProgress(safeTime, 7.2, 8.35));
-        const interfaceFade = easeOutCubic(segmentProgress(safeTime, 7.0, 8.0));
-        const finalTakeover = easeOutCubic(segmentProgress(safeTime, 8.66, 9.46));
-        const routeWeight = clamp01(segmentProgress(safeTime, 3.4, 4.5) - segmentProgress(safeTime, 5.05, 6.1) * 0.12);
-        const executeWeight = easeOutCubic(segmentProgress(safeTime, 4.9, 6.25));
-        const workspaceTargets = getWorkspaceChipTargets();
+        const heroPresence = fadeWindow(safeTime, 0.08, 0.95, 2.46, 3.02);
+        const routePresence = fadeWindow(safeTime, 2.82, 3.38, 5.32, 5.92);
+        const workspacePresence = fadeWindow(safeTime, 5.78, 6.28, 7.42, 8.02);
+        const workspacePanelIn = easeOutCubic(segmentProgress(safeTime, 5.78, 6.18));
+        const workspaceResultsIn = easeOutCubic(segmentProgress(safeTime, 6.16, 6.72));
+        const brandEnter = easeOutCubic(segmentProgress(safeTime, 7.78, 8.72));
+        const interfaceFade = easeInOutCubic(segmentProgress(safeTime, 7.08, 7.72));
+        const finalCleanup = easeInOutCubic(segmentProgress(safeTime, 8.52, 9.18));
+        const routeWeight = easeOutCubic(segmentProgress(safeTime, 3.5, 4.62));
+        const executeWeight = easeOutCubic(segmentProgress(safeTime, 4.85, 5.95));
+        const workspaceTranslateY = lerp(8, -4, workspacePresence) - brandEnter * 3;
+        const workspaceScale = lerp(0.989, 1, workspacePresence);
 
         stage.style.setProperty('--progress', String(progress));
 
-        inputHero.style.opacity = String(clamp01(heroEnter * (1 - heroExit * 0.96)));
-        inputHero.style.transform = `translate3d(0, ${lerp(26, -18, heroEnter) + lerp(0, -40, heroExit)}px, 0) scale(${lerp(0.972, 1, heroEnter) - heroExit * 0.032})`;
+        inputHero.style.opacity = String(heroPresence);
+        inputHero.style.transform = `translate3d(0, ${lerp(8, -3, heroPresence)}px, 0)`;
 
-        routeStage.style.opacity = String(clamp01(routeEnter * routePeak));
-        routeStage.style.transform = `translate3d(0, ${lerp(54, 0, routeEnter) + lerp(0, -24, workspaceEnter)}px, 0) scale(${lerp(0.97, 1, routeEnter) - workspaceEnter * 0.018})`;
+        routeStage.style.opacity = String(routePresence);
+        routeStage.style.transform = `translate3d(0, ${lerp(10, -3, routePresence) + brandEnter * -2}px, 0)`;
 
-        workspaceFall.style.opacity = String(clamp01(workspaceEnter * (1 - brandEnter * 0.34) * (1 - finalTakeover * 0.96)));
-        workspaceFall.style.transform = `translate3d(0, ${lerp(44, 0, workspaceEnter) - workspaceSettle * 8 - brandEnter * 18 - finalTakeover * 20}px, 0) scale(${lerp(0.985, 1, workspaceEnter) - finalTakeover * 0.018})`;
-        brandLockup.style.opacity = String(clamp01(brandEnter * (0.92 + brandQuiet * 0.08) + finalTakeover * 0.08));
-        brandLockup.style.transform = `translate3d(0, ${lerp(22, 0, brandEnter) - finalTakeover * 6}px, 0)`;
-        brandLockupInner.style.opacity = String(clamp01(0.94 + finalTakeover * 0.06));
-        brandLockupInner.style.transform = `translate3d(0, ${lerp(8, 0, brandEnter) - finalTakeover * 4}px, 0) scale(${1 - finalTakeover * 0.004})`;
-        masthead.style.opacity = String(clamp01((1 - interfaceFade * 0.82) * (1 - finalTakeover * 0.98)));
-        masthead.style.transform = `translate3d(0, ${interfaceFade * -10 - finalTakeover * 18}px, 0)`;
-        hudLayer.style.opacity = String(clamp01((1 - interfaceFade * 0.92) * (1 - finalTakeover * 0.99)));
-        hudLayer.style.transform = `translate3d(0, ${interfaceFade * 12 + finalTakeover * 18}px, 0)`;
-        timelineRail.style.opacity = String(clamp01((1 - interfaceFade * 0.88) * (1 - finalTakeover)));
+        workspaceFall.style.opacity = String(workspacePresence * (1 - brandEnter * 0.84));
+        workspaceFall.style.transform = `translate3d(0, ${workspaceTranslateY}px, 0)`;
+        workspacePanel.style.opacity = String(workspacePanelIn);
+        workspacePanel.style.transform = `translate3d(${lerp(-18, 0, workspacePanelIn)}px, 0, 0)`;
+        workspaceResults.style.opacity = String(workspaceResultsIn);
+        workspaceResults.style.transform = `translate3d(${lerp(22, 0, workspaceResultsIn)}px, 0, 0)`;
+        brandLockup.style.opacity = String(brandEnter);
+        brandLockup.style.transform = `translate3d(0, ${lerp(8, 0, brandEnter)}px, 0)`;
+        brandLockupInner.style.opacity = String(clamp01(0.94 + brandEnter * 0.06));
+        brandLockupInner.style.transform = `translate3d(0, ${lerp(4, 0, brandEnter)}px, 0)`;
+        masthead.style.opacity = String(clamp01((1 - interfaceFade) * (1 - finalCleanup)));
+        masthead.style.transform = `translate3d(0, ${interfaceFade * -6}px, 0)`;
+        hudLayer.style.opacity = String(clamp01((1 - interfaceFade) * (1 - finalCleanup)));
+        hudLayer.style.transform = `translate3d(0, ${interfaceFade * 6}px, 0)`;
+        timelineRail.style.opacity = String(clamp01((1 - interfaceFade) * (1 - finalCleanup)));
 
         const activePhase = executeWeight > 0.7 ? 'execute' : routeWeight > 0.42 ? 'route' : 'parse';
         phaseStatus.textContent = activePhase === 'execute'
@@ -1140,23 +1242,38 @@ Borrowed UI motifs
         routeChips.forEach((chip) => {
           const config = chipMotion[chip.dataset.chip];
           const appear = easeOutCubic(segmentProgress(safeTime, 3.0, 3.7));
-          const split = easeInOutCubic(segmentProgress(safeTime, 3.35, 4.35));
-          const arrive = easeOutCubic(segmentProgress(safeTime, 4.15, 5.2));
-          const handoff = easeInOutCubic(segmentProgress(safeTime, 5.18, 6.5));
-          const exit = easeOutCubic(segmentProgress(safeTime, 6.55, 7.05));
+          const split = easeInOutCubic(segmentProgress(safeTime, 3.35, 4.2));
+          const arrive = easeOutCubic(segmentProgress(safeTime, 4.08, 5.0));
+          const handoff = easeInOutCubic(segmentProgress(safeTime, 5.42, 6.12));
+          const exit = easeOutCubic(segmentProgress(safeTime, 5.92, 6.42));
 
           const midX = lerp(config.from.x, config.mid.x, split);
           const midY = lerp(config.from.y, config.mid.y, split);
           const routeX = lerp(midX, config.to.x, arrive);
           const routeY = lerp(midY, config.to.y, arrive);
-          const nextTarget = workspaceTargets[chip.dataset.chip] ?? config.to;
-          const x = lerp(routeX, nextTarget.x, handoff);
-          const y = lerp(routeY, nextTarget.y, handoff);
-          const opacity = clamp01(appear * (1 - exit));
-          const scale = lerp(0.92, 1, appear) + handoff * 0.02 - exit * 0.08;
+          const workspaceBaseTarget = workspaceTargetsCache[chip.dataset.chip] ?? config.to;
+          const nextTarget = clampToStageSafe(
+            workspaceBaseTarget.x,
+            workspaceBaseTarget.y + workspaceTranslateY,
+            chip.offsetWidth || 164,
+            chip.offsetHeight || 44
+          );
+          const unclamped = {
+            x: lerp(routeX, nextTarget.x, handoff),
+            y: lerp(routeY, nextTarget.y, handoff),
+          };
+          const resolved = clampToStageSafe(unclamped.x, unclamped.y, chip.offsetWidth || 164, chip.offsetHeight || 44);
+          const opacity = clamp01(appear * (1 - exit) * (routePresence * 0.8 + workspacePresence * 0.55 + 0.12));
+          const scale = lerp(0.94, 1, appear) + handoff * 0.015 - exit * 0.06;
 
           chip.style.opacity = String(opacity);
-          chip.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+          chip.style.transform = `translate3d(${resolved.x}px, ${resolved.y}px, 0) scale(${scale})`;
+        });
+
+        resultCards.forEach((card, index) => {
+          const reveal = easeOutCubic(segmentProgress(safeTime, 6.18 + index * 0.12, 6.62 + index * 0.12));
+          card.style.opacity = String(reveal * workspaceResultsIn);
+          card.style.transform = `translate3d(0, ${lerp(16, 0, reveal)}px, 0)`;
         });
       }
 
@@ -1175,7 +1292,14 @@ Borrowed UI motifs
         if (playing) {
           let nextTime = time + dt;
           if (nextTime >= DURATION) {
-            nextTime = window.__recording ? DURATION - 0.001 : 0;
+            if (window.__recording) {
+              nextTime = DURATION - 0.001;
+            } else {
+              render(DURATION);
+              time = 0;
+              requestAnimationFrame(tick);
+              return;
+            }
           }
           time = nextTime;
           render(time);
@@ -1190,12 +1314,19 @@ Borrowed UI motifs
         render(time);
       };
 
-      render(0);
-      window.__ready = true;
-      playing = true;
-      requestAnimationFrame(tick);
-
       document.fonts.ready.then(() => {
+        fitStage();
+        cacheWorkspaceChipTargets();
+        render(0);
+        time = 0;
+        playing = true;
+        lastTick = null;
+        requestAnimationFrame(tick);
+      });
+
+      window.addEventListener('resize', () => {
+        fitStage();
+        cacheWorkspaceChipTargets();
         render(time);
       });
     </script>
