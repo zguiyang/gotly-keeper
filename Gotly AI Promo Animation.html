@@ -624,27 +624,173 @@ Borrowed UI motifs
 
       .workspace-board {
         display: grid;
-        grid-template-columns: 0.96fr 1.04fr;
+        grid-template-columns: 168px minmax(0, 1fr);
         gap: 14px;
         height: 100%;
-        padding: 18px;
+        padding: 14px;
         border-radius: 34px;
         border: 1px solid rgba(54, 45, 33, 0.08);
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(247, 241, 233, 0.9));
         box-shadow: 0 28px 80px rgba(78, 58, 36, 0.12);
       }
 
+      .workspace-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-height: 0;
+        padding: 14px 12px;
+        border-radius: 24px;
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: rgba(243, 245, 248, 0.88);
+      }
+
+      .workspace-sidebar-brand {
+        padding: 4px 4px 10px;
+        border-bottom: 1px solid rgba(54, 45, 33, 0.08);
+      }
+
+      .workspace-sidebar-title {
+        font-size: 26px;
+        line-height: 1;
+        font-weight: 700;
+        letter-spacing: -0.05em;
+        color: #0051b1;
+      }
+
+      .workspace-sidebar-subtitle {
+        margin-top: 5px;
+        font-size: 11px;
+        color: rgba(31, 26, 21, 0.58);
+      }
+
+      .workspace-nav-group {
+        display: grid;
+        gap: 6px;
+      }
+
+      .workspace-nav-label {
+        font-size: 10px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: rgba(31, 26, 21, 0.42);
+        padding: 0 4px;
+      }
+
+      .workspace-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 10px;
+        border-radius: 14px;
+        font-size: 12px;
+        color: rgba(31, 26, 21, 0.74);
+      }
+
+      .workspace-nav-item.is-active {
+        background: rgba(218, 226, 255, 0.9);
+        color: rgba(0, 57, 147, 0.94);
+      }
+
+      .workspace-nav-icon {
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid rgba(54, 45, 33, 0.08);
+      }
+
+      .workspace-sidebar-footer {
+        margin-top: auto;
+        padding: 12px;
+        border-radius: 18px;
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: rgba(255, 255, 255, 0.92);
+        font-size: 11px;
+        line-height: 1.5;
+        color: rgba(31, 26, 21, 0.58);
+      }
+
+      .workspace-shell {
+        display: grid;
+        grid-template-rows: 56px minmax(0, 1fr);
+        min-height: 0;
+        gap: 12px;
+      }
+
+      .workspace-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 0 16px;
+        border-radius: 20px;
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: rgba(248, 250, 252, 0.92);
+      }
+
+      .workspace-topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .workspace-topbar-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: rgba(255, 255, 255, 0.92);
+        font-size: 11px;
+        color: rgba(31, 26, 21, 0.62);
+      }
+
+      .workspace-topbar-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #0768df;
+        box-shadow: 0 0 0 5px rgba(7, 104, 223, 0.12);
+      }
+
+      .workspace-topbar-hint {
+        font-size: 11px;
+        color: rgba(31, 26, 21, 0.52);
+      }
+
+      .workspace-topbar-user {
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #dae2ff, #ffffff);
+        border: 1px solid rgba(54, 45, 33, 0.08);
+      }
+
+      .workspace-main {
+        display: grid;
+        grid-template-columns: 0.88fr 1.12fr;
+        gap: 12px;
+        min-height: 0;
+      }
+
       .workspace-panel,
       .workspace-results {
         position: relative;
         overflow: hidden;
-        border-radius: 28px;
+        border-radius: 24px;
         border: 1px solid rgba(54, 45, 33, 0.08);
-        background: rgba(255, 255, 255, 0.78);
+        background: rgba(255, 255, 255, 0.86);
         will-change: transform, opacity;
       }
 
       .workspace-panel {
+        display: grid;
+        grid-template-rows: auto auto auto 1fr;
+        gap: 12px;
+        min-height: 0;
         padding: 16px;
       }
 
@@ -657,108 +803,102 @@ Borrowed UI motifs
 
       .workspace-label {
         margin: 0;
-        font-size: 12px;
+        font-size: 11px;
         letter-spacing: 0.16em;
         text-transform: uppercase;
         color: rgba(31, 26, 21, 0.46);
       }
 
       .workspace-heading {
-        margin: 14px 0 0;
-        font-size: 24px;
-        line-height: 1.12;
+        margin: 0;
+        font-size: 23px;
+        line-height: 1.1;
         letter-spacing: -0.04em;
         text-wrap: pretty;
       }
 
       .workspace-copy {
-        margin: 10px 0 0;
+        margin: 0;
         font-size: 13px;
         line-height: 1.45;
         color: rgba(31, 26, 21, 0.58);
       }
 
-      .workspace-context-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 6px;
-        margin-top: 12px;
-      }
-
-      .workspace-context-card {
-        padding: 8px 10px;
-        border-radius: 16px;
+      .workspace-entry-preview {
+        position: relative;
+        min-height: 136px;
+        padding: 16px 16px 44px;
+        border-radius: 20px;
         border: 1px solid rgba(54, 45, 33, 0.08);
-        background: rgba(247, 241, 233, 0.8);
+        background: rgba(248, 250, 252, 0.98);
       }
 
-      .workspace-context-label {
+      .workspace-entry-preview-label {
         font-size: 11px;
         letter-spacing: 0.12em;
         text-transform: uppercase;
         color: rgba(31, 26, 21, 0.38);
       }
 
-      .workspace-context-value {
-        margin-top: 6px;
-        font-size: 13px;
-        line-height: 1.35;
-        color: rgba(31, 26, 21, 0.82);
-      }
-
-      .workspace-run-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
+      .workspace-entry-preview-text {
         margin-top: 12px;
+        font-size: 18px;
+        line-height: 1.42;
+        letter-spacing: -0.03em;
+        color: rgba(31, 26, 21, 0.92);
       }
 
-      .workspace-meta-pill {
+      .workspace-entry-preview-footer {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .workspace-entry-preview-hint {
+        font-size: 11px;
+        color: rgba(31, 26, 21, 0.46);
+      }
+
+      .workspace-entry-preview-send {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        padding: 7px 10px;
+        gap: 6px;
+        padding: 7px 11px;
         border-radius: 999px;
-        border: 1px solid rgba(54, 45, 33, 0.08);
-        background: rgba(255, 255, 255, 0.62);
+        background: rgba(7, 104, 223, 0.12);
+        border: 1px solid rgba(7, 104, 223, 0.16);
         font-size: 11px;
-        color: rgba(31, 26, 21, 0.64);
+        color: rgba(0, 57, 147, 0.86);
       }
 
-      .workspace-phases {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 8px;
-        margin-top: 14px;
-      }
-
-      .workspace-phase-row {
+      .workspace-current-step {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        min-width: 0;
-        padding: 8px 10px;
+        gap: 10px;
+        padding: 12px 14px;
         border-radius: 18px;
-        background: rgba(247, 241, 233, 0.84);
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: rgba(243, 245, 248, 0.88);
       }
 
-      .workspace-phase-name {
-        display: block;
+      .workspace-current-step-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #0768df;
+        box-shadow: 0 0 0 5px rgba(7, 104, 223, 0.12);
+      }
+
+      .workspace-current-step-text {
         min-width: 0;
         font-size: 12px;
-        line-height: 1.2;
-        color: rgba(31, 26, 21, 0.78);
-      }
-
-      .workspace-phase-status {
-        flex: none;
-        font-size: 11px;
-        color: rgba(212, 134, 78, 0.88);
-      }
-
-      .workspace-phase-detail {
-        display: none;
+        line-height: 1.4;
+        color: rgba(31, 26, 21, 0.7);
       }
 
       .results-header {
@@ -771,28 +911,29 @@ Borrowed UI motifs
 
       .results-title {
         margin: 0;
-        font-size: 18px;
+        font-size: 17px;
         letter-spacing: -0.03em;
       }
 
       .results-status {
-        font-size: 12px;
+        font-size: 11px;
         color: rgba(31, 26, 21, 0.48);
       }
 
       .result-stack {
-        display: grid;
-        grid-template-rows: repeat(3, minmax(0, 1fr));
-        gap: 8px;
+        position: relative;
         min-height: 0;
+        overflow: hidden;
+        border-radius: 20px;
       }
 
       .result-card {
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
+        display: grid;
+        grid-template-rows: auto auto auto 1fr;
+        position: absolute;
+        inset: 0;
         min-height: 0;
-        padding: 12px 12px 10px;
+        padding: 12px;
         border-radius: 20px;
         border: 1px solid rgba(54, 45, 33, 0.08);
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 241, 233, 0.88));
@@ -819,7 +960,7 @@ Borrowed UI motifs
 
       .result-title {
         margin: 10px 0 0;
-        font-size: 16px;
+        font-size: 15px;
         line-height: 1.2;
         letter-spacing: -0.03em;
         text-wrap: pretty;
@@ -843,6 +984,106 @@ Borrowed UI motifs
         overflow: hidden;
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 2;
+      }
+
+      .result-preview {
+        display: grid;
+        gap: 6px;
+        align-content: start;
+        min-height: 0;
+        margin-top: 8px;
+      }
+
+      .result-page-frame {
+        position: absolute;
+        inset: auto 12px 12px;
+        height: 86px;
+        border-radius: 16px;
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: rgba(248, 250, 252, 0.84);
+        pointer-events: none;
+      }
+
+      .result-anchor {
+        position: absolute;
+        width: 0;
+        height: 0;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .result-preview-note {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .result-preview-note-card,
+      .result-preview-bookmark-row,
+      .result-preview-todo-row {
+        min-height: 0;
+        padding: 8px 9px;
+        border-radius: 12px;
+        border: 1px solid rgba(54, 45, 33, 0.08);
+        background: rgba(255, 255, 255, 0.84);
+      }
+
+      .result-preview-note-card {
+        background: #f6f1e8;
+      }
+
+      .result-preview-kicker {
+        font-size: 9px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(31, 26, 21, 0.38);
+      }
+
+      .result-preview-copy {
+        margin-top: 5px;
+        font-size: 11px;
+        line-height: 1.35;
+        white-space: pre-line;
+        color: rgba(31, 26, 21, 0.72);
+      }
+
+      .result-preview-bookmark-row {
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr);
+        gap: 8px;
+        align-items: start;
+        background: #eaf1f5;
+      }
+
+      .result-preview-favicon {
+        width: 18px;
+        height: 18px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(54, 45, 33, 0.08);
+      }
+
+      .result-preview-todo-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #eef4ea;
+      }
+
+      .result-preview-checkbox {
+        width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        border: 1.5px solid rgba(73, 99, 74, 0.46);
+      }
+
+      .result-preview-date {
+        flex: none;
+        padding: 4px 7px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.82);
+        font-size: 10px;
+        color: rgba(31, 26, 21, 0.56);
       }
     </style>
   </head>
@@ -922,91 +1163,137 @@ Borrowed UI motifs
 
               <section class="workspace-fall" aria-label="workspace 落幅">
                 <div class="workspace-board">
-                  <div class="workspace-panel">
-                    <p class="workspace-label">Workspace</p>
-                    <h2 class="workspace-heading">Run #042 已完成</h2>
-                    <p class="workspace-copy">输入已拆分并写入 3 个目标。</p>
-                    <div class="workspace-run-meta">
-                      <div class="workspace-meta-pill">输入 1 条</div>
-                      <div class="workspace-meta-pill">新增 3 条</div>
-                      <div class="workspace-meta-pill">更新时间 09:41</div>
+                  <aside class="workspace-sidebar">
+                    <div class="workspace-sidebar-brand">
+                      <div class="workspace-sidebar-title">Gotly AI</div>
+                      <div class="workspace-sidebar-subtitle">工作区</div>
                     </div>
-                    <div class="workspace-context-grid">
-                      <div class="workspace-context-card">
-                        <div class="workspace-context-label">来源</div>
-                        <div class="workspace-context-value">手动输入</div>
-                      </div>
-                      <div class="workspace-context-card">
-                        <div class="workspace-context-label">入口</div>
-                        <div class="workspace-context-value">Workspace Command</div>
-                      </div>
-                      <div class="workspace-context-card">
-                        <div class="workspace-context-label">处理状态</div>
-                        <div class="workspace-context-value">Parse / Route / Execute</div>
-                      </div>
-                      <div class="workspace-context-card">
-                        <div class="workspace-context-label">写入结果</div>
-                        <div class="workspace-context-value">笔记、书签、待办</div>
-                      </div>
+                    <div class="workspace-nav-group">
+                      <div class="workspace-nav-label">工作台</div>
+                      <div class="workspace-nav-item is-active"><span class="workspace-nav-icon"></span>启动台</div>
+                      <div class="workspace-nav-item"><span class="workspace-nav-icon"></span>知识库</div>
                     </div>
-                    <div class="workspace-phases">
-                      <div class="workspace-phase-row">
-                        <div>
-                          <span class="workspace-phase-name">解析输入</span>
-                          <div class="workspace-phase-detail">识别到主题、链接对象与时间提醒</div>
-                        </div>
-                        <span class="workspace-phase-status">已完成</span>
-                      </div>
-                      <div class="workspace-phase-row">
-                        <div>
-                          <span class="workspace-phase-name">判断处理方式</span>
-                          <div class="workspace-phase-detail">路由到笔记、书签、待办</div>
-                        </div>
-                        <span class="workspace-phase-status">已完成</span>
-                      </div>
-                      <div class="workspace-phase-row">
-                        <div>
-                          <span class="workspace-phase-name">执行处理</span>
-                          <div class="workspace-phase-detail">写入完成，可继续编辑或跟进</div>
-                        </div>
-                        <span class="workspace-phase-status">已完成</span>
-                      </div>
+                    <div class="workspace-nav-group">
+                      <div class="workspace-nav-label">内容类型</div>
+                      <div class="workspace-nav-item"><span class="workspace-nav-icon"></span>笔记</div>
+                      <div class="workspace-nav-item"><span class="workspace-nav-icon"></span>待办</div>
+                      <div class="workspace-nav-item"><span class="workspace-nav-icon"></span>书签</div>
                     </div>
-                  </div>
+                    <div class="workspace-nav-group">
+                      <div class="workspace-nav-label">管理</div>
+                      <div class="workspace-nav-item"><span class="workspace-nav-icon"></span>归档</div>
+                      <div class="workspace-nav-item"><span class="workspace-nav-icon"></span>回收站</div>
+                    </div>
+                    <div class="workspace-sidebar-footer">一句话就能保存、整理或找回内容。</div>
+                  </aside>
 
-                  <div class="workspace-results">
-                    <div class="results-header">
-                      <h3 class="results-title">本次整理结果</h3>
-                      <div class="results-status">三个结果已归位</div>
+                  <div class="workspace-shell">
+                    <div class="workspace-topbar">
+                      <div class="workspace-topbar-left">
+                        <div class="workspace-topbar-badge"><span class="workspace-topbar-dot"></span>工作区已就绪</div>
+                        <div class="workspace-topbar-hint">在启动台输入即可捕获或查询</div>
+                      </div>
+                      <div class="workspace-topbar-user"></div>
                     </div>
-                    <div class="result-stack">
-                      <article class="result-card is-highlighted" data-result-card="note">
-                        <div class="result-pill">笔记</div>
-                        <h4 class="result-title">下周发布节奏</h4>
-                        <div class="result-meta-row">
-                          <span>状态：已保存</span>
-                          <span>更新于 09:41</span>
+
+                    <div class="workspace-main">
+                      <div class="workspace-panel">
+                        <p class="workspace-label">Command</p>
+                        <h2 class="workspace-heading">先捕获，再让 Gotly 帮你整理</h2>
+                        <p class="workspace-copy">写想法、粘贴链接、安排待办，或直接问知识库。这里是唯一入口，不需要先决定内容放在哪。</p>
+                        <div class="workspace-entry-preview">
+                          <div class="workspace-entry-preview-label">输入内容或搜索知识库</div>
+                          <div class="workspace-entry-preview-text">记一下下周发布节奏，顺手存下这篇文章，明天提醒我跟进</div>
+                          <div class="workspace-entry-preview-footer">
+                            <span class="workspace-entry-preview-hint">Cmd / Ctrl + Enter 发送</span>
+                            <span class="workspace-entry-preview-send">发送</span>
+                          </div>
                         </div>
-                        <p class="result-excerpt">记录为笔记草稿，待补充发布时间和渠道安排。</p>
-                      </article>
-                      <article class="result-card" data-result-card="bookmark">
-                        <div class="result-pill">书签</div>
-                        <h4 class="result-title">文章链接已保存</h4>
-                        <div class="result-meta-row">
-                          <span>状态：已入库</span>
-                          <span>来源：外部链接</span>
+                        <div class="workspace-current-step">
+                          <span class="workspace-current-step-dot"></span>
+                          <div class="workspace-current-step-text">正在判断处理方式 · Gotly 会决定这是新内容还是查询请求，结果会在下方显示。</div>
                         </div>
-                        <p class="result-excerpt">原文入口已保留，后续可继续回看和引用。</p>
-                      </article>
-                      <article class="result-card" data-result-card="todo">
-                        <div class="result-pill">待办</div>
-                        <h4 class="result-title">明天跟进</h4>
-                        <div class="result-meta-row">
-                          <span>状态：待处理</span>
-                          <span>提醒：明天 09:00</span>
+                      </div>
+
+                      <div class="workspace-results">
+                        <div class="results-header">
+                          <h3 class="results-title">当前结果</h3>
+                          <div class="results-status" data-results-status>笔记页</div>
                         </div>
-                        <p class="result-excerpt">已创建提醒项，明天回到工作台时可直接继续处理。</p>
-                      </article>
+                        <div class="result-stack">
+                          <article class="result-card is-highlighted" data-result-card="note">
+                            <span class="result-anchor" data-result-anchor="note" style="left: 20px; top: 106px;"></span>
+                            <div class="result-pill">笔记</div>
+                            <h4 class="result-title">笔记页 · 最近捕获</h4>
+                            <div class="result-meta-row">
+                              <span>已加载 12 条</span>
+                              <span>草稿已保存</span>
+                            </div>
+                            <p class="result-excerpt">已保存到笔记区，最近捕获会优先展示并按内容长度形成卡片流。</p>
+                            <div class="result-preview result-preview-note">
+                              <div class="result-preview-note-card">
+                                <div class="result-preview-kicker">草稿</div>
+                                <div class="result-preview-copy">下周发布节奏<br />渠道安排待补充</div>
+                              </div>
+                              <div class="result-preview-note-card">
+                                <div class="result-preview-kicker">最近更新</div>
+                                <div class="result-preview-copy">记录文章里的关键结论与行动点</div>
+                              </div>
+                            </div>
+                            <div class="result-page-frame"></div>
+                          </article>
+                          <article class="result-card" data-result-card="bookmark">
+                            <span class="result-anchor" data-result-anchor="bookmark" style="left: 28px; top: 112px;"></span>
+                            <div class="result-pill">书签</div>
+                            <h4 class="result-title">我的收藏页</h4>
+                            <div class="result-meta-row">
+                              <span>已加载 8 条</span>
+                              <span>外部链接</span>
+                            </div>
+                            <p class="result-excerpt">已按来源加入收藏列表，后续可以继续回看、筛选和打开原文入口。</p>
+                            <div class="result-preview">
+                              <div class="result-preview-bookmark-row">
+                                <span class="result-preview-favicon"></span>
+                                <div>
+                                  <div class="result-preview-kicker">example.com</div>
+                                  <div class="result-preview-copy">文章链接已保存，可继续回看和引用</div>
+                                </div>
+                              </div>
+                              <div class="result-preview-bookmark-row">
+                                <span class="result-preview-favicon"></span>
+                                <div>
+                                  <div class="result-preview-kicker">docs.gotly.ai</div>
+                                  <div class="result-preview-copy">产品规范文档，已加入阅读队列</div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="result-page-frame"></div>
+                          </article>
+                          <article class="result-card" data-result-card="todo">
+                            <span class="result-anchor" data-result-anchor="todo" style="left: 36px; top: 136px;"></span>
+                            <div class="result-pill">待办</div>
+                            <h4 class="result-title">待办页</h4>
+                            <div class="result-meta-row">
+                              <span>当前 2 项</span>
+                              <span>任务流</span>
+                            </div>
+                            <p class="result-excerpt">已进入待办区，会按日期与未排期状态整理成清晰的任务流。</p>
+                            <div class="result-preview">
+                              <div class="result-preview-todo-row">
+                                <span class="result-preview-checkbox"></span>
+                                <div class="result-preview-copy">明天跟进</div>
+                                <span class="result-preview-date">明天</span>
+                              </div>
+                              <div class="result-preview-todo-row">
+                                <span class="result-preview-checkbox"></span>
+                                <div class="result-preview-copy">补充发布时间与渠道安排</div>
+                                <span class="result-preview-date">未排期</span>
+                              </div>
+                            </div>
+                            <div class="result-page-frame"></div>
+                          </article>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1058,10 +1345,12 @@ Borrowed UI motifs
       const timelineRail = document.querySelector('.timeline-rail');
       const logoImages = Array.from(document.querySelectorAll('[data-logo-img]'));
       const phaseStatus = document.querySelector('[data-phase-status]');
+      const resultsStatus = document.querySelector('[data-results-status]');
       const phasePills = Array.from(document.querySelectorAll('[data-phase]'));
       const routeGrid = document.querySelector('.route-grid');
       const routeChips = Array.from(document.querySelectorAll('[data-chip]'));
       const resultCards = Array.from(document.querySelectorAll('[data-result-card]'));
+      const resultAnchors = Array.from(document.querySelectorAll('[data-result-anchor]'));
       let workspaceTargetsCache = {};
       let time = 0;
       let playing = false;
@@ -1160,11 +1449,11 @@ Borrowed UI motifs
         const targets = {};
         const routeGridOffset = getRelativeOffset(routeGrid, stageShell);
 
-        resultCards.forEach((card) => {
-          const rect = getRelativeOffset(card, stageShell);
-          targets[card.dataset.resultCard] = {
-            x: rect.x + 34 - routeGridOffset.x,
-            y: rect.y + 74 - routeGridOffset.y,
+        resultAnchors.forEach((anchor) => {
+          const rect = getRelativeOffset(anchor, stageShell);
+          targets[anchor.dataset.resultAnchor] = {
+            x: rect.x - routeGridOffset.x,
+            y: rect.y - routeGridOffset.y,
           };
         });
 
@@ -1197,6 +1486,9 @@ Borrowed UI motifs
         const workspacePresence = fadeWindow(safeTime, 5.78, 6.28, 7.42, 8.02);
         const workspacePanelIn = easeOutCubic(segmentProgress(safeTime, 5.78, 6.18));
         const workspaceResultsIn = easeOutCubic(segmentProgress(safeTime, 6.16, 6.72));
+        const notePage = fadeWindow(safeTime, 6.18, 6.5, 6.72, 7.0);
+        const bookmarkPage = fadeWindow(safeTime, 6.78, 7.08, 7.24, 7.5);
+        const todoPage = fadeWindow(safeTime, 7.28, 7.56, 7.7, 7.96);
         const brandEnter = easeOutCubic(segmentProgress(safeTime, 7.78, 8.72));
         const interfaceFade = easeInOutCubic(segmentProgress(safeTime, 7.08, 7.72));
         const finalCleanup = easeInOutCubic(segmentProgress(safeTime, 8.52, 9.18));
@@ -1219,6 +1511,20 @@ Borrowed UI motifs
         workspacePanel.style.transform = `translate3d(${lerp(-18, 0, workspacePanelIn)}px, 0, 0)`;
         workspaceResults.style.opacity = String(workspaceResultsIn);
         workspaceResults.style.transform = `translate3d(${lerp(22, 0, workspaceResultsIn)}px, 0, 0)`;
+        const pageStates = {
+          note: notePage,
+          bookmark: bookmarkPage,
+          todo: todoPage,
+        };
+        const dominantValue = Math.max(notePage, bookmarkPage, todoPage);
+        const dominantPage = dominantValue < 0.08
+          ? '处理中'
+          : todoPage > bookmarkPage && todoPage > notePage
+            ? '待办页'
+            : bookmarkPage > notePage
+              ? '书签页'
+              : '笔记页';
+        resultsStatus.textContent = dominantPage;
         brandLockup.style.opacity = String(brandEnter);
         brandLockup.style.transform = `translate3d(0, ${lerp(8, 0, brandEnter)}px, 0)`;
         brandLockupInner.style.opacity = String(clamp01(0.94 + brandEnter * 0.06));
@@ -1270,10 +1576,15 @@ Borrowed UI motifs
           chip.style.transform = `translate3d(${resolved.x}px, ${resolved.y}px, 0) scale(${scale})`;
         });
 
-        resultCards.forEach((card, index) => {
-          const reveal = easeOutCubic(segmentProgress(safeTime, 6.18 + index * 0.12, 6.62 + index * 0.12));
+        resultCards.forEach((card) => {
+          const key = card.dataset.resultCard;
+          const reveal = pageStates[key] ?? 0;
+          const isVisible = reveal > 0.08;
           card.style.opacity = String(reveal * workspaceResultsIn);
-          card.style.transform = `translate3d(0, ${lerp(16, 0, reveal)}px, 0)`;
+          card.style.transform = `translate3d(${lerp(18, 0, reveal)}px, ${lerp(10, 0, reveal)}px, 0)`;
+          card.style.pointerEvents = isVisible ? 'auto' : 'none';
+          card.style.visibility = isVisible ? 'visible' : 'hidden';
+          card.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
         });
       }
 
