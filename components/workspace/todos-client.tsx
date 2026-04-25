@@ -27,6 +27,7 @@ import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useTodoCompletion } from '@/hooks/workspace/use-todo-completion'
 import { cn } from '@/lib/utils'
 import { type AssetListItem } from '@/shared/assets/assets.types'
+import { ASIA_SHANGHAI_TIME_ZONE, dayjs } from '@/shared/time/dayjs'
 
 function getDateKey(date: Date) {
   return format(startOfDay(date), 'yyyy-MM-dd')
@@ -44,6 +45,35 @@ function getTodoDate(item: AssetListItem) {
 function getSelectedDateLabel(date: Date) {
   if (isSameDay(date, new Date())) return '今天'
   return format(date, 'M月d日 EEEE', { locale: zhCN })
+}
+
+function isOverdueTodo(item: AssetListItem, todayDate: string) {
+  if (item.completed || !item.dueAt) return false
+
+  return dayjs(item.dueAt).tz(ASIA_SHANGHAI_TIME_ZONE).isBefore(
+    dayjs.tz(`${todayDate} 00:00:00`, 'YYYY-MM-DD HH:mm:ss', ASIA_SHANGHAI_TIME_ZONE)
+  )
+}
+
+function sortOverdueTodos(items: AssetListItem[]) {
+  return [...items].sort((left, right) => {
+    const leftTime = left.dueAt ? new Date(left.dueAt).getTime() : Number.MAX_SAFE_INTEGER
+    const rightTime = right.dueAt ? new Date(right.dueAt).getTime() : Number.MAX_SAFE_INTEGER
+
+    if (leftTime !== rightTime) {
+      return leftTime - rightTime
+    }
+
+    return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+  })
+}
+
+function sortCompletedTodos(items: AssetListItem[]) {
+  return [...items].sort((left, right) => {
+    const leftTime = new Date(left.updatedAt ?? left.createdAt).getTime()
+    const rightTime = new Date(right.updatedAt ?? right.createdAt).getTime()
+    return rightTime - leftTime
+  })
 }
 
 function TodoDateHeader({
@@ -341,15 +371,23 @@ function TodoCalendarPanel({
 
 export function TodosClient({
   selectedDate: initialSelectedDate,
-  initialSelectedDateTodos,
-  initialDateMarkers,
-  initialUnscheduledTodos,
+  todayDate,
+  initialCompletedTodos = [],
+  initialOverdueTodos = [],
+  initialSelectedDateTodos = [],
+  initialDateMarkers = [],
+  initialUnscheduledTodos = [],
 }: {
   selectedDate: string
-  initialSelectedDateTodos: AssetListItem[]
-  initialDateMarkers: string[]
-  initialUnscheduledTodos: AssetListItem[]
+  todayDate: string
+  initialCompletedTodos?: AssetListItem[]
+  initialOverdueTodos?: AssetListItem[]
+  initialSelectedDateTodos?: AssetListItem[]
+  initialDateMarkers?: string[]
+  initialUnscheduledTodos?: AssetListItem[]
 }) {
+  const [completedTodos, setCompletedTodos] = useState(initialCompletedTodos)
+  const [overdueTodos, setOverdueTodos] = useState(initialOverdueTodos)
   const [selectedDateTodos, setSelectedDateTodos] = useState(initialSelectedDateTodos)
   const [dateMarkers, setDateMarkers] = useState(initialDateMarkers)
   const [unscheduledTodos, setUnscheduledTodos] = useState(initialUnscheduledTodos)
@@ -365,11 +403,18 @@ export function TodosClient({
   const unscheduledItems = unscheduledTodos
   const shouldPromoteUnscheduled = selectedItems.length === 0 && unscheduledItems.length > 0
   const visibleSelectedItems = shouldPromoteUnscheduled ? unscheduledItems : selectedItems
+  const overdueItems = useMemo(() => overdueTodos, [overdueTodos])
+  const completedItems = useMemo(() => completedTodos, [completedTodos])
   const scheduledDateKeys = useMemo(
     () => new Set(dateMarkers),
     [dateMarkers]
   )
-  const showEmptyState = selectedDateTodos.length === 0 && unscheduledTodos.length === 0
+  const showEmptyState =
+    selectedDateTodos.length === 0 &&
+    unscheduledTodos.length === 0 &&
+    overdueItems.length === 0 &&
+    completedItems.length === 0 &&
+    dateMarkers.length === 0
 
   function replaceItem(updated: AssetListItem) {
     const todoDate = getTodoDate(updated)
@@ -382,6 +427,18 @@ export function TodosClient({
     setUnscheduledTodos((current) => {
       const withoutUpdated = current.filter((item) => item.id !== updated.id)
       return todoDate ? withoutUpdated : [updated, ...withoutUpdated]
+    })
+
+    setOverdueTodos((current) => {
+      const withoutUpdated = current.filter((item) => item.id !== updated.id)
+      return isOverdueTodo(updated, todayDate)
+        ? sortOverdueTodos([updated, ...withoutUpdated])
+        : withoutUpdated
+    })
+
+    setCompletedTodos((current) => {
+      const withoutUpdated = current.filter((item) => item.id !== updated.id)
+      return updated.completed ? sortCompletedTodos([updated, ...withoutUpdated]).slice(0, 20) : withoutUpdated
     })
   }
 
@@ -453,6 +510,8 @@ export function TodosClient({
       },
     })
     if (updated) {
+      setOverdueTodos((current) => current.filter((entry) => entry.id !== updated.id))
+      setCompletedTodos((current) => current.filter((entry) => entry.id !== updated.id))
       setSelectedDateTodos((current) => current.filter((entry) => entry.id !== updated.id))
       setUnscheduledTodos((current) => current.filter((entry) => entry.id !== updated.id))
       await refreshMarkers()
@@ -467,6 +526,8 @@ export function TodosClient({
       },
     })
     if (updated) {
+      setOverdueTodos((current) => current.filter((entry) => entry.id !== updated.id))
+      setCompletedTodos((current) => current.filter((entry) => entry.id !== updated.id))
       setSelectedDateTodos((current) => current.filter((entry) => entry.id !== updated.id))
       setUnscheduledTodos((current) => current.filter((entry) => entry.id !== updated.id))
       await refreshMarkers()
@@ -491,75 +552,109 @@ export function TodosClient({
         eyebrow="任务计划"
       />
 
-      {showEmptyState ? (
-        <WorkspaceEmptyState
-          title="暂无待办"
-          description="从统一入口保存新的待办后会出现在这里"
-          icon={ListTodo}
-          className="py-16"
-        />
-      ) : (
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
-          <div className="max-w-3xl space-y-8">
-            <section>
-              <TodoDateHeader
-                selectedDate={selectedDate}
-                selectedCount={selectedItems.length}
-                scheduledCount={dateMarkers.length}
-                unscheduledCount={unscheduledItems.length}
-                promotedUnscheduled={shouldPromoteUnscheduled}
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
+        <div className="max-w-3xl space-y-8">
+          <section>
+            <TodoDateHeader
+              selectedDate={selectedDate}
+              selectedCount={selectedItems.length}
+              scheduledCount={dateMarkers.length}
+              unscheduledCount={unscheduledItems.length}
+              promotedUnscheduled={shouldPromoteUnscheduled}
+            />
+            {loadingDate ? (
+              <WorkspaceTodosDateLoading />
+            ) : (
+              <TodoDateList
+                title={shouldPromoteUnscheduled ? '未排期待办' : '当天待办'}
+                description={
+                  shouldPromoteUnscheduled
+                    ? '这一天没有排期，先处理这些未排期事项。'
+                    : '只显示当前选中日期的待办。'
+                }
+                items={visibleSelectedItems}
+                emptyMessage="这个日期没有已排期待办。可以点选右侧日期，或先处理下面的逾期待办与已完成事项。"
+                pendingIds={pendingIds}
+                onToggleTodo={handleToggleTodo}
+                onEdit={setEditingTodo}
+                onArchive={handleArchive}
+                onMoveToTrash={handleMoveToTrash}
+                tone={shouldPromoteUnscheduled ? 'muted' : 'default'}
               />
-              {loadingDate ? (
-                <WorkspaceTodosDateLoading />
-              ) : (
-                <TodoDateList
-                  title={shouldPromoteUnscheduled ? '未排期待办' : '当天待办'}
-                  description={
-                    shouldPromoteUnscheduled
-                      ? '这一天没有排期，先处理这些未排期事项。'
-                      : '只显示当前选中日期的待办。'
-                  }
-                  items={visibleSelectedItems}
-                  emptyMessage="这个日期没有已排期待办。可以点选带圆点的日期快速切换。"
-                  pendingIds={pendingIds}
-                  onToggleTodo={handleToggleTodo}
-                  onEdit={setEditingTodo}
-                  onArchive={handleArchive}
-                  onMoveToTrash={handleMoveToTrash}
-                  tone={shouldPromoteUnscheduled ? 'muted' : 'default'}
-                />
-              )}
+            )}
+          </section>
+
+          {unscheduledItems.length > 0 && !shouldPromoteUnscheduled ? (
+            <section>
+              <TodoDateList
+                title="未排期待办"
+                description="暂时没有具体日期时间的待办。"
+                items={unscheduledItems}
+                emptyMessage="没有未排期待办"
+                pendingIds={pendingIds}
+                onToggleTodo={handleToggleTodo}
+                onEdit={setEditingTodo}
+                onArchive={handleArchive}
+                onMoveToTrash={handleMoveToTrash}
+                tone="muted"
+              />
             </section>
+          ) : null}
 
-            {unscheduledItems.length > 0 && !shouldPromoteUnscheduled ? (
-              <section>
-                <TodoDateList
-                  title="未排期待办"
-                  description="暂时没有具体日期时间的待办。"
-                  items={unscheduledItems}
-                  emptyMessage="没有未排期待办"
-                  pendingIds={pendingIds}
-                  onToggleTodo={handleToggleTodo}
-                  onEdit={setEditingTodo}
-                  onArchive={handleArchive}
-                  onMoveToTrash={handleMoveToTrash}
-                  tone="muted"
-                />
-              </section>
-            ) : null}
-          </div>
+          {overdueItems.length > 0 ? (
+            <section>
+              <TodoDateList
+                title="已过期待办"
+                description="已经超过计划时间、但仍未完成的事项。"
+                items={overdueItems}
+                emptyMessage="没有已过期待办"
+                pendingIds={pendingIds}
+                onToggleTodo={handleToggleTodo}
+                onEdit={setEditingTodo}
+                onArchive={handleArchive}
+                onMoveToTrash={handleMoveToTrash}
+                tone="muted"
+              />
+            </section>
+          ) : null}
 
-          <TodoCalendarPanel
-            selectedDate={selectedDate}
-            selectedCount={selectedItems.length}
-            scheduledDateKeys={scheduledDateKeys}
-            scheduledCount={dateMarkers.length}
-            unscheduledCount={unscheduledItems.length}
-            onSelectDate={(date) => void handleSelectDate(date)}
-            onMonthChange={(month) => void handleMonthChange(month)}
-          />
+          {completedItems.length > 0 ? (
+            <section>
+              <TodoDateList
+                title="已完成"
+                description="最近完成的事项会暂时保留在这里，方便回看。"
+                items={completedItems}
+                emptyMessage="还没有已完成事项"
+                pendingIds={pendingIds}
+                onToggleTodo={handleToggleTodo}
+                onEdit={setEditingTodo}
+                onArchive={handleArchive}
+                onMoveToTrash={handleMoveToTrash}
+                tone="muted"
+              />
+            </section>
+          ) : null}
+
+          {showEmptyState ? (
+            <WorkspaceEmptyState
+              title="暂无待办"
+              description="从统一入口保存新的待办后会出现在这里。右侧日期面板也会在有排期后显示圆点。"
+              icon={ListTodo}
+              className="py-16"
+            />
+          ) : null}
         </div>
-      )}
+
+        <TodoCalendarPanel
+          selectedDate={selectedDate}
+          selectedCount={selectedItems.length}
+          scheduledDateKeys={scheduledDateKeys}
+          scheduledCount={dateMarkers.length}
+          unscheduledCount={unscheduledItems.length}
+          onSelectDate={(date) => void handleSelectDate(date)}
+          onMonthChange={(month) => void handleMonthChange(month)}
+        />
+      </div>
 
       <AssetEditDialog
         asset={editingTodo}

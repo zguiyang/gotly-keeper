@@ -40,6 +40,8 @@ import {
   archiveTodo,
   createTodo,
   getTodoById,
+  listCompletedTodos,
+  listOverdueTodos,
   listTodoDateMarkers,
   listTodos,
   listTodosByDueDate,
@@ -885,6 +887,32 @@ export async function listWorkspaceUnscheduledTodos(input: {
   const todos = await listUnscheduledTodos({
     userId: input.userId,
     limit: input.limit ?? 50,
+    lifecycleStatus: ASSET_LIFECYCLE_STATUS.ACTIVE,
+  })
+  return todos.map(toAssetListItemFromTodo)
+}
+
+export async function listWorkspaceOverdueTodos(input: {
+  userId: string
+  before: Date
+  limit?: number
+}): Promise<AssetListItem[]> {
+  const todos = await listOverdueTodos({
+    userId: input.userId,
+    before: input.before,
+    limit: input.limit ?? 50,
+    lifecycleStatus: ASSET_LIFECYCLE_STATUS.ACTIVE,
+  })
+  return todos.map(toAssetListItemFromTodo)
+}
+
+export async function listWorkspaceCompletedTodos(input: {
+  userId: string
+  limit?: number
+}): Promise<AssetListItem[]> {
+  const todos = await listCompletedTodos({
+    userId: input.userId,
+    limit: input.limit ?? 20,
     lifecycleStatus: ASSET_LIFECYCLE_STATUS.ACTIVE,
   })
   return todos.map(toAssetListItemFromTodo)

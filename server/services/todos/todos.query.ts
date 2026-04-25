@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm'
 
 import { TODO_LIST_LIMIT_DEFAULT, TODO_LIST_LIMIT_MAX } from '@/server/lib/config/constants'
 import { db } from '@/server/lib/db'
@@ -55,6 +55,21 @@ type GetTodoByIdOptions = {
 }
 
 type ListIncompleteTodosOptions = {
+  includeLifecycleStatuses?: AssetLifecycleStatus[]
+}
+
+type ListOverdueTodosOptions = {
+  userId: string
+  before: Date
+  limit?: number
+  lifecycleStatus?: AssetLifecycleStatus
+  includeLifecycleStatuses?: AssetLifecycleStatus[]
+}
+
+type ListCompletedTodosOptions = {
+  userId: string
+  limit?: number
+  lifecycleStatus?: AssetLifecycleStatus
   includeLifecycleStatuses?: AssetLifecycleStatus[]
 }
 
@@ -291,6 +306,67 @@ export async function listIncompleteTodos(
     .from(todos)
     .where(conditions)
     .orderBy(sql`${todos.dueAt} asc nulls last`, desc(todos.createdAt))
+    .limit(clampedLimit)
+
+  return rows.map(toTodoListItem)
+}
+
+export async function listOverdueTodos({
+  userId,
+  before,
+  limit = TODO_LIST_LIMIT_DEFAULT,
+  lifecycleStatus,
+  includeLifecycleStatuses,
+}: ListOverdueTodosOptions): Promise<TodoListItem[]> {
+  if (Number.isNaN(before.getTime())) {
+    throw new Error('INVALID_DATE_RANGE')
+  }
+
+  const clampedLimit = clampTodoListLimit(limit)
+  const lifecycleStatuses = resolveLifecycleStatuses({ lifecycleStatus, includeLifecycleStatuses })
+
+  const rows = await db
+    .select()
+    .from(todos)
+    .where(
+      and(
+        eq(todos.userId, userId),
+        isNull(todos.completedAt),
+        isNotNull(todos.dueAt),
+        sql`${todos.dueAt} < ${before}`,
+        lifecycleStatuses.length === 1
+          ? eq(todos.lifecycleStatus, lifecycleStatuses[0])
+          : inArray(todos.lifecycleStatus, lifecycleStatuses)
+      )
+    )
+    .orderBy(asc(todos.dueAt), desc(todos.createdAt), desc(todos.id))
+    .limit(clampedLimit)
+
+  return rows.map(toTodoListItem)
+}
+
+export async function listCompletedTodos({
+  userId,
+  limit = TODO_LIST_LIMIT_DEFAULT,
+  lifecycleStatus,
+  includeLifecycleStatuses,
+}: ListCompletedTodosOptions): Promise<TodoListItem[]> {
+  const clampedLimit = clampTodoListLimit(limit)
+  const lifecycleStatuses = resolveLifecycleStatuses({ lifecycleStatus, includeLifecycleStatuses })
+
+  const rows = await db
+    .select()
+    .from(todos)
+    .where(
+      and(
+        eq(todos.userId, userId),
+        isNotNull(todos.completedAt),
+        lifecycleStatuses.length === 1
+          ? eq(todos.lifecycleStatus, lifecycleStatuses[0])
+          : inArray(todos.lifecycleStatus, lifecycleStatuses)
+      )
+    )
+    .orderBy(desc(todos.completedAt), desc(todos.updatedAt), desc(todos.id))
     .limit(clampedLimit)
 
   return rows.map(toTodoListItem)

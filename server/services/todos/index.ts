@@ -5,6 +5,8 @@ export { type Todo } from './todos.schema'
 
 export { createTodo } from './todos.command'
 export {
+  listCompletedTodos,
+  listOverdueTodos,
   listTodos,
   listTodosPage,
   listTodosByDueDate,
