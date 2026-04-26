@@ -46,6 +46,11 @@ describe('search.query-parser', () => {
       const terms = getAssetSearchTerms('北京 北京 上海 上海')
       expect(terms).toEqual(['北京', '上海'])
     })
+
+    it('strips retrieval helper prefixes like 保存过 from search terms', () => {
+      const terms = getAssetSearchTerms('我保存过木曜日咖啡 LIN-20260426-1630 的竞品参考链接吗')
+      expect(terms).toEqual(['木曜日咖啡', 'lin-20260426-1630', '竞品参考链接'])
+    })
   })
 
   describe('getTypeHintScore', () => {
@@ -96,6 +101,21 @@ describe('search.query-parser', () => {
       const score1 = scoreAssetForQuery(asset1, '项目计划', terms)
       const score2 = scoreAssetForQuery(asset2, '项目', terms)
       expect(score1 > score2).toBe(true)
+    })
+
+    it('matches bookmark keywords from title and excerpt fields', () => {
+      const asset = {
+        originalText: 'https://www.starbucks.com.cn/',
+        title: '星巴克中国',
+        excerpt: '木曜日咖啡上新竞品参考，重点看首屏卖点和价格露出。',
+        url: 'https://www.starbucks.com.cn/',
+        timeText: null,
+        type: 'link' as const,
+      }
+      const terms = ['木曜日咖啡', '竞品参考']
+
+      const score = scoreAssetForQuery(asset, '木曜日咖啡 竞品参考', terms)
+      expect(score > 0).toBe(true)
     })
   })
 })

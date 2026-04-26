@@ -18,6 +18,9 @@ const QUERY_FILLERS = [
   '最近',
   '上次',
   '之前',
+  '保存过',
+  '存过',
+  '收藏过',
   '记过',
   '记录过',
   '关于',
@@ -70,13 +73,22 @@ export function getTypeHintScore(query: string, type: AssetType): number {
 }
 
 export function scoreAssetForQuery(
-  asset: { originalText: string; url: string | null; timeText: string | null; type: AssetType },
+  asset: {
+    originalText: string
+    title?: string | null
+    excerpt?: string | null
+    url: string | null
+    timeText: string | null
+    type: AssetType
+  },
   query: string,
   terms: string[]
 ): number {
   const searchable = normalizeSearchText(
     [
       asset.originalText,
+      asset.title,
+      asset.excerpt,
       asset.url,
       asset.timeText,
       ASSET_TYPE_TERMS[asset.type].join(' '),

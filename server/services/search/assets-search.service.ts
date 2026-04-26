@@ -10,7 +10,7 @@ import {
 
 import { searchByKeyword } from './keyword-search.service'
 import { logSearchPath } from './search.logging'
-import { normalizeSearchText } from './search.query-parser'
+import { getAssetSearchTerms } from './search.query-parser'
 import { mergeSearchResults } from './search.ranker'
 import { matchesSearchTimeHint } from './search.time-match'
 import { searchByEmbedding } from './semantic-search.service'
@@ -82,8 +82,7 @@ export async function searchAssets({
     })
   }
 
-  const terms = normalizeSearchText(trimmed)
-    .split(/\s+/)
+  const terms = getAssetSearchTerms(trimmed)
     .filter((t) => t.length >= KEYWORD_TERM_MIN_LENGTH)
     .slice(0, KEYWORD_TERM_MAX_COUNT)
 

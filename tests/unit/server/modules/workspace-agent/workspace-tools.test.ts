@@ -183,6 +183,40 @@ describe('workspaceTools', () => {
     })
   })
 
+  it('create_bookmark keeps summary text in raw input for later retrieval', async () => {
+    mocks.createWorkspaceLink.mockResolvedValue({
+      kind: 'created',
+      asset: { id: 'bookmark_1', type: 'link', title: '星巴克中国' },
+    })
+
+    const result = await executeWorkspaceTool(
+      {
+        toolName: 'create_bookmark',
+        toolInput: {
+          url: 'https://www.starbucks.com.cn/',
+          title: '星巴克中国',
+          summary: '木曜日咖啡竞品参考链接，重点看首屏卖点和价格露出。',
+        },
+      },
+      { userId: 'user_1' }
+    )
+
+    expect(mocks.createWorkspaceLink).toHaveBeenCalledWith({
+      userId: 'user_1',
+      rawInput: '星巴克中国\n\n木曜日咖啡竞品参考链接，重点看首屏卖点和价格露出。\n\nhttps://www.starbucks.com.cn/',
+      url: 'https://www.starbucks.com.cn/',
+      title: '星巴克中国',
+      note: null,
+      summary: '木曜日咖啡竞品参考链接，重点看首屏卖点和价格露出。',
+    })
+    expect(result).toEqual({
+      ok: true,
+      target: 'bookmarks',
+      action: 'create',
+      item: { id: 'bookmark_1', type: 'link', title: '星巴克中国' },
+    })
+  })
+
   it('update_todo resolves a todo by query and marks it complete', async () => {
     mocks.searchWorkspaceAssets.mockResolvedValue([
       { id: 'todo_1', type: 'todo', createdAt: new Date('2026-04-22T10:00:00.000Z') },

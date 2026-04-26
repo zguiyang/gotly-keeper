@@ -81,6 +81,14 @@ function buildLookupQuery(query: string | null | undefined, subjectHint: string 
   return combined.length > 0 ? combined : null
 }
 
+function buildBookmarkRawInput(input: {
+  title?: string | null
+  summary?: string | null
+  url: string
+}) {
+  return [input.title?.trim(), input.summary?.trim(), input.url.trim()].filter(Boolean).join('\n\n')
+}
+
 function toQueryResult(
   target: 'notes' | 'todos' | 'bookmarks' | 'mixed',
   items: unknown[]
@@ -290,7 +298,7 @@ export const workspaceTools = {
     async execute(input, context) {
       const result = await createWorkspaceLink({
         userId: context.userId,
-        rawInput: input.title ?? input.url,
+        rawInput: buildBookmarkRawInput(input),
         url: input.url,
         title: input.title ?? null,
         note: null,
