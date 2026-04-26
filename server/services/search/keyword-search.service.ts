@@ -114,8 +114,13 @@ export async function searchByKeyword({
           rows.map((bookmark) => ({
             id: bookmark.id,
             originalText: bookmark.originalText,
-            title: bookmark.bookmarkMeta?.title ?? bookmark.originalText.slice(0, 32),
+            title:
+              bookmark.title ??
+              bookmark.bookmarkMeta?.title ??
+              bookmark.originalText.slice(0, 32),
             excerpt:
+              bookmark.note ??
+              bookmark.summary ??
               bookmark.bookmarkMeta?.description ??
               bookmark.bookmarkMeta?.contentSummary ??
               bookmark.originalText,

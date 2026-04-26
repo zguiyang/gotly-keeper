@@ -235,6 +235,21 @@ describe('assets-search.service', () => {
     expect(keywordCall.timeRangeHint).toBeNull()
   })
 
+  it('passes cleaned Chinese search terms to keyword search', async () => {
+    vi.mocked(semanticSearch.searchByEmbedding).mockResolvedValue([])
+    vi.mocked(keywordSearch.searchByKeyword).mockResolvedValue([])
+    vi.mocked(searchRanker.mergeSearchResults).mockReturnValue([])
+
+    await searchAssets({
+      userId: 'user1',
+      query: '我保存过木曜日咖啡的竞品参考链接吗',
+      typeHint: 'link',
+    })
+
+    const keywordCall = vi.mocked(keywordSearch.searchByKeyword).mock.calls[0][0]
+    expect(keywordCall.terms).toEqual(['木曜日咖啡', '竞品参考链接'])
+  })
+
   it('calls mergeSearchResults with semantic and keyword candidates', async () => {
     const semanticAsset = makeAsset({ id: 'sem-1', type: 'note' })
     const keywordAsset = makeAsset({ id: 'kw-1', type: 'note' })
