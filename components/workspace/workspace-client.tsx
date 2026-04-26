@@ -141,7 +141,6 @@ export function WorkspaceClient({
           <Textarea
             aria-label="输入内容或搜索知识库"
             aria-keyshortcuts="Meta+Enter Control+Enter"
-            aria-describedby="workspace-entry-help"
             className="max-h-56 w-full resize-none overflow-y-auto rounded-[1.35rem] border border-border/10 bg-surface-container-lowest pt-4 pr-4 pb-[4.3rem] pl-12 text-[15px] leading-6 text-on-surface shadow-[var(--shadow-elevation-3)] transition-[box-shadow,border-color] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 focus:shadow-[var(--shadow-soft)] sm:max-h-64 sm:pt-5 sm:pr-5 sm:pb-[4.5rem] sm:pl-14 sm:text-base"
             name="workspace-query"
             placeholder="记一句、贴个链接，或直接问我…"
@@ -168,9 +167,6 @@ export function WorkspaceClient({
             )}
           </Button>
         </div>
-        <p id="workspace-entry-help" className="mt-2 px-4 text-xs text-on-surface-variant/75">
-          记一句、贴个链接，或直接问我。
-        </p>
         {inputValue ? (
           <p className="mt-2 px-4 text-xs text-on-surface-variant/80">
             Enter 换行，Cmd/Ctrl + Enter 发送。Gotly 会判断这是新内容还是查询请求，结果会在下方显示。
