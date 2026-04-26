@@ -1,6 +1,6 @@
 'use client'
 
-import { Mic, Paperclip, SendHorizontal, Sparkles } from 'lucide-react'
+import { SendHorizontal, Sparkles } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import { useCallback, useRef, useState } from 'react'
 
@@ -24,9 +24,9 @@ function QuickInputSuggestions({
   hidden: boolean
 }) {
   const suggestions = [
-    '帮我找一下上周收藏的文章',
-    '记一下首页文案方向',
-    '总结最近笔记重点',
+    '记一下：首页 slogan 想走轻管家感',
+    '记个待办：明天下午发报价',
+    '帮我找一下最近的待办',
   ]
 
   return (
@@ -141,50 +141,16 @@ export function WorkspaceClient({
           <Textarea
             aria-label="输入内容或搜索知识库"
             aria-keyshortcuts="Meta+Enter Control+Enter"
-            aria-describedby="workspace-entry-disabled-help"
+            aria-describedby="workspace-entry-help"
             className="max-h-56 w-full resize-none overflow-y-auto rounded-[1.35rem] border border-border/10 bg-surface-container-lowest pt-4 pr-4 pb-[4.3rem] pl-12 text-[15px] leading-6 text-on-surface shadow-[var(--shadow-elevation-3)] transition-[box-shadow,border-color] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 focus:shadow-[var(--shadow-soft)] sm:max-h-64 sm:pt-5 sm:pr-5 sm:pb-[4.5rem] sm:pl-14 sm:text-base"
             name="workspace-query"
-            placeholder="写一句话、粘贴链接，或直接问知识库…"
+            placeholder="记一句、贴个链接，或直接问我…"
             value={inputValue}
             rows={3}
             maxLength={6000}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
           />
-          <span
-            title="暂不支持上传附件，请先粘贴链接或直接输入内容"
-            aria-label="上传文件暂不可用，请先粘贴链接或直接输入内容"
-            className="absolute bottom-3 left-3 sm:bottom-3.5 sm:left-4"
-          >
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              disabled
-              tabIndex={-1}
-              aria-label="上传文件暂不可用"
-              className="h-8 w-8 cursor-not-allowed rounded-full text-on-surface-variant/45 opacity-70 hover:bg-transparent hover:text-on-surface-variant/45"
-            >
-              <Paperclip className="h-4 w-4" />
-            </Button>
-          </span>
-          <span
-            title="暂不支持语音输入，请先直接输入内容"
-            aria-label="语音输入暂不可用，请先直接输入内容"
-            className="absolute right-[5.55rem] bottom-3 sm:right-[6.1rem] sm:bottom-3.5"
-          >
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              disabled
-              tabIndex={-1}
-              aria-label="语音输入暂不可用"
-              className="h-8 w-8 cursor-not-allowed rounded-full text-on-surface-variant/45 opacity-70 hover:bg-transparent hover:text-on-surface-variant/45"
-            >
-              <Mic className="h-4 w-4" />
-            </Button>
-          </span>
           <Button
             type="button"
             onClick={handleSubmit}
@@ -202,8 +168,8 @@ export function WorkspaceClient({
             )}
           </Button>
         </div>
-        <p id="workspace-entry-disabled-help" className="mt-2 px-4 text-xs text-on-surface-variant/75">
-          当前暂不支持附件上传和语音输入，请先粘贴链接或直接输入内容。
+        <p id="workspace-entry-help" className="mt-2 px-4 text-xs text-on-surface-variant/75">
+          记一句、贴个链接，或直接问我。
         </p>
         {inputValue ? (
           <p className="mt-2 px-4 text-xs text-on-surface-variant/80">
