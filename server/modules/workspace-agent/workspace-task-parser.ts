@@ -1,7 +1,9 @@
 import 'server-only'
 
+import { isAiTimeoutError } from '@/server/lib/ai/ai.errors'
 import { runAiGeneration } from '@/server/lib/ai/ai-runner'
 import { buildWorkspaceSystemPrompt } from '@/server/lib/ai/ai.prompts'
+import { WORKSPACE_TASK_PARSE_TIMEOUT_MS } from '@/server/lib/config/constants'
 import { renderPrompt } from '@/server/lib/prompt-template'
 import { ASIA_SHANGHAI_TIME_ZONE, dayjs } from '@/shared/time/dayjs'
 
@@ -52,10 +54,18 @@ export async function parseWorkspaceTask(input: {
     schema: workspaceTaskOutputSchema,
     systemPrompt,
     userPrompt,
+    timeoutMs: WORKSPACE_TASK_PARSE_TIMEOUT_MS,
   })
 
   if (!result.success) {
-    throw new WorkspaceTaskParseError(result.error.message)
+    const error = result.error
+    const errorMessage = error instanceof Error ? error.message : String(error)
+
+    if (isAiTimeoutError(error)) {
+      throw new WorkspaceTaskParseError('处理超时了，请稍后重试。')
+    }
+
+    throw new WorkspaceTaskParseError(errorMessage)
   }
 
   return validateWorkspaceTask(result.data)

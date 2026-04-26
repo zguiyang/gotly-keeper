@@ -31,8 +31,15 @@ describe('pwa metadata', () => {
   it('exposes root metadata and viewport for app installation surfaces', () => {
     expect(metadata.applicationName).toBe('Gotly AI')
     expect(metadata.manifest).toBe('/manifest.webmanifest')
-    expect(metadata.appleWebApp?.capable).toBe(true)
-    expect(metadata.appleWebApp?.title).toBe('Gotly AI')
+
+    const appleWebApp = metadata.appleWebApp
+    expect(typeof appleWebApp).toBe('object')
+
+    if (appleWebApp && typeof appleWebApp === 'object') {
+      expect(appleWebApp.capable).toBe(true)
+      expect(appleWebApp.title).toBe('Gotly AI')
+    }
+
     expect(viewport.themeColor).toEqual([
       { media: '(prefers-color-scheme: light)', color: '#f7f9fb' },
       { media: '(prefers-color-scheme: dark)', color: '#111417' },
