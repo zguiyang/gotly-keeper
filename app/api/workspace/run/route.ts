@@ -13,13 +13,15 @@ import type {
   WorkspaceRunStreamEvent,
 } from '@/shared/workspace/workspace-runner.types'
 
+type WorkspaceLegacyRunRequest = Exclude<WorkspaceRunRequest, { kind: 'resume' }>
+
 const QUICK_ACTION_PROMPTS = {
   'review-todos': '总结最近待办重点',
   'summarize-notes': '总结最近笔记重点',
   'summarize-bookmarks': '总结最近收藏的书签重点',
 } as const
 
-function isWorkspaceRunRequest(body: unknown): body is WorkspaceRunRequest {
+function isWorkspaceRunRequest(body: unknown): body is WorkspaceLegacyRunRequest {
   if (!body || typeof body !== 'object') {
     return false
   }
@@ -39,7 +41,7 @@ function isWorkspaceRunRequest(body: unknown): body is WorkspaceRunRequest {
   return false
 }
 
-function normalizeRequestToMessage(request: WorkspaceRunRequest) {
+function normalizeRequestToMessage(request: WorkspaceLegacyRunRequest) {
   if (request.kind === 'input') {
     return request.text
   }
