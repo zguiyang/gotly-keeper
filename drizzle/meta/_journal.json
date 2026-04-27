@@ -71,6 +71,13 @@
       "when": 1776592200000,
       "tag": "0009_structured_asset_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1776678600000,
+      "tag": "0010_persisted_run_store",
+      "breakpoints": true
     }
   ]
 }
