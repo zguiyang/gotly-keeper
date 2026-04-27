@@ -185,6 +185,26 @@ export const workspaceTools = {
       return toQueryResult('notes', items)
     },
   } satisfies WorkspaceTool<z.infer<typeof searchInputSchema>>,
+  search_all: {
+    name: 'search_all',
+    inputSchema: searchInputSchema,
+    async execute(input, context) {
+      const combinedQuery = buildLookupQuery(input.query, input.subjectHint)
+
+      const items = combinedQuery
+        ? await searchWorkspaceAssets({
+            userId: context.userId,
+            query: combinedQuery,
+            typeHint: null,
+          })
+        : await listWorkspaceAssets({
+            userId: context.userId,
+            limit: input.limit,
+          })
+
+      return toQueryResult('mixed', items)
+    },
+  } satisfies WorkspaceTool<z.infer<typeof searchInputSchema>>,
   search_todos: {
     name: 'search_todos',
     inputSchema: searchTodosInputSchema,

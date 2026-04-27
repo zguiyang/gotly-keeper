@@ -99,6 +99,9 @@ describe('routeWorkspaceTask', () => {
     const plan = routeWorkspaceTask({
       intent: 'query',
       query: '最近内容',
+      timeRange: {
+        type: 'recent',
+      },
     })
 
     expect(plan).toEqual({
@@ -111,6 +114,26 @@ describe('routeWorkspaceTask', () => {
           type: 'recent',
         },
         limitPerTarget: 5,
+      },
+      needsCompose: false,
+    })
+  })
+
+  it('routes mixed queries to search_all when asking for specific content', () => {
+    const plan = routeWorkspaceTask({
+      intent: 'query',
+      query: '木曜日咖啡不存在的冷门内部代号',
+    })
+
+    expect(plan).toEqual({
+      intent: 'query',
+      target: 'mixed',
+      toolName: 'search_all',
+      toolInput: {
+        query: '木曜日咖啡不存在的冷门内部代号',
+        subjectHint: null,
+        timeRange: null,
+        limit: 10,
       },
       needsCompose: false,
     })

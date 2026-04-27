@@ -37,6 +37,10 @@ function toRecentItemsInput(task: WorkspaceTask) {
   }
 }
 
+function shouldUseRecentItems(task: WorkspaceTask) {
+  return task.intent === 'query' && task.target == null && task.timeRange?.type === 'recent'
+}
+
 function toCreateInput(task: WorkspaceTask) {
   return task.payload ?? {}
 }
@@ -90,11 +94,21 @@ export function routeWorkspaceTask(task: WorkspaceTask): WorkspaceExecutionPlan 
       }
     }
 
+    if (shouldUseRecentItems(task)) {
+      return {
+        intent: task.intent,
+        target,
+        toolName: 'get_recent_items',
+        toolInput: toRecentItemsInput(task),
+        needsCompose: false,
+      }
+    }
+
     return {
       intent: task.intent,
       target,
-      toolName: 'get_recent_items',
-      toolInput: toRecentItemsInput(task),
+      toolName: 'search_all',
+      toolInput: toSearchInput(task),
       needsCompose: false,
     }
   }

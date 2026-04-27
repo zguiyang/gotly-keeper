@@ -86,6 +86,37 @@ describe('workspaceTools', () => {
     })
   })
 
+  it('search_all searches across all asset types when query text is provided', async () => {
+    mocks.searchWorkspaceAssets.mockResolvedValue([
+      { id: 'bookmark_1', type: 'link', title: '竞品参考', createdAt: new Date('2026-04-22T09:00:00.000Z') },
+    ])
+
+    const result = await executeWorkspaceTool(
+      {
+        toolName: 'search_all',
+        toolInput: {
+          query: '木曜日咖啡不存在的冷门内部代号',
+          subjectHint: null,
+          timeRange: null,
+          limit: 10,
+        },
+      },
+      { userId: 'user_1' }
+    )
+
+    expect(mocks.searchWorkspaceAssets).toHaveBeenCalledWith({
+      userId: 'user_1',
+      query: '木曜日咖啡不存在的冷门内部代号',
+      typeHint: null,
+    })
+    expect(result).toEqual({
+      ok: true,
+      target: 'mixed',
+      items: [{ id: 'bookmark_1', type: 'link', title: '竞品参考', createdAt: new Date('2026-04-22T09:00:00.000Z') }],
+      total: 1,
+    })
+  })
+
   it('get_recent_items merges results from all requested targets', async () => {
     mocks.listWorkspaceAssets
       .mockResolvedValueOnce([
