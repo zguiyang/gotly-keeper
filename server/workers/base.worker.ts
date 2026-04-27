@@ -2,16 +2,19 @@ import 'server-only'
 
 type BaseWorkerOptions = {
   idleDelayMs?: number
+  errorDelayMs?: number
 }
 
 export abstract class BaseWorker<TTask> {
   private readonly idleDelayMs: number
+  private readonly errorDelayMs: number
 
   constructor(
     readonly name: string,
     options: BaseWorkerOptions = {}
   ) {
     this.idleDelayMs = options.idleDelayMs ?? 300
+    this.errorDelayMs = options.errorDelayMs ?? 50
   }
 
   async start(): Promise<never> {
@@ -31,6 +34,9 @@ export abstract class BaseWorker<TTask> {
         await this.handleTask(task)
       } catch (error) {
         await this.onError(error, task)
+        if (this.errorDelayMs > 0) {
+          await this.sleep(this.errorDelayMs)
+        }
       }
     }
   }

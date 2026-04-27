@@ -63,6 +63,18 @@ function normalizeUrlOrThrow(url: string): string {
     throw new Error('URL_REQUIRED')
   }
 
+  let parsedUrl: URL
+
+  try {
+    parsedUrl = new URL(normalized)
+  } catch {
+    throw new Error('INVALID_URL')
+  }
+
+  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+    throw new Error('UNSUPPORTED_PROTOCOL')
+  }
+
   return normalized
 }
 

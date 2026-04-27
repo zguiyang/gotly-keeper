@@ -1,6 +1,11 @@
 import 'server-only'
 
-import { dequeueQueueMessage, enqueueQueueMessage } from '@/server/services/queue/queue.service'
+import {
+  acknowledgeQueueMessage,
+  dequeueQueueMessage,
+  enqueueQueueMessage,
+  releaseQueueMessage,
+} from '@/server/services/queue/queue.service'
 
 import type { BookmarkEnrichTask } from './bookmark-enrich.contract'
 
@@ -12,7 +17,19 @@ export async function enqueueBookmarkEnrichTask(task: BookmarkEnrichTask): Promi
 
 export async function dequeueBookmarkEnrichTask(
   timeoutSeconds = 5
-): Promise<BookmarkEnrichTask | null> {
-  return dequeueQueueMessage<BookmarkEnrichTask>(BOOKMARK_ENRICH_QUEUE_NAME, timeoutSeconds)
-}
+): Promise<{
+  task: BookmarkEnrichTask
+  acknowledge: () => Promise<void>
+  release: () => Promise<void>
+} | null> {
+  const reserved = await dequeueQueueMessage<BookmarkEnrichTask>(BOOKMARK_ENRICH_QUEUE_NAME, timeoutSeconds)
+  if (!reserved) {
+    return null
+  }
 
+  return {
+    task: reserved.payload,
+    acknowledge: () => acknowledgeQueueMessage(reserved.receipt),
+    release: () => releaseQueueMessage(reserved.receipt),
+  }
+}

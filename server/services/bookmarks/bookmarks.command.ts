@@ -17,6 +17,27 @@ function resolveRawInput(input: { rawInput?: string; text?: string }): string {
   return input.rawInput ?? input.text ?? ''
 }
 
+function normalizeUrlOrThrow(url: string): string {
+  const normalized = url.trim()
+  if (!normalized) {
+    throw new Error('URL_REQUIRED')
+  }
+
+  let parsedUrl: URL
+
+  try {
+    parsedUrl = new URL(normalized)
+  } catch {
+    throw new Error('INVALID_URL')
+  }
+
+  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+    throw new Error('UNSUPPORTED_PROTOCOL')
+  }
+
+  return normalized
+}
+
 export async function createBookmark(input: {
   userId: string
   rawInput?: string
@@ -26,7 +47,6 @@ export async function createBookmark(input: {
   note?: string | null
   summary?: string | null
 }): Promise<BookmarkListItem> {
-  const normalizedUrl = input.url.trim()
   const normalizedTitle = normalizeOptionalText(input.title)
   const normalizedNote = normalizeOptionalText(input.note)
   const normalizedSummary = normalizeOptionalText(input.summary)
@@ -34,11 +54,11 @@ export async function createBookmark(input: {
   return createAssetRecord({
     text: resolveRawInput(input),
     validate: () => {
-      if (!normalizedUrl) {
-        throw new Error('URL_REQUIRED')
-      }
+      void normalizeUrlOrThrow(input.url)
     },
     insert: async (trimmedText) => {
+      const normalizedUrl = normalizeUrlOrThrow(input.url)
+
       const [created] = await db
         .insert(bookmarks)
         .values({
