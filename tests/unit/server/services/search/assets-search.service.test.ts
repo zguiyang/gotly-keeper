@@ -250,6 +250,37 @@ describe('assets-search.service', () => {
     expect(keywordCall.terms).toEqual(['木曜日咖啡', '竞品参考链接'])
   })
 
+  it('drops semantic-only results when no keyword terms match', async () => {
+    const semanticOnlyAsset = makeAsset({
+      id: 'note-irrelevant',
+      type: 'note',
+      originalText: '周会记录',
+      title: '周会记录',
+      excerpt: '整理下周排期',
+    })
+
+    vi.mocked(semanticSearch.searchByEmbedding).mockResolvedValue([
+      makeSemanticAsset({
+        id: 'note-irrelevant',
+        type: 'note',
+        originalText: '周会记录',
+        title: '周会记录',
+        excerpt: '整理下周排期',
+      }),
+    ])
+    vi.mocked(keywordSearch.searchByKeyword).mockResolvedValue([])
+    vi.mocked(searchRanker.mergeSearchResults).mockReturnValue([
+      { asset: semanticOnlyAsset, score: 9, source: 'semantic' as const },
+    ])
+
+    const result = await searchAssets({
+      userId: 'user1',
+      query: '木曜日咖啡不存在的冷门内部代号',
+    })
+
+    expect(result).toEqual([])
+  })
+
   it('calls mergeSearchResults with semantic and keyword candidates', async () => {
     const semanticAsset = makeAsset({ id: 'sem-1', type: 'note' })
     const keywordAsset = makeAsset({ id: 'kw-1', type: 'note' })

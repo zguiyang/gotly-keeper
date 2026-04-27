@@ -10,7 +10,7 @@ import {
 
 import { searchByKeyword } from './keyword-search.service'
 import { logSearchPath } from './search.logging'
-import { getAssetSearchTerms } from './search.query-parser'
+import { getAssetSearchTerms, scoreAssetForQuery } from './search.query-parser'
 import { mergeSearchResults } from './search.ranker'
 import { matchesSearchTimeHint } from './search.time-match'
 import { searchByEmbedding } from './semantic-search.service'
@@ -106,7 +106,14 @@ export async function searchAssets({
     clampAssetListLimit(limit)
   )
 
-  const results = ranked.map((r) => r.asset)
+  const results = ranked
+    .filter(
+      (result) =>
+        result.source !== 'semantic' ||
+        terms.length === 0 ||
+        scoreAssetForQuery(result.asset, '', terms) > 0
+    )
+    .map((r) => r.asset)
 
   logSearchPath({
     query: trimmed,
