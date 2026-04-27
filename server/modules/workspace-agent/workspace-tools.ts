@@ -2,6 +2,7 @@ import 'server-only'
 
 import { z } from 'zod'
 
+import { matchesSearchTimeHint } from '@/server/services/search/search.time-match'
 import {
   createWorkspaceLink,
   createWorkspaceNote,
@@ -11,7 +12,10 @@ import {
   setWorkspaceTodoCompletion,
   updateWorkspaceTodo,
 } from '@/server/modules/workspace'
+import { ASIA_SHANGHAI_TIME_ZONE, dayjs } from '@/shared/time/dayjs'
+import { type WorkspaceAgentTimeFilter } from '@/shared/workspace/workspace-run.types'
 
+import type { AssetListItem } from '@/shared/assets/assets.types'
 import type { WorkspaceTool, WorkspaceToolContext, WorkspaceToolResult } from './types'
 
 const timeRangeSchema = z
@@ -76,6 +80,8 @@ const updateTodoInputSchema = z.object({
   }),
 })
 
+type WorkspaceToolTimeRange = z.infer<typeof timeRangeSchema>
+
 function buildLookupQuery(query: string | null | undefined, subjectHint: string | null | undefined) {
   const combined = [query?.trim(), subjectHint?.trim()].filter(Boolean).join(' ').trim()
   return combined.length > 0 ? combined : null
@@ -87,6 +93,98 @@ function buildBookmarkRawInput(input: {
   url: string
 }) {
   return [input.title?.trim(), input.summary?.trim(), input.url.trim()].filter(Boolean).join('\n\n')
+}
+
+function toExactRangeTimeFilter(input: {
+  phrase: string
+  startsAt: Date
+  endsAt: Date
+  basis: string
+}): WorkspaceAgentTimeFilter {
+  return {
+    kind: 'exact_range',
+    phrase: input.phrase,
+    startIso: input.startsAt.toISOString(),
+    endIso: input.endsAt.toISOString(),
+    basis: input.basis,
+  }
+}
+
+function getCurrentShanghaiTime() {
+  return dayjs().tz(ASIA_SHANGHAI_TIME_ZONE)
+}
+
+function buildTimeFilter(timeRange: WorkspaceToolTimeRange): WorkspaceAgentTimeFilter | null {
+  if (!timeRange || timeRange.type === 'recent') {
+    return null
+  }
+
+  if (timeRange.type === 'custom') {
+    if (!timeRange.startAt && !timeRange.endAt) {
+      return null
+    }
+
+    const startsAt = timeRange.startAt ? new Date(timeRange.startAt) : new Date(0)
+    const endsAt = timeRange.endAt ? new Date(timeRange.endAt) : new Date('9999-12-31T23:59:59.999Z')
+    if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime()) || startsAt >= endsAt) {
+      return null
+    }
+
+    return toExactRangeTimeFilter({
+      phrase: 'custom',
+      startsAt,
+      endsAt,
+      basis: 'workspace-tool-custom-range',
+    })
+  }
+
+  const current = getCurrentShanghaiTime()
+
+  if (timeRange.type === 'today') {
+    return toExactRangeTimeFilter({
+      phrase: 'today',
+      startsAt: current.startOf('day').toDate(),
+      endsAt: current.add(1, 'day').startOf('day').toDate(),
+      basis: 'workspace-tool-today',
+    })
+  }
+
+  if (timeRange.type === 'this_month') {
+    return toExactRangeTimeFilter({
+      phrase: 'this_month',
+      startsAt: current.startOf('month').toDate(),
+      endsAt: current.add(1, 'month').startOf('month').toDate(),
+      basis: 'workspace-tool-this-month',
+    })
+  }
+
+  const weekday = current.day()
+  const daysFromMonday = weekday === 0 ? 6 : weekday - 1
+  const startOfWeek = current.startOf('day').subtract(daysFromMonday, 'day')
+
+  return toExactRangeTimeFilter({
+    phrase: 'this_week',
+    startsAt: startOfWeek.toDate(),
+    endsAt: startOfWeek.add(1, 'week').toDate(),
+    basis: 'workspace-tool-this-week',
+  })
+}
+
+function filterItemsByTimeRange(items: AssetListItem[], timeRange: WorkspaceToolTimeRange): AssetListItem[] {
+  const timeFilter = buildTimeFilter(timeRange)
+  if (!timeFilter || timeFilter.kind !== 'exact_range') {
+    return items
+  }
+
+  const startsAt = new Date(timeFilter.startIso)
+  const endsAt = new Date(timeFilter.endIso)
+  if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime()) || startsAt >= endsAt) {
+    return items
+  }
+
+  return items.filter((item) =>
+    matchesSearchTimeHint(item as never, { startsAt, endsAt }, timeFilter.phrase)
+  )
 }
 
 function toQueryResult(
@@ -119,23 +217,28 @@ async function searchAssetsByType(input: {
   typeHint: 'note' | 'todo' | 'link'
   query?: string | null
   subjectHint?: string | null
+  timeRange?: WorkspaceToolTimeRange
   limit?: number
-}) {
+}): Promise<AssetListItem[]> {
   const combinedQuery = buildLookupQuery(input.query, input.subjectHint)
+  const timeFilter = buildTimeFilter(input.timeRange)
 
   if (combinedQuery) {
     return searchWorkspaceAssets({
       userId: input.userId,
       query: combinedQuery,
+      timeFilter,
       typeHint: input.typeHint,
     })
   }
 
-  return listWorkspaceAssets({
+  const items = await listWorkspaceAssets({
     userId: input.userId,
     type: input.typeHint,
-    limit: input.limit,
+    limit: timeFilter ? Math.max(input.limit ?? 10, 100) : input.limit,
   })
+
+  return filterItemsByTimeRange(items, input.timeRange).slice(0, input.limit)
 }
 
 async function resolveTodoId(input: {
@@ -179,6 +282,7 @@ export const workspaceTools = {
         typeHint: 'note',
         query: input.query,
         subjectHint: input.subjectHint,
+        timeRange: input.timeRange,
         limit: input.limit,
       })
 
@@ -195,14 +299,18 @@ export const workspaceTools = {
         ? await searchWorkspaceAssets({
             userId: context.userId,
             query: combinedQuery,
+            timeFilter: buildTimeFilter(input.timeRange),
             typeHint: null,
           })
         : await listWorkspaceAssets({
             userId: context.userId,
-            limit: input.limit,
+            limit: buildTimeFilter(input.timeRange) ? Math.max(input.limit, 100) : input.limit,
           })
 
-      return toQueryResult('mixed', items)
+      return toQueryResult(
+        'mixed',
+        combinedQuery ? items : filterItemsByTimeRange(items, input.timeRange).slice(0, input.limit)
+      )
     },
   } satisfies WorkspaceTool<z.infer<typeof searchInputSchema>>,
   search_todos: {
@@ -214,6 +322,7 @@ export const workspaceTools = {
         typeHint: 'todo',
         query: input.query,
         subjectHint: input.subjectHint,
+        timeRange: input.timeRange,
         limit: input.limit,
       })
 
@@ -238,6 +347,7 @@ export const workspaceTools = {
         typeHint: 'link',
         query: input.query,
         subjectHint: input.subjectHint,
+        timeRange: input.timeRange,
         limit: input.limit,
       })
 
@@ -259,12 +369,12 @@ export const workspaceTools = {
           listWorkspaceAssets({
             userId: context.userId,
             type: targetMap[target],
-            limit: input.limitPerTarget,
+            limit: buildTimeFilter(input.timeRange) ? Math.max(input.limitPerTarget, 50) : input.limitPerTarget,
           })
         )
       )
 
-      const items = groups.flat()
+      const items = groups.flat() as AssetListItem[]
       items.sort((left, right) => {
         const leftTimestamp =
           left && typeof left === 'object' && 'createdAt' in left && left.createdAt instanceof Date
@@ -280,7 +390,7 @@ export const workspaceTools = {
         return rightTimestamp - leftTimestamp
       })
 
-      return toQueryResult('mixed', items)
+      return toQueryResult('mixed', filterItemsByTimeRange(items, input.timeRange).slice(0, input.limitPerTarget * input.targets.length))
     },
   } satisfies WorkspaceTool<z.infer<typeof getRecentItemsInputSchema>>,
   create_note: {
