@@ -16,6 +16,7 @@ type GenerateOptions<T> = {
   userPrompt: string
   timeoutMs?: number
   maxRetries?: number
+  abortSignal?: AbortSignal
 }
 
 export async function runAiGeneration<T>({
@@ -24,6 +25,7 @@ export async function runAiGeneration<T>({
   userPrompt,
   timeoutMs = ASSET_INPUT_MODEL_TIMEOUT_MS,
   maxRetries = 1,
+  abortSignal,
 }: GenerateOptions<T>): Promise<AiResult<T>> {
   const model = getAiProvider()
 
@@ -43,6 +45,7 @@ export async function runAiGeneration<T>({
       temperature: 0,
       maxRetries,
       timeout: timeoutMs,
+      abortSignal,
       providerOptions: {
         alibaba: {
           enableThinking: false,

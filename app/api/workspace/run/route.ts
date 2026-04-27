@@ -1,5 +1,8 @@
 import { requireWorkspaceUserAccess } from '@/server/modules/auth/workspace-session'
-import { runWorkspace } from '@/server/modules/workspace-agent/workspace-runner'
+import {
+  runWorkspace,
+  WorkspaceRunAbortedError,
+} from '@/server/modules/workspace-agent/workspace-runner'
 
 import type { WorkspaceRunResult } from '@/server/modules/workspace-agent'
 import type { AssetListItem } from '@/shared/assets/assets.types'
@@ -130,14 +133,35 @@ export async function POST(req: Request) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const phases: WorkspaceRunApiResponse['phases'] = []
+      let closed = false
+
+      const closeController = () => {
+        if (closed) {
+          return
+        }
+
+        closed = true
+        controller.close()
+      }
+
+      const handleAbort = () => {
+        closeController()
+      }
+
+      req.signal.addEventListener('abort', handleAbort, { once: true })
 
       const writeEvent = (event: WorkspaceRunStreamEvent) => {
+        if (closed || req.signal.aborted) {
+          return
+        }
+
         controller.enqueue(encoder.encode(encodeSseEvent(event)))
       }
 
       try {
         const result = await runWorkspace({
           message,
+          signal: req.signal,
           userId: user.id,
           onEvent: (event) => {
             phases.push(event)
@@ -145,17 +169,26 @@ export async function POST(req: Request) {
           },
         })
 
+        if (req.signal.aborted) {
+          return
+        }
+
         writeEvent({
           type: 'result',
           response: normalizeRunResult(result, phases),
         })
       } catch (error) {
+        if (error instanceof WorkspaceRunAbortedError || req.signal.aborted) {
+          return
+        }
+
         writeEvent({
           type: 'error',
           message: error instanceof Error ? error.message : '处理失败，请重试。',
         })
       } finally {
-        controller.close()
+        req.signal.removeEventListener('abort', handleAbort)
+        closeController()
       }
     },
   })

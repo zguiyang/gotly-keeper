@@ -194,4 +194,74 @@ describe('useWorkspaceStream', () => {
       item: serializeForStream(createAsset({ id: 'todo_1', type: 'todo' })),
     })
   })
+
+  it('aborts the previous request before starting a new one', async () => {
+    const abortSignals: AbortSignal[] = []
+    let resolveFirstResponse: ((value: Response) => void) | null = null
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((_, init) => {
+      abortSignals.push((init as RequestInit).signal as AbortSignal)
+
+      if (abortSignals.length === 1) {
+        return new Promise<Response>((resolve) => {
+          resolveFirstResponse = resolve
+        })
+      }
+
+      return Promise.resolve(
+        createSseResponse([
+          {
+            type: 'result',
+            response: {
+              ok: true,
+              phases: [],
+              answer: '第二次请求成功',
+              data: {
+                kind: 'query',
+                target: 'notes',
+                items: [createAsset({ id: 'note_2', type: 'note' })],
+                total: 1,
+              },
+            },
+          },
+        ])
+      )
+    })
+
+    const hook = renderHook(() => useWorkspaceStream())
+    activeHook = hook
+
+    const firstRequest = hook.result.current.submitInput('第一次请求')
+
+    await act(async () => {
+      await hook.result.current.submitInput('第二次请求')
+    })
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(abortSignals[0]?.aborted).toBe(true)
+    expect(hook.result.current.state.assistantText).toBe('第二次请求成功')
+
+    await act(async () => {
+      resolveFirstResponse?.(
+        createSseResponse([
+          {
+            type: 'result',
+            response: {
+              ok: true,
+              phases: [],
+              answer: '第一次请求成功',
+              data: {
+                kind: 'query',
+                target: 'notes',
+                items: [createAsset({ id: 'note_1', type: 'note' })],
+                total: 1,
+              },
+            },
+          },
+        ])
+      )
+      await firstRequest.catch(() => undefined)
+    })
+
+    expect(hook.result.current.state.assistantText).toBe('第二次请求成功')
+  })
 })

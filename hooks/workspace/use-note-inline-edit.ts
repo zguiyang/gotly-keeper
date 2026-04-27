@@ -17,8 +17,10 @@ export function useNoteInlineEdit({
   const [status, setStatus] = useState<SaveStatus>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const lastSavedRef = useRef(initialMarkdown)
+  const latestMarkdownRef = useRef(initialMarkdown)
   const inflightSaveRef = useRef<Promise<boolean> | null>(null)
   const debounceTimerRef = useRef<number | null>(null)
+  const needsResaveRef = useRef(false)
 
   const clearDebounceTimer = useCallback(() => {
     if (debounceTimerRef.current !== null) {
@@ -31,6 +33,8 @@ export function useNoteInlineEdit({
     clearDebounceTimer()
     setMarkdownState(initialMarkdown)
     lastSavedRef.current = initialMarkdown
+    latestMarkdownRef.current = initialMarkdown
+    needsResaveRef.current = false
     setStatus('idle')
     setErrorMessage(null)
   }, [clearDebounceTimer, initialMarkdown])
@@ -38,6 +42,11 @@ export function useNoteInlineEdit({
   useEffect(() => clearDebounceTimer, [clearDebounceTimer])
 
   const setMarkdown = useCallback((nextMarkdown: string) => {
+    latestMarkdownRef.current = nextMarkdown
+    if (inflightSaveRef.current) {
+      needsResaveRef.current = true
+    }
+
     setMarkdownState(nextMarkdown)
     setErrorMessage(null)
     setStatus((current) => (current === 'saved' || current === 'error' ? 'idle' : current))
@@ -56,13 +65,15 @@ export function useNoteInlineEdit({
       return inflightSaveRef.current
     }
 
-    const snapshot = markdown
+    const snapshot = latestMarkdownRef.current
     setStatus('saving')
     setErrorMessage(null)
 
     const request = (async () => {
+      let saved = false
+
       try {
-        const saved = await onSave(snapshot)
+        saved = await onSave(snapshot)
         if (!saved) {
           setStatus('error')
           setErrorMessage('保存失败，请重试。')
@@ -78,6 +89,13 @@ export function useNoteInlineEdit({
         return false
       } finally {
         inflightSaveRef.current = null
+
+        if (saved && needsResaveRef.current && latestMarkdownRef.current !== lastSavedRef.current) {
+          needsResaveRef.current = false
+          queueMicrotask(() => {
+            void saveNowRef.current()
+          })
+        }
       }
     })()
 

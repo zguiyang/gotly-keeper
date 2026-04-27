@@ -97,4 +97,51 @@ describe('useNoteInlineEdit', () => {
     expect(result.current.status).toBe('saved')
     expect(result.current.errorMessage).toBeNull()
   })
+
+  it('保存过程中继续编辑时会补保存最新内容', async () => {
+    let resolveFirstSave: ((value: boolean) => void) | null = null
+    const onSave = vi
+      .fn<(markdown: string) => Promise<boolean>>()
+      .mockImplementationOnce(
+        (markdown) =>
+          new Promise<boolean>((resolve) => {
+            expect(markdown).toBe('第一版')
+            resolveFirstSave = resolve
+          })
+      )
+      .mockResolvedValueOnce(true)
+
+    const { result } = renderHook(() =>
+      useNoteInlineEdit({
+        initialMarkdown: '原始内容',
+        onSave,
+        debounceMs: 200,
+      })
+    )
+
+    act(() => {
+      result.current.setMarkdown('第一版')
+    })
+
+    const firstSavePromise = act(async () => {
+      await result.current.saveNow()
+    })
+
+    act(() => {
+      result.current.setMarkdown('第二版')
+    })
+
+    await act(async () => {
+      resolveFirstSave?.(true)
+      await firstSavePromise
+    })
+
+    await act(async () => {
+      await result.current.saveNow()
+    })
+
+    expect(onSave).toHaveBeenNthCalledWith(1, '第一版')
+    expect(onSave).toHaveBeenNthCalledWith(2, '第二版')
+    expect(result.current.status).toBe('saved')
+  })
 })
