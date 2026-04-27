@@ -1,56 +1,38 @@
 'use client'
 
-import { useCallback, useState } from 'react'
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { streamWorkspaceRun } from '@/client/workspace/workspace-run-stream.client'
+import {
+  fetchCurrentWorkspaceRun,
+  streamWorkspaceRunEvents,
+} from '@/client/workspace/workspace-run-events.client'
 
 import type {
-  WorkspaceRunApiPhase,
-  WorkspaceRunApiResponse,
+  WorkspaceInteraction,
+  WorkspaceInteractionResponse,
   WorkspaceRunRequest,
-} from '@/shared/workspace/workspace-runner.types'
+  WorkspaceRunResult,
+  WorkspaceRunStreamEvent,
+} from '@/shared/workspace/workspace-run-protocol'
 
 export type WorkspaceRunUiState = {
-  status: 'idle' | 'streaming' | 'success' | 'error'
-  assistantText: string | null
-  phases: WorkspaceRunApiPhase[]
-  result: WorkspaceRunApiResponse['data'] | null
+  status: 'idle' | 'streaming' | 'awaiting_user' | 'success' | 'error'
+  runId?: string
+  interaction?: WorkspaceInteraction
+  timeline: WorkspaceRunStreamEvent[]
+  result: WorkspaceRunResult | null
   errorMessage: string | null
 }
 
-const INITIAL_PHASES: WorkspaceRunApiPhase[] = [
-  { phase: 'parse', status: 'active', message: '正在理解请求' },
-  { phase: 'route', status: 'skipped', message: '等待选择操作' },
-  { phase: 'execute', status: 'skipped', message: '等待执行工具' },
-  { phase: 'compose', status: 'skipped', message: '等待整理结果' },
-]
-
 const INITIAL_RUN_STATE: WorkspaceRunUiState = {
   status: 'idle',
-  assistantText: null,
-  phases: [],
+  timeline: [],
   result: null,
   errorMessage: null,
 }
 
-function mergePhase(
-  phases: WorkspaceRunApiPhase[],
-  nextPhase: WorkspaceRunApiPhase
-) {
-  const phaseIndex = phases.findIndex((phase) => phase.phase === nextPhase.phase)
-
-  if (phaseIndex === -1) {
-    return [...phases, nextPhase]
-  }
-
-  return phases.map((phase, index) => (
-    index === phaseIndex ? nextPhase : phase
-  ))
-}
-
 export function useWorkspaceStream(options: {
-  onResult?: (result: WorkspaceRunApiResponse['data']) => void
+  onResult?: (result: WorkspaceRunResult) => void
 } = {}) {
   const [state, setState] = useState<WorkspaceRunUiState>({
     ...INITIAL_RUN_STATE,
@@ -58,8 +40,32 @@ export function useWorkspaceStream(options: {
   const abortControllerRef = useRef<AbortController | null>(null)
   const requestIdRef = useRef(0)
 
-  useEffect(() => () => {
-    abortControllerRef.current?.abort()
+  const loadCurrentAwaitingRun = useCallback(async () => {
+    try {
+      const result = await fetchCurrentWorkspaceRun()
+      if (result.ok && result.run) {
+        setState({
+          status: 'awaiting_user',
+          runId: result.run.runId,
+          interaction: result.run.interaction,
+          timeline: result.run.timeline,
+          result: null,
+          errorMessage: null,
+        })
+      }
+    } catch {
+      // silently ignore rehydration errors
+    }
+  }, [])
+
+  useEffect(() => {
+    loadCurrentAwaitingRun()
+  }, [loadCurrentAwaitingRun])
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort()
+    }
   }, [])
 
   const runRequest = useCallback(
@@ -72,76 +78,96 @@ export function useWorkspaceStream(options: {
 
       setState({
         status: 'streaming',
-        assistantText: null,
-        phases: INITIAL_PHASES,
+        timeline: [],
         result: null,
         errorMessage: null,
       })
 
       try {
-        const runState: {
-          finalResponse?: WorkspaceRunApiResponse
-          streamError?: Error
-        } = {}
+        await streamWorkspaceRunEvents(
+          request,
+          {
+            onEvent: (event: WorkspaceRunStreamEvent) => {
+              if (
+                requestIdRef.current !== requestId ||
+                abortController.signal.aborted
+              ) {
+                return
+              }
 
-        await streamWorkspaceRun(request, {
-          onEvent: (event) => {
-            if (requestIdRef.current !== requestId || abortController.signal.aborted) {
-              return
-            }
+              switch (event.type) {
+                case 'phase_started':
+                case 'phase_completed':
+                case 'tool_call_started':
+                case 'tool_call_completed':
+                  setState((current) => ({
+                    ...current,
+                    timeline: [...current.timeline, event],
+                  }))
+                  break
 
-            if (event.type === 'phase') {
+                case 'awaiting_user':
+                  setState((current) => ({
+                    status: 'awaiting_user',
+                    runId: event.interaction.runId,
+                    interaction: event.interaction,
+                    timeline: [...current.timeline, event],
+                    result: null,
+                    errorMessage: null,
+                  }))
+                  break
+
+                case 'run_completed':
+                  setState((current) => ({
+                    status: 'success',
+                    timeline: [...current.timeline, event],
+                    result: event.result,
+                    errorMessage: null,
+                  }))
+                  options.onResult?.(event.result)
+                  break
+
+                case 'run_failed':
+                  setState((current) => ({
+                    status: 'error',
+                    timeline: [...current.timeline, event],
+                    result: null,
+                    errorMessage: event.error.message,
+                  }))
+                  break
+              }
+            },
+            onError: (error: Error) => {
+              if (
+                requestIdRef.current !== requestId ||
+                abortController.signal.aborted
+              ) {
+                return
+              }
               setState((current) => ({
                 ...current,
-                phases: mergePhase(current.phases, event.phase),
+                status: 'error',
+                timeline: [],
+                result: null,
+                errorMessage: error.message,
               }))
-              return
-            }
-
-            if (event.type === 'error') {
-              runState.streamError = new Error(event.message)
-              return
-            }
-
-            runState.finalResponse = event.response
-            setState({
-              status: event.response.ok ? 'success' : 'error',
-              assistantText: event.response.answer,
-              phases: event.response.phases,
-              result: event.response.data,
-              errorMessage:
-                event.response.ok || event.response.data.kind !== 'error'
-                  ? null
-                  : event.response.data.message,
-            })
+            },
           },
-        }, { signal: abortController.signal })
-
-        if (runState.streamError) {
-          throw runState.streamError
-        }
-
-        if (requestIdRef.current !== requestId || abortController.signal.aborted) {
-          return
-        }
-
-        if (!runState.finalResponse) {
-          throw new Error('服务端没有返回处理结果，请重试。')
-        }
-
-        options.onResult?.(runState.finalResponse.data)
+          { signal: abortController.signal }
+        )
       } catch (error) {
         if (abortController.signal.aborted || requestIdRef.current !== requestId) {
           return
         }
 
-        setState({
+        setState((current) => ({
+          ...current,
           status: 'error',
-          assistantText: null,
-          phases: [],
+          timeline: [],
           result: null,
-          errorMessage: error instanceof Error ? error.message : '处理失败，请重试。',
-        })
+          errorMessage:
+            error instanceof Error ? error.message : '处理失败，请重试。',
+        }))
       } finally {
         if (abortControllerRef.current === abortController) {
           abortControllerRef.current = null
@@ -159,10 +185,33 @@ export function useWorkspaceStream(options: {
   )
 
   const triggerQuickAction = useCallback(
-    async (action: Extract<WorkspaceRunRequest, { kind: 'quick-action' }>['action']) => {
+    async (
+      action: Extract<WorkspaceRunRequest, { kind: 'quick-action' }>['action']
+    ) => {
       await runRequest({ kind: 'quick-action', action })
     },
     [runRequest]
+  )
+
+  const resumeInteraction = useCallback(
+    async (response: WorkspaceInteractionResponse) => {
+      if (!state.runId || !state.interaction) {
+        setState((current) => ({
+          ...current,
+          status: 'error',
+          errorMessage: '没有可继续的运行。',
+        }))
+        return
+      }
+
+      await runRequest({
+        kind: 'resume',
+        runId: state.runId,
+        interactionId: state.interaction.id,
+        response,
+      })
+    },
+    [runRequest, state.runId, state.interaction]
   )
 
   const resetRun = useCallback(() => {
@@ -173,6 +222,7 @@ export function useWorkspaceStream(options: {
     state,
     submitInput,
     triggerQuickAction,
+    resumeInteraction,
     resetRun,
   }
 }
