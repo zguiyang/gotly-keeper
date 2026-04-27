@@ -122,35 +122,14 @@
 
 .brandLockup {
   display: flex;
-  align-items: center;
-  gap: 0.9rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
 }
 
-.brandLogoBlock {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-
-.brandMark {
-  display: flex;
-  height: 2.75rem;
-  width: 2.75rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 1rem;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-container) 100%);
-  color: var(--color-on-primary);
-  box-shadow: 0 16px 36px -20px color-mix(in srgb, var(--color-primary) 55%, transparent);
-}
-
-.brandMarkSecondary {
-  height: 2.1rem;
-  width: 2.1rem;
-  border-radius: 0.8rem;
-  background: color-mix(in srgb, var(--color-surface-container-lowest) 74%, var(--color-primary-fixed) 26%);
-  color: var(--color-primary);
-  box-shadow: none;
+.brandLogo {
+  height: 2.5rem;
+  width: auto;
 }
 
 .navMenu {
@@ -703,10 +682,6 @@
     gap: 0.75rem;
   }
 
-  .brandLogoBlock {
-    gap: 0.4rem;
-  }
-
   .content {
     padding-top: 6.4rem;
   }
@@ -719,9 +694,8 @@
     padding-block: 3.25rem;
   }
 
-  .brandMark {
-    height: 2.5rem;
-    width: 2.5rem;
+  .brandLogo {
+    height: 2.2rem;
   }
 
   .primaryCta,

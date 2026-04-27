@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { BrandLogo } from "@/components/brand-logo";
 import { cn } from "@/lib/utils";
 
 interface AuthBrandProps {
@@ -7,9 +8,5 @@ interface AuthBrandProps {
 }
 
 export function AuthBrand({ className }: AuthBrandProps) {
-  return (
-    <span className={cn("font-headline text-xl font-bold tracking-tight text-on-surface", className)}>
-      Gotly Keeper
-    </span>
-  );
+  return <BrandLogo className={cn("h-10", className)} />;
 }

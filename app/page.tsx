@@ -1,12 +1,11 @@
 import {
   ArrowRight,
-  Archive,
-  Compass,
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 
 import { AccountMenu } from "@/components/account-menu";
+import { BrandLogo } from "@/components/brand-logo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -36,22 +35,7 @@ export default async function LandingPage() {
           <div className={cn(styles.container, styles.topbarInner)}>
             <div className={styles.nav}>
               <Link href="/" className={styles.brandLockup}>
-                <div className={styles.brandLogoBlock}>
-                  <div className={styles.brandMark}>
-                    <Archive className="h-5 w-5" />
-                  </div>
-                  <div className={cn(styles.brandMark, styles.brandMarkSecondary)}>
-                    <Compass className="h-4 w-4" />
-                  </div>
-                </div>
-                <div>
-                  <p className="font-headline text-base font-semibold tracking-tight text-on-surface sm:text-lg">
-                    Gotly Keeper
-                  </p>
-                  <p className="text-xs text-on-surface-variant">
-                    Quiet AI concierge
-                  </p>
-                </div>
+                <BrandLogo className={styles.brandLogo} priority />
               </Link>
 
               <nav className={styles.navMenu} aria-label="页面导航">
