@@ -29,7 +29,7 @@ export function TopAppBar({ userName, userEmail, userImage }: TopAppBarProps) {
             <SheetTitle className="sr-only">工作区导航</SheetTitle>
             <div className="flex h-full flex-col">
               <div className="border-b border-border/15 px-4 py-6">
-                <div className="font-headline text-[1.9rem] font-semibold tracking-[-0.04em] text-primary">Gotly AI</div>
+                <div className="font-headline text-[1.9rem] font-semibold tracking-[-0.04em] text-primary">Gotly Keeper</div>
                 <div className="mt-1 text-[11px] font-medium tracking-normal text-on-surface-variant/75">
                   工作区
                 </div>

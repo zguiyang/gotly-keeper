@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Gotly AI Design Tokens - Ethereal Archive Design System */
+/* Gotly Keeper Design Tokens - Ethereal Archive Design System */
 @theme inline {
   /* Fonts */
   --font-sans: "Inter", "PingFang SC", "Noto Sans SC", sans-serif;

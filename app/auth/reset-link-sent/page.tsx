@@ -53,7 +53,7 @@ export default function ResetLinkSentPage() {
 
       <div className="absolute bottom-12 w-full text-center">
         <p className="font-label text-xs uppercase tracking-wide text-secondary opacity-70">
-          Gotly AI • The Digital Curator
+          Gotly Keeper • The Digital Curator
         </p>
       </div>
     </AuthPageScaffold>

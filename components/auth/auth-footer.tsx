@@ -26,9 +26,9 @@ export function AuthPageFooter({ className, compact = false }: AuthPageFooterPro
         )}
       >
         <div className={cn(compact ? "text-center" : "mb-0")}>
-          <span className="text-sm font-semibold">Gotly AI</span>
+          <span className="text-sm font-semibold">Gotly Keeper</span>
           <p className="mt-1 text-xs leading-relaxed opacity-70">
-            © 2024 Gotly AI. The Digital Curator.
+            © 2024 Gotly Keeper. The Digital Curator.
           </p>
         </div>
         <div className="flex gap-8 text-xs tracking-wide">

@@ -17,7 +17,7 @@ export function AuthNavbar({ className }: AuthNavbarProps) {
           <Archive className="h-5 w-5" fill="currentColor" />
         </div>
         <span className="font-headline text-xl font-bold tracking-tighter text-on-surface">
-          Gotly AI
+          Gotly Keeper
         </span>
       </div>
       <div className="flex items-center gap-1">

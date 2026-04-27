@@ -1,11 +1,16 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import LandingPage from '@/app/page'
 
+vi.mock('@/server/modules/auth/session', () => ({
+  getSignedInUser: vi.fn(async () => null),
+}))
+
 describe('landing page', () => {
-  it('renders the new brand narrative and manifesto without a footer CTA button', () => {
-    const markup = renderToStaticMarkup(<LandingPage />)
+  it('renders the new brand narrative and manifesto without a footer CTA button', async () => {
+    const page = await LandingPage()
+    const markup = renderToStaticMarkup(page)
 
     expect(markup.match(/<h1/g)?.length).toBe(1)
     expect(markup).toContain('把零碎想法，收进一处安静的入口。')
@@ -33,7 +38,7 @@ describe('landing page', () => {
     expect(markup).toMatch(/<article class="[^"]+" data-index="0"/)
     expect(markup).toContain('Quiet AI concierge')
     expect(markup).toContain('AI 统一入口优先')
-    expect(markup).toContain('Gotly AI 更像一处安静入口。')
+    expect(markup).toContain('Gotly Keeper 更像一处安静入口。')
     expect(markup).toContain('Quietly keeping what matters')
     expect(markup).toContain('轻量记录')
     expect(markup).toContain('智能归档')

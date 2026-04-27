@@ -7,8 +7,8 @@ describe('pwa metadata', () => {
   it('exports installable app manifest with root start url', () => {
     const result = manifest()
 
-    expect(result.name).toBe('Gotly AI')
-    expect(result.short_name).toBe('Gotly')
+    expect(result.name).toBe('Gotly Keeper')
+    expect(result.short_name).toBe('Gotly Keeper')
     expect(result.start_url).toBe('/')
     expect(result.display).toBe('standalone')
     expect(result.display_override).toEqual(['window-controls-overlay', 'standalone'])
@@ -29,7 +29,7 @@ describe('pwa metadata', () => {
   })
 
   it('exposes root metadata and viewport for app installation surfaces', () => {
-    expect(metadata.applicationName).toBe('Gotly AI')
+    expect(metadata.applicationName).toBe('Gotly Keeper')
     expect(metadata.manifest).toBe('/manifest.webmanifest')
 
     const appleWebApp = metadata.appleWebApp
@@ -37,7 +37,7 @@ describe('pwa metadata', () => {
 
     if (appleWebApp && typeof appleWebApp === 'object') {
       expect(appleWebApp.capable).toBe(true)
-      expect(appleWebApp.title).toBe('Gotly AI')
+      expect(appleWebApp.title).toBe('Gotly Keeper')
     }
 
     expect(viewport.themeColor).toEqual([

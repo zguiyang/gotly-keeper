@@ -1,10 +1,10 @@
-# Gotly AI
+# Gotly Keeper
 
 > Personal Curator — AI-powered personal knowledge management workspace
 
 ## Project Scope
 
-Gotly AI is a personal knowledge curation tool that helps you capture, organize, and retrieve notes, todos, and bookmarks through natural language input. The AI interprets your intent and takes appropriate action (create, search, or summarize).
+Gotly Keeper is a personal knowledge curation tool that helps you capture, organize, and retrieve notes, todos, and bookmarks through natural language input. The AI interprets your intent and takes appropriate action (create, search, or summarize).
 
 **Current implemented capabilities:**
 - Unified natural language capture input
@@ -47,7 +47,7 @@ POSTGRES_HOST=localhost
 POSTGRES_PORT=5434
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
-POSTGRES_DATABASE=gotly_dev
+POSTGRES_DATABASE=gotly_keeper_dev
 REDIS_HOST=localhost
 REDIS_PORT=6382
 REDIS_DB=0

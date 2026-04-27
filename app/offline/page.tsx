@@ -14,7 +14,7 @@ export default function OfflinePage() {
           当前网络不可用
         </h1>
         <p className="mt-4 text-sm leading-7 text-on-surface-variant sm:text-[15px]">
-          你仍然可以从主屏幕或桌面打开 Gotly。恢复网络后，再进入工作区继续记录、整理和检索内容。
+          你仍然可以从主屏幕或桌面打开 Gotly Keeper。恢复网络后，再进入工作区继续记录、整理和检索内容。
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link

@@ -44,7 +44,7 @@ export default async function LandingPage() {
                 </div>
                 <div>
                   <p className="font-headline text-base font-semibold tracking-tight text-on-surface sm:text-lg">
-                    Gotly AI
+                    Gotly Keeper
                   </p>
                   <p className="text-xs text-on-surface-variant">
                     Quiet AI concierge
@@ -249,7 +249,7 @@ export default async function LandingPage() {
                   不需要经营系统，只需要先交给它。
                 </h2>
                 <p className={cn(styles.sectionIntro, styles.storyCopy)}>
-                  Gotly AI 面向的是忙碌、轻量记录、容易收藏但不想维护复杂结构的人。
+                  Gotly Keeper 面向的是忙碌、轻量记录、容易收藏但不想维护复杂结构的人。
                 </p>
               </div>
 
@@ -298,7 +298,7 @@ export default async function LandingPage() {
                   你先交给我，我替你安静收好。
                 </h2>
                 <p className={styles.manifestoDescription}>
-                  Gotly AI 更像一处安静入口。先接住你零碎的记录，之后在需要时，把它们清楚地带回来。
+                  Gotly Keeper 更像一处安静入口。先接住你零碎的记录，之后在需要时，把它们清楚地带回来。
                 </p>
               </div>
 
@@ -325,7 +325,7 @@ export default async function LandingPage() {
         <footer className={styles.bottombar}>
           <div className={cn(styles.container, styles.bottombarInner)}>
             <div className="flex flex-col gap-3 py-6 text-sm text-on-surface-variant sm:flex-row sm:items-center sm:justify-between">
-              <p>© 2026 Gotly AI. Quietly keeping what matters.</p>
+              <p>© 2026 Gotly Keeper. Quietly keeping what matters.</p>
               {user ? (
                 <Link href="/workspace" className="transition-colors hover:text-primary">
                   进入工作区

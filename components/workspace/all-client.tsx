@@ -376,7 +376,7 @@ export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetL
             title={emptyFilterMessages[activeFilter] ?? emptyFilterMessages.all}
             description={
               activeFilter === 'all'
-                ? '打开启动台输入一句话，Gotly 会自动识别它是笔记、书签还是待办。'
+                ? '打开启动台输入一句话，Gotly Keeper 会自动识别它是笔记、书签还是待办。'
                 : '切回知识库可以查看其它类型，或从启动台继续捕获新内容。'
             }
             icon={activeFilter === 'all' ? Inbox : Archive}

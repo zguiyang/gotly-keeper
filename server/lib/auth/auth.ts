@@ -18,7 +18,7 @@ function createDefaultAvatarUrl(seed = randomUUID()) {
 }
 
 export const auth = betterAuth({
-  appName: 'Gotly AI',
+  appName: 'Gotly Keeper',
   baseURL: serverEnv.auth.url,
   secret: serverEnv.auth.secret,
   database: drizzleAdapter(db, {

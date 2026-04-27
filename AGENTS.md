@@ -4,7 +4,7 @@
 This version has breaking changes. APIs, conventions, and file structure may differ from old habits and model memory. Read the relevant guide in `node_modules/next/dist/docs/` before writing Next.js code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
-# Gotly AI Agent Entry Guide
+# Gotly Keeper Agent Entry Guide
 
 ## Purpose
 

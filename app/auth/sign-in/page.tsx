@@ -19,7 +19,7 @@ export default function SignInPage() {
             <h1 className="font-headline mb-3 text-3xl font-bold tracking-tight text-on-surface">
               欢迎回来
             </h1>
-            <p className="text-sm leading-relaxed text-secondary">登录 Gotly AI 以继续管理你的灵感</p>
+            <p className="text-sm leading-relaxed text-secondary">登录 Gotly Keeper 以继续管理你的灵感</p>
           </div>
 
           <SignInForm />

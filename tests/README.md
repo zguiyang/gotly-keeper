@@ -1,6 +1,6 @@
 # Tests
 
-This directory contains the test infrastructure for the Gotly AI project.
+This directory contains the test infrastructure for the Gotly Keeper project.
 
 ## Structure
 

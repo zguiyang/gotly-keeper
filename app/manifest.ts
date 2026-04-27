@@ -3,10 +3,10 @@ import type { MetadataRoute } from 'next'
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',
-    name: 'Gotly AI',
-    short_name: 'Gotly',
+    name: 'Gotly Keeper',
+    short_name: 'Gotly Keeper',
     description:
-      'Gotly AI is a lightweight AI-powered capture tool for collecting, refining, and retrieving ideas.',
+      'Gotly Keeper is a lightweight AI-powered capture tool for collecting, refining, and retrieving ideas.',
     start_url: '/',
     scope: '/',
     display: 'standalone',

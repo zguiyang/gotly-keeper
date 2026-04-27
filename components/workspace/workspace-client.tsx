@@ -127,7 +127,7 @@ export function WorkspaceClient({
             Command
           </p>
           <h1 className="font-headline text-[2rem] font-semibold tracking-[-0.02em] text-on-surface sm:text-[2.15rem] lg:text-[2.6rem]">
-            先捕获，再让 Gotly 帮你整理
+            先捕获，再让 Gotly Keeper 帮你整理
           </h1>
           <p className="mt-3 max-w-2xl text-[14px] leading-6 text-on-surface-variant sm:text-[15px] sm:leading-7">
             写想法、粘贴链接、安排待办，或直接问知识库。这里是唯一入口，不需要先决定内容放在哪。
@@ -169,7 +169,7 @@ export function WorkspaceClient({
         </div>
         {inputValue ? (
           <p className="mt-2 px-4 text-xs text-on-surface-variant/80">
-            Enter 换行，Cmd/Ctrl + Enter 发送。Gotly 会判断这是新内容还是查询请求，结果会在下方显示。
+            Enter 换行，Cmd/Ctrl + Enter 发送。Gotly Keeper 会判断这是新内容还是查询请求，结果会在下方显示。
           </p>
         ) : null}
 

@@ -106,7 +106,7 @@ export function AccountMenu({
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-on-surface">{userName}</p>
             <p className="truncate text-xs text-on-surface-variant">
-              {userEmail ?? "已登录 Gotly AI"}
+              {userEmail ?? "已登录 Gotly Keeper"}
             </p>
           </div>
         </div>

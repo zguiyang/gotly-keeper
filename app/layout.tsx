@@ -13,15 +13,15 @@ import "@fontsource/manrope/700.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Gotly AI",
-  applicationName: "Gotly AI",
+  title: "Gotly Keeper",
+  applicationName: "Gotly Keeper",
   description:
-    "Gotly AI is a lightweight AI-powered capture tool for collecting, refining, and retrieving ideas.",
+    "Gotly Keeper is a lightweight AI-powered capture tool for collecting, refining, and retrieving ideas.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Gotly AI",
+    title: "Gotly Keeper",
   },
   formatDetection: {
     telephone: false,

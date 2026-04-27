@@ -9,7 +9,7 @@ interface AuthBrandProps {
 export function AuthBrand({ className }: AuthBrandProps) {
   return (
     <span className={cn("font-headline text-xl font-bold tracking-tight text-on-surface", className)}>
-      Gotly AI
+      Gotly Keeper
     </span>
   );
 }
