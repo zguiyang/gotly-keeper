@@ -91,4 +91,11 @@ describe('bookmarks.command', () => {
     await expect(createBookmark({ userId: 'u1', rawInput: 'link text', url: '   ' })).rejects.toThrow('URL_REQUIRED')
     expect(mocks.insertMock).not.toHaveBeenCalled()
   })
+
+  it('rejects unsupported url protocols', async () => {
+    await expect(
+      createBookmark({ userId: 'u1', rawInput: 'link text', url: 'javascript:alert(1)' })
+    ).rejects.toThrow('UNSUPPORTED_PROTOCOL')
+    expect(mocks.insertMock).not.toHaveBeenCalled()
+  })
 })

@@ -138,4 +138,50 @@ describe('BaseWorker', () => {
     expect(processed).toEqual([2])
     expect(reportedErrors).toEqual(['task failed'])
   })
+
+  it('backs off after processing errors before polling again', async () => {
+    vi.useFakeTimers()
+
+    try {
+      const stopError = new Error('stop-loop')
+      let dequeueCalls = 0
+
+      class TestWorker extends BaseWorker<number> {
+        constructor() {
+          super('test-worker', { idleDelayMs: 10 })
+        }
+
+        protected async dequeueTask(): Promise<number | null> {
+          dequeueCalls += 1
+
+          if (dequeueCalls === 1) {
+            return 1
+          }
+
+          throw stopError
+        }
+
+        protected async handleTask(): Promise<void> {
+          throw new Error('task failed')
+        }
+
+        protected async onError(error: unknown): Promise<void> {
+          if (error === stopError) {
+            throw error
+          }
+        }
+      }
+
+      const startPromise = new TestWorker().start().catch((error) => error)
+
+      await vi.advanceTimersByTimeAsync(49)
+      expect(dequeueCalls).toBe(1)
+
+      await vi.advanceTimersByTimeAsync(1)
+      await expect(startPromise).resolves.toBe(stopError)
+      expect(dequeueCalls).toBe(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })

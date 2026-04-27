@@ -5,14 +5,23 @@ import { z } from 'zod'
 import { buildWorkspaceSystemPrompt, runAiGeneration } from '@/server/lib/ai'
 import { writeBookmarkEnrichResult } from '@/server/modules/workspace/bookmark-enrich.module'
 import { dequeueBookmarkEnrichTask } from '@/server/services/bookmark/bookmark-queue.service'
+import { checkUrlSafety } from '@/server/services/bookmark/url-safety'
 
 import { BaseWorker } from './base.worker'
 
 import type { BookmarkEnrichResult, BookmarkEnrichTask } from '@/server/services/bookmark/bookmark-enrich.contract'
 import type { BookmarkEnrichedType } from '@/shared/assets/bookmark-meta.types'
 
+type ReservedBookmarkEnrichTask = {
+  task: BookmarkEnrichTask
+  acknowledge: () => Promise<void>
+  release: () => Promise<void>
+}
+
 const BOOKMARK_ENRICH_FETCH_TIMEOUT_MS = 8_000
 const BOOKMARK_ENRICH_MAX_INPUT_LENGTH = 8_000
+const BOOKMARK_ENRICH_MAX_HTML_BYTES = 256 * 1024
+const BOOKMARK_ENRICH_MAX_REDIRECTS = 3
 const BOOKMARK_ENRICH_SUMMARY_TIMEOUT_MS = 8_000
 
 const bookmarkSummarySchema = z.object({
@@ -163,15 +172,86 @@ async function generateContentSummary(
   return description ?? source.slice(0, 180)
 }
 
-export async function runBookmarkEnrichWorker(task: BookmarkEnrichTask): Promise<BookmarkEnrichResult> {
-  try {
-    const response = await fetch(task.url, {
+async function readHtmlResponse(response: Response): Promise<string | null> {
+  const contentType = response.headers.get('content-type')?.toLowerCase() ?? ''
+  if (!contentType.includes('text/html') && !contentType.includes('application/xhtml+xml')) {
+    return null
+  }
+
+  const contentLengthHeader = response.headers.get('content-length')
+  const contentLength = contentLengthHeader ? Number.parseInt(contentLengthHeader, 10) : Number.NaN
+  if (Number.isFinite(contentLength) && contentLength > BOOKMARK_ENRICH_MAX_HTML_BYTES) {
+    throw new Error('FETCH_TOO_LARGE')
+  }
+
+  const reader = response.body?.getReader()
+  if (!reader) {
+    const text = await response.text()
+    if (new TextEncoder().encode(text).byteLength > BOOKMARK_ENRICH_MAX_HTML_BYTES) {
+      throw new Error('FETCH_TOO_LARGE')
+    }
+    return text
+  }
+
+  const decoder = new TextDecoder()
+  let totalBytes = 0
+  let html = ''
+
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) {
+      break
+    }
+
+    totalBytes += value.byteLength
+    if (totalBytes > BOOKMARK_ENRICH_MAX_HTML_BYTES) {
+      await reader.cancel('FETCH_TOO_LARGE')
+      throw new Error('FETCH_TOO_LARGE')
+    }
+
+    html += decoder.decode(value, { stream: true })
+  }
+
+  html += decoder.decode()
+  return html
+}
+
+async function fetchBookmarkResponse(url: string): Promise<{ response: Response; finalUrl: string }> {
+  let currentUrl = url
+
+  for (let redirectCount = 0; redirectCount <= BOOKMARK_ENRICH_MAX_REDIRECTS; redirectCount += 1) {
+    const safety = await checkUrlSafety(currentUrl)
+    if (!safety.safe) {
+      throw new Error(safety.reason === 'private_network' ? 'PRIVATE_URL_BLOCKED' : 'INVALID_URL')
+    }
+
+    const response = await fetch(currentUrl, {
       method: 'GET',
+      redirect: 'manual',
       signal: AbortSignal.timeout(BOOKMARK_ENRICH_FETCH_TIMEOUT_MS),
       headers: {
         'user-agent': 'gotly-keeper-bookmark-bot/1.0',
       },
     })
+
+    if (response.status < 300 || response.status >= 400) {
+      return { response, finalUrl: currentUrl }
+    }
+
+    const location = response.headers.get('location')
+    if (!location) {
+      throw new Error('REDIRECT_LOCATION_MISSING')
+    }
+
+    currentUrl = new URL(location, currentUrl).toString()
+  }
+
+  throw new Error('TOO_MANY_REDIRECTS')
+}
+
+export async function runBookmarkEnrichWorker(task: BookmarkEnrichTask): Promise<BookmarkEnrichResult> {
+  try {
+    const { response, finalUrl } = await fetchBookmarkResponse(task.url)
 
     if (!response.ok) {
       return {
@@ -186,10 +266,23 @@ export async function runBookmarkEnrichWorker(task: BookmarkEnrichTask): Promise
       }
     }
 
-    const html = await response.text()
-    const metadata = extractMetadata(task.url, html)
+    const html = await readHtmlResponse(response)
+    if (!html) {
+      return {
+        taskId: task.taskId,
+        bookmarkId: task.bookmarkId,
+        success: false,
+        error: {
+          code: 'UNSUPPORTED_CONTENT_TYPE',
+          message: 'response is not an html document',
+          retryable: false,
+        },
+      }
+    }
+
+    const metadata = extractMetadata(finalUrl, html)
     const readableText = extractReadableText(html, metadata.description)
-    const bookmarkType = classifyBookmarkType(task.url, html)
+    const bookmarkType = classifyBookmarkType(finalUrl, html)
     const contentSummary = await generateContentSummary(
       metadata.title,
       metadata.description,
@@ -214,7 +307,15 @@ export async function runBookmarkEnrichWorker(task: BookmarkEnrichTask): Promise
       bookmarkId: task.bookmarkId,
       success: false,
       error: {
-        code: 'ENRICH_FAILED',
+        code:
+          error instanceof Error &&
+          (error.message === 'FETCH_TOO_LARGE' ||
+            error.message === 'PRIVATE_URL_BLOCKED' ||
+            error.message === 'INVALID_URL' ||
+            error.message === 'TOO_MANY_REDIRECTS' ||
+            error.message === 'REDIRECT_LOCATION_MISSING')
+            ? error.message
+            : 'ENRICH_FAILED',
         message: error instanceof Error ? error.message : String(error),
         retryable: false,
       },
@@ -222,21 +323,30 @@ export async function runBookmarkEnrichWorker(task: BookmarkEnrichTask): Promise
   }
 }
 
-export class BookmarkEnrichWorker extends BaseWorker<BookmarkEnrichTask> {
+export class BookmarkEnrichWorker extends BaseWorker<ReservedBookmarkEnrichTask> {
   constructor() {
     super('bookmark-enrich')
   }
 
-  protected async dequeueTask(): Promise<BookmarkEnrichTask | null> {
+  protected async dequeueTask(): Promise<ReservedBookmarkEnrichTask | null> {
     return dequeueBookmarkEnrichTask(5)
   }
 
-  protected async handleTask(task: BookmarkEnrichTask): Promise<void> {
-    const result = await runBookmarkEnrichWorker(task)
+  protected async handleTask(reservedTask: ReservedBookmarkEnrichTask): Promise<void> {
+    const result = await runBookmarkEnrichWorker(reservedTask.task)
     await writeBookmarkEnrichResult({
-      userId: task.userId,
-      bookmarkId: task.bookmarkId,
+      userId: reservedTask.task.userId,
+      bookmarkId: reservedTask.task.bookmarkId,
       result,
     })
+    await reservedTask.acknowledge()
+  }
+
+  protected async onError(error: unknown, reservedTask: ReservedBookmarkEnrichTask | null): Promise<void> {
+    if (reservedTask) {
+      await reservedTask.release()
+    }
+
+    await super.onError(error, reservedTask)
   }
 }

@@ -322,6 +322,7 @@ describe('workspace server actions', () => {
       rawInput: '  AI SDK 文档\n流式输出示例\nhttps://example.com  ',
       title: '  AI SDK 文档  ',
       note: '  流式输出示例  ',
+      summary: '  收藏这篇是因为 SSE 示例很完整  ',
       url: '  https://example.com  ',
     })
 
@@ -331,7 +332,7 @@ describe('workspace server actions', () => {
       rawInput: 'AI SDK 文档\n流式输出示例\nhttps://example.com',
       title: 'AI SDK 文档',
       note: '流式输出示例',
-      summary: '流式输出示例',
+      summary: '收藏这篇是因为 SSE 示例很完整',
       url: 'https://example.com',
     })
   })

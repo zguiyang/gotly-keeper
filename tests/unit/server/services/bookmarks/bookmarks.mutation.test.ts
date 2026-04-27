@@ -159,4 +159,16 @@ describe('bookmarks.mutation', () => {
       updatedAt: fixedNow,
     })
   })
+
+  it('rejects unsupported url protocols during updates', async () => {
+    await expect(
+      updateBookmark({
+        userId: 'u1',
+        bookmarkId: 'bookmark_1',
+        rawInput: 'raw input',
+        url: 'javascript:alert(1)',
+      })
+    ).rejects.toThrow('UNSUPPORTED_PROTOCOL')
+    expect(mocks.setMock).not.toHaveBeenCalled()
+  })
 })

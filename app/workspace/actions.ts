@@ -301,12 +301,27 @@ function parseUpdateAssetInput(input: unknown):
     title,
     note: 'note' in input && typeof input.note === 'string' ? input.note.trim() || null : undefined,
     summary:
-      'note' in input && typeof input.note === 'string' ? input.note.trim() || null : undefined,
+      'summary' in input && typeof input.summary === 'string'
+        ? input.summary.trim() || null
+        : undefined,
     url: input.url.trim(),
   }
 }
 
 function mapWorkspaceModuleError(error: unknown): never {
+  if (error instanceof Error) {
+    if (
+      error.message === 'URL_REQUIRED' ||
+      error.message === 'INVALID_URL' ||
+      error.message === 'UNSUPPORTED_PROTOCOL'
+    ) {
+      throw new ModuleActionError(
+        '请输入有效的 http/https 链接。',
+        MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT
+      )
+    }
+  }
+
   if (!(error instanceof WorkspaceModuleError)) {
     throw error
   }
