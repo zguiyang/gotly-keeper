@@ -1,13 +1,13 @@
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: gotly-postgres
+    container_name: gotly-keeper-postgres
     ports:
       - "5434:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: gotly_dev
+      POSTGRES_DB: gotly_keeper_dev
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -18,7 +18,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: gotly-redis
+    container_name: gotly-keeper-redis
     ports:
       - "6382:6379"
     volumes:

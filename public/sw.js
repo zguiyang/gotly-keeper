@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gotly-pwa-v1'
+const CACHE_NAME = 'gotly-keeper-pwa-v1'
 const STATIC_ASSETS = [
   '/offline',
   '/manifest.webmanifest',

@@ -170,7 +170,7 @@ export async function runBookmarkEnrichWorker(task: BookmarkEnrichTask): Promise
       method: 'GET',
       signal: AbortSignal.timeout(BOOKMARK_ENRICH_FETCH_TIMEOUT_MS),
       headers: {
-        'user-agent': 'gotly-ai-bookmark-bot/1.0',
+        'user-agent': 'gotly-keeper-bookmark-bot/1.0',
       },
     })
 

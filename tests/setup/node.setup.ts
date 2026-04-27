@@ -5,7 +5,7 @@ const testEnvDefaults: Record<string, string> = {
   POSTGRES_PORT: '5432',
   POSTGRES_USER: 'postgres',
   POSTGRES_PASSWORD: 'postgres',
-  POSTGRES_DATABASE: 'gotly_test',
+  POSTGRES_DATABASE: 'gotly_keeper_test',
   REDIS_HOST: '127.0.0.1',
   REDIS_PORT: '6379',
   REDIS_DB: '0',

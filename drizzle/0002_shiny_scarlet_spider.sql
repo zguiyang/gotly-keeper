@@ -18,7 +18,7 @@ RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  PERFORM pg_advisory_xact_lock(hashtext('gotly_ai:first_super_admin'));
+  PERFORM pg_advisory_xact_lock(hashtext('gotly_keeper:first_super_admin'));
 
   IF NOT EXISTS (
     SELECT 1 FROM "users" WHERE "role" = 'super_admin'
