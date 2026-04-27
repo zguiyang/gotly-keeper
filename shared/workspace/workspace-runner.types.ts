@@ -1,12 +1,31 @@
 import type { AssetListItem } from '@/shared/assets/assets.types'
+import type {
+  WorkspaceInteraction,
+  WorkspaceInteractionResponse,
+  WorkspacePendingRunSnapshot,
+  WorkspaceRunError,
+  WorkspaceRunPhase,
+  WorkspaceRunPreview,
+  WorkspaceRunRequest as WorkspaceRunProtocolRequest,
+  WorkspaceRunResult,
+  WorkspaceRunStreamEvent as WorkspaceRunProtocolEvent,
+} from '@/shared/workspace/workspace-run-protocol'
 
-export type WorkspaceRunRequest =
-  | { kind: 'input'; text: string }
-  | {
-      kind: 'quick-action'
-      action: 'review-todos' | 'summarize-notes' | 'summarize-bookmarks'
-    }
+export type WorkspaceRunRequest = WorkspaceRunProtocolRequest
+export type {
+  WorkspaceInteraction,
+  WorkspaceInteractionResponse,
+  WorkspacePendingRunSnapshot,
+  WorkspaceRunError,
+  WorkspaceRunPhase,
+  WorkspaceRunPreview,
+  WorkspaceRunResult,
+}
+// Canonical event type for all new interactive workspace-run code.
+export type WorkspaceRunEvent = WorkspaceRunProtocolEvent
+export type WorkspaceRunProtocolStreamEvent = WorkspaceRunEvent
 
+// Legacy compatibility types for the old `/api/workspace/run` contract.
 export type WorkspaceRunApiPhase = {
   phase: 'parse' | 'route' | 'execute' | 'compose'
   status: 'active' | 'done' | 'failed' | 'skipped'
@@ -39,6 +58,14 @@ export type WorkspaceRunApiResponse = {
   data: WorkspaceRunApiData
 }
 
+export type LegacyWorkspaceRunApiPhase = WorkspaceRunApiPhase
+export type LegacyWorkspaceRunApiData = WorkspaceRunApiData
+export type LegacyWorkspaceRunApiResponse = WorkspaceRunApiResponse
+export type WorkspaceRunLegacyCompatibilityResult =
+  | WorkspaceRunApiResponse
+  | WorkspaceRunResult
+
+// Legacy compatibility stream event for the old SSE client.
 export type WorkspaceRunStreamEvent =
   | {
       type: 'phase'
@@ -52,3 +79,5 @@ export type WorkspaceRunStreamEvent =
       type: 'error'
       message: string
     }
+
+export type LegacyWorkspaceRunStreamEvent = WorkspaceRunStreamEvent

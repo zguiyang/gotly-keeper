@@ -292,3 +292,27 @@ export type TodoListItem = typeof todos.$inferSelect
 export type Bookmark = typeof bookmarks.$inferSelect
 export type NewBookmark = typeof bookmarks.$inferInsert
 export type BookmarkListItem = typeof bookmarks.$inferSelect
+
+export const workspaceRuns = pgTable(
+  'workspace_runs',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    runId: text('run_id').notNull(),
+    phase: text('phase').notNull(),
+    status: text('status').notNull(),
+    snapshot: jsonb('snapshot').$type<Record<string, unknown>>().notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('workspace_runs_user_id_idx').on(table.userId),
+    index('workspace_runs_user_status_idx').on(table.userId, table.status),
+    uniqueIndex('workspace_runs_run_id_idx').on(table.runId),
+  ]
+)
+
+export type WorkspaceRun = typeof workspaceRuns.$inferSelect
+export type NewWorkspaceRun = typeof workspaceRuns.$inferInsert
