@@ -25,6 +25,8 @@ import styles from "./page.module.css";
 
 export default async function LandingPage() {
   const user = await getSignedInUser();
+  const workspaceHref = user ? "/workspace" : "/auth/sign-in";
+  const workspaceLabel = user ? "进入工作区" : "登录后进入工作区";
 
   return (
     <div className={styles.pageShell}>
@@ -138,14 +140,14 @@ export default async function LandingPage() {
 
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <Link
-                    href="/workspace"
+                    href={workspaceHref}
                     className={cn(
                       buttonVariants({ size: "lg" }),
                       styles.primaryCta,
                       "h-12 rounded-full px-6 shadow-lg shadow-primary/20"
                     )}
                   >
-                    进入工作空间
+                    {workspaceLabel}
                     <ArrowRight
                       className="h-4 w-4 transition-transform duration-200 group-hover/button:translate-x-1"
                       data-icon="inline-end"
@@ -327,7 +329,7 @@ export default async function LandingPage() {
             <div className="flex flex-col gap-3 py-6 text-sm text-on-surface-variant sm:flex-row sm:items-center sm:justify-between">
               <p>© 2026 Gotly Keeper. Quietly keeping what matters.</p>
               {user ? (
-                <Link href="/workspace" className="transition-colors hover:text-primary">
+                <Link href={workspaceHref} className="transition-colors hover:text-primary">
                   进入工作区
                 </Link>
               ) : (
