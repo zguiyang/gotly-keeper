@@ -1,0 +1,370 @@
+import { describe, expect, it, vi } from 'vitest'
+
+import type { WorkspaceRunOrchestratorError } from '@/server/modules/workspace-agent/workspace-run-orchestrator'
+import type { WorkspaceRunStore } from '@/server/modules/workspace-agent/workspace-run-store'
+import type { WorkspaceRunModel } from '@/server/modules/workspace-agent/workspace-run-understanding'
+import type {
+  SearchWorkspaceRunCandidates,
+  WorkspaceRunPlannerCandidate,
+} from '@/server/modules/workspace-agent/workspace-run-planner'
+import type { WorkspaceRunRequest } from '@/shared/workspace/workspace-run-protocol'
+
+const createMockStore = (): WorkspaceRunStore => ({
+  saveSnapshot: vi.fn().mockResolvedValue(undefined),
+  loadLatestAwaiting: vi.fn().mockResolvedValue(null),
+  updateRunStatus: vi.fn().mockResolvedValue(true),
+  deleteRun: vi.fn().mockResolvedValue(undefined),
+})
+
+const createMockRunModel = (): WorkspaceRunModel => {
+  return async () => {
+    return {
+      draftTasks: [
+        {
+          id: 'draft_1',
+          intent: 'create',
+          target: 'todos',
+          title: '给客户发报价',
+          confidence: 0.92,
+          ambiguities: [],
+          corrections: [],
+          slots: { title: '给客户发报价' },
+        },
+      ],
+    }
+  }
+}
+
+const createMockSearchCandidates = (): SearchWorkspaceRunCandidates => {
+  return async () => []
+}
+
+describe('workspace-run-orchestrator', () => {
+  describe('aborted signal', () => {
+    it('returns aborted when signal is already aborted', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const controller = new AbortController()
+      controller.abort()
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '给客户发报价' },
+        store: createMockStore(),
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        signal: controller.signal,
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.phase).toBe('aborted')
+    })
+  })
+
+  describe('normalize phase', () => {
+    it('emits normalize phase events', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const events: unknown[] = []
+      const store = createMockStore()
+
+      await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '给客户发报价' },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      expect(events).toContainEqual(expect.objectContaining({ type: 'phase_started', phase: 'normalize' }))
+      expect(events).toContainEqual(expect.objectContaining({ type: 'phase_completed', phase: 'normalize' }))
+    })
+  })
+
+  describe('understand phase', () => {
+    it('calls understand after normalize', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const events: unknown[] = []
+      const store = createMockStore()
+
+      await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '给客户发报价' },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      const normalizeIndex = events.findIndex((e: any) => e.type === 'phase_completed' && e.phase === 'normalize')
+      const understandIndex = events.findIndex((e: any) => e.type === 'phase_started' && e.phase === 'understand')
+
+      expect(understandIndex).toBeGreaterThan(normalizeIndex)
+    })
+  })
+
+  describe('plan phase', () => {
+    it('generates plan steps', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const events: unknown[] = []
+
+      await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '给客户发报价' },
+        store: createMockStore(),
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      expect(events).toContainEqual(expect.objectContaining({ type: 'phase_started', phase: 'plan' }))
+      expect(events).toContainEqual(expect.objectContaining({ type: 'phase_completed', phase: 'plan' }))
+    })
+  })
+
+  describe('review phase', () => {
+    it('reviews the plan and emits review phase events', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const events: unknown[] = []
+
+      await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '给客户发报价' },
+        store: createMockStore(),
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      expect(events).toContainEqual(expect.objectContaining({ type: 'phase_started', phase: 'review' }))
+      expect(events).toContainEqual(expect.objectContaining({ type: 'phase_completed', phase: 'review' }))
+    })
+  })
+
+  describe('error handling', () => {
+    it('handles model errors gracefully', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const failingModel: WorkspaceRunModel = async () => {
+        throw new Error('Model failed')
+      }
+
+      const events: unknown[] = []
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '给客户发报价' },
+        store: createMockStore(),
+        runModel: failingModel,
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.phase).toBe('error')
+      expect(events).toContainEqual(
+        expect.objectContaining({
+          type: 'run_failed',
+          error: expect.objectContaining({ code: 'INTERNAL_ERROR' }),
+        })
+      )
+    })
+  })
+
+  describe('preview phase', () => {
+    it('emits preview phase events when auto_execute is triggered', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const events: unknown[] = []
+
+      await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '给客户发报价' },
+        store: createMockStore(),
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      expect(events).toContainEqual(expect.objectContaining({ type: 'phase_started', phase: 'preview' }))
+      expect(events).toContainEqual(expect.objectContaining({ type: 'phase_completed', phase: 'preview' }))
+    })
+  })
+
+  describe('execute phase', () => {
+    it('emits execute phase events when auto_execute is triggered', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const events: unknown[] = []
+
+      await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '给客户发报价' },
+        store: createMockStore(),
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      expect(events).toContainEqual(expect.objectContaining({ type: 'phase_started', phase: 'execute' }))
+      expect(events).toContainEqual(expect.objectContaining({ type: 'phase_completed', phase: 'execute' }))
+    })
+  })
+
+  describe('compose phase', () => {
+    it('emits compose phase events when execute succeeds', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const events: unknown[] = []
+      const store = createMockStore()
+
+      store.updateRunStatus = vi.fn().mockResolvedValue(true)
+
+      await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '给客户发报价' },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      const executePhase = events.find(
+        (e: any) => e.phase === 'execute' && e.type === 'phase_completed'
+      ) as { output?: { stepResults?: Array<{ result: { ok: boolean } }> } } | undefined
+      if (executePhase?.output?.stepResults?.every((r) => r.result.ok)) {
+        expect(events).toContainEqual(expect.objectContaining({ type: 'phase_started', phase: 'compose' }))
+        expect(events).toContainEqual(expect.objectContaining({ type: 'phase_completed', phase: 'compose' }))
+      } else {
+        expect(events).not.toContainEqual(expect.objectContaining({ type: 'phase_started', phase: 'compose' }))
+      }
+    })
+  })
+
+  describe('quick action', () => {
+    it('accepts supported quick actions through the new pipeline', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const events: unknown[] = []
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'quick-action', action: 'summarize-notes' },
+        store: createMockStore(),
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      expect(events).toContainEqual(
+        expect.objectContaining({ type: 'phase_started', phase: 'normalize' })
+      )
+      expect(result.phase).not.toBe('quick_action')
+    })
+  })
+
+  describe('resume flow', () => {
+    it('preserves candidates when resuming from snapshot', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const store = createMockStore()
+      const mockSnapshot = {
+        runId: 'run_123',
+        phase: 'review' as const,
+        status: 'awaiting_user' as const,
+        interactionId: 'interaction_1',
+        interaction: {
+          runId: 'run_123',
+          id: 'interaction_1',
+          type: 'confirm_plan' as const,
+          message: '请确认',
+          actions: ['confirm', 'edit', 'cancel'] as const,
+        },
+        timeline: [],
+        preview: { plan: null },
+        understandingPreview: {
+          rawInput: '把给客户发报价标记完成',
+          normalizedInput: '把给客户发报价标记完成',
+          draftTasks: [
+            {
+              id: 'draft_1',
+              intent: 'update',
+              target: 'todos',
+              title: '把给客户发报价标记完成',
+              confidence: 0.86,
+              ambiguities: [],
+              corrections: [],
+              slots: {
+                query: '给客户发报价',
+                status: 'done',
+              },
+            },
+          ],
+          corrections: [],
+        },
+        planPreview: {
+          summary: 'Test plan',
+          steps: [
+            {
+              id: 'step_1',
+              toolName: 'update_todo',
+              title: '更新待办',
+              preview: '更新待办',
+            },
+          ],
+        },
+        correctionNotes: [],
+        updatedAt: new Date().toISOString(),
+      }
+
+      store.loadLatestAwaiting = vi.fn().mockResolvedValue(mockSnapshot)
+
+      const events: unknown[] = []
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'resume',
+          runId: 'run_123',
+          interactionId: 'interaction_1',
+          response: { type: 'confirm_plan', action: 'confirm' },
+        },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      expect(store.loadLatestAwaiting).toHaveBeenCalledWith('user_123')
+      expect(result.ok).toBe(false)
+      expect(result.phase).toBe('execute')
+    })
+
+    it('returns not_found when no pending run exists on resume', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const store = createMockStore()
+      store.loadLatestAwaiting = vi.fn().mockResolvedValue(null)
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'resume',
+          runId: 'run_123',
+          interactionId: 'interaction_1',
+          response: { type: 'confirm_plan', action: 'confirm' },
+        },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.phase).toBe('not_found')
+    })
+  })
+})

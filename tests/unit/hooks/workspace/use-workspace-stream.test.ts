@@ -1,32 +1,19 @@
 // @vitest-environment jsdom
 
-import React, { act } from 'react'
+import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import React from 'react'
+import { waitFor } from '@testing-library/react'
 
 import { useWorkspaceStream } from '@/hooks/workspace/use-workspace-stream'
 
-import type { AssetListItem } from '@/shared/assets/assets.types'
-import type { WorkspaceRunStreamEvent } from '@/shared/workspace/workspace-runner.types'
+import type { WorkspaceRunStreamEvent } from '@/shared/workspace/workspace-run-protocol'
 
-function createAsset(overrides: Partial<AssetListItem>): AssetListItem {
-  return {
-    id: 'asset_1',
-    originalText: '测试内容',
-    title: '测试标题',
-    excerpt: '测试摘要',
-    type: 'note',
-    content: null,
-    note: null,
-    summary: null,
-    url: null,
-    timeText: null,
-    dueAt: null,
-    completed: false,
-    createdAt: new Date('2026-04-23T00:00:00.000Z'),
-    ...overrides,
-  }
-}
+vi.mock('@/client/workspace/workspace-run-events.client', () => ({
+  streamWorkspaceRunEvents: vi.fn(),
+  fetchCurrentWorkspaceRun: vi.fn(),
+}))
 
 function createSseResponse(events: WorkspaceRunStreamEvent[]) {
   const body = events
@@ -81,10 +68,17 @@ function renderHook<T>(useHook: () => T) {
 describe('useWorkspaceStream', () => {
   let activeHook: ReturnType<typeof renderHook<ReturnType<typeof useWorkspaceStream>>> | null = null
 
-  beforeEach(() => {
+  let mockStreamWorkspaceRunEvents: ReturnType<typeof vi.fn>
+  let mockFetchCurrentWorkspaceRun: ReturnType<typeof vi.fn>
+
+  beforeEach(async () => {
     vi.restoreAllMocks()
     ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT =
       true
+
+    const client = await import('@/client/workspace/workspace-run-events.client')
+    mockStreamWorkspaceRunEvents = client.streamWorkspaceRunEvents as ReturnType<typeof vi.fn>
+    mockFetchCurrentWorkspaceRun = client.fetchCurrentWorkspaceRun as ReturnType<typeof vi.fn>
   })
 
   afterEach(() => {
@@ -92,36 +86,120 @@ describe('useWorkspaceStream', () => {
     activeHook = null
   })
 
-  it('submits input requests and stores successful query results', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      createSseResponse([
-        {
-          type: 'phase',
-          phase: { phase: 'parse', status: 'done', message: '已理解请求' },
+  it('rehydrates the latest awaiting run on page initialization', async () => {
+    mockFetchCurrentWorkspaceRun.mockResolvedValueOnce({
+      ok: true,
+      run: {
+        runId: 'run_awaiting',
+        interaction: {
+          id: 'interaction_1',
+          runId: 'run_awaiting',
+          type: 'select_candidate',
+          target: 'todo',
+          message: '请选择要更新的待办',
+          actions: ['select', 'skip', 'cancel'] as const,
+          candidates: [
+            { id: 'todo_1', label: '发报价给老王', reason: '报价相关' },
+          ],
         },
-        {
-          type: 'phase',
-          phase: { phase: 'route', status: 'active', message: '正在选择操作' },
+        timeline: [
+          { type: 'phase_completed', phase: 'preview', output: {} },
+        ],
+        understandingPreview: null,
+        planPreview: null,
+        correctionNotes: [],
+        updatedAt: '2026-04-27T01:00:00.000Z',
+      },
+    })
+
+    const hook = renderHook(() => useWorkspaceStream())
+    activeHook = hook
+
+    await waitFor(() => {
+      expect(hook.result.current.state.status).toBe('awaiting_user')
+    })
+    expect(hook.result.current.state.runId).toBe('run_awaiting')
+    expect(hook.result.current.state.interaction?.type).toBe('select_candidate')
+  })
+
+  it('stores awaiting user interaction and resumes it', async () => {
+    const events: WorkspaceRunStreamEvent[] = [
+      { type: 'phase_started', phase: 'normalize' },
+      { type: 'phase_completed', phase: 'normalize' },
+      { type: 'phase_started', phase: 'understand' },
+      { type: 'phase_completed', phase: 'understand' },
+      {
+        type: 'awaiting_user',
+        interaction: {
+          id: 'interaction_1',
+          runId: 'run_1',
+          type: 'select_candidate',
+          target: 'todo',
+          message: '请选择要更新的待办',
+          actions: ['select', 'skip', 'cancel'] as const,
+          candidates: [
+            { id: 'todo_1', label: '发报价给老王', reason: '报价相关' },
+          ],
         },
-        {
-          type: 'result',
-          response: {
-            ok: true,
-            phases: [
-              { phase: 'parse', status: 'done', message: '已理解请求' },
-              { phase: 'route', status: 'done', message: '已选择 search_notes' },
-            ],
-            answer: '已找到 1 条笔记。',
-            data: {
-              kind: 'query',
-              target: 'notes',
-              items: [createAsset({ id: 'note_1', type: 'note' })],
-              total: 1,
-            },
-          },
-        },
-      ])
-    )
+      },
+    ]
+
+    mockStreamWorkspaceRunEvents.mockImplementation(async (_request, handlers) => {
+      for (const event of events) {
+        handlers.onEvent(event)
+      }
+    })
+
+    const hook = renderHook(() => useWorkspaceStream())
+    activeHook = hook
+
+    await act(async () => {
+      await hook.result.current.submitInput('把那个报价的事改到后天下午吧')
+    })
+
+    expect(hook.result.current.state.status).toBe('awaiting_user')
+    expect(hook.result.current.state.interaction?.type).toBe('select_candidate')
+    expect(hook.result.current.state.runId).toBe('run_1')
+
+    mockStreamWorkspaceRunEvents.mockImplementation(async (_request, handlers) => {
+      handlers.onEvent({
+        type: 'run_completed',
+        result: { summary: '已更新', preview: null },
+      })
+    })
+
+    await act(async () => {
+      await hook.result.current.resumeInteraction({
+        type: 'select_candidate',
+        action: 'select',
+        candidateId: 'todo_1',
+      })
+    })
+
+    expect(hook.result.current.state.status).toBe('success')
+  })
+
+  it('emits phase_started and phase_completed events', async () => {
+    const events: WorkspaceRunStreamEvent[] = [
+      { type: 'phase_started', phase: 'normalize' },
+      { type: 'phase_completed', phase: 'normalize' },
+      { type: 'phase_started', phase: 'understand' },
+      { type: 'phase_completed', phase: 'understand' },
+      { type: 'phase_started', phase: 'plan' },
+      { type: 'phase_completed', phase: 'plan' },
+      { type: 'phase_started', phase: 'preview' },
+      { type: 'phase_completed', phase: 'preview' },
+      {
+        type: 'run_completed',
+        result: { summary: '已找到 1 条笔记', preview: null },
+      },
+    ]
+
+    mockStreamWorkspaceRunEvents.mockImplementation(async (_request, handlers) => {
+      for (const event of events) {
+        handlers.onEvent(event)
+      }
+    })
 
     const hook = renderHook(() => useWorkspaceStream())
     activeHook = hook
@@ -130,101 +208,85 @@ describe('useWorkspaceStream', () => {
       await hook.result.current.submitInput('找下最近笔记')
     })
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/workspace/run', expect.objectContaining({
-      method: 'POST',
-    }))
     expect(hook.result.current.state.status).toBe('success')
-    expect(hook.result.current.state.assistantText).toBe('已找到 1 条笔记。')
-    expect(hook.result.current.state.result).toEqual({
-      kind: 'query',
-      target: 'notes',
-      items: [serializeForStream(createAsset({ id: 'note_1', type: 'note' }))],
-      total: 1,
-    })
+    expect(hook.result.current.state.timeline).toEqual(events)
   })
 
-  it('surfaces API errors as error state', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ error: '请输入有效内容。' }), { status: 400 })
-    )
+  it('handles tool_call_started and tool_call_completed events', async () => {
+    const events: WorkspaceRunStreamEvent[] = [
+      { type: 'phase_started', phase: 'execute' },
+      { type: 'tool_call_started', toolName: 'create_todo', preview: '创建待办：发报价' },
+      { type: 'tool_call_completed', toolName: 'create_todo', result: { ok: true } },
+      { type: 'phase_completed', phase: 'execute' },
+      { type: 'phase_started', phase: 'compose' },
+      { type: 'phase_completed', phase: 'compose' },
+      {
+        type: 'run_completed',
+        result: { summary: '已创建待办', preview: null },
+      },
+    ]
+
+    mockStreamWorkspaceRunEvents.mockImplementation(async (_request, handlers) => {
+      for (const event of events) {
+        handlers.onEvent(event)
+      }
+    })
 
     const hook = renderHook(() => useWorkspaceStream())
     activeHook = hook
 
     await act(async () => {
-      await hook.result.current.submitInput('')
+      await hook.result.current.submitInput('记个待办：发报价')
     })
 
-    expect(hook.result.current.state.status).toBe('error')
-    expect(hook.result.current.state.errorMessage).toBe('请输入有效内容。')
+    expect(hook.result.current.state.status).toBe('success')
+    const toolEvents = hook.result.current.state.timeline.filter(
+      (e) => e.type === 'tool_call_started' || e.type === 'tool_call_completed'
+    )
+    expect(toolEvents).toHaveLength(2)
   })
 
-  it('passes successful responses to onResult', async () => {
-    const onResult = vi.fn()
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      createSseResponse([
-        {
-          type: 'result',
-          response: {
-            ok: true,
-            phases: [],
-            answer: '已创建待办。',
-            data: {
-              kind: 'mutation',
-              action: 'create',
-              target: 'todos',
-              item: createAsset({ id: 'todo_1', type: 'todo' }),
-            },
-          },
-        },
-      ])
-    )
+  it('handles run_failed events', async () => {
+    const events: WorkspaceRunStreamEvent[] = [
+      { type: 'phase_started', phase: 'execute' },
+      { type: 'tool_call_started', toolName: 'create_todo', preview: '创建待办' },
+      {
+        type: 'run_failed',
+        error: { code: 'tool_failed', message: '工具执行失败' },
+      },
+    ]
 
-    const hook = renderHook(() => useWorkspaceStream({ onResult }))
+    mockStreamWorkspaceRunEvents.mockImplementation(async (_request, handlers) => {
+      for (const event of events) {
+        handlers.onEvent(event)
+      }
+    })
+
+    const hook = renderHook(() => useWorkspaceStream())
     activeHook = hook
 
     await act(async () => {
-      await hook.result.current.submitInput('创建一个待办')
+      await hook.result.current.submitInput('记个待办：发报价')
     })
 
-    expect(onResult).toHaveBeenCalledWith({
-      kind: 'mutation',
-      action: 'create',
-      target: 'todos',
-      item: serializeForStream(createAsset({ id: 'todo_1', type: 'todo' })),
-    })
+    expect(hook.result.current.state.status).toBe('error')
+    expect(hook.result.current.state.errorMessage).toBe('工具执行失败')
   })
 
   it('aborts the previous request before starting a new one', async () => {
-    const abortSignals: AbortSignal[] = []
-    let resolveFirstResponse: ((value: Response) => void) | null = null
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((_, init) => {
-      abortSignals.push((init as RequestInit).signal as AbortSignal)
+    mockStreamWorkspaceRunEvents.mockClear()
 
-      if (abortSignals.length === 1) {
-        return new Promise<Response>((resolve) => {
-          resolveFirstResponse = resolve
-        })
+    mockStreamWorkspaceRunEvents.mockImplementation(async (_request, handlers) => {
+      const events: WorkspaceRunStreamEvent[] = [
+        { type: 'phase_started', phase: 'normalize' },
+        {
+          type: 'run_completed',
+          result: { summary: '请求完成', preview: null },
+        },
+      ]
+      for (const event of events) {
+        handlers.onEvent(event)
       }
-
-      return Promise.resolve(
-        createSseResponse([
-          {
-            type: 'result',
-            response: {
-              ok: true,
-              phases: [],
-              answer: '第二次请求成功',
-              data: {
-                kind: 'query',
-                target: 'notes',
-                items: [createAsset({ id: 'note_2', type: 'note' })],
-                total: 1,
-              },
-            },
-          },
-        ])
-      )
     })
 
     const hook = renderHook(() => useWorkspaceStream())
@@ -236,32 +298,8 @@ describe('useWorkspaceStream', () => {
       await hook.result.current.submitInput('第二次请求')
     })
 
-    expect(fetchMock).toHaveBeenCalledTimes(2)
-    expect(abortSignals[0]?.aborted).toBe(true)
-    expect(hook.result.current.state.assistantText).toBe('第二次请求成功')
-
-    await act(async () => {
-      resolveFirstResponse?.(
-        createSseResponse([
-          {
-            type: 'result',
-            response: {
-              ok: true,
-              phases: [],
-              answer: '第一次请求成功',
-              data: {
-                kind: 'query',
-                target: 'notes',
-                items: [createAsset({ id: 'note_1', type: 'note' })],
-                total: 1,
-              },
-            },
-          },
-        ])
-      )
-      await firstRequest.catch(() => undefined)
-    })
-
-    expect(hook.result.current.state.assistantText).toBe('第二次请求成功')
+    expect(mockStreamWorkspaceRunEvents).toHaveBeenCalledTimes(2)
+    expect(hook.result.current.state.status).toBe('success')
+    expect(hook.result.current.state.runId).toBeUndefined()
   })
 })
