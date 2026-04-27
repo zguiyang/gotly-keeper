@@ -66,6 +66,10 @@ import {
   scheduleBookmarkEnrichTask,
 } from './bookmark-enrich.module'
 import { summarizeWorkspaceRecentBookmarksInternal } from './bookmarks.summary'
+import {
+  createMixedWorkspaceAssetsPage,
+  decodeMixedWorkspaceAssetsCursor,
+} from './mixed-assets-pagination'
 import { summarizeWorkspaceRecentNotesInternal } from './notes.summary'
 import { reviewWorkspaceUnfinishedTodosInternal } from './todos.review'
 
@@ -785,28 +789,43 @@ export async function listWorkspaceAssetsPage(input: {
     }
   }
 
+  const mixedCursor = decodeMixedWorkspaceAssetsCursor(input.cursor)
   const [notesPage, bookmarksPage, todosPage] = await Promise.all([
-    listNotesPage({ userId: input.userId, pageSize, cursor: input.cursor, lifecycleStatus }),
-    listBookmarksPage({ userId: input.userId, pageSize, cursor: input.cursor, lifecycleStatus }),
-    listTodosPage({ userId: input.userId, pageSize, cursor: input.cursor, lifecycleStatus }),
+    listNotesPage({
+      userId: input.userId,
+      pageSize,
+      cursor: mixedCursor?.notesCursor ?? null,
+      lifecycleStatus,
+    }),
+    listBookmarksPage({
+      userId: input.userId,
+      pageSize,
+      cursor: mixedCursor?.bookmarksCursor ?? null,
+      lifecycleStatus,
+    }),
+    listTodosPage({
+      userId: input.userId,
+      pageSize,
+      cursor: mixedCursor?.todosCursor ?? null,
+      lifecycleStatus,
+    }),
   ])
 
-  const items: AssetListItem[] = [
-    ...notesPage.items.map(toAssetListItemFromNote),
-    ...bookmarksPage.items.map(toAssetListItemFromBookmark),
-    ...todosPage.items.map(toAssetListItemFromTodo),
-  ]
-
-  items.sort(compareWorkspaceAssetsDesc)
-
-  return createCursorPage({
-    rows: items,
+  return createMixedWorkspaceAssetsPage({
     pageSize,
-    getCursorPayload: (item) => ({
-      createdAt: item.createdAt.toISOString(),
-      id: item.id,
-      type: item.type,
-    }),
+    incomingCursor: mixedCursor,
+    notesPage: {
+      items: notesPage.items.map(toAssetListItemFromNote),
+      pageInfo: notesPage.pageInfo,
+    },
+    bookmarksPage: {
+      items: bookmarksPage.items.map(toAssetListItemFromBookmark),
+      pageInfo: bookmarksPage.pageInfo,
+    },
+    todosPage: {
+      items: todosPage.items.map(toAssetListItemFromTodo),
+      pageInfo: todosPage.pageInfo,
+    },
   })
 }
 

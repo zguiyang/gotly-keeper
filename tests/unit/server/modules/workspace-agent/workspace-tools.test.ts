@@ -48,12 +48,65 @@ describe('workspaceTools', () => {
     expect(mocks.searchWorkspaceAssets).toHaveBeenCalledWith({
       userId: 'user_1',
       query: '项目复盘',
+      timeFilter: null,
       typeHint: 'note',
     })
     expect(result).toEqual({
       ok: true,
       target: 'notes',
       items: [{ id: 'note_1', type: 'note', title: '复盘', createdAt: new Date('2026-04-22T10:00:00.000Z') }],
+      total: 1,
+    })
+  })
+
+  it('search_notes forwards today timeRange as an exact range filter', async () => {
+    mocks.searchWorkspaceAssets.mockResolvedValue([])
+
+    await workspaceTools.search_notes.execute(
+      {
+        query: '日报',
+        subjectHint: null,
+        timeRange: { type: 'today' },
+        limit: 10,
+      },
+      { userId: 'user_1' }
+    )
+
+    expect(mocks.searchWorkspaceAssets).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user_1',
+        query: '日报',
+        typeHint: 'note',
+        timeFilter: expect.objectContaining({ kind: 'exact_range', phrase: 'today' }),
+      })
+    )
+  })
+
+  it('search_todos filters list results by custom timeRange when query is empty', async () => {
+    mocks.listWorkspaceAssets.mockResolvedValue([
+      { id: 'todo_1', type: 'todo', createdAt: new Date('2026-04-20T09:00:00.000Z') },
+      { id: 'todo_2', type: 'todo', createdAt: new Date('2026-04-23T09:00:00.000Z') },
+    ])
+
+    const result = await workspaceTools.search_todos.execute(
+      {
+        query: null,
+        subjectHint: null,
+        timeRange: {
+          type: 'custom',
+          startAt: '2026-04-22T00:00:00.000Z',
+          endAt: '2026-04-24T00:00:00.000Z',
+        },
+        limit: 10,
+        status: 'all',
+      },
+      { userId: 'user_1' }
+    )
+
+    expect(result).toEqual({
+      ok: true,
+      target: 'todos',
+      items: [{ id: 'todo_2', type: 'todo', createdAt: new Date('2026-04-23T09:00:00.000Z') }],
       total: 1,
     })
   })
@@ -107,6 +160,7 @@ describe('workspaceTools', () => {
     expect(mocks.searchWorkspaceAssets).toHaveBeenCalledWith({
       userId: 'user_1',
       query: '木曜日咖啡不存在的冷门内部代号',
+      timeFilter: null,
       typeHint: null,
     })
     expect(result).toEqual({
