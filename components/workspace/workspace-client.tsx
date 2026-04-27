@@ -14,7 +14,7 @@ import { RecentItem } from './workspace-result-panels'
 import { WorkspaceRunPanel } from './workspace-run-panel'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
-import type { WorkspaceRunApiResponse } from '@/shared/workspace/workspace-runner.types'
+import type { WorkspaceRunResult } from '@/shared/workspace/workspace-run-protocol'
 
 function QuickInputSuggestions({
   onSuggestionClick,
@@ -63,26 +63,23 @@ export function WorkspaceClient({
   const [recentItems, setRecentItems] = useState(recentAssets)
   const isSubmittingRef = useRef(false)
 
-  const handleWorkspaceResult = useCallback((result: WorkspaceRunApiResponse['data']) => {
-    if (result.kind !== 'mutation' || result.action !== 'create' || !result.item) {
+  const handleWorkspaceResult = useCallback((result: WorkspaceRunResult) => {
+    const data = result.data as { kind?: string; action?: string; item?: AssetListItem } | null
+    if (!data || data.kind !== 'mutation' || data.action !== 'create' || !data.item) {
       return
     }
 
-    const createdItem = result.item
+    const createdItem = data.item
     setRecentItems((items) => [
       createdItem,
       ...items.filter((item) => item.id !== createdItem.id),
     ].slice(0, 10))
   }, [])
 
-  const { state, submitInput, resetRun } = useWorkspaceStream({
+  const { state, submitInput, resetRun, resumeInteraction } = useWorkspaceStream({
     onResult: handleWorkspaceResult,
   })
-  const hasRunPanel =
-    state.status === 'streaming' ||
-    state.status === 'error' ||
-    state.phases.length > 0 ||
-    Boolean(state.assistantText)
+  const hasRunPanel = state.status !== 'idle'
 
   async function handleSubmit() {
     if (isSubmittingRef.current || state.status === 'streaming') {
@@ -153,7 +150,7 @@ export function WorkspaceClient({
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={state.status === 'streaming'}
+            disabled={state.status === 'streaming' || state.status === 'awaiting_user'}
             className="absolute right-3 bottom-3 h-8 rounded-full px-3 text-xs sm:right-4 sm:bottom-3.5 sm:h-9 sm:px-4 sm:text-sm"
           >
             {state.status === 'streaming' ? (
@@ -183,11 +180,15 @@ export function WorkspaceClient({
         {hasRunPanel && (
           <WorkspaceRunPanel
             key="run-panel"
-            status={state.status === 'idle' ? 'success' : state.status}
-            assistantText={state.assistantText}
-            phases={state.phases}
-            result={state.result}
+            status={state.status}
+            assistantText={state.result?.summary ?? null}
+            phases={[]}
+            result={state.result?.data as Parameters<typeof WorkspaceRunPanel>[0]['result']}
             errorMessage={state.errorMessage}
+            runId={state.runId}
+            interaction={state.interaction}
+            timeline={state.timeline}
+            onResume={resumeInteraction}
           />
         )}
       </AnimatePresence>

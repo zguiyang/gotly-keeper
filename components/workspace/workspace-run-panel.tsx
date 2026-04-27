@@ -2,9 +2,22 @@
 
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
+import { CandidatePicker } from './candidate-picker'
+import { DraftTaskEditor } from './draft-task-editor'
+import { PlanPreviewCard } from './plan-preview-card'
+import { RunTimeline } from './run-timeline'
+import { SlotClarificationForm } from './slot-clarification-form'
+import { UnderstandingPreview } from './understanding-preview'
 import { WorkspaceQueryResultsContent } from './workspace-result-panels'
 import { workspaceMetaTextClassName, workspacePillClassName } from './workspace-view-primitives'
 
+import type {
+  WorkspaceInteraction,
+  WorkspaceInteractionResponse,
+  WorkspaceRunStreamEvent,
+  WorkspaceUnderstandingPreview,
+  WorkspacePlanPreview,
+} from '@/shared/workspace/workspace-run-protocol'
 import type {
   WorkspaceRunApiData,
   WorkspaceRunApiPhase,
@@ -227,18 +240,53 @@ function FinalResult({
   )
 }
 
+function InteractionPanel({
+  interaction,
+  onResume,
+}: {
+  interaction: WorkspaceInteraction
+  onResume: (response: WorkspaceInteractionResponse) => void
+}) {
+  switch (interaction.type) {
+    case 'select_candidate':
+      return <CandidatePicker interaction={interaction} onSubmit={onResume} />
+    case 'clarify_slots':
+      return <SlotClarificationForm interaction={interaction} onSubmit={onResume} />
+    case 'edit_draft_tasks':
+      return <DraftTaskEditor interaction={interaction} onSubmit={onResume} />
+    case 'confirm_plan':
+      return <PlanPreviewCard interaction={interaction} onSubmit={onResume} />
+    default:
+      return null
+  }
+}
+
 export function WorkspaceRunPanel({
   status,
   assistantText,
   phases,
   result = null,
   errorMessage = null,
+  runId,
+  interaction,
+  timeline,
+  understandingPreview,
+  planPreview,
+  correctionNotes,
+  onResume,
 }: {
-  status: 'streaming' | 'success' | 'error'
+  status: 'idle' | 'streaming' | 'awaiting_user' | 'success' | 'error'
   assistantText: string | null
   phases: WorkspaceRunApiPhase[]
   result?: WorkspaceRunApiData | null
   errorMessage?: string | null
+  runId?: string
+  interaction?: WorkspaceInteraction
+  timeline?: WorkspaceRunStreamEvent[]
+  understandingPreview?: WorkspaceUnderstandingPreview | null
+  planPreview?: WorkspacePlanPreview | null
+  correctionNotes?: string[]
+  onResume?: (response: WorkspaceInteractionResponse) => void
 }) {
   const visiblePhase = getVisiblePhase(phases)
 
@@ -252,7 +300,17 @@ export function WorkspaceRunPanel({
       className="mb-8 rounded-[1.75rem] border border-border/10 bg-surface-container-lowest px-4 py-4 shadow-[var(--shadow-soft)] sm:px-5"
     >
       <AnimatePresence mode="wait" initial={false}>
-        {status === 'streaming' ? (
+        {status === 'awaiting_user' && interaction && onResume ? (
+          <motion.div
+            key="interaction"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <InteractionPanel interaction={interaction} onResume={onResume} />
+          </motion.div>
+        ) : status === 'streaming' ? (
           <motion.div
             key="current-step"
             initial={{ opacity: 0, y: 8 }}
@@ -274,7 +332,7 @@ export function WorkspaceRunPanel({
               assistantText={assistantText}
               result={result}
               errorMessage={errorMessage}
-              status={status}
+              status={(status === 'idle' ? 'success' : status) as 'success' | 'error'}
             />
           </motion.div>
         )}
