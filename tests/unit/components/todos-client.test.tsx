@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { TodosClient } from '@/components/workspace/todos-client'
-import type { AssetListItem } from '@/shared/assets/assets.types'
 import { createAssetFixture } from '@/tests/support/factories/asset.factory'
+
+import type { AssetListItem } from '@/shared/assets/assets.types'
+import type React from 'react'
 
 const toggleCompletionMock = vi.fn<(assetId: string, completed: boolean) => Promise<AssetListItem | null>>(
   async () => null

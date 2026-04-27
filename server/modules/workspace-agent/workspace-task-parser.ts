@@ -1,7 +1,7 @@
 import 'server-only'
 
-import { isAiTimeoutError } from '@/server/lib/ai/ai.errors'
 import { runAiGeneration } from '@/server/lib/ai/ai-runner'
+import { isAiTimeoutError } from '@/server/lib/ai/ai.errors'
 import { buildWorkspaceSystemPrompt } from '@/server/lib/ai/ai.prompts'
 import { WORKSPACE_TASK_PARSE_TIMEOUT_MS } from '@/server/lib/config/constants'
 import { renderPrompt } from '@/server/lib/prompt-template'

@@ -1,7 +1,8 @@
 'use client'
 
-import { useMemo } from 'react'
-
+import { CodeNode } from '@lexical/code'
+import { LinkNode } from '@lexical/link'
+import { ListItemNode, ListNode } from '@lexical/list'
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
@@ -16,18 +17,16 @@ import {
   QUOTE,
   UNORDERED_LIST,
 } from '@lexical/markdown'
-import { CodeNode } from '@lexical/code'
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin'
-import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
+import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary'
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
-import { LinkNode } from '@lexical/link'
-import { ListItemNode, ListNode } from '@lexical/list'
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
+import { useMemo } from 'react'
 
 import { cn } from '@/lib/utils'
 
