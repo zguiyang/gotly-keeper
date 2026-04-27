@@ -1,20 +1,24 @@
-<svg width="220" height="48" viewBox="0 0 220 48" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    .fg { fill: currentColor; }
-    .stroke { stroke: currentColor; }
-  </style>
+<svg width="220" height="48" viewBox="0 0 220 48" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="gotly-keeper-logo-title gotly-keeper-logo-desc">
+  <title id="gotly-keeper-logo-title">Gotly Keeper logo</title>
+  <desc id="gotly-keeper-logo-desc">A friendly G shaped robot-face icon with the Gotly Keeper wordmark.</desc>
 
-  <!-- Icon background (auto adapts via opacity) -->
-  <rect x="0" y="0" width="48" height="48" rx="12" fill="currentColor" opacity="0.1"/>
+  <g transform="translate(0 0) scale(0.5581395349)">
+    <rect x="0" y="5" width="86" height="76" rx="24" fill="#163A6B" />
+    <path
+      d="M59 27H46C35 27 27 35 27 43C27 53 35 60 46 60H60"
+      fill="none"
+      stroke="#FFFFFF"
+      stroke-width="8.3"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path d="M53 43H63" fill="none" stroke="#FFFFFF" stroke-width="8.3" stroke-linecap="round" />
+    <circle cx="30.5" cy="32" r="3.8" fill="#FFFFFF" />
+    <circle cx="30.5" cy="53.5" r="3.2" fill="#FFFFFF" opacity="0.95" />
+    <path d="M28.5 63C31.5 65.5 35 66.5 39 66.5" fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" />
+  </g>
 
-  <!-- Chat bubble -->
-  <path d="M14 14C14 11.7909 15.7909 10 18 10H30C32.2091 10 34 11.7909 34 14V22C34 24.2091 32.2091 26 30 26H22L17 30V26H18C15.7909 26 14 24.2091 14 22V14Z" fill="currentColor" opacity="0.2"/>
-
-  <!-- Check -->
-  <path d="M20 18L24 22L30 16" class="stroke" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-
-  <!-- Text -->
-  <text x="60" y="30" class="fg" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="600">
+  <text x="60" y="30" fill="#163A6B" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="600">
     Gotly Keeper
   </text>
 </svg>
