@@ -75,7 +75,10 @@ async function readWorkspaceRunStream(
 
 export async function streamWorkspaceRun(
   body: WorkspaceRunRequest,
-  callbacks: WorkspaceRunStreamCallbacks
+  callbacks: WorkspaceRunStreamCallbacks,
+  options: {
+    signal?: AbortSignal
+  } = {}
 ) {
   const response = await fetch('/api/workspace/run', {
     method: 'POST',
@@ -84,6 +87,7 @@ export async function streamWorkspaceRun(
       'content-type': 'application/json',
     },
     body: JSON.stringify(body),
+    signal: options.signal,
   })
 
   if (!response.ok) {

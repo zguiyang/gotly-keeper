@@ -111,6 +111,7 @@ export async function composeWorkspaceAnswer(input: {
   task: WorkspaceTask
   plan: WorkspaceExecutionPlan
   data: WorkspaceToolResult
+  signal?: AbortSignal
 }): Promise<WorkspaceComposeResult> {
   const fallbackAnswer = buildFallbackAnswer(input.task, input.data)
 
@@ -135,6 +136,7 @@ export async function composeWorkspaceAnswer(input: {
       systemPrompt,
       userPrompt,
       timeoutMs: NOTE_SUMMARY_MODEL_TIMEOUT_MS,
+      abortSignal: input.signal,
     })
 
     if (!result.success) {

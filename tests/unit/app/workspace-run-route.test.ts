@@ -116,6 +116,7 @@ describe('/api/workspace/run POST', () => {
     expect(requireWorkspaceUserAccessMock).toHaveBeenCalledTimes(1)
     expect(runWorkspaceMock).toHaveBeenCalledWith({
       message: '帮我找一下最近笔记',
+      signal: req.signal,
       userId: 'user_123',
       onEvent: expect.any(Function),
     })
@@ -155,6 +156,7 @@ describe('/api/workspace/run POST', () => {
 
     expect(runWorkspaceMock).toHaveBeenCalledWith({
       message: '总结最近笔记重点',
+      signal: req.signal,
       userId: 'user_123',
       onEvent: expect.any(Function),
     })

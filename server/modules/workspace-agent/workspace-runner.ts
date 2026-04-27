@@ -12,6 +12,20 @@ type RunWorkspaceInput = {
   message: string
   userId: string
   onEvent?: (event: WorkspaceRunEvent) => void
+  signal?: AbortSignal
+}
+
+export class WorkspaceRunAbortedError extends Error {
+  constructor() {
+    super('Workspace run aborted.')
+    this.name = 'WorkspaceRunAbortedError'
+  }
+}
+
+function throwIfAborted(signal: AbortSignal | undefined) {
+  if (signal?.aborted) {
+    throw new WorkspaceRunAbortedError()
+  }
 }
 
 function emitEvent(
@@ -22,6 +36,8 @@ function emitEvent(
 }
 
 export async function runWorkspace(input: RunWorkspaceInput): Promise<WorkspaceRunResult> {
+  throwIfAborted(input.signal)
+
   emitEvent(input.onEvent, {
     phase: 'parse',
     status: 'active',
@@ -33,8 +49,13 @@ export async function runWorkspace(input: RunWorkspaceInput): Promise<WorkspaceR
     task = await parseWorkspaceTask({
       message: input.message,
       userId: input.userId,
+      signal: input.signal,
     })
   } catch (error) {
+    if (error instanceof WorkspaceRunAbortedError) {
+      throw error
+    }
+
     emitEvent(input.onEvent, {
       phase: 'parse',
       status: 'failed',
@@ -61,8 +82,13 @@ export async function runWorkspace(input: RunWorkspaceInput): Promise<WorkspaceR
 
   let plan
   try {
+    throwIfAborted(input.signal)
     plan = routeWorkspaceTask(task)
   } catch (error) {
+    if (error instanceof WorkspaceRunAbortedError) {
+      throw error
+    }
+
     emitEvent(input.onEvent, {
       phase: 'route',
       status: 'failed',
@@ -93,6 +119,7 @@ export async function runWorkspace(input: RunWorkspaceInput): Promise<WorkspaceR
 
   let data: WorkspaceToolResult
   try {
+    throwIfAborted(input.signal)
     data = await executeWorkspaceTool(
       {
         toolName: plan.toolName as keyof typeof workspaceTools,
@@ -115,6 +142,8 @@ export async function runWorkspace(input: RunWorkspaceInput): Promise<WorkspaceR
       plan,
     }
   }
+
+  throwIfAborted(input.signal)
 
   if (!data.ok) {
     emitEvent(input.onEvent, {
@@ -149,6 +178,7 @@ export async function runWorkspace(input: RunWorkspaceInput): Promise<WorkspaceR
     task,
     plan,
     data,
+    signal: input.signal,
   })
 
   emitEvent(input.onEvent, {

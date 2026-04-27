@@ -33,6 +33,7 @@ function buildTimeContext(now: Date = new Date()) {
 export async function parseWorkspaceTask(input: {
   message: string
   userId: string
+  signal?: AbortSignal
 }): Promise<WorkspaceTask> {
   const trimmedMessage = input.message.trim()
   if (!trimmedMessage) {
@@ -55,6 +56,7 @@ export async function parseWorkspaceTask(input: {
     systemPrompt,
     userPrompt,
     timeoutMs: WORKSPACE_TASK_PARSE_TIMEOUT_MS,
+    abortSignal: input.signal,
   })
 
   if (!result.success) {

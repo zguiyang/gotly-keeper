@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { streamWorkspaceRun } from '@/client/workspace/workspace-run-stream.client'
 
@@ -54,9 +55,21 @@ export function useWorkspaceStream(options: {
   const [state, setState] = useState<WorkspaceRunUiState>({
     ...INITIAL_RUN_STATE,
   })
+  const abortControllerRef = useRef<AbortController | null>(null)
+  const requestIdRef = useRef(0)
+
+  useEffect(() => () => {
+    abortControllerRef.current?.abort()
+  }, [])
 
   const runRequest = useCallback(
     async (request: WorkspaceRunRequest) => {
+      requestIdRef.current += 1
+      const requestId = requestIdRef.current
+      abortControllerRef.current?.abort()
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
+
       setState({
         status: 'streaming',
         assistantText: null,
@@ -73,6 +86,10 @@ export function useWorkspaceStream(options: {
 
         await streamWorkspaceRun(request, {
           onEvent: (event) => {
+            if (requestIdRef.current !== requestId || abortController.signal.aborted) {
+              return
+            }
+
             if (event.type === 'phase') {
               setState((current) => ({
                 ...current,
@@ -98,10 +115,14 @@ export function useWorkspaceStream(options: {
                   : event.response.data.message,
             })
           },
-        })
+        }, { signal: abortController.signal })
 
         if (runState.streamError) {
           throw runState.streamError
+        }
+
+        if (requestIdRef.current !== requestId || abortController.signal.aborted) {
+          return
         }
 
         if (!runState.finalResponse) {
@@ -110,6 +131,10 @@ export function useWorkspaceStream(options: {
 
         options.onResult?.(runState.finalResponse.data)
       } catch (error) {
+        if (abortController.signal.aborted || requestIdRef.current !== requestId) {
+          return
+        }
+
         setState({
           status: 'error',
           assistantText: null,
@@ -117,6 +142,10 @@ export function useWorkspaceStream(options: {
           result: null,
           errorMessage: error instanceof Error ? error.message : '处理失败，请重试。',
         })
+      } finally {
+        if (abortControllerRef.current === abortController) {
+          abortControllerRef.current = null
+        }
       }
     },
     [options]
