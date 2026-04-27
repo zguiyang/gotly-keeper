@@ -1,6 +1,7 @@
 import Link from "next/link";
 import * as React from "react";
 
+import { BrandLogo } from "@/components/brand-logo";
 import { cn } from "@/lib/utils";
 
 interface AuthPageFooterProps {
@@ -26,10 +27,7 @@ export function AuthPageFooter({ className, compact = false }: AuthPageFooterPro
         )}
       >
         <div className={cn(compact ? "text-center" : "mb-0")}>
-          <span className="text-sm font-semibold">Gotly Keeper</span>
-          <p className="mt-1 text-xs leading-relaxed opacity-70">
-            © 2024 Gotly Keeper. The Digital Curator.
-          </p>
+          <BrandLogo className="h-8" />
         </div>
         <div className="flex gap-8 text-xs tracking-wide">
           <Link className="opacity-70 transition-opacity hover:text-primary hover:opacity-100" href="/privacy">

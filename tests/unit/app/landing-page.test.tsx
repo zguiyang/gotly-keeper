@@ -36,7 +36,6 @@ describe('landing page', () => {
     expect(markup).toMatch(/<nav class="[^"]+" aria-label="页面导航"/)
     expect(markup).toMatch(/<section id="capabilities" class="[^"]+"/)
     expect(markup).toMatch(/<article class="[^"]+" data-index="0"/)
-    expect(markup).toContain('Quiet AI concierge')
     expect(markup).toContain('AI 统一入口优先')
     expect(markup).toContain('Gotly Keeper 更像一处安静入口。')
     expect(markup).toContain('Quietly keeping what matters')

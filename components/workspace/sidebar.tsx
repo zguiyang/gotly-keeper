@@ -1,15 +1,13 @@
 "use client"
 
+import { BrandLogo } from '@/components/brand-logo'
 import { WorkspaceNavList } from '@/components/workspace/workspace-nav-list'
 
 export function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 z-50 hidden h-full w-64 flex-col border-r border-border/15 bg-muted/45 px-4 py-6 text-sm lg:flex">
       <div className="mb-10 px-2.5">
-        <div className="font-headline text-[1.9rem] font-semibold tracking-[-0.04em] text-primary">Gotly Keeper</div>
-        <div className="mt-1 text-[11px] font-medium tracking-normal text-on-surface-variant/75">
-          工作区
-        </div>
+        <BrandLogo className="h-9" />
       </div>
 
       <nav className="flex-1">

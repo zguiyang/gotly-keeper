@@ -3,6 +3,7 @@
 import { Command, Menu, Sparkles } from "lucide-react"
 
 import { AccountMenu } from "@/components/account-menu"
+import { BrandLogo } from "@/components/brand-logo"
 import { ThemeToggle } from "@/components/theme/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -25,16 +26,13 @@ export function TopAppBar({ userName, userEmail, userImage }: TopAppBarProps) {
           >
             <Menu />
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 border-r border-border/15 bg-surface p-0">
-            <SheetTitle className="sr-only">工作区导航</SheetTitle>
-            <div className="flex h-full flex-col">
-              <div className="border-b border-border/15 px-4 py-6">
-                <div className="font-headline text-[1.9rem] font-semibold tracking-[-0.04em] text-primary">Gotly Keeper</div>
-                <div className="mt-1 text-[11px] font-medium tracking-normal text-on-surface-variant/75">
-                  工作区
+            <SheetContent side="left" className="w-64 border-r border-border/15 bg-surface p-0">
+              <SheetTitle className="sr-only">工作区导航</SheetTitle>
+              <div className="flex h-full flex-col">
+                <div className="border-b border-border/15 px-4 py-6">
+                  <BrandLogo className="h-9" />
                 </div>
-              </div>
-              <nav className="flex-1 px-2 py-4">
+                <nav className="flex-1 px-2 py-4">
                 <WorkspaceNavList variant="sheet" />
               </nav>
               <div className="border-t border-border/15 px-4 py-6">
