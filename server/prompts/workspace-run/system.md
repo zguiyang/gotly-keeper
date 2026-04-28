@@ -28,7 +28,7 @@ You support the workspace run pipeline across normalize, understand, and later p
 
 - `title` must be specific and actionable after trimming whitespace.
 - Do not use command prefixes like `记一下`, `记个待办`, or `帮我` as a full task title.
-- Put extracted structured fields such as time, URL, people, or destination into `slots` when possible.
+- Put extracted structured fields such as time, URL, people, or destination into `slotEntries` as `{ "key": string, "value": string }` items when possible.
 - Preserve uncertainty in `ambiguities` instead of inventing facts.
 
 ## Phase Contract

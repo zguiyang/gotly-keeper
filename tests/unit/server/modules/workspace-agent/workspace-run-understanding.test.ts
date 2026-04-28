@@ -266,6 +266,122 @@ describe('workspace-run-understanding', () => {
     expect(result.draftTasks.map((task) => task.id)).toEqual(['task_1', 'task_2'])
   })
 
+  it('accepts AI-friendly slotEntries and converts them to slots', async () => {
+    const result = await understandWorkspaceRunInput({
+      normalized: {
+        rawText: '记一下：https://example.com 定价页',
+        normalizedText: '记一下：https://example.com 定价页',
+        urls: ['https://example.com'],
+        separators: ['：'],
+        typoCandidates: [],
+        timeHints: [],
+      },
+      runModel: vi.fn().mockResolvedValue({
+        draftTasks: [
+          {
+            id: 'task_1',
+            intent: 'create',
+            target: 'bookmarks',
+            title: '定价页',
+            confidence: 0.88,
+            ambiguities: [],
+            corrections: [],
+            slotEntries: [
+              { key: 'url', value: 'https://example.com' },
+              { key: 'summary', value: '产品定价说明' },
+            ],
+          },
+        ],
+      }),
+    })
+
+    expect(result.draftTasks).toEqual([
+      {
+        id: 'task_1',
+        intent: 'create',
+        target: 'bookmarks',
+        title: '定价页',
+        confidence: 0.88,
+        ambiguities: [],
+        corrections: [],
+        slots: {
+          url: 'https://example.com',
+          summary: '产品定价说明',
+        },
+      },
+    ])
+  })
+
+  it('rejects duplicate keys in AI-friendly slotEntries', async () => {
+    await expect(
+      understandWorkspaceRunInput({
+        normalized: {
+          rawText: '记一下：https://example.com 定价页',
+          normalizedText: '记一下：https://example.com 定价页',
+          urls: ['https://example.com'],
+          separators: ['：'],
+          typoCandidates: [],
+          timeHints: [],
+        },
+        runModel: vi.fn().mockResolvedValue({
+          draftTasks: [
+            {
+              id: 'task_1',
+              intent: 'create',
+              target: 'bookmarks',
+              title: '定价页',
+              confidence: 0.88,
+              ambiguities: [],
+              corrections: [],
+              slotEntries: [
+                { key: 'url', value: 'https://example.com/a' },
+                { key: 'url', value: 'https://example.com/b' },
+              ],
+            },
+          ],
+        }),
+      })
+    ).rejects.toThrow('slotEntries must not contain duplicate keys')
+  })
+
+  it('prefers slotEntries when both slots and slotEntries are present', async () => {
+    const result = await understandWorkspaceRunInput({
+      normalized: {
+        rawText: '记一下：https://example.com 定价页',
+        normalizedText: '记一下：https://example.com 定价页',
+        urls: ['https://example.com'],
+        separators: ['：'],
+        typoCandidates: [],
+        timeHints: [],
+      },
+      runModel: vi.fn().mockResolvedValue({
+        draftTasks: [
+          {
+            id: 'task_1',
+            intent: 'create',
+            target: 'bookmarks',
+            title: '定价页',
+            confidence: 0.88,
+            ambiguities: [],
+            corrections: [],
+            slots: {
+              url: 'https://stale.example.com',
+            },
+            slotEntries: [
+              { key: 'url', value: 'https://example.com' },
+              { key: 'summary', value: '产品定价说明' },
+            ],
+          },
+        ],
+      }),
+    })
+
+    expect(result.draftTasks[0]?.slots).toEqual({
+      url: 'https://example.com',
+      summary: '产品定价说明',
+    })
+  })
+
   it('rejects intents outside the MVP action boundary', async () => {
     await expect(
       understandWorkspaceRunInput({

@@ -20,6 +20,10 @@ const allowedIntentSchema = z.enum([
   'update',
 ])
 const allowedTargetSchema = z.enum(['notes', 'todos', 'bookmarks'])
+const understandingSlotEntrySchema = z.object({
+  key: z.string().trim().min(1),
+  value: z.string(),
+})
 
 const understandingTaskSchema = workspaceDraftTaskSchema
   .extend({
@@ -46,9 +50,80 @@ const understandingTaskSchema = workspaceDraftTaskSchema
     }
   })
 
+const understandingModelTaskSchema = workspaceDraftTaskSchema
+  .omit({ slots: true })
+  .extend({
+    confidence: z.number().min(0).max(1),
+    intent: allowedIntentSchema,
+    target: allowedTargetSchema,
+    title: z.string().transform((title) => title.trim()).pipe(z.string().min(1)),
+    slotEntries: z.array(understandingSlotEntrySchema).default([]),
+  })
+  .superRefine((task, ctx) => {
+    if (commandOnlyTitleRegex.test(task.title)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'task title cannot be only a command prefix',
+        path: ['title'],
+      })
+    }
+
+    if (task.intent === 'update' && task.target !== 'todos') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'update intent only supports todos target',
+        path: ['target'],
+      })
+    }
+
+    const uniqueKeys = new Set<string>()
+    for (const [index, entry] of task.slotEntries.entries()) {
+      if (uniqueKeys.has(entry.key)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'slotEntries must not contain duplicate keys',
+          path: ['slotEntries', index, 'key'],
+        })
+        continue
+      }
+
+      uniqueKeys.add(entry.key)
+    }
+  })
+
+function slotEntriesToSlots(slotEntries: Array<{ key: string; value: string }>): Record<string, string> {
+  return Object.fromEntries(slotEntries.map((entry) => [entry.key, entry.value]))
+}
+
+export const understandingModelResultSchema = z.object({
+  draftTasks: z.array(understandingModelTaskSchema).min(1, 'draftTasks must be non-empty'),
+})
+
 export const understandingResultSchema = z.object({
   draftTasks: z.array(understandingTaskSchema).min(1, 'draftTasks must be non-empty'),
 })
+
+function normalizeModelDraftTasks(tasks: z.infer<typeof understandingModelTaskSchema>[]) {
+  return tasks.map(({ slotEntries, ...task }) => ({
+    ...task,
+    slots: slotEntriesToSlots(slotEntries),
+  }))
+}
+
+function prefersModelSchema(value: unknown) {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const draftTasks = (value as { draftTasks?: unknown }).draftTasks
+  if (!Array.isArray(draftTasks)) {
+    return false
+  }
+
+  return draftTasks.some(
+    (task) => task && typeof task === 'object' && 'slotEntries' in (task as Record<string, unknown>)
+  )
+}
 
 export type WorkspaceRunModel = (input: {
   systemPrompt: string
@@ -94,16 +169,52 @@ export async function understandWorkspaceRunInput(input: {
     userPrompt,
   })
 
+  if (prefersModelSchema(modelOutput)) {
+    const modelParsed = understandingModelResultSchema.safeParse(modelOutput)
+    if (!modelParsed.success) {
+      const issue = modelParsed.error.issues[0]
+      throw new WorkspaceRunUnderstandingError(issue?.message ?? 'Invalid understanding output')
+    }
+
+    return {
+      rawInput: input.normalized.rawText,
+      normalizedInput: input.normalized.normalizedText,
+      draftTasks: toDraftTasks(normalizeModelDraftTasks(modelParsed.data.draftTasks)),
+      corrections: dedupeCorrections(typoCandidatesToCorrections(input.normalized.typoCandidates)),
+    }
+  }
+
   const parsed = understandingResultSchema.safeParse(modelOutput)
   if (!parsed.success) {
-    const issue = parsed.error.issues[0]
+    const modelParsed = understandingModelResultSchema.safeParse(modelOutput)
+
+    if (!modelParsed.success) {
+      const preferredIssue = prefersModelSchema(modelOutput)
+        ? modelParsed.error.issues[0]
+        : parsed.error.issues[0] ?? modelParsed.error.issues[0]
+      throw new WorkspaceRunUnderstandingError(
+        preferredIssue?.message ?? 'Invalid understanding output'
+      )
+    }
+
+    return {
+      rawInput: input.normalized.rawText,
+      normalizedInput: input.normalized.normalizedText,
+      draftTasks: toDraftTasks(normalizeModelDraftTasks(modelParsed.data.draftTasks)),
+      corrections: dedupeCorrections(typoCandidatesToCorrections(input.normalized.typoCandidates)),
+    }
+  }
+
+  const validated = understandingResultSchema.safeParse(parsed.data)
+  if (!validated.success) {
+    const issue = validated.error.issues[0]
     throw new WorkspaceRunUnderstandingError(issue?.message ?? 'Invalid understanding output')
   }
 
   return {
     rawInput: input.normalized.rawText,
     normalizedInput: input.normalized.normalizedText,
-    draftTasks: toDraftTasks(parsed.data.draftTasks),
+    draftTasks: toDraftTasks(validated.data.draftTasks),
     corrections: dedupeCorrections(typoCandidatesToCorrections(input.normalized.typoCandidates)),
   }
 }
