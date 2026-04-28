@@ -3,7 +3,7 @@ import 'server-only'
 import { z } from 'zod'
 
 import { buildWorkspaceSystemPrompt, runAiGeneration } from '@/server/lib/ai'
-import { writeBookmarkEnrichResult } from '@/server/modules/workspace/bookmark-enrich.module'
+import { writeBookmarkEnrichResult } from '@/server/services/bookmark/bookmark-enrich.service'
 import { dequeueBookmarkEnrichTask } from '@/server/services/bookmark/bookmark-queue.service'
 import { checkUrlSafety } from '@/server/services/bookmark/url-safety'
 

@@ -9,7 +9,6 @@ import {
 } from '@/server/services/assets/asset-lifecycle'
 import {
   archiveBookmark,
-  createBookmark,
   getBookmarkById,
   listBookmarks,
   listBookmarksPage,
@@ -22,7 +21,6 @@ import {
 } from '@/server/services/bookmarks'
 import {
   archiveNote,
-  createNote,
   getNoteById,
   listNotes,
   listNotesPage,
@@ -34,11 +32,9 @@ import {
   type NoteListItem,
 } from '@/server/services/notes'
 import { createCursorPage } from '@/server/services/pagination'
-import { searchAssets } from '@/server/services/search/assets-search.service'
 import { deleteEmbeddingsForAsset } from '@/server/services/search/semantic-search.service'
 import {
   archiveTodo,
-  createTodo,
   getTodoById,
   listCompletedTodos,
   listOverdueTodos,
@@ -50,9 +46,7 @@ import {
   moveTodoToTrash,
   purgeTodo,
   restoreTodoFromTrash,
-  setTodoCompletion,
   unarchiveTodo,
-  updateTodo,
   type TodoListItem,
 } from '@/server/services/todos'
 import {
@@ -61,10 +55,17 @@ import {
 } from '@/shared/assets/asset-lifecycle.types'
 
 
+import { scheduleBookmarkEnrichTask } from '@/server/services/bookmark/bookmark-enrich.service'
 import {
-  buildPendingBookmarkMetaForResponse,
-  scheduleBookmarkEnrichTask,
-} from './bookmark-enrich.module'
+  createWorkspaceLinkAsset,
+  createWorkspaceNoteAsset,
+  createWorkspaceTodoAsset,
+  listWorkspaceAssets as listWorkspaceAssetsService,
+  searchWorkspaceAssets as searchWorkspaceAssetsService,
+  setWorkspaceTodoAssetCompletion,
+  updateWorkspaceTodoAsset,
+  WorkspaceAssetsError,
+} from '@/server/services/workspace/workspace-assets.service'
 import { summarizeWorkspaceRecentBookmarksInternal } from './bookmarks.summary'
 import {
   createMixedWorkspaceAssetsPage,
@@ -210,19 +211,16 @@ export async function createWorkspaceNote(input: {
   content?: string | null
   summary?: string | null
 }): Promise<Extract<WorkspaceAssetActionResult, { kind: 'created' }>> {
-  const note = await createNote({
+  const asset = await createWorkspaceNoteAsset({
     userId: input.userId,
-    ...(input.rawInput !== undefined
-      ? {
-          rawInput: input.rawInput,
-          title: input.title,
-          content: input.content,
-          summary: input.summary,
-        }
-      : { text: input.text ?? '' }),
+    text: input.rawInput === undefined ? input.text ?? '' : undefined,
+    rawInput: input.rawInput,
+    title: input.rawInput !== undefined ? input.title ?? null : undefined,
+    content: input.rawInput !== undefined ? input.content ?? null : undefined,
+    summary: input.rawInput !== undefined ? input.summary ?? null : undefined,
   })
 
-  return { kind: 'created', asset: toAssetListItemFromNote(note) }
+  return { kind: 'created', asset }
 }
 
 export async function createWorkspaceTodo(input: {
@@ -234,20 +232,16 @@ export async function createWorkspaceTodo(input: {
   timeText?: string | null
   dueAt?: Date | null
 }): Promise<Extract<WorkspaceAssetActionResult, { kind: 'created' }>> {
-  const todo = await createTodo({
+  const asset = await createWorkspaceTodoAsset({
     userId: input.userId,
-    ...(input.rawInput !== undefined
-      ? {
-          rawInput: input.rawInput,
-          title: input.title,
-          content: input.content,
-          timeText: input.timeText,
-          dueAt: input.dueAt,
-        }
-      : { text: input.text ?? '' }),
+    rawInput: input.rawInput ?? input.text ?? '',
+    title: input.rawInput !== undefined ? input.title ?? null : null,
+    content: input.rawInput !== undefined ? input.content ?? null : null,
+    timeText: input.rawInput !== undefined ? input.timeText ?? null : null,
+    dueAt: input.rawInput !== undefined ? input.dueAt ?? null : null,
   })
 
-  return { kind: 'created', asset: toAssetListItemFromTodo(todo) }
+  return { kind: 'created', asset }
 }
 
 export async function createWorkspaceLink(input: {
@@ -259,26 +253,13 @@ export async function createWorkspaceLink(input: {
   note?: string | null
   summary?: string | null
 }): Promise<Extract<WorkspaceAssetActionResult, { kind: 'created' }>> {
-  const bookmark = await createBookmark({
+  const asset = await createWorkspaceLinkAsset({
     userId: input.userId,
-    ...(input.rawInput !== undefined
-      ? {
-          rawInput: input.rawInput,
-          title: input.title,
-          note: input.note,
-          summary: input.summary,
-        }
-      : { text: input.text ?? '' }),
+    rawInput: input.rawInput ?? input.text ?? '',
     url: input.url,
-  })
-
-  const asset = toAssetListItemFromBookmark(bookmark)
-  asset.bookmarkMeta = buildPendingBookmarkMetaForResponse()
-
-  void scheduleBookmarkEnrichTask({
-    bookmarkId: asset.id,
-    userId: input.userId,
-    url: input.url,
+    title: input.rawInput !== undefined ? input.title ?? null : null,
+    note: input.rawInput !== undefined ? input.note ?? null : null,
+    summary: input.rawInput !== undefined ? input.summary ?? null : null,
   })
 
   return { kind: 'created', asset }
@@ -316,20 +297,15 @@ export async function setWorkspaceTodoCompletion(input: {
   assetId: string
   completed: boolean
 }): Promise<AssetListItem> {
-  const updated = await setTodoCompletion({
-    userId: input.userId,
-    todoId: input.assetId,
-    completed: input.completed,
-  })
+  try {
+    return await setWorkspaceTodoAssetCompletion(input)
+  } catch (error) {
+    if (error instanceof WorkspaceAssetsError) {
+      throw new WorkspaceModuleError(error.publicMessage, error.code)
+    }
 
-  if (!updated) {
-    throw new WorkspaceModuleError(
-      '没有找到这条待办，或你没有权限更新它。',
-      WORKSPACE_MODULE_ERROR_CODES.TODO_NOT_FOUND
-    )
+    throw error
   }
-
-  return toAssetListItemFromTodo(updated)
 }
 
 export async function updateWorkspaceNote(input: {
@@ -379,26 +355,23 @@ export async function updateWorkspaceTodo(input: {
   timeText?: string | null
   dueAt?: Date | null
 }): Promise<AssetListItem> {
-  const updated = await updateTodo({
-    userId: input.userId,
-    todoId: input.assetId,
-    text: input.text,
-    rawInput: input.rawInput,
-    title: input.title,
-    content: input.content,
-    timeText: input.timeText,
-    dueAt: input.dueAt,
-  })
+  try {
+    return await updateWorkspaceTodoAsset({
+      userId: input.userId,
+      assetId: input.assetId,
+      rawInput: input.rawInput ?? input.text ?? '',
+      title: input.rawInput !== undefined ? input.title ?? null : null,
+      content: input.rawInput !== undefined ? input.content ?? null : null,
+      timeText: input.rawInput !== undefined ? input.timeText ?? null : null,
+      dueAt: input.rawInput !== undefined ? input.dueAt ?? null : null,
+    })
+  } catch (error) {
+    if (error instanceof WorkspaceAssetsError) {
+      throw new WorkspaceModuleError(error.publicMessage, error.code)
+    }
 
-  if (!updated) {
-    throw new WorkspaceModuleError(
-      '没有找到这条待办，或你没有权限更新它。',
-      WORKSPACE_MODULE_ERROR_CODES.ASSET_NOT_FOUND
-    )
+    throw error
   }
-
-  await deleteEmbeddingsForAsset({ assetType: 'todo', assetId: updated.id })
-  return toAssetListItemFromTodo(updated)
 }
 
 export async function updateWorkspaceBookmark(input: {
@@ -705,39 +678,7 @@ export async function listWorkspaceAssets(input: {
   limit?: number
   lifecycleStatus?: AssetLifecycleStatus
 }): Promise<AssetListItem[]> {
-  const limit = input.limit ?? 50
-  const lifecycleStatus = input.lifecycleStatus ?? ASSET_LIFECYCLE_STATUS.ACTIVE
-
-  if (input.type === 'note') {
-    const notes = await listNotes({ userId: input.userId, limit, lifecycleStatus })
-    return notes.map(toAssetListItemFromNote)
-  }
-
-  if (input.type === 'link') {
-    const bookmarks = await listBookmarks({ userId: input.userId, limit, lifecycleStatus })
-    return bookmarks.map(toAssetListItemFromBookmark)
-  }
-
-  if (input.type === 'todo') {
-    const todos = await listTodos({ userId: input.userId, limit, lifecycleStatus })
-    return todos.map(toAssetListItemFromTodo)
-  }
-
-  const [notes, bookmarks, todos] = await Promise.all([
-    listNotes({ userId: input.userId, limit, lifecycleStatus }),
-    listBookmarks({ userId: input.userId, limit, lifecycleStatus }),
-    listTodos({ userId: input.userId, limit, lifecycleStatus }),
-  ])
-
-  const items: AssetListItem[] = [
-    ...notes.map(toAssetListItemFromNote),
-    ...bookmarks.map(toAssetListItemFromBookmark),
-    ...todos.map(toAssetListItemFromTodo),
-  ]
-
-  items.sort(compareWorkspaceAssetsDesc)
-
-  return items.slice(0, limit)
+  return listWorkspaceAssetsService(input)
 }
 
 export async function listWorkspaceAssetsPage(input: {
@@ -991,11 +932,5 @@ export async function searchWorkspaceAssets(input: {
   timeFilter?: WorkspaceAgentTimeFilter | null
   completionHint?: 'complete' | 'incomplete' | null
 }): Promise<AssetListItem[]> {
-  return searchAssets({
-    userId: input.userId,
-    query: input.query,
-    typeHint: input.typeHint ?? null,
-    timeFilter: input.timeFilter ?? null,
-    completionHint: input.completionHint ?? null,
-  })
+  return searchWorkspaceAssetsService(input)
 }
