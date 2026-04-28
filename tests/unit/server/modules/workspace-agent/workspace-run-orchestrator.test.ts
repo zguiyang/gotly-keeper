@@ -173,6 +173,40 @@ describe('workspace-run-orchestrator', () => {
         })
       )
     })
+
+    it('preserves standardized AI error metadata in run_failed events', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const events: unknown[] = []
+      const aiFailure = Object.assign(new Error('AI provider not configured'), {
+        code: 'AI_PROVIDER_ERROR',
+        retryable: true,
+      })
+
+      const failingModel: WorkspaceRunModel = async () => {
+        throw aiFailure
+      }
+
+      await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '给客户发报价' },
+        store: createMockStore(),
+        runModel: failingModel,
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      expect(events).toContainEqual(
+        expect.objectContaining({
+          type: 'run_failed',
+          error: expect.objectContaining({
+            code: 'AI_PROVIDER_ERROR',
+            message: 'AI provider not configured',
+            retryable: true,
+          }),
+        })
+      )
+    })
   })
 
   describe('preview phase', () => {
