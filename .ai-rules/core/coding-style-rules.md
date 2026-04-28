@@ -139,6 +139,7 @@ Before submitting changes, verify:
 9. Data shapes are stable and external raw data is normalized.
 10. Comments explain rationale and contain no stale notes.
 11. Code is concise without harming clarity.
+12. No unnecessary compatibility layer, fallback branch, or defensive default was added.
 
 ## 12. Relation to Other Rules
 
