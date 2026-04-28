@@ -1,5 +1,6 @@
 import type { OrchestrateWorkspaceRunOptions } from './workspace-run-orchestrator'
 import { PhaseContext, emitEvent, createRunId, getToolResultError, getToolNameFromAction } from './workspace-run-orchestrator.shared'
+import { isWorkspaceRunModelError } from './workspace-run-runtime'
 
 import { normalizeWorkspaceRunInput } from './workspace-run-normalizer'
 import { understandWorkspaceRunInput } from './workspace-run-understanding'
@@ -295,12 +296,15 @@ export async function handleNewInput(
       message: 'Unknown review decision',
     }
   } catch (error) {
+    const errorCode = isWorkspaceRunModelError(error) ? error.code : 'INTERNAL_ERROR'
+    const retryable = isWorkspaceRunModelError(error) ? error.retryable : false
+
     emitEvent(ctx, {
       type: 'run_failed',
       error: {
-        code: 'INTERNAL_ERROR',
+        code: errorCode,
         message: error instanceof Error ? error.message : 'Internal error',
-        retryable: false,
+        retryable,
       },
     })
 
