@@ -5,8 +5,11 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
-  forbid-legacy-test-layout:
+  architecture-and-governance-guards:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,7 +25,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
@@ -30,7 +33,7 @@ jobs:
 
       - name: Forbid __tests__ directories in source tree
         run: |
-          if rg --glob '!node_modules/**' --glob '!.worktrees/**' "__tests__" app server client components hooks shared; then
+          if rg --files app server client components hooks shared | rg '(^|/)__tests__(/|$)'; then
             echo "Found forbidden __tests__ usage in source tree. Place tests under root tests/."
             exit 1
           fi
