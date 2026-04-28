@@ -1,9 +1,9 @@
 import { requireWorkspaceUserAccess } from '@/server/modules/auth/workspace-session'
 import { createWorkspaceRunRuntime } from '@/server/modules/workspace-agent'
 import { orchestrateWorkspaceRun } from '@/server/modules/workspace-agent/workspace-run-orchestrator'
+import { workspaceRunRequestSchema } from '@/shared/workspace/workspace-run-protocol'
 
 import type { WorkspaceRunRequest } from '@/shared/workspace/workspace-run-protocol'
-import { workspaceRunRequestSchema } from '@/shared/workspace/workspace-run-protocol'
 
 function encodeSseEvent(event: unknown) {
   return `event: ${(event as { type: string }).type}\ndata: ${JSON.stringify(event)}\n\n`
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       }
 
       try {
-        const result = await orchestrateWorkspaceRun({
+        await orchestrateWorkspaceRun({
           userId: user.id,
           request,
           store,
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
         if (req.signal.aborted) {
           return
         }
-      } catch (error) {
+      } catch {
         if (req.signal.aborted) {
           return
         }

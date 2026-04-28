@@ -1,17 +1,19 @@
 import 'server-only'
 
-import type { WorkspaceRunRequest } from '@/shared/workspace/workspace-run-protocol'
-import type { WorkspacePendingRunSnapshot } from '@/shared/workspace/workspace-run-protocol'
 
 import { handleNewInput } from './workspace-run-orchestrator.input'
-import { handleResume } from './workspace-run-orchestrator.resume'
 import { handleQuickAction } from './workspace-run-orchestrator.quickaction'
-
+import { handleResume } from './workspace-run-orchestrator.resume'
 import { createWorkspaceRunStore } from './workspace-run-store.drizzle'
 
+import type { SearchWorkspaceRunCandidates } from './workspace-run-planner'
 import type { WorkspaceRunStore } from './workspace-run-store'
 import type { WorkspaceRunModel } from './workspace-run-understanding'
-import type { SearchWorkspaceRunCandidates } from './workspace-run-planner'
+import type {
+  WorkspacePendingRunSnapshot,
+  WorkspaceRunRequest,
+  WorkspaceRunStreamEvent,
+} from '@/shared/workspace/workspace-run-protocol'
 
 export class WorkspaceRunOrchestratorError extends Error {
   constructor(message: string) {
@@ -26,7 +28,7 @@ export type OrchestrateWorkspaceRunOptions = {
   store: WorkspaceRunStore
   runModel: WorkspaceRunModel
   searchCandidates: SearchWorkspaceRunCandidates
-  onEvent?: (event: import('@/shared/workspace/workspace-run-protocol').WorkspaceRunStreamEvent) => void
+  onEvent?: (event: WorkspaceRunStreamEvent) => void
   signal?: AbortSignal
 }
 

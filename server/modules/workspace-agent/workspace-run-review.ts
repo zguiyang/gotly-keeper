@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { ACTION_LABELS } from './workspace-run-action-labels'
+
 import type {
   WorkspaceCandidate,
   WorkspaceInteraction,
@@ -8,7 +10,6 @@ import type {
   WorkspaceUnderstandingPreview,
 } from '@/shared/workspace/workspace-run-protocol'
 
-import { ACTION_LABELS } from './workspace-run-action-labels'
 
 export type WorkspaceCorrectionNote = string
 

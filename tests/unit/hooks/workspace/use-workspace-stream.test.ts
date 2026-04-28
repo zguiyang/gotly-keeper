@@ -1,10 +1,9 @@
 // @vitest-environment jsdom
 
-import { act } from 'react'
+import { waitFor } from '@testing-library/react'
+import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import React from 'react'
-import { waitFor } from '@testing-library/react'
 
 import { useWorkspaceStream } from '@/hooks/workspace/use-workspace-stream'
 
@@ -14,23 +13,6 @@ vi.mock('@/client/workspace/workspace-run-events.client', () => ({
   streamWorkspaceRunEvents: vi.fn(),
   fetchCurrentWorkspaceRun: vi.fn(),
 }))
-
-function createSseResponse(events: WorkspaceRunStreamEvent[]) {
-  const body = events
-    .map((event) => `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`)
-    .join('')
-
-  return new Response(body, {
-    status: 200,
-    headers: {
-      'content-type': 'text/event-stream',
-    },
-  })
-}
-
-function serializeForStream<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T
-}
 
 function renderHook<T>(useHook: () => T) {
   const container = document.createElement('div')
@@ -292,7 +274,7 @@ describe('useWorkspaceStream', () => {
     const hook = renderHook(() => useWorkspaceStream())
     activeHook = hook
 
-    const firstRequest = hook.result.current.submitInput('第一次请求')
+    hook.result.current.submitInput('第一次请求')
 
     await act(async () => {
       await hook.result.current.submitInput('第二次请求')

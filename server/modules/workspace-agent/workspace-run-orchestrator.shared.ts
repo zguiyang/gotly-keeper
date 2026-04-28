@@ -1,5 +1,4 @@
 import type { WorkspaceToolContext, WorkspaceToolResult, WorkspaceIntent, WorkspaceTarget } from './types'
-import type { WorkspaceRunPlannerResult } from './workspace-run-planner'
 import type { WorkspaceRunStreamEvent } from '@/shared/workspace/workspace-run-protocol'
 
 export type PhaseContext = {

@@ -1,16 +1,13 @@
 import 'server-only'
 
+import { ACTION_LABELS } from './workspace-run-action-labels'
+
+import type { WorkspaceRunPlannerResult } from './workspace-run-planner'
 import type {
   WorkspacePlanPreview,
   WorkspaceRunPreview,
   WorkspaceUnderstandingPreview,
-  WorkspaceInteraction,
 } from '@/shared/workspace/workspace-run-protocol'
-
-import type { WorkspaceRunPlannerResult } from './workspace-run-planner'
-import type { WorkspaceReviewPendingRunSnapshot } from './workspace-run-review'
-import { ACTION_LABELS } from './workspace-run-action-labels'
-
 export type WorkspaceRunPreviewInput = {
   runId: string
   understandingPreview: WorkspaceUnderstandingPreview | null
@@ -46,5 +43,4 @@ export function buildWorkspaceRunPreview(input: WorkspaceRunPreviewInput): Works
     plan: planPreview,
   }
 }
-
 

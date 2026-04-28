@@ -1,5 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
+import { executeWorkspaceRunSteps, isWorkspaceRunExecutorResult } from '@/server/modules/workspace-agent/workspace-run-executor'
+import { executeWorkspaceTool } from '@/server/modules/workspace-agent/workspace-tools'
+
+import type { WorkspaceToolContext } from '@/server/modules/workspace-agent/types'
+import type { WorkspaceRunPlannerAction } from '@/server/modules/workspace-agent/workspace-run-planner'
+
 vi.mock('@/server/modules/workspace-agent/workspace-tools', () => ({
   executeWorkspaceTool: vi.fn(),
   workspaceTools: {
@@ -10,10 +16,6 @@ vi.mock('@/server/modules/workspace-agent/workspace-tools', () => ({
     search_all: { name: 'search_all', execute: vi.fn() },
   },
 }))
-
-import { executeWorkspaceRunSteps, isWorkspaceRunExecutorResult } from '@/server/modules/workspace-agent/workspace-run-executor'
-import { executeWorkspaceTool } from '@/server/modules/workspace-agent/workspace-tools'
-import type { WorkspaceToolContext } from '@/server/modules/workspace-agent/types'
 
 const createMockContext = (): WorkspaceToolContext => ({ userId: 'user_123' })
 
@@ -117,7 +119,7 @@ describe('workspace-run-executor', () => {
       const steps = [
         {
           id: 'step_1',
-          action: 'invalid_action' as any,
+          action: 'invalid_action' as unknown as WorkspaceRunPlannerAction,
           target: 'todos' as const,
           title: 'Test',
           risk: 'low' as const,
