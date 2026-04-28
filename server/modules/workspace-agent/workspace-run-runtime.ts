@@ -1,25 +1,85 @@
 import 'server-only'
 
 import { runAiGeneration } from '@/server/lib/ai/ai-runner'
+import { isAiProviderError, isAiSchemaError, isAiTimeoutError } from '@/server/lib/ai/ai.errors'
 
-import type { AssetListItem } from '@/shared/assets/assets.types'
 
 import { createWorkspaceRunStore } from './workspace-run-store.drizzle'
-import { understandingResultSchema, type WorkspaceRunModel } from './workspace-run-understanding'
+import { understandingModelResultSchema, type WorkspaceRunModel } from './workspace-run-understanding'
 import { executeWorkspaceTool } from './workspace-tools'
 
 import type { SearchWorkspaceRunCandidates } from './workspace-run-planner'
+import type { AssetListItem } from '@/shared/assets/assets.types'
+
+export class WorkspaceRunModelError extends Error {
+  readonly code: string
+  readonly retryable: boolean
+  readonly cause: unknown
+
+  constructor(message: string, options: { code: string; retryable: boolean; cause: unknown }) {
+    super(message)
+    this.name = 'WorkspaceRunModelError'
+    this.code = options.code
+    this.retryable = options.retryable
+    this.cause = options.cause
+  }
+}
+
+export function isWorkspaceRunModelError(
+  error: unknown
+): error is Pick<WorkspaceRunModelError, 'message' | 'code' | 'retryable'> {
+  return (
+    error instanceof Error &&
+    typeof (error as { code?: unknown }).code === 'string' &&
+    typeof (error as { retryable?: unknown }).retryable === 'boolean'
+  )
+}
+
+function toWorkspaceRunModelError(error: unknown): WorkspaceRunModelError {
+  if (isAiTimeoutError(error)) {
+    return new WorkspaceRunModelError(error.message, {
+      code: 'AI_TIMEOUT',
+      retryable: true,
+      cause: error,
+    })
+  }
+
+  if (isAiSchemaError(error)) {
+    return new WorkspaceRunModelError(error.message, {
+      code: 'AI_SCHEMA_ERROR',
+      retryable: false,
+      cause: error,
+    })
+  }
+
+  if (isAiProviderError(error)) {
+    return new WorkspaceRunModelError(error.message, {
+      code: 'AI_PROVIDER_ERROR',
+      retryable: true,
+      cause: error,
+    })
+  }
+
+  return new WorkspaceRunModelError(
+    error instanceof Error ? error.message : 'AI generation failed',
+    {
+      code: 'AI_GENERATION_FAILED',
+      retryable: false,
+      cause: error,
+    }
+  )
+}
 
 function createRunModel(): WorkspaceRunModel {
   return async (input) => {
     const result = await runAiGeneration({
-      schema: understandingResultSchema,
+      schema: understandingModelResultSchema,
       systemPrompt: input.systemPrompt,
       userPrompt: input.userPrompt,
     })
 
     if (!result.success) {
-      throw new Error('AI generation failed')
+      throw toWorkspaceRunModelError(result.error)
     }
 
     return result.data
