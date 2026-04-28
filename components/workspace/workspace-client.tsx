@@ -181,13 +181,14 @@ export function WorkspaceClient({
           <WorkspaceRunPanel
             key="run-panel"
             status={state.status}
-            assistantText={state.result?.summary ?? null}
-            phases={[]}
+            assistantText={state.result?.answer ?? state.result?.summary ?? null}
             result={state.result?.data as Parameters<typeof WorkspaceRunPanel>[0]['result']}
             errorMessage={state.errorMessage}
             runId={state.runId}
             interaction={state.interaction}
             timeline={state.timeline}
+            understandingPreview={state.result?.preview?.understanding ?? null}
+            planPreview={state.result?.preview?.plan ?? null}
             onResume={resumeInteraction}
           />
         )}

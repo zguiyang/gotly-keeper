@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckCircle2, Circle, Loader2 } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Circle, Loader2 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -54,6 +54,10 @@ function TimelineItem({
         return <Loader2 className="size-4 text-amber-500 animate-spin" />
       case 'tool_call_completed':
         return <CheckCircle2 className="size-4 text-emerald-500" />
+      case 'run_completed':
+        return <CheckCircle2 className="size-4 text-emerald-500" />
+      case 'run_failed':
+        return <AlertCircle className="size-4 text-destructive" />
       default:
         return <Circle className="size-4 text-muted-foreground" />
     }
@@ -69,6 +73,10 @@ function TimelineItem({
         return `开始: ${getToolLabel(event.toolName)}`
       case 'tool_call_completed':
         return `完成: ${getToolLabel(event.toolName)}`
+      case 'run_completed':
+        return '完成: 已生成最终结果'
+      case 'run_failed':
+        return '失败: 本次执行未完成'
       default:
         return event.type
     }
@@ -83,6 +91,10 @@ function TimelineItem({
           return event.result.ok ? '成功' : '失败'
         }
         return ''
+      case 'run_completed':
+        return event.result.answer ?? event.result.summary
+      case 'run_failed':
+        return event.error.message
       default:
         return ''
     }

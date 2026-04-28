@@ -199,6 +199,14 @@ describe('RunTimeline', () => {
     { type: 'phase_completed', phase: 'plan' },
     { type: 'tool_call_started', toolName: 'create_todo', preview: '创建待办：发报价' },
     { type: 'tool_call_completed', toolName: 'create_todo', result: { ok: true } },
+    {
+      type: 'run_completed',
+      result: {
+        summary: '执行了 1/1 个步骤',
+        answer: '已创建待办：发报价。',
+        preview: null,
+      },
+    },
   ]
 
   it('renders all timeline events', () => {
@@ -209,6 +217,8 @@ describe('RunTimeline', () => {
     expect(screen.getByText('开始: 计划')).toBeTruthy()
     expect(screen.getByText('开始: 创建待办')).toBeTruthy()
     expect(screen.getByText('完成: 标准化')).toBeTruthy()
+    expect(screen.getByText('完成: 已生成最终结果')).toBeTruthy()
+    expect(screen.getByText('已创建待办：发报价。')).toBeTruthy()
   })
 })
 

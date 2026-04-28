@@ -11,6 +11,7 @@ import { UnderstandingPreview } from './understanding-preview'
 import { WorkspaceQueryResultsContent } from './workspace-result-panels'
 import { workspaceMetaTextClassName, workspacePillClassName } from './workspace-view-primitives'
 
+import type { AssetListItem } from '@/shared/assets/assets.types'
 import type {
   WorkspaceInteraction,
   WorkspaceInteractionResponse,
@@ -23,7 +24,41 @@ import type {
   WorkspaceRunApiPhase,
 } from '@/shared/workspace/workspace-runner.types'
 
-function getPhaseTitle(phase: WorkspaceRunApiPhase['phase']) {
+type VisibleWorkspaceRunPhase = {
+  phase:
+    | WorkspaceRunApiPhase['phase']
+    | 'normalize'
+    | 'understand'
+    | 'plan'
+    | 'review'
+    | 'preview'
+    | 'execute'
+    | 'compose'
+  status: 'active' | 'done' | 'failed' | 'skipped'
+  message?: string
+}
+
+function getPhaseTitle(phase: VisibleWorkspaceRunPhase['phase']) {
+  if (phase === 'normalize') {
+    return '正在规范化输入'
+  }
+
+  if (phase === 'understand') {
+    return '正在理解你的输入'
+  }
+
+  if (phase === 'plan') {
+    return '正在规划执行步骤'
+  }
+
+  if (phase === 'review') {
+    return '正在检查执行风险'
+  }
+
+  if (phase === 'preview') {
+    return '正在整理执行预览'
+  }
+
   if (phase === 'parse') {
     return '正在解析你的输入'
   }
@@ -67,7 +102,28 @@ function getMutationTargetLabel(target: 'notes' | 'todos' | 'bookmarks') {
   return '书签'
 }
 
-function getVisiblePhase(phases: WorkspaceRunApiPhase[]) {
+function getVisiblePhase(
+  phases: WorkspaceRunApiPhase[] = [],
+  timeline: WorkspaceRunStreamEvent[] = []
+): VisibleWorkspaceRunPhase {
+  const phaseEvent = [...timeline]
+    .reverse()
+    .find((event) => event.type === 'phase_started' || event.type === 'phase_completed')
+
+  if (phaseEvent?.type === 'phase_started') {
+    return {
+      phase: phaseEvent.phase,
+      status: 'active',
+    }
+  }
+
+  if (phaseEvent?.type === 'phase_completed') {
+    return {
+      phase: phaseEvent.phase,
+      status: 'done',
+    }
+  }
+
   return (
     phases.findLast((phase) => phase.status === 'active') ??
     phases.findLast((phase) => phase.status === 'failed') ??
@@ -79,7 +135,27 @@ function getVisiblePhase(phases: WorkspaceRunApiPhase[]) {
   )
 }
 
-function getPhaseFallbackMessage(visiblePhase: WorkspaceRunApiPhase) {
+function getPhaseFallbackMessage(visiblePhase: VisibleWorkspaceRunPhase) {
+  if (visiblePhase.phase === 'normalize') {
+    return '正在整理原始输入，准备后续判断。'
+  }
+
+  if (visiblePhase.phase === 'understand') {
+    return '正在识别意图、对象和需要执行的任务。'
+  }
+
+  if (visiblePhase.phase === 'plan') {
+    return '正在把理解结果整理成可执行步骤。'
+  }
+
+  if (visiblePhase.phase === 'review') {
+    return '正在判断是否可以直接执行，还是需要你确认。'
+  }
+
+  if (visiblePhase.phase === 'preview') {
+    return '正在整理给你看的执行预览。'
+  }
+
   if (visiblePhase.phase === 'parse') {
     return '正在理解意图、对象和时间线。'
   }
@@ -98,7 +174,7 @@ function getPhaseFallbackMessage(visiblePhase: WorkspaceRunApiPhase) {
 function CurrentStep({
   visiblePhase,
 }: {
-  visiblePhase: WorkspaceRunApiPhase
+  visiblePhase: VisibleWorkspaceRunPhase
 }) {
   const prefersReducedMotion = useReducedMotion()
   const phaseTitle = getPhaseTitle(visiblePhase.phase)
@@ -135,6 +211,37 @@ function CurrentStep({
             </motion.p>
           </AnimatePresence>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function PlanStepsPreview({
+  planPreview,
+}: {
+  planPreview: WorkspacePlanPreview
+}) {
+  return (
+    <div className="rounded-[1rem] border border-border/10 bg-muted/35 px-4 py-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={workspacePillClassName}>执行步骤</span>
+        <span className={workspaceMetaTextClassName}>{planPreview.summary}</span>
+      </div>
+
+      <div className="mt-3 space-y-2">
+        {planPreview.steps.map((step, index) => (
+          <div
+            key={step.id}
+            className="rounded-[0.9rem] border border-border/10 bg-surface-container-lowest px-3 py-2.5"
+          >
+            <p className="text-sm font-medium text-on-surface">
+              {index + 1}. {step.title}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-on-surface-variant/75">
+              {step.preview}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -240,6 +347,47 @@ function FinalResult({
   )
 }
 
+type WorkspaceToolSuccessData = {
+  ok: true
+  target: 'notes' | 'todos' | 'bookmarks' | 'mixed'
+  items?: AssetListItem[]
+  total?: number
+  action?: 'create' | 'update'
+  item?: AssetListItem | null
+}
+
+function isWorkspaceToolSuccessData(value: WorkspaceRunApiData | WorkspaceToolSuccessData | null): value is WorkspaceToolSuccessData {
+  return Boolean(value && typeof value === 'object' && 'ok' in value && value.ok === true)
+}
+
+function toLegacyResultData(
+  result: WorkspaceRunApiData | WorkspaceToolSuccessData | null
+): WorkspaceRunApiData | null {
+  if (!isWorkspaceToolSuccessData(result)) {
+    return result
+  }
+
+  if (result.action && result.target !== 'mixed') {
+    return {
+      kind: 'mutation',
+      action: result.action,
+      target: result.target,
+      item: result.item ?? null,
+    }
+  }
+
+  if (Array.isArray(result.items) && typeof result.total === 'number') {
+    return {
+      kind: 'query',
+      target: result.target,
+      items: result.items,
+      total: result.total,
+    }
+  }
+
+  return null
+}
+
 function InteractionPanel({
   interaction,
   onResume,
@@ -264,21 +412,19 @@ function InteractionPanel({
 export function WorkspaceRunPanel({
   status,
   assistantText,
-  phases,
+  phases = [],
   result = null,
   errorMessage = null,
-  runId,
   interaction,
-  timeline,
-  understandingPreview,
-  planPreview,
-  correctionNotes,
+  timeline = [],
+  understandingPreview = null,
+  planPreview = null,
   onResume,
 }: {
   status: 'idle' | 'streaming' | 'awaiting_user' | 'success' | 'error'
   assistantText: string | null
-  phases: WorkspaceRunApiPhase[]
-  result?: WorkspaceRunApiData | null
+  phases?: WorkspaceRunApiPhase[]
+  result?: WorkspaceRunApiData | WorkspaceToolSuccessData | null
   errorMessage?: string | null
   runId?: string
   interaction?: WorkspaceInteraction
@@ -288,7 +434,12 @@ export function WorkspaceRunPanel({
   correctionNotes?: string[]
   onResume?: (response: WorkspaceInteractionResponse) => void
 }) {
-  const visiblePhase = getVisiblePhase(phases)
+  const visiblePhase = getVisiblePhase(phases, timeline)
+  const resolvedUnderstandingPreview = understandingPreview
+  const resolvedPlanPreview = planPreview
+  const resolvedResult = toLegacyResultData(result)
+  const shouldShowDetails =
+    status !== 'streaming' && status !== 'error' && (Boolean(resolvedPlanPreview) || timeline.length > 0)
 
   return (
     <motion.section
@@ -330,10 +481,20 @@ export function WorkspaceRunPanel({
           >
             <FinalResult
               assistantText={assistantText}
-              result={result}
+              result={resolvedResult}
               errorMessage={errorMessage}
               status={(status === 'idle' ? 'success' : status) as 'success' | 'error'}
             />
+
+            {shouldShowDetails ? (
+              <div className="mt-4 space-y-4">
+                {resolvedUnderstandingPreview ? (
+                  <UnderstandingPreview understandingPreview={resolvedUnderstandingPreview} />
+                ) : null}
+                {resolvedPlanPreview ? <PlanStepsPreview planPreview={resolvedPlanPreview} /> : null}
+                {timeline.length > 0 ? <RunTimeline timeline={timeline} /> : null}
+              </div>
+            ) : null}
           </motion.div>
         )}
       </AnimatePresence>

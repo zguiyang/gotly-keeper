@@ -1,13 +1,10 @@
-import type { OrchestrateWorkspaceRunOptions } from './workspace-run-orchestrator'
+import { composeWorkspaceAnswer } from './workspace-compose'
+import { executeWorkspaceRunSteps } from './workspace-run-executor'
 import {
-  PhaseContext,
   emitEvent,
   getToolResultError,
   getToolNameFromAction,
 } from './workspace-run-orchestrator.shared'
-
-import { composeWorkspaceAnswer } from './workspace-compose'
-import { executeWorkspaceRunSteps } from './workspace-run-executor'
 import { planWorkspaceRun, type WorkspaceRunPlannerResult } from './workspace-run-planner'
 import {
   reviewWorkspaceRunPlan,
@@ -17,18 +14,18 @@ import {
 } from './workspace-run-review'
 
 import type { WorkspaceToolContext, WorkspaceToolResult, WorkspaceIntent, WorkspaceTarget } from './types'
+import type { OrchestrateWorkspaceRunOptions } from './workspace-run-orchestrator'
+import type { PhaseContext } from './workspace-run-orchestrator.shared'
 import type {
   DraftWorkspaceTask,
   WorkspaceInteraction,
   WorkspaceInteractionResponse,
   WorkspacePlanPreview,
+  WorkspaceRunRequest,
   WorkspaceRunResult,
 } from '@/shared/workspace/workspace-run-protocol'
 
-type ResumeResponse = Extract<
-  import('@/shared/workspace/workspace-run-protocol').WorkspaceRunRequest,
-  { kind: 'resume' }
->['response']
+type ResumeResponse = Extract<WorkspaceRunRequest, { kind: 'resume' }>['response']
 
 async function runExecute(
   ctx: PhaseContext,
@@ -235,12 +232,19 @@ function buildRunCompletedResult(input: {
   executeResult: Awaited<ReturnType<typeof runExecute>>
   snapshot: WorkspaceReviewPendingRunSnapshot
   data: WorkspaceToolResult & { ok: true }
+  answer: string
 }) {
+  const preview = input.snapshot.preview
+    ? {
+        understanding: input.snapshot.understandingPreview ?? undefined,
+        plan: input.snapshot.preview.plan ?? undefined,
+      }
+    : undefined
+
   return {
     summary: input.executeResult.summary,
-    preview: input.snapshot.preview
-      ? { plan: input.snapshot.preview.plan ?? undefined }
-      : undefined,
+    answer: input.answer,
+    preview,
     data: input.data,
   } satisfies WorkspaceRunResult
 }
@@ -315,6 +319,7 @@ async function executePlannedRun(input: {
       executeResult,
       snapshot: input.snapshot,
       data: firstOkResult,
+      answer: composeResult.answer,
     }),
   })
 
