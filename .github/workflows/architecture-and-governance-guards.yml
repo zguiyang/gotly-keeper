@@ -48,21 +48,36 @@ jobs:
           fi
           echo "OK: no legacy __tests__ usage in source tree."
 
-      - name: Typecheck and architecture guards
+      - name: Resolve diff base
         run: |
-          pnpm typecheck
-          bash .ai-rules/advanced-workflows/guards/check-import-boundaries.sh
-          bash .ai-rules/advanced-workflows/guards/check-capability-boundary.sh
-          bash .ai-rules/advanced-workflows/guards/check-boundary-exception-todos.sh
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            bash .ai-rules/advanced-workflows/guards/check-design-token-usage.sh --against "${{ github.event.pull_request.base.sha }}"
-            bash .ai-rules/advanced-workflows/guards/check-test-migration.sh --against "${{ github.event.pull_request.base.sha }}"
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
           else
             BASE_REF="${{ github.event.before }}"
             if [ -z "$BASE_REF" ] || [ "$BASE_REF" = "0000000000000000000000000000000000000000" ]; then
               BASE_REF="HEAD~1"
             fi
-            bash .ai-rules/advanced-workflows/guards/check-design-token-usage.sh --against "$BASE_REF"
-            bash .ai-rules/advanced-workflows/guards/check-test-migration.sh --against "$BASE_REF"
           fi
+          echo "BASE_REF=$BASE_REF" >> "$GITHUB_ENV"
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Check import boundaries
+        run: bash .ai-rules/advanced-workflows/guards/check-import-boundaries.sh
+
+      - name: Check capability boundary
+        run: bash .ai-rules/advanced-workflows/guards/check-capability-boundary.sh
+
+      - name: Check boundary exception TODOs
+        run: bash .ai-rules/advanced-workflows/guards/check-boundary-exception-todos.sh
+
+      - name: Check design token usage
+        run: bash .ai-rules/advanced-workflows/guards/check-design-token-usage.sh --against "$BASE_REF"
+
+      - name: Check test migration
+        run: bash .ai-rules/advanced-workflows/guards/check-test-migration.sh --against "$BASE_REF"
+
+      - name: Check governance links
+        run: |
           bash .ai-rules/advanced-workflows/guards/check-governance-links.sh
