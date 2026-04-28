@@ -41,10 +41,29 @@ Rules:
 
 - Do NOT introduce new subsystems (email, payment, queue, etc.)
 - Do NOT assume missing features should be implemented
+- Do NOT add compatibility layers, fallback branches, or defensive defaults unless an existing contract, persisted data shape, or external consumer clearly requires them
+- If the need for compatibility or fallback behavior is uncertain, ask the user before coding instead of inventing a "safe" path
 - If a feature requires new infrastructure, ask the user before coding
 - Apply the same non-goals and forbidden capability boundary to subagent prompts
 
 Use `PROJECT_CAPABILITIES.md` as the source of truth for capability boundaries.
+
+### 2.2 Compatibility/Fallback Clarification Trigger (MANDATORY)
+
+Before implementation, stop and ask the user if the change appears to require any of the following but the requirement is not already explicit:
+
+- backward-compatibility code
+- legacy adapters or dual-path logic
+- fallback branches for uncertain runtime states
+- defensive defaults that silently change accepted input, output, or control flow
+- permissive parsing or normalization added only to make the code "more robust"
+
+Rules:
+
+1. Do not choose these patterns proactively just because they feel safer.
+2. Do not widen behavior without a confirmed requirement.
+3. Prefer the narrowest correct implementation unless the user confirms compatibility or fallback requirements.
+4. If the code seems to need one of these patterns to avoid breakage, explain the exact breakage risk and ask the user to decide.
 
 ## 3. Non-Default Workflows
 

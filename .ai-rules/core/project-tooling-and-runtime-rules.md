@@ -148,7 +148,7 @@ Rules:
 
 1. Run verification appropriate to the changed code before offering or attempting integration.
 2. Review the full diff and related code in a code-review stance before local merge or PR fallback.
-3. If the review finds blocking correctness, architecture, security, data-loss, or test-coverage issues, stop and tell the user. Do not merge or create a PR until the issues are fixed and review is rerun.
+3. If the review finds blocking correctness, architecture, security, data-loss, test-coverage, or unjustified compatibility/fallback issues, stop and tell the user. Do not merge or create a PR until the issues are fixed and review is rerun.
 4. Prefer local merge into the base branch first when the active workflow allows direct local integration.
 5. If local merge or push fails, stop and ask the user whether to create a PR for fallback merge. Do not create a PR unless the user explicitly approves PR fallback.
 6. Before any `gh pr ...` command, run `gh auth status`.
