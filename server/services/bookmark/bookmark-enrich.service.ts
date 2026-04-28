@@ -1,12 +1,12 @@
 import 'server-only'
 
-import { enqueueBookmarkEnrichTask } from '@/server/services/bookmark/bookmark-queue.service'
-import { checkUrlSafety } from '@/server/services/bookmark/url-safety'
 import { updateBookmarkEnrichment } from '@/server/services/bookmarks'
 import { BOOKMARK_META_STATUS, type BookmarkMeta } from '@/shared/assets/bookmark-meta.types'
 import { nowIso } from '@/shared/time/dayjs'
 
-import type { BookmarkEnrichResult, BookmarkEnrichTask } from '@/server/services/bookmark/bookmark-enrich.contract'
+import { enqueueBookmarkEnrichTask } from './bookmark-queue.service'
+import type { BookmarkEnrichResult, BookmarkEnrichTask } from './bookmark-enrich.contract'
+import { checkUrlSafety } from './url-safety'
 
 function createPendingBookmarkMeta(): BookmarkMeta {
   return {
@@ -132,9 +132,9 @@ export async function writeBookmarkEnrichResult(input: {
   const bookmarkMeta = input.result.success && input.result.data
     ? createSuccessBookmarkMeta(input.result.data)
     : createFailedBookmarkMeta(
-      input.result.error?.code ?? 'UNKNOWN_ERROR',
-      input.result.error?.message ?? 'unknown worker failure'
-    )
+        input.result.error?.code ?? 'UNKNOWN_ERROR',
+        input.result.error?.message ?? 'unknown worker failure'
+      )
 
   await updateBookmarkEnrichment({
     bookmarkId: input.bookmarkId,

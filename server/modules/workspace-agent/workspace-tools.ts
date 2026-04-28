@@ -4,14 +4,14 @@ import { z } from 'zod'
 
 import { matchesSearchTimeHint } from '@/server/services/search/search.time-match'
 import {
-  createWorkspaceLink,
-  createWorkspaceNote,
-  createWorkspaceTodo,
+  createWorkspaceLinkAsset,
+  createWorkspaceNoteAsset,
+  createWorkspaceTodoAsset,
   listWorkspaceAssets,
   searchWorkspaceAssets,
-  setWorkspaceTodoCompletion,
-  updateWorkspaceTodo,
-} from '@/server/modules/workspace'
+  setWorkspaceTodoAssetCompletion,
+  updateWorkspaceTodoAsset,
+} from '@/server/services/workspace/workspace-assets.service'
 import { ASIA_SHANGHAI_TIME_ZONE, dayjs } from '@/shared/time/dayjs'
 import { type WorkspaceAgentTimeFilter } from '@/shared/workspace/workspace-run.types'
 
@@ -397,20 +397,20 @@ export const workspaceTools = {
     name: 'create_note',
     inputSchema: createNoteInputSchema,
     async execute(input, context) {
-      const result = await createWorkspaceNote({
+      const asset = await createWorkspaceNoteAsset({
         userId: context.userId,
         rawInput: input.content,
         content: input.content,
       })
 
-      return toMutationResult('notes', 'create', result.asset)
+      return toMutationResult('notes', 'create', asset)
     },
   } satisfies WorkspaceTool<z.infer<typeof createNoteInputSchema>>,
   create_todo: {
     name: 'create_todo',
     inputSchema: createTodoInputSchema,
     async execute(input, context) {
-      const result = await createWorkspaceTodo({
+      const asset = await createWorkspaceTodoAsset({
         userId: context.userId,
         rawInput: input.title,
         title: input.title,
@@ -419,14 +419,14 @@ export const workspaceTools = {
         dueAt: input.dueAt ? new Date(input.dueAt) : null,
       })
 
-      return toMutationResult('todos', 'create', result.asset)
+      return toMutationResult('todos', 'create', asset)
     },
   } satisfies WorkspaceTool<z.infer<typeof createTodoInputSchema>>,
   create_bookmark: {
     name: 'create_bookmark',
     inputSchema: createBookmarkInputSchema,
     async execute(input, context) {
-      const result = await createWorkspaceLink({
+      const asset = await createWorkspaceLinkAsset({
         userId: context.userId,
         rawInput: buildBookmarkRawInput(input),
         url: input.url,
@@ -435,7 +435,7 @@ export const workspaceTools = {
         summary: input.summary ?? null,
       })
 
-      return toMutationResult('bookmarks', 'create', result.asset)
+      return toMutationResult('bookmarks', 'create', asset)
     },
   } satisfies WorkspaceTool<z.infer<typeof createBookmarkInputSchema>>,
   update_todo: {
@@ -456,7 +456,7 @@ export const workspaceTools = {
         input.patch.dueAt !== undefined
 
       if (hasFieldPatch) {
-        updatedTodo = await updateWorkspaceTodo({
+        updatedTodo = await updateWorkspaceTodoAsset({
           userId: context.userId,
           assetId: todoId,
           rawInput: input.patch.title ?? input.selector.subjectHint ?? input.selector.query ?? '更新待办',
@@ -468,7 +468,7 @@ export const workspaceTools = {
       }
 
       if (input.patch.status) {
-        updatedTodo = await setWorkspaceTodoCompletion({
+        updatedTodo = await setWorkspaceTodoAssetCompletion({
           userId: context.userId,
           assetId: todoId,
           completed: input.patch.status === 'done',
