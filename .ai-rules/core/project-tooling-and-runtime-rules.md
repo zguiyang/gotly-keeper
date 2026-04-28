@@ -175,7 +175,7 @@ Before running commands or implementing code:
 12. Follow `.ai-rules/core/project-governance-rules.md` for placement of AI workflow guards and local AI workspace material.
 13. Do not treat local AI workspace files as repository deliverables.
 14. Run `ai-bootstrap-check` only for the governance/worktree cases listed in Section 1.1.
-15. Before commit/PR, run `bash .ai-rules/advanced-workflows/guards/check-rules-integrity.sh --staged`.
+15. For local governance edits, run `bash .ai-rules/advanced-workflows/guards/check-rules-integrity.sh --staged` before commit/PR handoff.
 16. Before local merge, complete code review as defined in Section 8.1.
 17. Before PR creation or PR merge, complete code review and `gh auth status` checks as defined in Section 8.1.
 
@@ -184,6 +184,8 @@ Before running commands or implementing code:
 Rule-validation scripts live under `.ai-rules/advanced-workflows/guards/`.
 
 Run guard scripts directly by path. Do not expose `.ai-rules/` guards through `package.json`, even when CI uses them.
+
+`check-rules-integrity.sh` is a local approval guard for governance-file edits. It currently protects `AGENTS.md`, `PROJECT_CAPABILITIES.md`, `.ai-rules/**`, and `.github/workflows/architecture-and-governance-guards.yml`. It is not currently a mandatory CI gate, because its purpose is to require explicit operator approval before these governance surfaces change.
 
 Examples:
 

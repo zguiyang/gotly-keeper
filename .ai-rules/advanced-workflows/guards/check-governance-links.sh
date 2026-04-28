@@ -11,7 +11,7 @@ cd "$REPO_ROOT"
 
 failures=0
 
-echo "Checking .ai-rules path references..."
+echo "Checking governance path references..."
 RULE_REFS="$(rg \
   --glob '!node_modules/**' \
   --glob '!.next/**' \
@@ -20,7 +20,7 @@ RULE_REFS="$(rg \
   -o \
   --no-heading \
   --no-filename \
-  '\.ai-rules/[A-Za-z0-9_./-]+' \
+  '(AGENTS\.md|PROJECT_CAPABILITIES\.md|\.ai-rules/[A-Za-z0-9_./-]+|\.github/workflows/[A-Za-z0-9_./-]+)' \
   . | sort -u || true)"
 
 if [ -n "$RULE_REFS" ]; then
@@ -45,7 +45,7 @@ if [ -n "$RULE_REFS" ]; then
     done
     [ -z "$ref" ] && continue
     if [ ! -e "$ref" ]; then
-      echo "FAIL: broken .ai-rules reference -> $ref"
+      echo "FAIL: broken governance reference -> $ref"
       failures=$((failures + 1))
     fi
   done <<< "$RULE_REFS"
