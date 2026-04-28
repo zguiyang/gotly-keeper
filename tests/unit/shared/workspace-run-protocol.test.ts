@@ -320,6 +320,7 @@ describe('workspace run protocol', () => {
       type: 'run_completed',
       result: {
         summary: '已创建待办。',
+        answer: '已保存待办：发报价。',
         preview: {
           understanding: {
             rawInput: '记个待办，明天下午发报价',

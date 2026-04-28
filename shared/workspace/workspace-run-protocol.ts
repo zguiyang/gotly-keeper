@@ -228,6 +228,7 @@ export type WorkspaceRunRequest = z.infer<typeof workspaceRunRequestSchema>
 
 const workspaceRunResultSchema = z.object({
   summary: z.string(),
+  answer: z.string().optional(),
   preview: workspacePreviewSchema.nullable().optional(),
   data: z.unknown().nullable().optional(),
 })

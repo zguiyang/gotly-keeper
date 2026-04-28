@@ -1,20 +1,18 @@
-import type { OrchestrateWorkspaceRunOptions } from './workspace-run-orchestrator'
-import { PhaseContext, emitEvent, createRunId, getToolResultError, getToolNameFromAction } from './workspace-run-orchestrator.shared'
-import { isWorkspaceRunModelError } from './workspace-run-runtime'
-
-import { normalizeWorkspaceRunInput } from './workspace-run-normalizer'
-import { understandWorkspaceRunInput } from './workspace-run-understanding'
-import { planWorkspaceRun } from './workspace-run-planner'
-import { reviewWorkspaceRunPlan } from './workspace-run-review'
-import { buildWorkspaceRunPreview } from './workspace-run-preview'
-import { executeWorkspaceRunSteps } from './workspace-run-executor'
 import { composeWorkspaceAnswer } from './workspace-compose'
+import { executeWorkspaceRunSteps } from './workspace-run-executor'
+import { normalizeWorkspaceRunInput } from './workspace-run-normalizer'
+import { emitEvent, createRunId, getToolResultError, getToolNameFromAction } from './workspace-run-orchestrator.shared'
+import { planWorkspaceRun } from './workspace-run-planner'
+import { buildWorkspaceRunPreview } from './workspace-run-preview'
+import { reviewWorkspaceRunPlan } from './workspace-run-review'
+import { isWorkspaceRunModelError } from './workspace-run-runtime'
+import { understandWorkspaceRunInput } from './workspace-run-understanding'
 
-import type { WorkspaceRunPlannerResult } from './workspace-run-planner'
 import type { WorkspaceToolContext, WorkspaceToolResult, WorkspaceIntent, WorkspaceTarget } from './types'
-import type { WorkspaceInteraction } from '@/shared/workspace/workspace-run-protocol'
-import type { DraftWorkspaceTask } from '@/shared/workspace/workspace-run-protocol'
-import type { WorkspaceRunPlanHint } from './workspace-run-planner'
+import type { OrchestrateWorkspaceRunOptions } from './workspace-run-orchestrator'
+import type { PhaseContext } from './workspace-run-orchestrator.shared'
+import type { WorkspaceRunPlannerResult, WorkspaceRunPlanHint } from './workspace-run-planner'
+import type { WorkspaceInteraction, DraftWorkspaceTask } from '@/shared/workspace/workspace-run-protocol'
 
 async function runNormalize(ctx: PhaseContext, rawText: string) {
   emitEvent(ctx, { type: 'phase_started', phase: 'normalize' })
@@ -251,7 +249,8 @@ export async function handleNewInput(
           type: 'run_completed',
           result: {
             summary: executeResult.summary,
-            preview: { plan: preview.plan },
+            answer: composeResult.answer,
+            preview,
             data: firstOkResult,
           },
         })

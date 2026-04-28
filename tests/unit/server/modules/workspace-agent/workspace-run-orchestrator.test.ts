@@ -1,13 +1,19 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { WorkspaceRunOrchestratorError } from '@/server/modules/workspace-agent/workspace-run-orchestrator'
+import type {
+  SearchWorkspaceRunCandidates,
+} from '@/server/modules/workspace-agent/workspace-run-planner'
 import type { WorkspaceRunStore } from '@/server/modules/workspace-agent/workspace-run-store'
 import type { WorkspaceRunModel } from '@/server/modules/workspace-agent/workspace-run-understanding'
 import type {
-  SearchWorkspaceRunCandidates,
-  WorkspaceRunPlannerCandidate,
-} from '@/server/modules/workspace-agent/workspace-run-planner'
-import type { WorkspaceRunRequest } from '@/shared/workspace/workspace-run-protocol'
+  WorkspaceRunStreamEvent,
+} from '@/shared/workspace/workspace-run-protocol'
+
+type PhaseEvent = Extract<WorkspaceRunStreamEvent, { type: 'phase_started' | 'phase_completed' }>
+
+function isPhaseEvent(event: unknown): event is PhaseEvent {
+  return typeof event === 'object' && event !== null && 'type' in event && 'phase' in event
+}
 
 const createMockStore = (): WorkspaceRunStore => ({
   saveSnapshot: vi.fn().mockResolvedValue(undefined),
@@ -98,8 +104,12 @@ describe('workspace-run-orchestrator', () => {
         onEvent: (e) => events.push(e),
       })
 
-      const normalizeIndex = events.findIndex((e: any) => e.type === 'phase_completed' && e.phase === 'normalize')
-      const understandIndex = events.findIndex((e: any) => e.type === 'phase_started' && e.phase === 'understand')
+      const normalizeIndex = events.findIndex(
+        (e) => isPhaseEvent(e) && e.type === 'phase_completed' && e.phase === 'normalize'
+      )
+      const understandIndex = events.findIndex(
+        (e) => isPhaseEvent(e) && e.type === 'phase_started' && e.phase === 'understand'
+      )
 
       expect(understandIndex).toBeGreaterThan(normalizeIndex)
     })
@@ -268,13 +278,45 @@ describe('workspace-run-orchestrator', () => {
       })
 
       const executePhase = events.find(
-        (e: any) => e.phase === 'execute' && e.type === 'phase_completed'
-      ) as { output?: { stepResults?: Array<{ result: { ok: boolean } }> } } | undefined
+        (e) => isPhaseEvent(e) && e.type === 'phase_completed' && e.phase === 'execute'
+      ) as (PhaseEvent & { output?: { stepResults?: Array<{ result: { ok: boolean } }> } }) | undefined
       if (executePhase?.output?.stepResults?.every((r) => r.result.ok)) {
         expect(events).toContainEqual(expect.objectContaining({ type: 'phase_started', phase: 'compose' }))
         expect(events).toContainEqual(expect.objectContaining({ type: 'phase_completed', phase: 'compose' }))
       } else {
         expect(events).not.toContainEqual(expect.objectContaining({ type: 'phase_started', phase: 'compose' }))
+      }
+    })
+
+    it('emits run_completed with composed answer and full preview', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const events: WorkspaceRunStreamEvent[] = []
+      const store = createMockStore()
+
+      store.updateRunStatus = vi.fn().mockResolvedValue(true)
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '记一下：首页 slogan 想走轻管家感' },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      const runCompletedEvent = events.find(
+        (event): event is Extract<WorkspaceRunStreamEvent, { type: 'run_completed' }> =>
+          event.type === 'run_completed'
+      )
+
+      if (result.ok && result.phase === 'completed') {
+        expect(runCompletedEvent).toBeDefined()
+        expect(runCompletedEvent?.result.answer).toBeTruthy()
+        expect(runCompletedEvent?.result.preview?.plan).toBeDefined()
+        expect(runCompletedEvent?.result.preview?.understanding).toBeDefined()
+      } else {
+        expect(runCompletedEvent).toBeUndefined()
       }
     })
   })
