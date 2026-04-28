@@ -6,11 +6,11 @@ import { db } from '@/server/lib/db'
 import { workspaceRuns } from '@/server/lib/db/schema'
 import { now } from '@/shared/time/dayjs'
 
+import type { WorkspaceReviewPendingRunSnapshot } from './workspace-run-review'
 import type {
   WorkspaceRunStatus,
   WorkspaceRunStore,
 } from './workspace-run-store'
-import type { WorkspaceReviewPendingRunSnapshot } from './workspace-run-review'
 
 export function createWorkspaceRunStore(): WorkspaceRunStore {
   return {

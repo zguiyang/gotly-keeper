@@ -1,10 +1,10 @@
 import 'server-only'
 
-import { executeWorkspaceTool, workspaceTools } from './workspace-tools'
+import { executeWorkspaceTool } from './workspace-tools'
 
-import type { WorkspaceRunPlannerStep } from './workspace-run-planner'
 import type { WorkspaceToolContext, WorkspaceToolResult } from './types'
-import type { WorkspaceRunStreamEvent } from '@/shared/workspace/workspace-run-protocol'
+import type { WorkspaceRunPlannerStep } from './workspace-run-planner'
+import type { workspaceTools } from './workspace-tools'
 
 export type WorkspaceRunExecutorStepResult = {
   stepId: string

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 
 import { describe, expect, it } from 'vitest'
@@ -7,6 +8,7 @@ import {
   type ReviewableDraftTask,
   type ReviewablePlan,
 } from '@/server/modules/workspace-agent/workspace-run-review'
+
 import type { WorkspaceUnderstandingPreview } from '@/shared/workspace/workspace-run-protocol'
 
 function createDraftTask(overrides: Partial<ReviewableDraftTask> = {}): ReviewableDraftTask {

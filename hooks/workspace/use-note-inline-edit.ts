@@ -101,7 +101,7 @@ export function useNoteInlineEdit({
 
     inflightSaveRef.current = request
     return request
-  }, [clearDebounceTimer, isDirty, markdown, onSave])
+  }, [clearDebounceTimer, isDirty, onSave])
 
   const saveNowRef = useRef(saveNow)
 

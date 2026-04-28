@@ -5,8 +5,9 @@ import { BOOKMARK_META_STATUS, type BookmarkMeta } from '@/shared/assets/bookmar
 import { nowIso } from '@/shared/time/dayjs'
 
 import { enqueueBookmarkEnrichTask } from './bookmark-queue.service'
-import type { BookmarkEnrichResult, BookmarkEnrichTask } from './bookmark-enrich.contract'
 import { checkUrlSafety } from './url-safety'
+
+import type { BookmarkEnrichResult, BookmarkEnrichTask } from './bookmark-enrich.contract'
 
 function createPendingBookmarkMeta(): BookmarkMeta {
   return {

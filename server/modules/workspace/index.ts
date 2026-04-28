@@ -7,6 +7,7 @@ import {
   canRestoreFromTrash,
   canUnarchive,
 } from '@/server/services/assets/asset-lifecycle'
+import { scheduleBookmarkEnrichTask } from '@/server/services/bookmark/bookmark-enrich.service'
 import {
   archiveBookmark,
   getBookmarkById,
@@ -31,7 +32,6 @@ import {
   updateNote,
   type NoteListItem,
 } from '@/server/services/notes'
-import { createCursorPage } from '@/server/services/pagination'
 import { deleteEmbeddingsForAsset } from '@/server/services/search/semantic-search.service'
 import {
   archiveTodo,
@@ -50,13 +50,6 @@ import {
   type TodoListItem,
 } from '@/server/services/todos'
 import {
-  ASSET_LIFECYCLE_STATUS,
-  type AssetLifecycleStatus,
-} from '@/shared/assets/asset-lifecycle.types'
-
-
-import { scheduleBookmarkEnrichTask } from '@/server/services/bookmark/bookmark-enrich.service'
-import {
   createWorkspaceLinkAsset,
   createWorkspaceNoteAsset,
   createWorkspaceTodoAsset,
@@ -66,6 +59,11 @@ import {
   updateWorkspaceTodoAsset,
   WorkspaceAssetsError,
 } from '@/server/services/workspace/workspace-assets.service'
+import {
+  ASSET_LIFECYCLE_STATUS,
+  type AssetLifecycleStatus,
+} from '@/shared/assets/asset-lifecycle.types'
+
 import { summarizeWorkspaceRecentBookmarksInternal } from './bookmarks.summary'
 import {
   createMixedWorkspaceAssetsPage,
@@ -73,7 +71,6 @@ import {
 } from './mixed-assets-pagination'
 import { summarizeWorkspaceRecentNotesInternal } from './notes.summary'
 import { reviewWorkspaceUnfinishedTodosInternal } from './todos.review'
-
 
 import type {
   AssetListItem,
@@ -661,15 +658,6 @@ function requireExistingAsset(asset: AssetListItem | null): AssetListItem {
   }
 
   return asset
-}
-
-function compareWorkspaceAssetsDesc(a: AssetListItem, b: AssetListItem): number {
-  const createdAtDiff = b.createdAt.getTime() - a.createdAt.getTime()
-  if (createdAtDiff !== 0) {
-    return createdAtDiff
-  }
-
-  return b.id.localeCompare(a.id)
 }
 
 export async function listWorkspaceAssets(input: {

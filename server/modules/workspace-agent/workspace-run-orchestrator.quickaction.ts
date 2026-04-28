@@ -1,6 +1,7 @@
+import { handleNewInput } from './workspace-run-orchestrator.input'
+
 import type { OrchestrateWorkspaceRunOptions } from './workspace-run-orchestrator'
 
-import { handleNewInput } from './workspace-run-orchestrator.input'
 
 const QUICK_ACTION_PROMPTS = {
   'review-todos': '总结最近待办重点',
