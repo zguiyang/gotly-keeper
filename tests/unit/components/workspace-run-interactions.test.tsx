@@ -152,14 +152,13 @@ describe('DraftTaskEditor', () => {
     ],
   }
 
-  it('renders editable task list and action buttons', () => {
-    const onSubmit = () => {}
-    render(<DraftTaskEditor interaction={mockInteraction} onSubmit={onSubmit} />)
+  it('renders editable task list without local action buttons', () => {
+    render(<DraftTaskEditor interaction={mockInteraction} />)
 
     expect(screen.getByDisplayValue('首页文案要更轻')).toBeTruthy()
     expect(screen.getByDisplayValue('给 Joy 看一版')).toBeTruthy()
-    expect(screen.getByRole('button', { name: '保存并继续' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: '取消' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '保存并继续' })).toBeNull()
+    expect(screen.queryByRole('button', { name: '取消' })).toBeNull()
   })
 })
 
@@ -178,14 +177,20 @@ describe('PlanPreviewCard', () => {
     },
   }
 
-  it('renders plan preview and action buttons', () => {
-    const onSubmit = () => {}
-    render(<PlanPreviewCard interaction={mockInteraction} onSubmit={onSubmit} />)
+  it('renders plan preview without local action buttons', () => {
+    render(<PlanPreviewCard interaction={mockInteraction} />)
 
     expect(screen.getByText('发报价')).toBeTruthy()
-    expect(screen.getByRole('button', { name: '确认' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: '编辑（即将支持）' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: '取消' })).toBeTruthy()
+    expect(screen.getByText('待你确认')).toBeTruthy()
+    expect(screen.queryByRole('button')).toBeNull()
+    expect(screen.queryByText('编辑（即将支持）')).toBeNull()
+  })
+
+  it('renders plan steps as a section list instead of cards', () => {
+    const { container } = render(<PlanPreviewCard interaction={mockInteraction} />)
+    expect(container.querySelector('section')).toBeTruthy()
+    expect(container.querySelector('ol')).toBeTruthy()
+    expect(container.querySelector('[class*="group/card"]')).toBeNull()
   })
 })
 

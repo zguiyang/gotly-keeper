@@ -2,10 +2,7 @@
 
 import { useState } from 'react'
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-
-import { workspacePillClassName, workspaceSurfaceClassName } from './workspace-view-primitives'
+import { workspacePillClassName, workspaceRunSectionClassName } from './workspace-view-primitives'
 
 import type { ConfirmPlanInteraction, WorkspaceInteractionResponse } from '@/shared/workspace/workspace-run-protocol'
 
@@ -14,27 +11,8 @@ type PlanPreviewCardProps = {
   onSubmit: (response: WorkspaceInteractionResponse) => void
 }
 
-export function PlanPreviewCard({ interaction, onSubmit }: PlanPreviewCardProps) {
+export function PlanPreviewCard({ interaction }: PlanPreviewCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [showEditHint, setShowEditHint] = useState(false)
-
-  const handleConfirm = () => {
-    onSubmit({
-      type: 'confirm_plan',
-      action: 'confirm',
-    })
-  }
-
-  const handleCancel = () => {
-    onSubmit({
-      type: 'confirm_plan',
-      action: 'cancel',
-    })
-  }
-
-  const handleEdit = () => {
-    setShowEditHint(true)
-  }
 
   const getToolNameLabel = (toolName: string) => {
     if (toolName === 'create_todo') return '创建待办'
@@ -52,73 +30,42 @@ export function PlanPreviewCard({ interaction, onSubmit }: PlanPreviewCardProps)
     : interaction.plan.steps.slice(0, 2)
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <p className="text-sm text-on-surface-variant">{interaction.message}</p>
+    <section className={workspaceRunSectionClassName}>
+      <p className="text-sm text-on-surface-variant">{interaction.message}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={workspacePillClassName}>待你确认</span>
+        <span className="text-sm font-medium text-on-surface">{interaction.plan.summary}</span>
       </div>
 
-      <Card className={workspaceSurfaceClassName}>
-        <CardContent className="space-y-4 p-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={workspacePillClassName}>待你确认</span>
-            <span className="text-sm font-medium text-on-surface">{interaction.plan.summary}</span>
-          </div>
-
-          <div className="space-y-2">
-            {previewSteps.map((step, index) => (
-              <div
-                key={step.id}
-                className="rounded-[0.95rem] border border-border/10 bg-muted/35 px-3 py-2.5"
-              >
-                <p className="text-xs font-medium text-on-surface-variant/75">
-                  {index + 1}. {getToolNameLabel(step.toolName)}
-                </p>
-                <p className="mt-1 text-sm font-medium text-on-surface">{step.title}</p>
-                <p className="mt-1 text-sm text-on-surface">{step.preview}</p>
-              </div>
-            ))}
-          </div>
-
-          {interaction.plan.steps.length > 2 ? (
-            <div className="flex flex-wrap items-center gap-3">
-              {!isExpanded ? (
-                <p className="text-xs text-on-surface-variant/70">
-                  还有 {interaction.plan.steps.length - 2} 个动作会继续处理。
-                </p>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => setIsExpanded((current) => !current)}
-                className="text-xs font-medium text-primary transition-colors hover:text-primary/80"
-              >
-                {isExpanded ? '收起步骤' : `查看全部 ${interaction.plan.steps.length} 步`}
-              </button>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      {showEditHint ? (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-4">
-            <p className="text-sm text-on-surface-variant">
-              编辑计划暂时还不能直接在这里完成。你可以先查看全部步骤，或取消后换一种更明确的说法重新发起。
+      <h3 className="text-xs font-semibold text-on-surface-variant">将执行</h3>
+      <ol className="space-y-2">
+        {previewSteps.map((step, index) => (
+          <li key={step.id} className="rounded-[0.95rem] border border-border/10 bg-muted/35 px-3 py-2.5">
+            <p className="text-xs font-medium text-on-surface-variant/75">
+              {index + 1}. {getToolNameLabel(step.toolName)}
             </p>
-          </CardContent>
-        </Card>
-      ) : null}
+            <p className="mt-1 text-sm font-medium text-on-surface">{step.title}</p>
+            <p className="mt-1 text-sm text-on-surface">{step.preview}</p>
+          </li>
+        ))}
+      </ol>
 
-      <div className="flex items-center gap-2 pt-2">
-        <Button variant="default" size="sm" onClick={handleConfirm}>
-          确认
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleEdit}>
-          编辑（即将支持）
-        </Button>
-        <Button variant="ghost" size="sm" onClick={handleCancel}>
-          取消
-        </Button>
-      </div>
-    </div>
+      {interaction.plan.steps.length > 2 ? (
+        <div className="flex flex-wrap items-center gap-3">
+          {!isExpanded ? (
+            <p className="text-xs text-on-surface-variant/70">
+              还有 {interaction.plan.steps.length - 2} 个动作会继续处理。
+            </p>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setIsExpanded((current) => !current)}
+            className="text-xs font-medium text-primary transition-colors hover:text-primary/80"
+          >
+            {isExpanded ? '收起步骤' : `查看全部 ${interaction.plan.steps.length} 步`}
+          </button>
+        </div>
+      ) : null}
+    </section>
   )
 }
