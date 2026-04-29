@@ -2,9 +2,8 @@
 
 import { useState } from 'react'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 
 import { workspacePillClassName, workspaceSurfaceClassName } from './workspace-view-primitives'
 
@@ -16,7 +15,8 @@ type PlanPreviewCardProps = {
 }
 
 export function PlanPreviewCard({ interaction, onSubmit }: PlanPreviewCardProps) {
-  const [isEditing, setIsEditing] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [showEditHint, setShowEditHint] = useState(false)
 
   const handleConfirm = () => {
     onSubmit({
@@ -25,19 +25,15 @@ export function PlanPreviewCard({ interaction, onSubmit }: PlanPreviewCardProps)
     })
   }
 
-  const handleEdit = () => {
-    setIsEditing(true)
-  }
-
-  const handleCancelEdit = () => {
-    setIsEditing(false)
-  }
-
   const handleCancel = () => {
     onSubmit({
       type: 'confirm_plan',
       action: 'cancel',
     })
+  }
+
+  const handleEdit = () => {
+    setShowEditHint(true)
   }
 
   const getToolNameLabel = (toolName: string) => {
@@ -51,6 +47,10 @@ export function PlanPreviewCard({ interaction, onSubmit }: PlanPreviewCardProps)
     return toolName
   }
 
+  const previewSteps = isExpanded
+    ? interaction.plan.steps
+    : interaction.plan.steps.slice(0, 2)
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -58,58 +58,62 @@ export function PlanPreviewCard({ interaction, onSubmit }: PlanPreviewCardProps)
       </div>
 
       <Card className={workspaceSurfaceClassName}>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">计划预览</CardTitle>
-            <span className={workspacePillClassName}>
-              {interaction.plan.summary}
-            </span>
+        <CardContent className="space-y-4 p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={workspacePillClassName}>待你确认</span>
+            <span className="text-sm font-medium text-on-surface">{interaction.plan.summary}</span>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {interaction.plan.steps.map((step, index) => (
-            <div
-              key={step.id}
-              className="flex items-start gap-3 p-3 rounded-lg bg-muted/40"
-            >
-              <div className="flex-shrink-0 size-6 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-xs font-medium text-primary">{index + 1}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="outline" className="text-xs">
-                    {getToolNameLabel(step.toolName)}
-                  </Badge>
-                </div>
-                <p className="text-sm font-medium text-on-surface">{step.title}</p>
-                <p className="text-xs text-on-surface-variant/70 mt-1">
-                  {step.preview}
+
+          <div className="space-y-2">
+            {previewSteps.map((step, index) => (
+              <div
+                key={step.id}
+                className="rounded-[0.95rem] border border-border/10 bg-muted/35 px-3 py-2.5"
+              >
+                <p className="text-xs font-medium text-on-surface-variant/75">
+                  {index + 1}. {getToolNameLabel(step.toolName)}
                 </p>
+                <p className="mt-1 text-sm font-medium text-on-surface">{step.title}</p>
+                <p className="mt-1 text-sm text-on-surface">{step.preview}</p>
               </div>
+            ))}
+          </div>
+
+          {interaction.plan.steps.length > 2 ? (
+            <div className="flex flex-wrap items-center gap-3">
+              {!isExpanded ? (
+                <p className="text-xs text-on-surface-variant/70">
+                  还有 {interaction.plan.steps.length - 2} 个动作会继续处理。
+                </p>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setIsExpanded((current) => !current)}
+                className="text-xs font-medium text-primary transition-colors hover:text-primary/80"
+              >
+                {isExpanded ? '收起步骤' : `查看全部 ${interaction.plan.steps.length} 步`}
+              </button>
             </div>
-          ))}
+          ) : null}
         </CardContent>
       </Card>
 
-      {isEditing && (
-        <Card className="border-primary/30 bg-primary/5">
+      {showEditHint ? (
+        <Card className="border-primary/20 bg-primary/5">
           <CardContent className="p-4">
             <p className="text-sm text-on-surface-variant">
-              编辑功能即将推出。当前版本请先确认或取消。
+              编辑计划暂时还不能直接在这里完成。你可以先查看全部步骤，或取消后换一种更明确的说法重新发起。
             </p>
-            <Button variant="outline" size="sm" className="mt-3" onClick={handleCancelEdit}>
-              返回
-            </Button>
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
       <div className="flex items-center gap-2 pt-2">
         <Button variant="default" size="sm" onClick={handleConfirm}>
           确认
         </Button>
         <Button variant="outline" size="sm" onClick={handleEdit}>
-          编辑
+          编辑（即将支持）
         </Button>
         <Button variant="ghost" size="sm" onClick={handleCancel}>
           取消

@@ -184,7 +184,7 @@ describe('PlanPreviewCard', () => {
 
     expect(screen.getByText('发报价')).toBeTruthy()
     expect(screen.getByRole('button', { name: '确认' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: '编辑' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '编辑（即将支持）' })).toBeTruthy()
     expect(screen.getByRole('button', { name: '取消' })).toBeTruthy()
   })
 })
