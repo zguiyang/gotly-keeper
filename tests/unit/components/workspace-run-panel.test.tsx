@@ -10,6 +10,68 @@ afterEach(() => {
 })
 
 describe('WorkspaceRunPanel', () => {
+  describe('shell layout contract', () => {
+    it('renders a unified shell with header, content, and actions for awaiting_user status', () => {
+      render(
+        <WorkspaceRunPanel
+          status="awaiting_user"
+          interaction={{
+            runId: 'run_1',
+            id: 'interaction_1',
+            type: 'confirm_plan',
+            message: '确认执行？',
+            actions: ['confirm', 'cancel'],
+            plan: { summary: 'test', steps: [] },
+          }}
+          onResume={() => {}}
+        />
+      )
+
+      expect(screen.getByTestId('workspace-run-panel')).toBeTruthy()
+      expect(screen.getByTestId('workspace-run-panel-header')).toBeTruthy()
+      expect(screen.getByTestId('workspace-run-panel-content')).toBeTruthy()
+      expect(screen.getByTestId('workspace-run-panel-actions')).toBeTruthy()
+    })
+
+    it('renders a unified shell for streaming status', () => {
+      render(
+        <WorkspaceRunPanel
+          status="streaming"
+          assistantText={null}
+        />
+      )
+
+      expect(screen.getByTestId('workspace-run-panel')).toBeTruthy()
+      expect(screen.getByTestId('workspace-run-panel-header')).toBeTruthy()
+      expect(screen.getByTestId('workspace-run-panel-content')).toBeTruthy()
+    })
+
+    it('renders a unified shell for success status', () => {
+      render(
+        <WorkspaceRunPanel
+          status="success"
+          assistantText="处理完成"
+        />
+      )
+
+      expect(screen.getByTestId('workspace-run-panel')).toBeTruthy()
+      expect(screen.getByTestId('workspace-run-panel-header')).toBeTruthy()
+      expect(screen.getByTestId('workspace-run-panel-content')).toBeTruthy()
+    })
+
+    it('uses internal overflow on content area', () => {
+      render(
+        <WorkspaceRunPanel
+          status="streaming"
+          assistantText={null}
+        />
+      )
+
+      const content = screen.getByTestId('workspace-run-panel-content')
+      expect(content.className).toMatch(/overflow-y-auto/)
+    })
+  })
+
   it('collapses to the final result after a successful single-task run', () => {
     render(
       <WorkspaceRunPanel

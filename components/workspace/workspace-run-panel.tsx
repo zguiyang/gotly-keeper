@@ -7,7 +7,7 @@ import { DraftTaskEditor } from './draft-task-editor'
 import { PlanPreviewCard } from './plan-preview-card'
 import { SlotClarificationForm } from './slot-clarification-form'
 import { WorkspaceQueryResultsContent } from './workspace-result-panels'
-import { workspaceMetaTextClassName, workspacePillClassName } from './workspace-view-primitives'
+import { workspaceMetaTextClassName, workspacePillClassName, workspaceRunActionBarClassName, workspaceRunScrollBodyClassName, workspaceRunShellClassName } from './workspace-view-primitives'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
 import type {
@@ -827,58 +827,87 @@ export function WorkspaceRunPanel({
   const resolvedPlanPreview = planPreview ?? derivePlanPreviewFromTimeline(timeline)
   const resolvedResult = toLegacyResultData(result)
 
+  const headerTitle = status === 'awaiting_user'
+    ? null
+    : status === 'streaming'
+      ? visiblePhase.message ?? getPhaseFallbackMessage(visiblePhase)
+      : null
+
   return (
     <motion.section
+      data-testid="workspace-run-panel"
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-      className="mb-8 rounded-[1.75rem] border border-border/10 bg-surface-container-lowest px-4 py-4 shadow-[var(--shadow-soft)] sm:px-5"
+      className={workspaceRunShellClassName}
     >
-      <AnimatePresence mode="wait" initial={false}>
-        {status === 'awaiting_user' && interaction && onResume ? (
-          <motion.div
-            key="interaction"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <InteractionPanel interaction={interaction} onResume={onResume} />
-          </motion.div>
-        ) : status === 'streaming' ? (
-          <motion.div
-            key="current-step"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <StreamingPanel
-              planPreview={resolvedPlanPreview}
-              timeline={timeline}
-              visiblePhase={visiblePhase}
-            />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="final-result"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <FinalResult
-              assistantText={assistantText}
-              result={resolvedResult}
-              errorMessage={errorMessage}
-              status={(status === 'idle' ? 'success' : status) as 'success' | 'error'}
-              elapsedMs={elapsedMs}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <header
+        data-testid="workspace-run-panel-header"
+        className="mb-3 flex items-center gap-2"
+      >
+        {headerTitle ? (
+          <span className="text-xs font-medium text-on-surface-variant/70">
+            {headerTitle}
+          </span>
+        ) : null}
+      </header>
+
+      <div
+        data-testid="workspace-run-panel-content"
+        className={workspaceRunScrollBodyClassName}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {status === 'awaiting_user' && interaction && onResume ? (
+            <motion.div
+              key="interaction"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <InteractionPanel interaction={interaction} onResume={onResume} />
+            </motion.div>
+          ) : status === 'streaming' ? (
+            <motion.div
+              key="current-step"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <StreamingPanel
+                planPreview={resolvedPlanPreview}
+                timeline={timeline}
+                visiblePhase={visiblePhase}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="final-result"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <FinalResult
+                assistantText={assistantText}
+                result={resolvedResult}
+                errorMessage={errorMessage}
+                status={(status === 'idle' ? 'success' : status) as 'success' | 'error'}
+                elapsedMs={elapsedMs}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <footer
+        data-testid="workspace-run-panel-actions"
+        className={workspaceRunActionBarClassName}
+      >
+      </footer>
     </motion.section>
   )
 }
