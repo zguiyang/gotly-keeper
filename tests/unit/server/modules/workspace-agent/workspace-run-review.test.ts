@@ -142,6 +142,60 @@ describe('workspace-run-review', () => {
     }
   })
 
+  it('requests plan confirmation after multi-task drafts are already confirmed', () => {
+    const draftTasks = [
+      createDraftTask({
+        id: 'task_1',
+        title: '熬药',
+        confidence: 0.95,
+        slots: { time: '五分钟后' },
+      }),
+      createDraftTask({
+        id: 'task_2',
+        target: 'notes',
+        title: '不要吃生冷食物',
+        confidence: 0.9,
+        slots: {},
+      }),
+    ]
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks,
+      plan: createPlan({
+        summary: '准备执行 2 个任务。',
+        steps: [
+          {
+            id: 'step_1',
+            action: 'create_todo',
+            target: 'todos',
+            title: '熬药',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+          {
+            id: 'step_2',
+            action: 'create_note',
+            target: 'notes',
+            title: '不要吃生冷食物',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks }),
+      updatedAt,
+      draftTasksConfirmed: true,
+    })
+
+    expect(result.status).toBe('await_user')
+    expect(result.reason).toBe('confirm_plan')
+    expect(result.snapshot?.interaction).toMatchObject({
+      type: 'confirm_plan',
+      actions: ['confirm', 'edit', 'cancel'],
+    })
+  })
+
   it('requests candidate selection for update steps with candidates', () => {
     const draftTask = createDraftTask({
       intent: 'update',
@@ -363,6 +417,42 @@ describe('workspace-run-review', () => {
 
     expect(result.status).toBe('await_user')
     expect(result.reason).toBe('clarify_slots')
+  })
+
+  it('still auto-executes a single clear task after draft confirmation', () => {
+    const draftTask = createDraftTask({
+      title: '给客户发报价',
+      confidence: 0.92,
+      ambiguities: [],
+      corrections: [],
+      slots: { title: '给客户发报价' },
+    })
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [draftTask],
+      plan: createPlan({
+        steps: [
+          {
+            id: 'step_1',
+            action: 'create_todo',
+            target: 'todos',
+            title: '给客户发报价',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+      updatedAt,
+      draftTasksConfirmed: true,
+    })
+
+    expect(result).toEqual({
+      status: 'auto_execute',
+      reason: 'single_low_risk_clear_task',
+      snapshot: null,
+    })
   })
 
   it('awaits user clarification when ambiguities exist', () => {

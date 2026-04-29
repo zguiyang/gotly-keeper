@@ -344,6 +344,105 @@ describe('workspace-run-orchestrator', () => {
   })
 
   describe('resume flow', () => {
+    it('advances to confirm_plan after saving multi-task draft edits', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const store = createMockStore()
+      const draftTasks = [
+        {
+          id: 'task_1',
+          intent: 'create',
+          target: 'todos',
+          title: '熬药',
+          confidence: 0.95,
+          ambiguities: [],
+          corrections: [],
+          slots: { time: '五分钟后' },
+        },
+        {
+          id: 'task_2',
+          intent: 'create',
+          target: 'notes',
+          title: '不要吃生冷食物',
+          confidence: 0.9,
+          ambiguities: [],
+          corrections: [],
+          slots: {},
+        },
+        {
+          id: 'task_3',
+          intent: 'create',
+          target: 'bookmarks',
+          title: 'https://github.com/zguiyang',
+          confidence: 0.95,
+          ambiguities: [],
+          corrections: [],
+          slots: { url: 'https://github.com/zguiyang' },
+        },
+      ]
+
+      store.loadLatestAwaiting = vi.fn().mockResolvedValue({
+        runId: 'run_123',
+        phase: 'review',
+        status: 'awaiting_user',
+        interactionId: 'run_123_edit_draft_tasks',
+        interaction: {
+          runId: 'run_123',
+          id: 'run_123_edit_draft_tasks',
+          type: 'edit_draft_tasks',
+          message: '这次请求包含多个草稿任务，请先确认或编辑。',
+          actions: ['save', 'cancel'] as const,
+          tasks: draftTasks,
+        },
+        timeline: [],
+        preview: { plan: null },
+        understandingPreview: {
+          rawInput: '五分钟后提醒我熬药，帮我几个笔记，不要吃生冷食物，最后收藏一下：https://github.com/zguiyang',
+          normalizedInput: '五分钟后提醒我熬药，帮我几个笔记，不要吃生冷食物，最后收藏一下：https://github.com/zguiyang',
+          draftTasks,
+          corrections: [],
+        },
+        planPreview: null,
+        correctionNotes: [],
+        updatedAt: new Date().toISOString(),
+      })
+
+      const events: unknown[] = []
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'resume',
+          runId: 'run_123',
+          interactionId: 'run_123_edit_draft_tasks',
+          response: {
+            type: 'edit_draft_tasks',
+            action: 'save',
+            tasks: draftTasks,
+          },
+        },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('review')
+      expect(events).toContainEqual(
+        expect.objectContaining({
+          type: 'awaiting_user',
+          interaction: expect.objectContaining({ type: 'confirm_plan' }),
+        })
+      )
+      expect(events).not.toContainEqual(
+        expect.objectContaining({
+          type: 'awaiting_user',
+          interaction: expect.objectContaining({ type: 'edit_draft_tasks' }),
+        })
+      )
+    })
+
     it('preserves candidates when resuming from snapshot', async () => {
       const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
 

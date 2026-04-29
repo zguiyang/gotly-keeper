@@ -2,6 +2,7 @@ import 'server-only'
 
 import { runAiGeneration } from '@/server/lib/ai/ai-runner'
 import { isAiProviderError, isAiSchemaError, isAiTimeoutError } from '@/server/lib/ai/ai.errors'
+import { WORKSPACE_TASK_PARSE_TIMEOUT_MS } from '@/server/lib/config/constants'
 
 
 import { createWorkspaceRunStore } from './workspace-run-store.drizzle'
@@ -37,7 +38,7 @@ export function isWorkspaceRunModelError(
 
 function toWorkspaceRunModelError(error: unknown): WorkspaceRunModelError {
   if (isAiTimeoutError(error)) {
-    return new WorkspaceRunModelError(error.message, {
+    return new WorkspaceRunModelError('理解这次输入超时了，请稍后重试；如果内容较多，可以分两次发送。', {
       code: 'AI_TIMEOUT',
       retryable: true,
       cause: error,
@@ -76,6 +77,8 @@ function createRunModel(): WorkspaceRunModel {
       schema: understandingModelResultSchema,
       systemPrompt: input.systemPrompt,
       userPrompt: input.userPrompt,
+      timeoutMs: WORKSPACE_TASK_PARSE_TIMEOUT_MS,
+      abortSignal: input.signal,
     })
 
     if (!result.success) {

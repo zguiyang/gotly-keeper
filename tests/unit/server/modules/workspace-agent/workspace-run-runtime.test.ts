@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AiProviderError, AiSchemaError, AiTimeoutError } from '@/server/lib/ai/ai.types'
+import { WORKSPACE_TASK_PARSE_TIMEOUT_MS } from '@/server/lib/config/constants'
 import { createWorkspaceRunRuntime } from '@/server/modules/workspace-agent/workspace-run-runtime'
 
 const mocks = vi.hoisted(() => ({
@@ -70,9 +71,46 @@ describe('workspace-run-runtime', () => {
         userPrompt: 'user prompt',
       })
     ).rejects.toMatchObject({
-      message: 'The operation was aborted due to timeout',
+      message: '理解这次输入超时了，请稍后重试；如果内容较多，可以分两次发送。',
       retryable: true,
       code: 'AI_TIMEOUT',
     })
+  })
+
+  it('uses the workspace understanding timeout for run model calls', async () => {
+    const controller = new AbortController()
+
+    mocks.runAiGeneration.mockResolvedValueOnce({
+      success: true,
+      data: {
+        draftTasks: [
+          {
+            id: 'draft_1',
+            intent: 'create',
+            target: 'todos',
+            title: '给客户发报价',
+            confidence: 0.92,
+            ambiguities: [],
+            corrections: [],
+            slotEntries: [],
+          },
+        ],
+      },
+    })
+
+    const { runModel } = createWorkspaceRunRuntime()
+
+    await runModel({
+      systemPrompt: 'system prompt',
+      userPrompt: 'user prompt',
+      signal: controller.signal,
+    })
+
+    expect(mocks.runAiGeneration).toHaveBeenCalledWith(
+      expect.objectContaining({
+        timeoutMs: WORKSPACE_TASK_PARSE_TIMEOUT_MS,
+        abortSignal: controller.signal,
+      })
+    )
   })
 })

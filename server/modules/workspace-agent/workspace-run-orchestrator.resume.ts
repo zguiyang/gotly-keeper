@@ -411,6 +411,7 @@ export async function handleResume(
     runId: request.runId,
     userId,
     onEvent,
+    signal: options.signal,
   }
 
   if (request.response.action === 'cancel') {
@@ -472,6 +473,8 @@ export async function handleResume(
       corrections: snapshot.understandingPreview?.corrections ?? [],
     },
     updatedAt: new Date().toISOString(),
+    draftTasksConfirmed:
+      request.response.type === 'edit_draft_tasks' && request.response.action === 'save',
   })
 
   emitEvent(ctx, { type: 'phase_started', phase: 'review' })
