@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useId, useRef, useState } from 'react'
+import { Check } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 
 import { CandidatePicker } from './candidate-picker'
 import { DraftTaskEditor, type DraftTaskEditorHandle } from './draft-task-editor'
@@ -808,6 +810,26 @@ function InteractionPanel({
   }
 }
 
+function InteractionActionIntro({
+  interaction,
+}: {
+  interaction: WorkspaceInteraction
+}) {
+  if (interaction.type === 'edit_draft_tasks') {
+    return '确认标题和附加信息后，保存这些任务并继续执行。'
+  }
+
+  if (interaction.type === 'confirm_plan') {
+    return '执行前最后确认一遍步骤；确认后会按顺序处理这些动作。'
+  }
+
+  if (interaction.type === 'select_candidate') {
+    return '选择最合适的候选内容，或跳过这次匹配。'
+  }
+
+  return '补充缺失信息后即可继续。'
+}
+
 export function WorkspaceRunPanel({
   status,
   assistantText,
@@ -871,13 +893,16 @@ export function WorkspaceRunPanel({
                 tasks: tasks ?? [],
               })
             }}
+            className="rounded-full px-4"
           >
-            继续
+            <Check data-icon="inline-start" />
+            保存任务并继续
           </Button>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={() => onResume({ type: 'edit_draft_tasks', action: 'cancel' })}
+            className="rounded-full px-4"
           >
             取消
           </Button>
@@ -897,13 +922,15 @@ export function WorkspaceRunPanel({
               }
             }}
             disabled={!selectedCandidateId}
+            className="rounded-full px-4"
           >
-            选择
+            使用这条候选
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => onResume({ type: 'select_candidate', action: 'skip' })}
+            className="rounded-full px-4"
           >
             跳过
           </Button>
@@ -911,6 +938,7 @@ export function WorkspaceRunPanel({
             variant="ghost"
             size="sm"
             onClick={() => onResume({ type: 'select_candidate', action: 'cancel' })}
+            className="rounded-full px-4"
           >
             取消
           </Button>
@@ -926,13 +954,15 @@ export function WorkspaceRunPanel({
             size="sm"
             type="submit"
             form={slotFormId}
+            className="rounded-full px-4"
           >
-            提交
+            提交信息
           </Button>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={() => onResume({ type: 'clarify_slots', action: 'cancel' })}
+            className="rounded-full px-4"
           >
             取消
           </Button>
@@ -947,15 +977,18 @@ export function WorkspaceRunPanel({
             variant="default"
             size="sm"
             onClick={() => onResume({ type: 'confirm_plan', action: 'confirm' })}
+            className="rounded-full px-4"
           >
-            确认执行
+            <Check data-icon="inline-start" />
+            确认并执行
           </Button>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={() => onResume({ type: 'confirm_plan', action: 'cancel' })}
+            className="rounded-full px-4"
           >
-            取消
+            返回修改
           </Button>
         </>
       )
@@ -1043,14 +1076,16 @@ export function WorkspaceRunPanel({
 
       {showDisclosure ? (
         <div className="mt-3 border-t border-border/10 pt-3">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setDetailsExpanded((prev) => !prev)}
-            className="text-xs font-medium text-on-surface-variant/60 transition-colors hover:text-on-surface-variant"
             aria-expanded={detailsExpanded}
+            className="rounded-full px-3 text-xs text-on-surface-variant/70"
           >
             {detailsExpanded ? '收起详情' : '展开详情'}
-          </button>
+          </Button>
 
           {detailsExpanded ? (
             <div className="mt-3 space-y-3">
@@ -1110,6 +1145,12 @@ export function WorkspaceRunPanel({
           data-testid="workspace-run-panel-actions"
           className={workspaceRunActionBarClassName}
         >
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-on-surface-variant/70">
+              {InteractionActionIntro({ interaction })}
+            </p>
+          </div>
+          <Separator orientation="vertical" className="hidden h-6 bg-border/10 sm:block" />
           {renderActions(interaction)}
         </footer>
       ) : null}

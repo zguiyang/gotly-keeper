@@ -39,7 +39,7 @@ const workspaceRunScrollBodyClassName =
   'flex-1 min-h-0 overflow-y-auto pb-4'
 
 const workspaceRunActionBarClassName =
-  'sticky bottom-0 flex items-center gap-2 border-t border-border/10 bg-surface-container-lowest pt-3'
+  'sticky bottom-0 mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/10 bg-surface-container-lowest/98 pt-3'
 
 const workspaceRunSectionClassName =
   'space-y-3'
