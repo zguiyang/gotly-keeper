@@ -13,6 +13,11 @@ import {
 } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 
+import {
+  workspaceInteractionBodyTextClassName,
+  workspaceInteractionCardClassName,
+} from './workspace-view-primitives'
+
 import type { ConfirmPlanInteraction, WorkspaceInteractionResponse } from '@/shared/workspace/workspace-run-protocol'
 
 type PlanPreviewCardProps = {
@@ -39,8 +44,8 @@ export function PlanPreviewCard({ interaction }: PlanPreviewCardProps) {
     : interaction.plan.steps.slice(0, 2)
 
   return (
-    <Card className="overflow-hidden rounded-[1.35rem] border-border/15 bg-surface-container-lowest/95 shadow-[var(--shadow-elevation-1)]">
-      <CardHeader className="gap-3 px-5 py-5">
+    <Card className={workspaceInteractionCardClassName}>
+      <CardHeader className="gap-2 px-5 py-4">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-[11px] font-medium tracking-normal">
             待确认执行
@@ -51,7 +56,7 @@ export function PlanPreviewCard({ interaction }: PlanPreviewCardProps) {
         </div>
         <div className="flex flex-col gap-1">
           <CardTitle className="text-base text-on-surface">{interaction.plan.summary}</CardTitle>
-          <CardDescription className="text-sm leading-6 text-on-surface-variant">
+          <CardDescription className={workspaceInteractionBodyTextClassName}>
             {interaction.message}
           </CardDescription>
         </div>
@@ -59,9 +64,9 @@ export function PlanPreviewCard({ interaction }: PlanPreviewCardProps) {
 
       <Separator className="bg-border/10" />
 
-      <CardContent className="flex flex-col gap-4 px-5 py-5">
+      <CardContent className="flex flex-col gap-3 px-5 py-4">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-xs font-semibold tracking-[0.14em] text-on-surface-variant/70 uppercase">
+          <h3 className="text-[12px] font-medium tracking-normal text-on-surface-variant/72">
             将执行
           </h3>
           {interaction.plan.steps.length > 2 ? (
@@ -71,18 +76,18 @@ export function PlanPreviewCard({ interaction }: PlanPreviewCardProps) {
               size="sm"
               onClick={() => setIsExpanded((current) => !current)}
               aria-expanded={isExpanded}
-              className="rounded-full px-3 text-xs"
+              className="rounded-full px-3 text-xs text-on-surface-variant/78 hover:text-on-surface"
             >
               {isExpanded ? '收起步骤' : `查看全部 ${interaction.plan.steps.length} 步`}
             </Button>
           ) : null}
         </div>
 
-        <ol className="flex flex-col gap-2.5">
+        <ol className="flex flex-col gap-2">
           {previewSteps.map((step, index) => (
             <li
               key={step.id}
-              className="rounded-[1rem] border border-border/10 bg-muted/30 px-4 py-3 transition-[transform,border-color,background-color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-px hover:border-border/20 hover:bg-muted/40"
+              className="rounded-[1rem] border border-border/10 bg-muted/30 px-4 py-3 transition-[transform,border-color,background-color,box-shadow] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-px hover:border-border/20 hover:bg-muted/40 hover:shadow-[var(--shadow-elevation-1)]"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] font-medium tracking-normal">

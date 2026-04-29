@@ -15,6 +15,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 
+import {
+  workspaceInteractionBodyTextClassName,
+  workspaceInteractionCardClassName,
+  workspaceInteractionInsetFieldClassName,
+  workspaceInteractionLabelClassName,
+} from './workspace-view-primitives'
+
 import type { DraftWorkspaceTask, EditDraftTasksInteraction } from '@/shared/workspace/workspace-run-protocol'
 
 type DraftTaskEditorProps = {
@@ -57,8 +64,8 @@ export const DraftTaskEditor = forwardRef<DraftTaskEditorHandle, DraftTaskEditor
     }
 
     return (
-      <Card className="overflow-hidden rounded-[1.35rem] border-border/15 bg-surface-container-lowest/95 shadow-[var(--shadow-elevation-1)]">
-        <CardHeader className="gap-2 px-5 py-5">
+      <Card className={workspaceInteractionCardClassName}>
+        <CardHeader className="gap-2 px-5 py-4">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-[11px] font-medium tracking-normal">
               多任务校对
@@ -69,7 +76,7 @@ export const DraftTaskEditor = forwardRef<DraftTaskEditorHandle, DraftTaskEditor
           </div>
           <div className="flex flex-col gap-1">
             <CardTitle className="text-base text-on-surface">确认任务内容后继续</CardTitle>
-            <p className="text-sm leading-6 text-on-surface-variant">
+            <p className={workspaceInteractionBodyTextClassName}>
               优先修改标题；附加信息会作为执行时的上下文一起保存。
             </p>
           </div>
@@ -77,14 +84,14 @@ export const DraftTaskEditor = forwardRef<DraftTaskEditorHandle, DraftTaskEditor
 
         <Separator className="bg-border/10" />
 
-        <CardContent className="px-5 py-5">
-          <ol className="flex flex-col gap-4">
+        <CardContent className="px-5 py-4">
+          <ol className="flex flex-col gap-3">
           {tasks.map((task, index) => (
             <li
               key={task.id}
-              className="rounded-[1rem] border border-border/10 bg-muted/25 p-4 transition-[transform,border-color,background-color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-px hover:border-border/20 hover:bg-muted/35"
+              className="rounded-[1rem] border border-border/10 bg-muted/25 p-4 transition-[transform,border-color,background-color,box-shadow] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-px hover:border-border/20 hover:bg-muted/35 hover:shadow-[var(--shadow-elevation-1)]"
             >
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex flex-wrap items-start justify-between gap-2.5">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[10px] tracking-normal">
                     任务 {index + 1}
@@ -101,9 +108,12 @@ export const DraftTaskEditor = forwardRef<DraftTaskEditorHandle, DraftTaskEditor
                 </span>
               </div>
 
-              <FieldGroup className="mt-4 gap-4">
+              <FieldGroup className="mt-3.5 gap-3.5">
                 <Field>
-                  <FieldLabel htmlFor={`task-title-${index}`} className="text-xs font-semibold tracking-[0.12em] text-on-surface-variant/75 uppercase">
+                  <FieldLabel
+                    htmlFor={`task-title-${index}`}
+                    className={workspaceInteractionLabelClassName}
+                  >
                     标题
                   </FieldLabel>
                   <FieldContent>
@@ -112,6 +122,7 @@ export const DraftTaskEditor = forwardRef<DraftTaskEditorHandle, DraftTaskEditor
                       value={task.title}
                       onChange={(e) => updateTask(index, { title: e.target.value })}
                       name={`task-title-${index}`}
+                      className={workspaceInteractionInsetFieldClassName}
                     />
                     <FieldDescription>这条标题会直接影响后续保存与执行内容。</FieldDescription>
                   </FieldContent>
@@ -121,6 +132,7 @@ export const DraftTaskEditor = forwardRef<DraftTaskEditorHandle, DraftTaskEditor
                   <>
                     <FieldSeparator />
                     <FieldGroup className="gap-3">
+                      <p className="text-[12px] font-medium text-on-surface-variant/68">附加信息</p>
                       {Object.entries(task.slots).map(([key, value]) => {
                         const inputId = `task-slot-${index}-${key}`
 
@@ -128,7 +140,7 @@ export const DraftTaskEditor = forwardRef<DraftTaskEditorHandle, DraftTaskEditor
                           <Field key={key}>
                             <FieldLabel
                               htmlFor={inputId}
-                              className="text-xs font-semibold tracking-[0.12em] text-on-surface-variant/70 uppercase"
+                              className={workspaceInteractionLabelClassName}
                             >
                               {key}
                             </FieldLabel>
@@ -142,6 +154,7 @@ export const DraftTaskEditor = forwardRef<DraftTaskEditorHandle, DraftTaskEditor
                                   })
                                 }
                                 name={inputId}
+                                className={workspaceInteractionInsetFieldClassName}
                               />
                             </FieldContent>
                           </Field>

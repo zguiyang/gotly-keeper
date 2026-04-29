@@ -2,10 +2,20 @@
 
 import { useId, useState } from 'react'
 
+import {
+  Field,
+  FieldContent,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 
-import { workspaceSurfaceClassName } from './workspace-view-primitives'
+import {
+  workspaceInteractionBodyTextClassName,
+  workspaceInteractionCardClassName,
+  workspaceInteractionInsetFieldClassName,
+  workspaceInteractionLabelClassName,
+} from './workspace-view-primitives'
 
 import type { ClarifySlotsInteraction, WorkspaceInteractionResponse } from '@/shared/workspace/workspace-run-protocol'
 
@@ -24,14 +34,14 @@ export function SlotClarificationForm({ interaction, formId, onSubmit }: SlotCla
   }
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <p className="text-sm text-on-surface-variant">{interaction.message}</p>
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <p className={workspaceInteractionBodyTextClassName}>{interaction.message}</p>
       </div>
 
       <form
         id={formId}
-        className={`${workspaceSurfaceClassName} p-4 space-y-4`}
+        className={`${workspaceInteractionCardClassName} p-5`}
         onSubmit={(event) => {
           event.preventDefault()
           onSubmit({
@@ -41,26 +51,31 @@ export function SlotClarificationForm({ interaction, formId, onSubmit }: SlotCla
           })
         }}
       >
-        {interaction.fields.map((field) => {
-          const inputId = `${idPrefix}-${field.key}`
+        <FieldGroup className="gap-3.5">
+          {interaction.fields.map((field) => {
+            const inputId = `${idPrefix}-${field.key}`
 
-          return (
-            <div key={field.key} className="space-y-2">
-              <Label htmlFor={inputId}>
-                {field.label}
-                {field.required && <span className="text-destructive ml-1">*</span>}
-              </Label>
-              <Input
-                id={inputId}
-                placeholder={field.placeholder}
-                value={values[field.key] || ''}
-                onChange={(e) => handleChange(field.key, e.target.value)}
-                required={field.required}
-                name={field.key}
-              />
-            </div>
-          )
-        })}
+            return (
+              <Field key={field.key}>
+                <FieldLabel htmlFor={inputId} className={workspaceInteractionLabelClassName}>
+                  {field.label}
+                  {field.required ? <span className="ml-1 text-destructive">*</span> : null}
+                </FieldLabel>
+                <FieldContent>
+                  <Input
+                    id={inputId}
+                    placeholder={field.placeholder}
+                    value={values[field.key] || ''}
+                    onChange={(e) => handleChange(field.key, e.target.value)}
+                    required={field.required}
+                    name={field.key}
+                    className={workspaceInteractionInsetFieldClassName}
+                  />
+                </FieldContent>
+              </Field>
+            )
+          })}
+        </FieldGroup>
       </form>
     </div>
   )

@@ -12,7 +12,15 @@ import { DraftTaskEditor, type DraftTaskEditorHandle } from './draft-task-editor
 import { PlanPreviewCard } from './plan-preview-card'
 import { SlotClarificationForm } from './slot-clarification-form'
 import { WorkspaceQueryResultsContent } from './workspace-result-panels'
-import { workspaceMetaTextClassName, workspacePillClassName, workspaceRunActionBarClassName, workspaceRunScrollBodyClassName, workspaceRunShellClassName } from './workspace-view-primitives'
+import {
+  workspaceMetaTextClassName,
+  workspacePillClassName,
+  workspacePrimaryActionButtonClassName,
+  workspaceRunActionBarClassName,
+  workspaceRunScrollBodyClassName,
+  workspaceRunShellClassName,
+  workspaceSecondaryActionButtonClassName,
+} from './workspace-view-primitives'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
 import type {
@@ -881,10 +889,9 @@ export function WorkspaceRunPanel({
 
     if (interaction.type === 'edit_draft_tasks') {
       return (
-        <>
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="default"
-            size="sm"
             onClick={() => {
               const tasks = draftEditorRef.current?.getTasks()
               onResume({
@@ -893,104 +900,96 @@ export function WorkspaceRunPanel({
                 tasks: tasks ?? [],
               })
             }}
-            className="rounded-full px-4"
+            className={workspacePrimaryActionButtonClassName}
           >
             <Check data-icon="inline-start" />
             保存任务并继续
           </Button>
           <Button
             variant="outline"
-            size="sm"
             onClick={() => onResume({ type: 'edit_draft_tasks', action: 'cancel' })}
-            className="rounded-full px-4"
+            className={workspaceSecondaryActionButtonClassName}
           >
             取消
           </Button>
-        </>
+        </div>
       )
     }
 
     if (interaction.type === 'select_candidate') {
       return (
-        <>
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="default"
-            size="sm"
             onClick={() => {
               if (selectedCandidateId) {
                 onResume({ type: 'select_candidate', action: 'select', candidateId: selectedCandidateId })
               }
             }}
             disabled={!selectedCandidateId}
-            className="rounded-full px-4"
+            className={workspacePrimaryActionButtonClassName}
           >
             使用这条候选
           </Button>
           <Button
             variant="outline"
-            size="sm"
             onClick={() => onResume({ type: 'select_candidate', action: 'skip' })}
-            className="rounded-full px-4"
+            className={workspaceSecondaryActionButtonClassName}
           >
             跳过
           </Button>
           <Button
             variant="ghost"
-            size="sm"
             onClick={() => onResume({ type: 'select_candidate', action: 'cancel' })}
-            className="rounded-full px-4"
+            className={workspaceSecondaryActionButtonClassName}
           >
             取消
           </Button>
-        </>
+        </div>
       )
     }
 
     if (interaction.type === 'clarify_slots') {
       return (
-        <>
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="default"
-            size="sm"
             type="submit"
             form={slotFormId}
-            className="rounded-full px-4"
+            className={workspacePrimaryActionButtonClassName}
           >
             提交信息
           </Button>
           <Button
             variant="outline"
-            size="sm"
             onClick={() => onResume({ type: 'clarify_slots', action: 'cancel' })}
-            className="rounded-full px-4"
+            className={workspaceSecondaryActionButtonClassName}
           >
             取消
           </Button>
-        </>
+        </div>
       )
     }
 
     if (interaction.type === 'confirm_plan') {
       return (
-        <>
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="default"
-            size="sm"
             onClick={() => onResume({ type: 'confirm_plan', action: 'confirm' })}
-            className="rounded-full px-4"
+            className={workspacePrimaryActionButtonClassName}
           >
             <Check data-icon="inline-start" />
             确认并执行
           </Button>
           <Button
             variant="outline"
-            size="sm"
             onClick={() => onResume({ type: 'confirm_plan', action: 'cancel' })}
-            className="rounded-full px-4"
+            className={workspaceSecondaryActionButtonClassName}
           >
             返回修改
           </Button>
-        </>
+        </div>
       )
     }
 
@@ -1145,7 +1144,7 @@ export function WorkspaceRunPanel({
           data-testid="workspace-run-panel-actions"
           className={workspaceRunActionBarClassName}
         >
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 pr-2">
             <p className="text-xs font-medium text-on-surface-variant/70">
               {InteractionActionIntro({ interaction })}
             </p>
