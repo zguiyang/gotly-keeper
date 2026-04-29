@@ -5,9 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { CandidatePicker } from './candidate-picker'
 import { DraftTaskEditor } from './draft-task-editor'
 import { PlanPreviewCard } from './plan-preview-card'
-import { RunTimeline } from './run-timeline'
 import { SlotClarificationForm } from './slot-clarification-form'
-import { UnderstandingPreview } from './understanding-preview'
 import { WorkspaceQueryResultsContent } from './workspace-result-panels'
 import { workspaceMetaTextClassName, workspacePillClassName } from './workspace-view-primitives'
 
@@ -36,6 +34,11 @@ type VisibleWorkspaceRunPhase = {
     | 'compose'
   status: 'active' | 'done' | 'failed' | 'skipped'
   message?: string
+}
+
+type ProcessLine = {
+  key: string
+  text: string
 }
 
 function getPhaseTitle(phase: VisibleWorkspaceRunPhase['phase']) {
@@ -100,6 +103,70 @@ function getMutationTargetLabel(target: 'notes' | 'todos' | 'bookmarks') {
   }
 
   return '书签'
+}
+
+function getToolLabel(toolName: string) {
+  if (toolName === 'create_todo') return '创建待办'
+  if (toolName === 'update_todo') return '更新待办'
+  if (toolName === 'create_note') return '创建笔记'
+  if (toolName === 'update_note') return '更新笔记'
+  if (toolName === 'create_bookmark') return '创建书签'
+  if (toolName === 'query_assets') return '查询内容'
+  if (toolName === 'summarize_assets') return '总结内容'
+  return toolName
+}
+
+function isWorkspacePlanPreview(value: unknown): value is WorkspacePlanPreview {
+  return Boolean(
+    value &&
+    typeof value === 'object' &&
+    'summary' in value &&
+    typeof value.summary === 'string' &&
+    'steps' in value &&
+    Array.isArray(value.steps)
+  )
+}
+
+function derivePlanPreviewFromTimeline(timeline: WorkspaceRunStreamEvent[]) {
+  for (const event of [...timeline].reverse()) {
+    if (event.type !== 'phase_completed') {
+      continue
+    }
+
+    if (event.phase === 'preview' && isWorkspacePlanPreview((event.output as { plan?: unknown } | undefined)?.plan)) {
+      return (event.output as { plan: WorkspacePlanPreview }).plan
+    }
+
+    if (event.phase === 'plan' && isWorkspacePlanPreview(event.output)) {
+      return event.output
+    }
+
+    if (
+      event.phase === 'plan' &&
+      event.output &&
+      typeof event.output === 'object' &&
+      'summary' in event.output &&
+      typeof event.output.summary === 'string' &&
+      'steps' in event.output &&
+      Array.isArray(event.output.steps)
+    ) {
+      return {
+        summary: event.output.summary,
+        steps: event.output.steps
+          .filter((step): step is { id: string; action: string; title?: string } => (
+            Boolean(step && typeof step === 'object' && 'id' in step && 'action' in step)
+          ))
+          .map((step) => ({
+            id: step.id,
+            toolName: step.action,
+            title: getToolLabel(step.action),
+            preview: `${getToolLabel(step.action)}：${step.title ?? ''}`.trimEnd(),
+          })),
+      }
+    }
+  }
+
+  return null
 }
 
 function getVisiblePhase(
@@ -171,44 +238,148 @@ function getPhaseFallbackMessage(visiblePhase: VisibleWorkspaceRunPhase) {
   return '正在把结果整理成可读的回复。'
 }
 
-function CurrentStep({
-  visiblePhase,
-}: {
-  visiblePhase: VisibleWorkspaceRunPhase
-}) {
-  const prefersReducedMotion = useReducedMotion()
+function formatElapsedMs(elapsedMs: number | null | undefined) {
+  if (!elapsedMs || elapsedMs < 1000) {
+    return null
+  }
+
+  const totalSeconds = Math.round(elapsedMs / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+
+  if (minutes === 0) {
+    return `耗时 ${seconds}s`
+  }
+
+  return `耗时 ${minutes}m${String(seconds).padStart(2, '0')}s`
+}
+
+function getPhaseLine(visiblePhase: VisibleWorkspaceRunPhase) {
   const phaseTitle = getPhaseTitle(visiblePhase.phase)
   const message = visiblePhase.message ?? getPhaseFallbackMessage(visiblePhase)
-  const lineText = message ? `${phaseTitle} · ${message}` : phaseTitle
-  const lineKey = `${visiblePhase.phase}-${message}`
+  return message ? `${phaseTitle} · ${message}` : phaseTitle
+}
+
+function pushUniqueLine(lines: ProcessLine[], line: ProcessLine) {
+  if (lines.at(-1)?.text === line.text) {
+    return
+  }
+
+  lines.push(line)
+}
+
+function collectProcessLines(
+  timeline: WorkspaceRunStreamEvent[],
+  visiblePhase: VisibleWorkspaceRunPhase
+) {
+  const lines: ProcessLine[] = []
+
+  for (const event of timeline) {
+    if (event.type === 'phase_started') {
+      pushUniqueLine(lines, {
+        key: `phase-${event.phase}-${lines.length}`,
+        text: getPhaseLine({ phase: event.phase, status: 'active' }),
+      })
+    }
+
+    if (event.type === 'tool_call_started') {
+      pushUniqueLine(lines, {
+        key: `tool-${event.toolName}-${lines.length}`,
+        text: event.preview,
+      })
+    }
+  }
+
+  if (lines.length === 0) {
+    lines.push({
+      key: `fallback-${visiblePhase.phase}`,
+      text: getPhaseLine(visiblePhase),
+    })
+  }
+
+  return lines.slice(-2)
+}
+
+function getToolProgress(timeline: WorkspaceRunStreamEvent[]) {
+  let startedCount = 0
+  let completedCount = 0
+
+  for (const event of timeline) {
+    if (event.type === 'tool_call_started') {
+      startedCount += 1
+    }
+
+    if (event.type === 'tool_call_completed') {
+      completedCount += 1
+    }
+  }
+
+  const activeIndex = startedCount > completedCount ? completedCount : null
+  const nextIndex = Math.min(completedCount, Math.max(0, startedCount))
+
+  return {
+    activeIndex,
+    nextIndex,
+  }
+}
+
+function getCompactPlanSteps(
+  planPreview: WorkspacePlanPreview,
+  activeIndex: number | null,
+  nextIndex: number
+) {
+  if (planPreview.steps.length <= 2) {
+    return planPreview.steps
+  }
+
+  const focusIndex = activeIndex ?? nextIndex
+
+  if (focusIndex <= 0) {
+    return planPreview.steps.slice(0, 2)
+  }
+
+  if (focusIndex >= planPreview.steps.length - 1) {
+    return planPreview.steps.slice(-2)
+  }
+
+  return planPreview.steps.slice(focusIndex, focusIndex + 2)
+}
+
+function StreamingSinglePanel({
+  lines,
+}: {
+  lines: ProcessLine[]
+}) {
+  const prefersReducedMotion = useReducedMotion()
 
   return (
-    <div className="flex min-h-[6.5rem] items-center justify-start">
-      <div className="flex w-full items-center gap-3 px-1 sm:px-2">
+    <div className="flex min-h-[7rem] items-center justify-start">
+      <div className="flex w-full items-start gap-3 px-1 pt-2 sm:px-2">
         <span className="relative flex h-2.5 w-2.5 shrink-0">
           <span className="absolute inline-flex h-full w-full rounded-full bg-primary/45 motion-safe:animate-ping" />
           <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
         </span>
 
-        <div className="relative h-7 min-w-0 flex-1" role="status" aria-live="polite" aria-atomic="true">
-          <AnimatePresence initial={false}>
-            <motion.p
-              key={lineKey}
-              initial={prefersReducedMotion
-                ? { opacity: 0 }
-                : { opacity: 0, y: 10, backgroundPosition: '100% 50%' }}
-              animate={prefersReducedMotion
-                ? { opacity: 1 }
-                : { opacity: 1, y: 0, backgroundPosition: '0% 50%' }}
-              exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
-              transition={prefersReducedMotion
-                ? { duration: 0.18, ease: 'linear' }
-                : { duration: 0.56, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-0 truncate bg-gradient-to-r from-on-surface-variant/75 via-on-surface to-on-surface-variant/80 bg-[length:220%_100%] bg-clip-text text-left text-sm leading-7 text-transparent drop-shadow-[0_1px_5px_rgba(15,23,42,0.1)] dark:drop-shadow-[0_1px_7px_rgba(255,255,255,0.06)] forced-colors:bg-none forced-colors:text-[CanvasText] forced-colors:[-webkit-text-fill-color:CanvasText]"
-              title={lineText}
-            >
-              {lineText}
-            </motion.p>
+        <div className="min-w-0 flex-1 space-y-1" role="status" aria-live="polite" aria-atomic="true">
+          <AnimatePresence initial={false} mode="popLayout">
+            {lines.map((line, index) => (
+              <motion.p
+                key={line.key}
+                layout
+                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+                animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -12 }}
+                transition={prefersReducedMotion
+                  ? { duration: 0.18, ease: 'linear' }
+                  : { duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+                className={index === lines.length - 1
+                  ? 'truncate text-sm leading-7 text-on-surface'
+                  : 'truncate text-sm leading-6 text-on-surface-variant/58'}
+                title={line.text}
+              >
+                {line.text}
+              </motion.p>
+            ))}
           </AnimatePresence>
         </div>
       </div>
@@ -216,35 +387,75 @@ function CurrentStep({
   )
 }
 
-function PlanStepsPreview({
+function StreamingMultiPanel({
   planPreview,
+  timeline,
+  visiblePhase,
 }: {
   planPreview: WorkspacePlanPreview
+  timeline: WorkspaceRunStreamEvent[]
+  visiblePhase: VisibleWorkspaceRunPhase
 }) {
+  const { activeIndex, nextIndex } = getToolProgress(timeline)
+  const visibleSteps = getCompactPlanSteps(planPreview, activeIndex, nextIndex)
+  const areToolsFinished = nextIndex >= planPreview.steps.length
+  const isComposePhase = visiblePhase.phase === 'compose'
+
   return (
-    <div className="rounded-[1rem] border border-border/10 bg-muted/35 px-4 py-4">
+    <div className="space-y-4 px-1 sm:px-2">
       <div className="flex flex-wrap items-center gap-2">
-        <span className={workspacePillClassName}>执行步骤</span>
-        <span className={workspaceMetaTextClassName}>{planPreview.summary}</span>
+        <span className={workspacePillClassName}>处理中</span>
+        <span className="text-sm font-medium text-on-surface">{planPreview.summary}</span>
       </div>
 
-      <div className="mt-3 space-y-2">
-        {planPreview.steps.map((step, index) => (
+      <div className="space-y-2">
+        {visibleSteps.map((step, index) => {
+          const absoluteIndex = planPreview.steps.findIndex((candidate) => candidate.id === step.id)
+          const isActive = activeIndex !== null ? absoluteIndex === activeIndex : false
+          const isCompleted = isComposePhase || areToolsFinished || absoluteIndex < nextIndex
+          const isNext = activeIndex === null ? absoluteIndex === nextIndex : absoluteIndex === activeIndex + 1
+
+          return (
           <div
             key={step.id}
-            className="rounded-[0.9rem] border border-border/10 bg-surface-container-lowest px-3 py-2.5"
+            className={isActive
+              ? 'rounded-[0.95rem] border border-primary/15 bg-primary/6 px-3 py-2.5'
+              : isCompleted
+                ? 'rounded-[0.95rem] border border-emerald-500/15 bg-emerald-500/6 px-3 py-2.5'
+              : 'rounded-[0.95rem] border border-border/10 bg-muted/35 px-3 py-2.5'}
           >
-            <p className="text-sm font-medium text-on-surface">
-              {index + 1}. {step.title}
+            <p className={isActive
+              ? 'text-xs font-medium text-primary/80'
+              : isCompleted
+                ? 'text-xs font-medium text-emerald-600 dark:text-emerald-400'
+                : 'text-xs font-medium text-on-surface-variant/70'}>
+              {isActive ? '当前动作' : isCompleted ? '已完成动作' : isNext ? '接续动作' : '后续动作'}
             </p>
-            <p className="mt-1 text-xs leading-5 text-on-surface-variant/75">
+            <p className="mt-1 text-sm leading-6 text-on-surface">
               {step.preview}
             </p>
           </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
+}
+
+function StreamingPanel({
+  planPreview,
+  timeline,
+  visiblePhase,
+}: {
+  planPreview: WorkspacePlanPreview | null
+  timeline: WorkspaceRunStreamEvent[]
+  visiblePhase: VisibleWorkspaceRunPhase
+}) {
+  if (planPreview && planPreview.steps.length > 1) {
+    return <StreamingMultiPanel planPreview={planPreview} timeline={timeline} visiblePhase={visiblePhase} />
+  }
+
+  return <StreamingSinglePanel lines={collectProcessLines(timeline, visiblePhase)} />
 }
 
 function FinalResult({
@@ -252,12 +463,16 @@ function FinalResult({
   result,
   errorMessage,
   status,
+  elapsedMs,
 }: {
   assistantText: string | null
   result: WorkspaceRunApiData | null
   errorMessage: string | null
   status: 'streaming' | 'success' | 'error'
+  elapsedMs?: number | null
 }) {
+  const elapsedText = formatElapsedMs(elapsedMs)
+
   if (status === 'streaming') {
     return null
   }
@@ -276,14 +491,17 @@ function FinalResult({
         <p className="mt-1 text-xs leading-5 text-on-surface-variant/80">
           可以换成更明确的说法，比如“总结最近笔记重点”或“查找上周待办”。
         </p>
+        {elapsedText ? (
+          <p className="mt-2 text-xs text-on-surface-variant/70">{elapsedText}</p>
+        ) : null}
       </div>
     )
   }
 
   if (result?.kind === 'query') {
     if (result.total === 0) {
-      return (
-        <div className="rounded-[1rem] border border-border/10 bg-muted/35 px-4 py-4">
+    return (
+      <div className="rounded-[1rem] border border-border/10 bg-muted/35 px-4 py-4">
           <p className="text-sm font-semibold text-on-surface">没有找到相关内容</p>
           {assistantText ? (
             <p className="mt-1 text-sm leading-6 text-on-surface-variant/80">
@@ -293,6 +511,9 @@ function FinalResult({
           <p className="mt-1 text-xs leading-5 text-on-surface-variant/70">
             可以换个关键词，或先在上方保存一条新记录。
           </p>
+          {elapsedText ? (
+            <p className="mt-2 text-xs text-on-surface-variant/70">{elapsedText}</p>
+          ) : null}
         </div>
       )
     }
@@ -308,6 +529,9 @@ function FinalResult({
           ) : null}
         </div>
         <WorkspaceQueryResultsContent results={result.items} />
+        {elapsedText ? (
+          <p className="text-xs text-on-surface-variant/70">{elapsedText}</p>
+        ) : null}
       </div>
     )
   }
@@ -334,15 +558,21 @@ function FinalResult({
             </p>
           </div>
         ) : null}
+        {elapsedText ? (
+          <p className="text-xs text-on-surface-variant/70">{elapsedText}</p>
+        ) : null}
       </div>
     )
   }
 
   return (
-    <div className="rounded-[1rem] border border-border/10 bg-muted/35 px-4 py-3">
+    <div className="space-y-2 rounded-[1rem] border border-border/10 bg-muted/35 px-4 py-3">
       <p className="break-words text-sm leading-6 text-on-surface">
         {assistantText ?? '处理完成。'}
       </p>
+      {elapsedText ? (
+        <p className="text-xs text-on-surface-variant/70">{elapsedText}</p>
+      ) : null}
     </div>
   )
 }
@@ -419,6 +649,7 @@ export function WorkspaceRunPanel({
   timeline = [],
   understandingPreview = null,
   planPreview = null,
+  elapsedMs = null,
   onResume,
 }: {
   status: 'idle' | 'streaming' | 'awaiting_user' | 'success' | 'error'
@@ -431,15 +662,13 @@ export function WorkspaceRunPanel({
   timeline?: WorkspaceRunStreamEvent[]
   understandingPreview?: WorkspaceUnderstandingPreview | null
   planPreview?: WorkspacePlanPreview | null
+  elapsedMs?: number | null
   correctionNotes?: string[]
   onResume?: (response: WorkspaceInteractionResponse) => void
 }) {
   const visiblePhase = getVisiblePhase(phases, timeline)
-  const resolvedUnderstandingPreview = understandingPreview
-  const resolvedPlanPreview = planPreview
+  const resolvedPlanPreview = planPreview ?? derivePlanPreviewFromTimeline(timeline)
   const resolvedResult = toLegacyResultData(result)
-  const shouldShowDetails =
-    status !== 'streaming' && status !== 'error' && (Boolean(resolvedPlanPreview) || timeline.length > 0)
 
   return (
     <motion.section
@@ -469,7 +698,11 @@ export function WorkspaceRunPanel({
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
           >
-            <CurrentStep visiblePhase={visiblePhase} />
+            <StreamingPanel
+              planPreview={resolvedPlanPreview}
+              timeline={timeline}
+              visiblePhase={visiblePhase}
+            />
           </motion.div>
         ) : (
           <motion.div
@@ -484,17 +717,8 @@ export function WorkspaceRunPanel({
               result={resolvedResult}
               errorMessage={errorMessage}
               status={(status === 'idle' ? 'success' : status) as 'success' | 'error'}
+              elapsedMs={elapsedMs}
             />
-
-            {shouldShowDetails ? (
-              <div className="mt-4 space-y-4">
-                {resolvedUnderstandingPreview ? (
-                  <UnderstandingPreview understandingPreview={resolvedUnderstandingPreview} />
-                ) : null}
-                {resolvedPlanPreview ? <PlanStepsPreview planPreview={resolvedPlanPreview} /> : null}
-                {timeline.length > 0 ? <RunTimeline timeline={timeline} /> : null}
-              </div>
-            ) : null}
           </motion.div>
         )}
       </AnimatePresence>

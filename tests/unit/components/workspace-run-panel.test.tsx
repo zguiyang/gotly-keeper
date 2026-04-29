@@ -10,11 +10,12 @@ afterEach(() => {
 })
 
 describe('WorkspaceRunPanel', () => {
-  it('renders plan steps and timeline after a successful run', () => {
+  it('collapses to the final result after a successful single-task run', () => {
     render(
       <WorkspaceRunPanel
         status="success"
         assistantText="已保存笔记：首页 slogan 想走轻管家感。"
+        elapsedMs={117000}
         result={{
           action: 'create',
           ok: true,
@@ -93,26 +94,129 @@ describe('WorkspaceRunPanel', () => {
     )
 
     expect(screen.getByText('已创建笔记')).toBeTruthy()
-    expect(screen.getAllByText('已保存笔记：首页 slogan 想走轻管家感。')).toHaveLength(2)
-    expect(screen.getByText('理解预览')).toBeTruthy()
-    expect(screen.getByText('执行步骤')).toBeTruthy()
-    expect(screen.getByText('准备执行 1 个任务。')).toBeTruthy()
-    expect(screen.getByText('1. 创建笔记')).toBeTruthy()
-    expect(screen.getByText('创建笔记：首页 slogan 想走轻管家感')).toBeTruthy()
-    expect(screen.getByText('开始: 计划')).toBeTruthy()
-    expect(screen.getByText('开始: 创建笔记')).toBeTruthy()
-    expect(screen.getByText('完成: 已生成最终结果')).toBeTruthy()
+    expect(screen.getByText('已保存笔记：首页 slogan 想走轻管家感。')).toBeTruthy()
+    expect(screen.getByText('耗时 1m57s')).toBeTruthy()
+    expect(screen.queryByText('理解预览')).toBeNull()
+    expect(screen.queryByText('执行步骤')).toBeNull()
+    expect(screen.queryByText('执行时间线')).toBeNull()
   })
 
-  it('uses timeline to show the active streaming phase', () => {
+  it('shows two streaming lines for a single task', () => {
     render(
       <WorkspaceRunPanel
         status="streaming"
         assistantText={null}
-        timeline={[{ type: 'phase_started', phase: 'understand' }]}
+        timeline={[
+          { type: 'phase_started', phase: 'understand' },
+          { type: 'phase_started', phase: 'plan' },
+        ]}
+        planPreview={{
+          summary: '准备执行 1 个任务。',
+          steps: [
+            {
+              id: 'step_1',
+              toolName: 'create_note',
+              title: '创建笔记',
+              preview: '创建笔记：首页 slogan 想走轻管家感',
+            },
+          ],
+        }}
       />
     )
 
+    expect(screen.getByText(/正在规划执行步骤/)).toBeTruthy()
     expect(screen.getByText(/正在理解你的输入/)).toBeTruthy()
+  })
+
+  it('shows a compact queue for multi-task streaming', () => {
+    render(
+      <WorkspaceRunPanel
+        status="streaming"
+        assistantText={null}
+        timeline={[
+          { type: 'phase_started', phase: 'plan' },
+          {
+            type: 'tool_call_started',
+            toolName: 'create_note',
+            preview: '创建笔记：首页 slogan 想走轻管家感',
+          },
+        ]}
+        planPreview={{
+          summary: '准备执行 3 个任务。',
+          steps: [
+            {
+              id: 'step_1',
+              toolName: 'create_note',
+              title: '创建笔记',
+              preview: '创建笔记：首页 slogan 想走轻管家感',
+            },
+            {
+              id: 'step_2',
+              toolName: 'create_todo',
+              title: '创建待办',
+              preview: '创建待办：明天下午发报价',
+            },
+            {
+              id: 'step_3',
+              toolName: 'query_assets',
+              title: '查询内容',
+              preview: '查询内容：最近待办',
+            },
+          ],
+        }}
+      />
+    )
+
+    expect(screen.getByText('准备执行 3 个任务。')).toBeTruthy()
+    expect(screen.getByText('创建笔记：首页 slogan 想走轻管家感')).toBeTruthy()
+    expect(screen.getByText('创建待办：明天下午发报价')).toBeTruthy()
+    expect(screen.queryByText('查询内容：最近待办')).toBeNull()
+  })
+
+  it('shows a compact confirmation summary for multi-task plans', () => {
+    render(
+      <WorkspaceRunPanel
+        status="awaiting_user"
+        assistantText={null}
+        interaction={{
+          runId: 'run_1',
+          id: 'interaction_1',
+          type: 'confirm_plan',
+          message: '这些动作会一起执行，是否继续？',
+          actions: ['confirm', 'edit', 'cancel'],
+          plan: {
+            summary: '准备执行 3 个任务。',
+            steps: [
+              {
+                id: 'step_1',
+                toolName: 'create_note',
+                title: '创建笔记',
+                preview: '创建笔记：首页 slogan 想走轻管家感',
+              },
+              {
+                id: 'step_2',
+                toolName: 'create_todo',
+                title: '创建待办',
+                preview: '创建待办：明天下午发报价',
+              },
+              {
+                id: 'step_3',
+                toolName: 'query_assets',
+                title: '查询内容',
+                preview: '查询内容：最近待办',
+              },
+            ],
+          },
+        }}
+        onResume={() => {}}
+      />
+    )
+
+    expect(screen.getByText('这些动作会一起执行，是否继续？')).toBeTruthy()
+    expect(screen.getByText('准备执行 3 个任务。')).toBeTruthy()
+    expect(screen.getByText('创建笔记：首页 slogan 想走轻管家感')).toBeTruthy()
+    expect(screen.getByText('创建待办：明天下午发报价')).toBeTruthy()
+    expect(screen.queryByText('查询内容：最近待办')).toBeNull()
+    expect(screen.getByText('编辑（即将支持）')).toBeTruthy()
   })
 })
