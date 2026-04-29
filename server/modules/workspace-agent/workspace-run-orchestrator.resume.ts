@@ -13,6 +13,7 @@ import {
   type ReviewablePlan,
   type WorkspaceReviewPendingRunSnapshot,
 } from './workspace-run-review'
+import { normalizeTodoDraftTaskTimes } from './workspace-run-time-normalization'
 
 import type { WorkspaceToolContext, WorkspaceToolResult, WorkspaceIntent, WorkspaceTarget } from './types'
 import type { OrchestrateWorkspaceRunOptions } from './workspace-run-orchestrator'
@@ -163,7 +164,7 @@ async function replanDraftTasks(
 ) {
   return planWorkspaceRun({
     userId: options.userId,
-    draftTasks: tasks,
+    draftTasks: normalizeTodoDraftTaskTimes(tasks),
     searchCandidates: options.searchCandidates,
     runPlanHints: async () => null,
   })

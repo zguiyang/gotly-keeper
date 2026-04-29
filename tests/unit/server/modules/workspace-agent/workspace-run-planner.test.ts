@@ -91,6 +91,46 @@ describe('workspace-run-planner', () => {
     expect(runPlanHints).not.toHaveBeenCalled()
   })
 
+  it('keeps normalized todo dueAt together with the original timeText', async () => {
+    const result = await planWorkspaceRun({
+      userId: 'user_123',
+      draftTasks: [
+        {
+          id: 'draft_1',
+          intent: 'create',
+          target: 'todos',
+          title: '发周报',
+          confidence: 0.95,
+          ambiguities: [],
+          corrections: [],
+          slots: {
+            time: '五分钟后',
+            timeText: '五分钟后',
+            dueAt: '2026-04-29T02:15:00.000Z',
+          },
+        },
+      ],
+      searchCandidates: vi.fn(),
+      runPlanHints: vi.fn(),
+    })
+
+    expect(result.steps).toEqual([
+      {
+        id: 'step_1',
+        action: 'create_todo',
+        target: 'todos',
+        title: '发周报',
+        risk: 'low',
+        requiresUserApproval: false,
+        toolInput: {
+          title: '发周报',
+          timeText: '五分钟后',
+          dueAt: '2026-04-29T02:15:00.000Z',
+        },
+      },
+    ])
+  })
+
   it('maps clear create bookmark input to a low-risk create_bookmark step without hints', async () => {
     const runPlanHints = vi.fn()
 
