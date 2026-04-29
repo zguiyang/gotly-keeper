@@ -1,4 +1,5 @@
 import { composeWorkspaceAnswer } from './workspace-compose'
+import { buildBatchAnswer, buildCompletedRunResult } from './workspace-run-completed'
 import { executeWorkspaceRunSteps } from './workspace-run-executor'
 import { normalizeWorkspaceRunInput } from './workspace-run-normalizer'
 import { emitEvent, createRunId, getToolResultError, getToolNameFromAction } from './workspace-run-orchestrator.shared'
@@ -159,6 +160,27 @@ async function runCompose(
   return result
 }
 
+async function runBatchCompose(
+  ctx: PhaseContext,
+  input: {
+    preview: Awaited<ReturnType<typeof runPreview>>
+    executeResult: Awaited<ReturnType<typeof runExecute>>
+  }
+) {
+  emitEvent(ctx, { type: 'phase_started', phase: 'compose' })
+
+  const result = {
+    answer: buildBatchAnswer({
+      plan: input.preview.plan,
+      executeResult: input.executeResult,
+    }),
+    usedFallback: true,
+  }
+
+  emitEvent(ctx, { type: 'phase_completed', phase: 'compose', output: result })
+  return result
+}
+
 export async function handleNewInput(
   options: OrchestrateWorkspaceRunOptions
 ): Promise<{
@@ -234,27 +256,36 @@ export async function handleNewInput(
       const firstOkResult = executeResult.stepResults.find((r) => r.result.ok)?.result
 
       if (firstOkResult && firstOkResult.ok) {
-        const firstTask = understanding.draftTasks[0]
-        const firstStep = plannerResult.steps[0]
-        const toolName = firstStep ? getToolNameFromAction(firstStep.action) : 'create_todo'
-
-        const composeResult = await runCompose(
-          ctx,
-          { intent: firstTask.intent as WorkspaceIntent, target: firstTask.target as Exclude<WorkspaceTarget, 'mixed'> },
-          { intent: firstTask.intent as WorkspaceIntent, target: firstTask.target as WorkspaceTarget, toolName, toolInput: {}, needsCompose: true },
-          firstOkResult
-        )
+        const composeResult = executeResult.stepResults.length > 1
+          ? await runBatchCompose(ctx, { preview, executeResult })
+          : await runCompose(
+              ctx,
+              {
+                intent: understanding.draftTasks[0].intent as WorkspaceIntent,
+                target: understanding.draftTasks[0].target as Exclude<WorkspaceTarget, 'mixed'>,
+              },
+              {
+                intent: understanding.draftTasks[0].intent as WorkspaceIntent,
+                target: understanding.draftTasks[0].target as WorkspaceTarget,
+                toolName: plannerResult.steps[0]
+                  ? getToolNameFromAction(plannerResult.steps[0].action)
+                  : 'create_todo',
+                toolInput: {},
+                needsCompose: true,
+              },
+              firstOkResult
+            )
 
         await store.updateRunStatus(runId, userId, 'completed')
 
         emitEvent(ctx, {
           type: 'run_completed',
-          result: {
-            summary: executeResult.summary,
+          result: buildCompletedRunResult({
+            executeResult,
             answer: composeResult.answer,
             preview,
-            data: firstOkResult,
-          },
+            data: executeResult.stepResults.length > 1 ? null : firstOkResult,
+          }),
         })
 
         return {

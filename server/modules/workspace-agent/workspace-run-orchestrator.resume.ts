@@ -1,4 +1,5 @@
 import { composeWorkspaceAnswer } from './workspace-compose'
+import { buildBatchAnswer, buildCompletedRunResult } from './workspace-run-completed'
 import { executeWorkspaceRunSteps } from './workspace-run-executor'
 import {
   emitEvent,
@@ -73,7 +74,6 @@ async function runCompose(
   emitEvent(ctx, { type: 'phase_completed', phase: 'compose', output: result })
   return result
 }
-
 function toDraftWorkspaceTasks(
   snapshot: WorkspaceReviewPendingRunSnapshot,
   response: ResumeResponse
@@ -228,25 +228,25 @@ function applyEditedPlan(
   }
 }
 
-function buildRunCompletedResult(input: {
-  executeResult: Awaited<ReturnType<typeof runExecute>>
-  snapshot: WorkspaceReviewPendingRunSnapshot
-  data: WorkspaceToolResult & { ok: true }
-  answer: string
-}) {
-  const preview = input.snapshot.preview
-    ? {
-        understanding: input.snapshot.understandingPreview ?? undefined,
-        plan: input.snapshot.preview.plan ?? undefined,
-      }
-    : undefined
+async function runBatchCompose(
+  ctx: PhaseContext,
+  input: {
+    preview: WorkspaceRunResult['preview']
+    executeResult: Awaited<ReturnType<typeof runExecute>>
+  }
+) {
+  emitEvent(ctx, { type: 'phase_started', phase: 'compose' })
 
-  return {
-    summary: input.executeResult.summary,
-    answer: input.answer,
-    preview,
-    data: input.data,
-  } satisfies WorkspaceRunResult
+  const result = {
+    answer: buildBatchAnswer({
+      plan: input.preview?.plan,
+      executeResult: input.executeResult,
+    }),
+    usedFallback: true,
+  }
+
+  emitEvent(ctx, { type: 'phase_completed', phase: 'compose', output: result })
+  return result
 }
 
 async function executePlannedRun(input: {
@@ -293,33 +293,41 @@ async function executePlannedRun(input: {
 
   const firstTask = input.draftTasks[0]
   const toolName = firstOkStep.toolName
-  const composeResult = await runCompose(
-    input.ctx,
-    {
-      intent: firstTask.intent as WorkspaceIntent,
-      target: firstTask.target as Exclude<WorkspaceTarget, 'mixed'>,
-    },
-    {
-      intent: firstTask.intent as WorkspaceIntent,
-      target: firstTask.target as WorkspaceTarget,
-      toolName,
-      toolInput:
-        input.plannerResult.steps.find((step) => getToolNameFromAction(step.action) === toolName)
-          ?.toolInput ?? {},
-      needsCompose: true,
-    },
-    firstOkResult
-  )
+  const preview = input.snapshot.preview
+    ? {
+        understanding: input.snapshot.understandingPreview ?? undefined,
+        plan: input.snapshot.preview.plan ?? undefined,
+      }
+    : undefined
+  const composeResult = executeResult.stepResults.length > 1
+    ? await runBatchCompose(input.ctx, { preview, executeResult })
+    : await runCompose(
+        input.ctx,
+        {
+          intent: firstTask.intent as WorkspaceIntent,
+          target: firstTask.target as Exclude<WorkspaceTarget, 'mixed'>,
+        },
+        {
+          intent: firstTask.intent as WorkspaceIntent,
+          target: firstTask.target as WorkspaceTarget,
+          toolName,
+          toolInput:
+            input.plannerResult.steps.find((step) => getToolNameFromAction(step.action) === toolName)
+              ?.toolInput ?? {},
+          needsCompose: true,
+        },
+        firstOkResult
+      )
 
   await input.store.updateRunStatus(input.runId, input.userId, 'completed')
 
   emitEvent(input.ctx, {
     type: 'run_completed',
-    result: buildRunCompletedResult({
+    result: buildCompletedRunResult({
       executeResult,
-      snapshot: input.snapshot,
-      data: firstOkResult,
+      preview,
       answer: composeResult.answer,
+      data: executeResult.stepResults.length > 1 ? null : firstOkResult,
     }),
   })
 

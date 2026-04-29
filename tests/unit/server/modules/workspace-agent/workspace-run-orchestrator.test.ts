@@ -6,6 +6,7 @@ import type {
 import type { WorkspaceRunStore } from '@/server/modules/workspace-agent/workspace-run-store'
 import type { WorkspaceRunModel } from '@/server/modules/workspace-agent/workspace-run-understanding'
 import type {
+  DraftWorkspaceTask,
   WorkspaceRunStreamEvent,
 } from '@/shared/workspace/workspace-run-protocol'
 
@@ -319,6 +320,7 @@ describe('workspace-run-orchestrator', () => {
         expect(runCompletedEvent).toBeUndefined()
       }
     })
+
   })
 
   describe('quick action', () => {
@@ -348,7 +350,7 @@ describe('workspace-run-orchestrator', () => {
       const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
 
       const store = createMockStore()
-      const draftTasks = [
+      const draftTasks: DraftWorkspaceTask[] = [
         {
           id: 'task_1',
           intent: 'create',
