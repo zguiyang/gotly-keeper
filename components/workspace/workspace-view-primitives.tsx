@@ -44,6 +44,24 @@ const workspaceRunActionBarClassName =
 const workspaceRunSectionClassName =
   'space-y-3'
 
+const workspaceInteractionCardClassName =
+  'overflow-hidden rounded-[1.35rem] border border-border/15 bg-surface-container-lowest/95 shadow-[var(--shadow-elevation-1)]'
+
+const workspaceInteractionInsetFieldClassName =
+  'h-10 rounded-xl border-border/8 bg-muted/55 px-3.5 shadow-none transition-[background-color,border-color,box-shadow] duration-200 placeholder:text-on-surface-variant/45 hover:bg-muted/65 focus-visible:border-primary/20 focus-visible:bg-surface-container-lowest focus-visible:ring-4 focus-visible:ring-primary/10'
+
+const workspaceInteractionLabelClassName =
+  'text-[12px] font-medium tracking-normal text-on-surface-variant/80'
+
+const workspaceInteractionBodyTextClassName =
+  'text-sm leading-6 text-on-surface-variant'
+
+const workspacePrimaryActionButtonClassName =
+  'h-9 rounded-full px-4.5 text-sm shadow-[var(--shadow-elevation-1)]'
+
+const workspaceSecondaryActionButtonClassName =
+  'h-9 rounded-full px-4 text-sm'
+
 type WorkspacePageHeaderProps = {
   title: string
   description?: string
@@ -202,5 +220,11 @@ export {
   workspaceRunSectionClassName,
   workspaceRunShellClassName,
   workspaceSurfaceClassName,
+  workspaceInteractionBodyTextClassName,
+  workspaceInteractionCardClassName,
+  workspaceInteractionInsetFieldClassName,
+  workspaceInteractionLabelClassName,
+  workspacePrimaryActionButtonClassName,
+  workspaceSecondaryActionButtonClassName,
   WorkspaceTypeBadge,
 }
