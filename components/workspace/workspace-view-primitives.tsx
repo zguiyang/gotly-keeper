@@ -33,13 +33,13 @@ const workspaceCriticalSurfaceClassName =
   'rounded-[14px] border border-destructive/24 bg-destructive/[0.045] shadow-[var(--shadow-elevation-1)]'
 
 const workspaceRunShellClassName =
-  'mb-8 rounded-[1.75rem] border border-border/10 bg-surface-container-lowest px-4 py-4 shadow-[var(--shadow-soft)] sm:px-5'
+  'mb-8 flex max-h-[32rem] flex-col rounded-[1.75rem] border border-border/10 bg-surface-container-lowest px-4 py-4 shadow-[var(--shadow-soft)] sm:px-5'
 
 const workspaceRunScrollBodyClassName =
-  'min-h-0 overflow-y-auto'
+  'flex-1 min-h-0 overflow-y-auto pb-4'
 
 const workspaceRunActionBarClassName =
-  'flex items-center gap-2 pt-4'
+  'sticky bottom-0 flex items-center gap-2 border-t border-border/10 bg-surface-container-lowest pt-3'
 
 const workspaceRunSectionClassName =
   'space-y-3'
