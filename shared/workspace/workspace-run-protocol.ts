@@ -231,6 +231,7 @@ const workspaceRunResultSchema = z.object({
   answer: z.string().optional(),
   preview: workspacePreviewSchema.nullable().optional(),
   data: z.unknown().nullable().optional(),
+  stepResults: z.array(z.unknown()).optional(),
 })
 
 export type WorkspaceRunResult = z.infer<typeof workspaceRunResultSchema>

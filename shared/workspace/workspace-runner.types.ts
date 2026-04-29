@@ -46,6 +46,15 @@ export type WorkspaceRunApiData =
       item: AssetListItem | null
     }
   | {
+      kind: 'batch'
+      summary: string
+      stepResults: Array<{
+        stepId: string
+        toolName: string
+        result: unknown
+      }>
+    }
+  | {
       kind: 'error'
       phase: 'parse_failed' | 'unsupported_task' | 'tool_failed' | 'compose_failed'
       message: string

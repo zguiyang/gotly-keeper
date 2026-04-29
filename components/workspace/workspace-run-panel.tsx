@@ -466,7 +466,7 @@ function FinalResult({
   elapsedMs,
 }: {
   assistantText: string | null
-  result: WorkspaceRunApiData | null
+  result: WorkspaceRunApiData | WorkspaceBatchResult | null
   errorMessage: string | null
   status: 'streaming' | 'success' | 'error'
   elapsedMs?: number | null
@@ -565,6 +565,92 @@ function FinalResult({
     )
   }
 
+  if (result?.kind === 'batch') {
+    return (
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={workspacePillClassName}>{result.summary}</span>
+          {assistantText ? (
+            <span className={workspaceMetaTextClassName}>{assistantText}</span>
+          ) : null}
+        </div>
+        <div className="space-y-2">
+          {result.stepResults.map((step) => {
+            const normalized = getBatchStepItem(step)
+
+            if (normalized?.kind === 'mutation') {
+              return (
+                <div
+                  key={step.stepId}
+                  className="rounded-[1rem] border border-border/10 bg-muted/45 px-3 py-2.5"
+                >
+                  <p className="text-xs font-medium text-on-surface-variant/70">
+                    {normalized.action === 'create' ? '已创建' : '已更新'}
+                    {getMutationTargetLabel(normalized.target)}
+                  </p>
+                  <p className="mt-1 truncate text-sm font-medium text-on-surface">
+                    {normalized.item?.title ?? getToolLabel(step.toolName)}
+                  </p>
+                  {normalized.item?.excerpt ? (
+                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-on-surface-variant/70">
+                      {normalized.item.excerpt}
+                    </p>
+                  ) : null}
+                </div>
+              )
+            }
+
+            if (normalized?.kind === 'query') {
+              return (
+                <div
+                  key={step.stepId}
+                  className="rounded-[1rem] border border-border/10 bg-muted/45 px-3 py-2.5"
+                >
+                  <p className="text-xs font-medium text-on-surface-variant/70">
+                    {getToolLabel(step.toolName)}
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-on-surface">
+                    找到 {normalized.total} 条{getTargetLabel(normalized.target)}
+                  </p>
+                </div>
+              )
+            }
+
+            if (normalized?.kind === 'error') {
+              return (
+                <div
+                  key={step.stepId}
+                  className="rounded-[1rem] border border-destructive/15 bg-destructive/5 px-3 py-2.5"
+                >
+                  <p className="text-xs font-medium text-destructive">
+                    {getToolLabel(step.toolName)}
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-destructive">
+                    {normalized.message}
+                  </p>
+                </div>
+              )
+            }
+
+            return (
+              <div
+                key={step.stepId}
+                className="rounded-[1rem] border border-border/10 bg-muted/45 px-3 py-2.5"
+              >
+                <p className="text-sm font-medium text-on-surface">
+                  {normalized?.message ?? getToolLabel(step.toolName)}
+                </p>
+              </div>
+            )
+          })}
+        </div>
+        {elapsedText ? (
+          <p className="text-xs text-on-surface-variant/70">{elapsedText}</p>
+        ) : null}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-2 rounded-[1rem] border border-border/10 bg-muted/35 px-4 py-3">
       <p className="break-words text-sm leading-6 text-on-surface">
@@ -586,13 +672,38 @@ type WorkspaceToolSuccessData = {
   item?: AssetListItem | null
 }
 
-function isWorkspaceToolSuccessData(value: WorkspaceRunApiData | WorkspaceToolSuccessData | null): value is WorkspaceToolSuccessData {
+type WorkspaceBatchResult = {
+  kind: 'batch'
+  summary: string
+  stepResults: Array<{
+    stepId: string
+    toolName: string
+    result: unknown
+  }>
+}
+
+function isWorkspaceToolSuccessData(value: WorkspaceRunApiData | WorkspaceToolSuccessData | WorkspaceBatchResult | null): value is WorkspaceToolSuccessData {
   return Boolean(value && typeof value === 'object' && 'ok' in value && value.ok === true)
 }
 
+function isWorkspaceBatchResult(value: WorkspaceRunApiData | WorkspaceToolSuccessData | WorkspaceBatchResult | null): value is WorkspaceBatchResult {
+  return Boolean(
+    value &&
+    typeof value === 'object' &&
+    'kind' in value &&
+    value.kind === 'batch' &&
+    'stepResults' in value &&
+    Array.isArray(value.stepResults)
+  )
+}
+
 function toLegacyResultData(
-  result: WorkspaceRunApiData | WorkspaceToolSuccessData | null
+  result: WorkspaceRunApiData | WorkspaceToolSuccessData | WorkspaceBatchResult | null
 ): WorkspaceRunApiData | null {
+  if (isWorkspaceBatchResult(result)) {
+    return result
+  }
+
   if (!isWorkspaceToolSuccessData(result)) {
     return result
   }
@@ -616,6 +727,52 @@ function toLegacyResultData(
   }
 
   return null
+}
+
+function getBatchStepItem(step: WorkspaceBatchResult['stepResults'][number]) {
+  if (!step.result || typeof step.result !== 'object') {
+    return null
+  }
+
+  const result = step.result as {
+    ok?: boolean
+    action?: 'create' | 'update'
+    target?: 'notes' | 'todos' | 'bookmarks' | 'mixed'
+    item?: AssetListItem | null
+    total?: number
+    items?: AssetListItem[]
+    message?: string
+  }
+
+  if (result.ok && result.action && result.target && result.target !== 'mixed') {
+    return {
+      kind: 'mutation' as const,
+      action: result.action,
+      target: result.target,
+      item: result.item ?? null,
+    }
+  }
+
+  if (result.ok && Array.isArray(result.items) && typeof result.total === 'number' && result.target) {
+    return {
+      kind: 'query' as const,
+      target: result.target,
+      total: result.total,
+      items: result.items,
+    }
+  }
+
+  if (result.ok === false) {
+    return {
+      kind: 'error' as const,
+      message: result.message ?? '处理失败',
+    }
+  }
+
+  return {
+    kind: 'fallback' as const,
+    message: getToolLabel(step.toolName),
+  }
 }
 
 function InteractionPanel({
@@ -655,7 +812,7 @@ export function WorkspaceRunPanel({
   status: 'idle' | 'streaming' | 'awaiting_user' | 'success' | 'error'
   assistantText: string | null
   phases?: WorkspaceRunApiPhase[]
-  result?: WorkspaceRunApiData | WorkspaceToolSuccessData | null
+  result?: WorkspaceRunApiData | WorkspaceToolSuccessData | WorkspaceBatchResult | null
   errorMessage?: string | null
   runId?: string
   interaction?: WorkspaceInteraction

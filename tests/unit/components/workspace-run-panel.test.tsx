@@ -219,4 +219,123 @@ describe('WorkspaceRunPanel', () => {
     expect(screen.queryByText('查询内容：最近待办')).toBeNull()
     expect(screen.getByText('编辑（即将支持）')).toBeTruthy()
   })
+
+  it('shows all final results for a successful multi-task run', () => {
+    render(
+      <WorkspaceRunPanel
+        status="success"
+        assistantText="已执行 3 个任务：添加待办“熬药”、保存笔记“不要吃生冷食物”、收藏链接 https://github.com/zguiyang。"
+        elapsedMs={2400}
+        result={{
+          kind: 'batch',
+          summary: '执行了 3/3 个步骤',
+          stepResults: [
+            {
+              stepId: 'step_1',
+              toolName: 'create_todo',
+              result: {
+                ok: true,
+                target: 'todos',
+                action: 'create',
+                item: {
+                  id: 'todo_1',
+                  originalText: '熬药',
+                  title: '熬药',
+                  excerpt: '熬药',
+                  type: 'todo',
+                  content: null,
+                  url: null,
+                  timeText: null,
+                  dueAt: null,
+                  completed: false,
+                  bookmarkMeta: null,
+                  lifecycleStatus: 'active',
+                  archivedAt: null,
+                  trashedAt: null,
+                  createdAt: new Date('2026-04-29T01:24:00.902Z'),
+                  updatedAt: new Date('2026-04-29T01:24:00.902Z'),
+                },
+              },
+            },
+            {
+              stepId: 'step_2',
+              toolName: 'create_note',
+              result: {
+                ok: true,
+                target: 'notes',
+                action: 'create',
+                item: {
+                  id: 'note_1',
+                  originalText: '不要吃生冷食物',
+                  title: '不要吃生冷食物',
+                  excerpt: '不要吃生冷食物',
+                  type: 'note',
+                  content: '不要吃生冷食物',
+                  summary: null,
+                  url: null,
+                  timeText: null,
+                  dueAt: null,
+                  completed: false,
+                  bookmarkMeta: null,
+                  lifecycleStatus: 'active',
+                  archivedAt: null,
+                  trashedAt: null,
+                  createdAt: new Date('2026-04-29T01:24:00.914Z'),
+                  updatedAt: new Date('2026-04-29T01:24:00.914Z'),
+                },
+              },
+            },
+            {
+              stepId: 'step_3',
+              toolName: 'create_bookmark',
+              result: {
+                ok: true,
+                target: 'bookmarks',
+                action: 'create',
+                item: {
+                  id: 'bookmark_1',
+                  originalText: 'https://github.com/zguiyang',
+                  title: 'https://github.com/zguiyang',
+                  excerpt: 'https://github.com/zguiyang',
+                  type: 'link',
+                  note: null,
+                  summary: null,
+                  url: 'https://github.com/zguiyang',
+                  timeText: null,
+                  dueAt: null,
+                  completed: false,
+                  bookmarkMeta: {
+                    status: 'pending',
+                    title: null,
+                    icon: null,
+                    bookmarkType: null,
+                    description: null,
+                    contentSummary: null,
+                    errorCode: null,
+                    errorMessage: null,
+                    updatedAt: '2026-04-29T01:24:00.927Z',
+                  },
+                  lifecycleStatus: 'active',
+                  archivedAt: null,
+                  trashedAt: null,
+                  createdAt: new Date('2026-04-29T01:24:00.921Z'),
+                  updatedAt: new Date('2026-04-29T01:24:00.921Z'),
+                },
+              },
+            },
+          ],
+        }}
+      />
+    )
+
+    expect(screen.getByText('执行了 3/3 个步骤')).toBeTruthy()
+    expect(screen.getByText('已执行 3 个任务：添加待办“熬药”、保存笔记“不要吃生冷食物”、收藏链接 https://github.com/zguiyang。')).toBeTruthy()
+    expect(screen.getByText('已创建待办')).toBeTruthy()
+    expect(screen.getByText('已创建笔记')).toBeTruthy()
+    expect(screen.getByText('已创建书签')).toBeTruthy()
+    expect(screen.getAllByText('熬药').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('不要吃生冷食物').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('https://github.com/zguiyang').length).toBeGreaterThan(0)
+    expect(screen.getByText('耗时 2s')).toBeTruthy()
+  })
 })

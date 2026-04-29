@@ -64,15 +64,38 @@ export function WorkspaceClient({
   const isSubmittingRef = useRef(false)
 
   const handleWorkspaceResult = useCallback((result: WorkspaceRunResult) => {
-    const data = result.data as { kind?: string; action?: string; item?: AssetListItem } | null
-    if (!data || data.kind !== 'mutation' || data.action !== 'create' || !data.item) {
+    const createdItems: AssetListItem[] = []
+
+    if (Array.isArray(result.stepResults)) {
+      for (const stepResult of result.stepResults) {
+        if (!stepResult || typeof stepResult !== 'object' || !('result' in stepResult)) {
+          continue
+        }
+
+        const rawResult = stepResult.result as {
+          ok?: boolean
+          action?: string
+          item?: AssetListItem
+        } | null
+
+        if (rawResult?.ok && rawResult.action === 'create' && rawResult.item) {
+          createdItems.push(rawResult.item)
+        }
+      }
+    } else {
+      const data = result.data as { kind?: string; action?: string; item?: AssetListItem } | null
+      if (data?.kind === 'mutation' && data.action === 'create' && data.item) {
+        createdItems.push(data.item)
+      }
+    }
+
+    if (createdItems.length === 0) {
       return
     }
 
-    const createdItem = data.item
     setRecentItems((items) => [
-      createdItem,
-      ...items.filter((item) => item.id !== createdItem.id),
+      ...[...createdItems].reverse(),
+      ...items.filter((item) => !createdItems.some((createdItem) => createdItem.id === item.id)),
     ].slice(0, 10))
   }, [])
 
@@ -185,7 +208,17 @@ export function WorkspaceClient({
             key="run-panel"
             status={state.status}
             assistantText={state.result?.answer ?? state.result?.summary ?? null}
-            result={state.result?.data as Parameters<typeof WorkspaceRunPanel>[0]['result']}
+            result={Array.isArray(state.result?.stepResults) && state.result.stepResults.length > 1
+              ? {
+                  kind: 'batch',
+                  summary: state.result.summary,
+                  stepResults: state.result.stepResults as Array<{
+                    stepId: string
+                    toolName: string
+                    result: unknown
+                  }>,
+                }
+              : state.result?.data as Parameters<typeof WorkspaceRunPanel>[0]['result']}
             errorMessage={state.errorMessage}
             runId={state.runId}
             interaction={state.interaction}
