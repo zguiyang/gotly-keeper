@@ -14,6 +14,7 @@ import { WorkspaceRunResultPanel } from '@/components/workspace/workspace-run-re
 import type {
   ClarifySlotsInteraction,
   ConfirmPlanInteraction,
+  DraftWorkspaceTask,
   EditDraftTasksInteraction,
   SelectCandidateInteraction,
   WorkspaceRunResult,
@@ -39,38 +40,37 @@ describe('CandidatePicker', () => {
     ],
   }
 
-  it('renders candidates and action buttons', () => {
-    const onSubmit = () => {}
-    render(<CandidatePicker interaction={mockInteraction} onSubmit={onSubmit} />)
+  it('renders candidates without local action buttons', () => {
+    render(<CandidatePicker interaction={mockInteraction} selectedId={null} onSelect={() => {}} />)
 
     expect(screen.getByText('发报价给老王')).toBeTruthy()
     expect(screen.getByText('主题匹配')).toBeTruthy()
-    expect(screen.getByRole('button', { name: '选择' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: '跳过' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: '取消' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '选择' })).toBeNull()
+    expect(screen.queryByRole('button', { name: '跳过' })).toBeNull()
+    expect(screen.queryByRole('button', { name: '取消' })).toBeNull()
   })
 
-  it('calls onSubmit with select action when candidate is clicked', () => {
-    let submittedResponse: unknown = null
-    const onSubmit = (response: unknown) => {
-      submittedResponse = response
+  it('notifies parent when a candidate is selected', () => {
+    let selectedCandidateId: string | null = null
+
+    render(
+      <CandidatePicker
+        interaction={mockInteraction}
+        selectedId={null}
+        onSelect={(candidateId) => {
+          selectedCandidateId = candidateId
+        }}
+      />
+    )
+
+    const candidateCard = screen.getByText('整理报价模板').closest('div[class*="cursor-pointer"]')
+    expect(candidateCard).toBeTruthy()
+
+    if (candidateCard) {
+      fireEvent.click(candidateCard)
     }
 
-    render(<CandidatePicker interaction={mockInteraction} onSubmit={onSubmit} />)
-
-    const todo1Card = screen.getByText('发报价给老王').closest('div[class*="cursor-pointer"]')
-    if (todo1Card) {
-      fireEvent.click(todo1Card)
-    }
-
-    const selectButton = screen.getByRole('button', { name: '选择' })
-    selectButton.click()
-
-    expect(submittedResponse).toMatchObject({
-      type: 'select_candidate',
-      action: 'select',
-      candidateId: 'todo_1',
-    })
+    expect(selectedCandidateId).toBe('todo_2')
   })
 })
 
@@ -87,36 +87,49 @@ describe('SlotClarificationForm', () => {
     ],
   }
 
-  it('renders form fields and action buttons', () => {
-    const onSubmit = () => {}
-    render(<SlotClarificationForm interaction={mockInteraction} onSubmit={onSubmit} />)
+  it('renders form fields without local action buttons', () => {
+    render(
+      <SlotClarificationForm
+        interaction={mockInteraction}
+        formId="clarify-form"
+        onSubmit={() => {}}
+      />
+    )
 
     expect(screen.getByPlaceholderText('输入日期')).toBeTruthy()
     expect(screen.getByPlaceholderText('可选备注')).toBeTruthy()
-    expect(screen.getByRole('button', { name: '提交' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: '取消' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '提交' })).toBeNull()
+    expect(screen.queryByRole('button', { name: '取消' })).toBeNull()
   })
 
-  it('calls onSubmit with submit action and values', () => {
+  it('submits current field values through the form handler', () => {
     let submittedResponse: unknown = null
-    const onSubmit = (response: unknown) => {
-      submittedResponse = response
-    }
 
-    render(<SlotClarificationForm interaction={mockInteraction} onSubmit={onSubmit} />)
+    render(
+      <SlotClarificationForm
+        interaction={mockInteraction}
+        formId="clarify-form"
+        onSubmit={(response) => {
+          submittedResponse = response
+        }}
+      />
+    )
 
     const dueDateInput = screen.getByPlaceholderText('输入日期')
     fireEvent.change(dueDateInput, { target: { value: '2026-05-01' } })
+    const form = document.getElementById('clarify-form')
+    expect(form).toBeTruthy()
 
-    const submitButton = screen.getByRole('button', { name: '提交' })
-    submitButton.click()
+    if (form) {
+      fireEvent.submit(form)
+    }
 
     expect(submittedResponse).toMatchObject({
       type: 'clarify_slots',
       action: 'submit',
-      values: expect.objectContaining({
+      values: {
         dueDate: '2026-05-01',
-      }),
+      },
     })
   })
 })
