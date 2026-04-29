@@ -45,7 +45,7 @@ const workspaceRunSectionClassName =
   'space-y-3'
 
 const workspaceInteractionCardClassName =
-  'overflow-hidden rounded-[1.35rem] border border-border/15 bg-surface-container-lowest/95 shadow-[var(--shadow-elevation-1)]'
+  'overflow-hidden gap-2 rounded-[1.35rem] border border-border/15 bg-surface-container-lowest/95 shadow-[var(--shadow-elevation-1)]'
 
 const workspaceInteractionInsetFieldClassName =
   'h-10 rounded-xl border-border/8 bg-muted/55 px-3.5 shadow-none transition-[background-color,border-color,box-shadow] duration-200 placeholder:text-on-surface-variant/45 hover:bg-muted/65 focus-visible:border-primary/20 focus-visible:bg-surface-container-lowest focus-visible:ring-4 focus-visible:ring-primary/10'

@@ -45,7 +45,7 @@ export function PlanPreviewCard({ interaction }: PlanPreviewCardProps) {
 
   return (
     <Card className={workspaceInteractionCardClassName}>
-      <CardHeader className="gap-2 px-5 py-4">
+      <CardHeader className="gap-2 px-5 pt-4">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-[11px] font-medium tracking-normal">
             待确认执行
@@ -64,7 +64,7 @@ export function PlanPreviewCard({ interaction }: PlanPreviewCardProps) {
 
       <Separator className="bg-border/10" />
 
-      <CardContent className="flex flex-col gap-3 px-5 py-4">
+      <CardContent className="flex flex-col gap-2 px-5 pb-4 pt-3">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-[12px] font-medium tracking-normal text-on-surface-variant/72">
             将执行
