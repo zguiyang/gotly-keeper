@@ -8,7 +8,7 @@ import type { ConfirmPlanInteraction, WorkspaceInteractionResponse } from '@/sha
 
 type PlanPreviewCardProps = {
   interaction: ConfirmPlanInteraction
-  onSubmit: (response: WorkspaceInteractionResponse) => void
+  onSubmit?: (response: WorkspaceInteractionResponse) => void
 }
 
 export function PlanPreviewCard({ interaction }: PlanPreviewCardProps) {
