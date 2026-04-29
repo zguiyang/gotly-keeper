@@ -1,9 +1,12 @@
 'use client'
 
+import { useRef } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
+import { Button } from '@/components/ui/button'
+
 import { CandidatePicker } from './candidate-picker'
-import { DraftTaskEditor } from './draft-task-editor'
+import { DraftTaskEditor, type DraftTaskEditorHandle } from './draft-task-editor'
 import { PlanPreviewCard } from './plan-preview-card'
 import { SlotClarificationForm } from './slot-clarification-form'
 import { WorkspaceQueryResultsContent } from './workspace-result-panels'
@@ -778,9 +781,11 @@ function getBatchStepItem(step: WorkspaceBatchResult['stepResults'][number]) {
 function InteractionPanel({
   interaction,
   onResume,
+  draftEditorRef,
 }: {
   interaction: WorkspaceInteraction
   onResume: (response: WorkspaceInteractionResponse) => void
+  draftEditorRef?: React.Ref<DraftTaskEditorHandle>
 }) {
   switch (interaction.type) {
     case 'select_candidate':
@@ -788,7 +793,7 @@ function InteractionPanel({
     case 'clarify_slots':
       return <SlotClarificationForm interaction={interaction} onSubmit={onResume} />
     case 'edit_draft_tasks':
-      return <DraftTaskEditor interaction={interaction} onSubmit={onResume} />
+      return <DraftTaskEditor ref={draftEditorRef} interaction={interaction} />
     case 'confirm_plan':
       return <PlanPreviewCard interaction={interaction} onSubmit={onResume} />
     default:
@@ -826,12 +831,68 @@ export function WorkspaceRunPanel({
   const visiblePhase = getVisiblePhase(phases, timeline)
   const resolvedPlanPreview = planPreview ?? derivePlanPreviewFromTimeline(timeline)
   const resolvedResult = toLegacyResultData(result)
+  const draftEditorRef = useRef<DraftTaskEditorHandle>(null)
 
   const headerTitle = status === 'awaiting_user'
     ? null
     : status === 'streaming'
       ? visiblePhase.message ?? getPhaseFallbackMessage(visiblePhase)
       : null
+
+  function renderActions(interaction: WorkspaceInteraction) {
+    if (!onResume) return null
+
+    if (interaction.type === 'edit_draft_tasks') {
+      return (
+        <>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => {
+              const tasks = draftEditorRef.current?.getTasks()
+              onResume({
+                type: 'edit_draft_tasks',
+                action: 'save',
+                tasks: tasks ?? [],
+              })
+            }}
+          >
+            继续
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onResume({ type: 'edit_draft_tasks', action: 'cancel' })}
+          >
+            取消
+          </Button>
+        </>
+      )
+    }
+
+    if (interaction.type === 'confirm_plan') {
+      return (
+        <>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => onResume({ type: 'confirm_plan', action: 'confirm' })}
+          >
+            确认执行
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onResume({ type: 'confirm_plan', action: 'cancel' })}
+          >
+            取消
+          </Button>
+        </>
+      )
+    }
+
+    return null
+  }
 
   return (
     <motion.section
@@ -867,7 +928,7 @@ export function WorkspaceRunPanel({
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
             >
-              <InteractionPanel interaction={interaction} onResume={onResume} />
+              <InteractionPanel interaction={interaction} onResume={onResume} draftEditorRef={draftEditorRef} />
             </motion.div>
           ) : status === 'streaming' ? (
             <motion.div
@@ -903,11 +964,14 @@ export function WorkspaceRunPanel({
         </AnimatePresence>
       </div>
 
-      <footer
-        data-testid="workspace-run-panel-actions"
-        className={workspaceRunActionBarClassName}
-      >
-      </footer>
+      {status === 'awaiting_user' && interaction ? (
+        <footer
+          data-testid="workspace-run-panel-actions"
+          className={workspaceRunActionBarClassName}
+        >
+          {renderActions(interaction)}
+        </footer>
+      ) : null}
     </motion.section>
   )
 }

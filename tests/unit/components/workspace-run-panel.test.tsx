@@ -279,7 +279,7 @@ describe('WorkspaceRunPanel', () => {
     expect(screen.getByText('创建笔记：首页 slogan 想走轻管家感')).toBeTruthy()
     expect(screen.getByText('创建待办：明天下午发报价')).toBeTruthy()
     expect(screen.queryByText('查询内容：最近待办')).toBeNull()
-    expect(screen.getByText('编辑（即将支持）')).toBeTruthy()
+    expect(screen.queryByText('编辑（即将支持）')).toBeNull()
   })
 
   it('shows all final results for a successful multi-task run', () => {
