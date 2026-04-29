@@ -982,13 +982,6 @@ export function WorkspaceRunPanel({
             <Check data-icon="inline-start" />
             确认并执行
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => onResume({ type: 'confirm_plan', action: 'cancel' })}
-            className={workspaceSecondaryActionButtonClassName}
-          >
-            返回修改
-          </Button>
         </div>
       )
     }

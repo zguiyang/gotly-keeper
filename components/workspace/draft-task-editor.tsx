@@ -91,7 +91,7 @@ export const DraftTaskEditor = forwardRef<DraftTaskEditorHandle, DraftTaskEditor
               key={task.id}
               className="rounded-[1rem] border border-border/10 bg-muted/25 p-4 transition-[transform,border-color,background-color,box-shadow] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-px hover:border-border/20 hover:bg-muted/35 hover:shadow-[var(--shadow-elevation-1)]"
             >
-              <div className="flex flex-wrap items-start justify-between gap-2.5">
+              <div className="flex flex-wrap items-start gap-2.5">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[10px] tracking-normal">
                     任务 {index + 1}
@@ -103,9 +103,6 @@ export const DraftTaskEditor = forwardRef<DraftTaskEditorHandle, DraftTaskEditor
                     {getTargetLabel(task.target)}
                   </Badge>
                 </div>
-                <span className="text-xs font-medium tabular-nums text-on-surface-variant/60">
-                  置信度 {Math.round(task.confidence * 100)}%
-                </span>
               </div>
 
               <FieldGroup className="mt-3.5 gap-3.5">
