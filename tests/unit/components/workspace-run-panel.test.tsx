@@ -178,6 +178,26 @@ describe('WorkspaceRunPanel', () => {
     })
   })
 
+  describe('layout integration', () => {
+    it('renders the panel within the shell without unbounded growth', () => {
+      render(
+        <WorkspaceRunPanel
+          status="streaming"
+          assistantText={null}
+        />
+      )
+
+      const panel = screen.getByTestId('workspace-run-panel')
+      const header = screen.getByTestId('workspace-run-panel-header')
+      const content = screen.getByTestId('workspace-run-panel-content')
+
+      expect(panel).toBeTruthy()
+      expect(header).toBeTruthy()
+      expect(content).toBeTruthy()
+      expect(content.className).toMatch(/overflow-y-auto/)
+    })
+  })
+
   describe('final result hierarchy', () => {
     it('shows result items without replaying full plan text', () => {
       render(
