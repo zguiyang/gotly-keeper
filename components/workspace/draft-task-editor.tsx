@@ -65,7 +65,7 @@ export const DraftTaskEditor = forwardRef<DraftTaskEditorHandle, DraftTaskEditor
 
     return (
       <Card className={workspaceInteractionCardClassName}>
-        <CardHeader className="gap-2 px-5 py-4">
+        <CardHeader className="gap-2 px-5 pt-4">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-[11px] font-medium tracking-normal">
               多任务校对
@@ -84,8 +84,8 @@ export const DraftTaskEditor = forwardRef<DraftTaskEditorHandle, DraftTaskEditor
 
         <Separator className="bg-border/10" />
 
-        <CardContent className="px-5 py-4">
-          <ol className="flex flex-col gap-3">
+        <CardContent className="px-5 pb-4">
+          <ol className="flex flex-col gap-2">
           {tasks.map((task, index) => (
             <li
               key={task.id}
