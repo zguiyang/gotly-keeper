@@ -1,52 +1,24 @@
 'use client'
 
-import { useState } from 'react'
-
-import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
 import { workspacePillClassName, workspaceSurfaceClassName } from './workspace-view-primitives'
 
-import type { SelectCandidateInteraction, WorkspaceInteractionResponse } from '@/shared/workspace/workspace-run-protocol'
+import type { SelectCandidateInteraction } from '@/shared/workspace/workspace-run-protocol'
 
 type CandidatePickerProps = {
   interaction: SelectCandidateInteraction
-  onSubmit: (response: WorkspaceInteractionResponse) => void
+  selectedId: string | null
+  onSelect: (candidateId: string) => void
 }
 
-export function CandidatePicker({ interaction, onSubmit }: CandidatePickerProps) {
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+function getTargetLabel(target: SelectCandidateInteraction['target']) {
+  if (target === 'todo') return '待办'
+  if (target === 'note') return '笔记'
+  return '书签'
+}
 
-  const handleSelect = () => {
-    if (selectedId) {
-      onSubmit({
-        type: 'select_candidate',
-        action: 'select',
-        candidateId: selectedId,
-      })
-    }
-  }
-
-  const handleSkip = () => {
-    onSubmit({
-      type: 'select_candidate',
-      action: 'skip',
-    })
-  }
-
-  const handleCancel = () => {
-    onSubmit({
-      type: 'select_candidate',
-      action: 'cancel',
-    })
-  }
-
-  const getTargetLabel = (target: SelectCandidateInteraction['target']) => {
-    if (target === 'todo') return '待办'
-    if (target === 'note') return '笔记'
-    return '书签'
-  }
-
+export function CandidatePicker({ interaction, selectedId, onSelect }: CandidatePickerProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -65,7 +37,7 @@ export function CandidatePicker({ interaction, onSubmit }: CandidatePickerProps)
                 ? 'border-primary/40 bg-primary/5'
                 : 'hover:border-primary/20'
             }`}
-            onClick={() => setSelectedId(candidate.id)}
+            onClick={() => onSelect(candidate.id)}
           >
             <CardContent className="p-4">
               <div className="flex items-start justify-between gap-3">
@@ -104,23 +76,6 @@ export function CandidatePicker({ interaction, onSubmit }: CandidatePickerProps)
             </CardContent>
           </Card>
         ))}
-      </div>
-
-      <div className="flex items-center gap-2 pt-2">
-        <Button
-          variant="default"
-          size="sm"
-          onClick={handleSelect}
-          disabled={!selectedId}
-        >
-          选择
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleSkip}>
-          跳过
-        </Button>
-        <Button variant="ghost" size="sm" onClick={handleCancel}>
-          取消
-        </Button>
       </div>
     </div>
   )

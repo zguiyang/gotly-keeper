@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { WorkspaceRunPanel } from '@/components/workspace/workspace-run-panel'
+
+import type { WorkspaceInteraction } from '@/shared/workspace/workspace-run-protocol'
 
 afterEach(() => {
   cleanup()
@@ -15,12 +17,13 @@ describe('WorkspaceRunPanel', () => {
       render(
         <WorkspaceRunPanel
           status="awaiting_user"
+          assistantText={null}
           interaction={{
             runId: 'run_1',
             id: 'interaction_1',
             type: 'confirm_plan',
             message: '确认执行？',
-            actions: ['confirm', 'cancel'],
+            actions: ['confirm', 'edit', 'cancel'],
             plan: { summary: 'test', steps: [] },
           }}
           onResume={() => {}}
@@ -128,7 +131,7 @@ describe('WorkspaceRunPanel', () => {
             action: 'create',
             ok: true,
             target: 'notes',
-            item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note' },
+            item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note', url: null, timeText: null, dueAt: null, completed: false, createdAt: new Date() },
           }}
           understandingPreview={{
             rawInput: '记一下：首页 slogan 想走轻管家感',
@@ -151,7 +154,7 @@ describe('WorkspaceRunPanel', () => {
             action: 'create',
             ok: true,
             target: 'notes',
-            item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note' },
+            item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note', url: null, timeText: null, dueAt: null, completed: false, createdAt: new Date() },
           }}
           understandingPreview={{
             rawInput: '记一下：首页 slogan 想走轻管家感',
@@ -228,7 +231,7 @@ describe('WorkspaceRunPanel', () => {
             action: 'create',
             ok: true,
             target: 'notes',
-            item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note' },
+            item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note', url: null, timeText: null, dueAt: null, completed: false, createdAt: new Date() },
           }}
         />
       )
@@ -565,5 +568,228 @@ describe('WorkspaceRunPanel', () => {
     expect(screen.getAllByText('不要吃生冷食物').length).toBeGreaterThan(0)
     expect(screen.getAllByText('https://github.com/zguiyang').length).toBeGreaterThan(0)
     expect(screen.getByText('耗时 2s')).toBeTruthy()
+  })
+
+  describe('shell layout DOM contract', () => {
+    it('shell has flex-col and max-height', () => {
+      render(
+        <WorkspaceRunPanel
+          status="streaming"
+          assistantText={null}
+        />
+      )
+
+      const shell = screen.getByTestId('workspace-run-panel')
+      expect(shell.className).toMatch(/flex-col/)
+      expect(shell.className).toMatch(/max-h/)
+    })
+
+    it('content area has flex-1 min-h-0 and overflow-y-auto', () => {
+      render(
+        <WorkspaceRunPanel
+          status="streaming"
+          assistantText={null}
+        />
+      )
+
+      const content = screen.getByTestId('workspace-run-panel-content')
+      expect(content.className).toMatch(/flex-1/)
+      expect(content.className).toMatch(/min-h-0/)
+      expect(content.className).toMatch(/overflow-y-auto/)
+      expect(content.className).toMatch(/pb-4/)
+    })
+
+    it('action bar is sticky at bottom', () => {
+      render(
+        <WorkspaceRunPanel
+          status="awaiting_user"
+          assistantText={null}
+          interaction={{
+            runId: 'run_1',
+            id: 'interaction_1',
+            type: 'confirm_plan',
+            message: '确认执行？',
+            actions: ['confirm', 'edit', 'cancel'],
+            plan: { summary: 'test', steps: [] },
+          }}
+          onResume={() => {}}
+        />
+      )
+
+      const actions = screen.getByTestId('workspace-run-panel-actions')
+      expect(actions.className).toMatch(/sticky/)
+    })
+  })
+
+  describe('select_candidate unified footer', () => {
+    it('enables select in shell footer after choosing a candidate and submits the selected id', () => {
+      const onResume = vi.fn()
+
+      render(
+        <WorkspaceRunPanel
+          status="awaiting_user"
+          assistantText={null}
+          interaction={{
+            runId: 'run_1',
+            id: 'interaction_1',
+            type: 'select_candidate',
+            target: 'todo',
+            message: '请选择',
+            actions: ['select', 'skip', 'cancel'],
+            candidates: [{ id: 'todo_1', label: '发报价', reason: '匹配' }],
+          }}
+          onResume={onResume}
+        />
+      )
+
+      const selectButton = screen.getByRole('button', { name: '选择' })
+      expect((selectButton as HTMLButtonElement).disabled).toBe(true)
+
+      const candidateCard = screen.getByText('发报价').closest('div[class*="cursor-pointer"]')
+      expect(candidateCard).toBeTruthy()
+
+      if (candidateCard) {
+        fireEvent.click(candidateCard)
+      }
+
+      expect((selectButton as HTMLButtonElement).disabled).toBe(false)
+      fireEvent.click(selectButton)
+
+      expect(onResume).toHaveBeenCalledWith({
+        type: 'select_candidate',
+        action: 'select',
+        candidateId: 'todo_1',
+      })
+
+      expect(screen.getByRole('button', { name: '跳过' })).toBeTruthy()
+      expect(screen.getByRole('button', { name: '取消' })).toBeTruthy()
+    })
+  })
+
+  describe('clarify_slots unified footer', () => {
+    it('respects required fields before submitting from the shell footer', () => {
+      const onResume = vi.fn()
+
+      render(
+        <WorkspaceRunPanel
+          status="awaiting_user"
+          assistantText={null}
+          interaction={{
+            runId: 'run_1',
+            id: 'interaction_1',
+            type: 'clarify_slots',
+            message: '补充信息',
+            actions: ['submit', 'cancel'],
+            fields: [{ key: 'date', label: '日期', required: true }],
+          }}
+          onResume={onResume}
+        />
+      )
+
+      const submitButton = screen.getByRole('button', { name: '提交' })
+      fireEvent.click(submitButton)
+      expect(onResume).not.toHaveBeenCalled()
+
+      fireEvent.change(screen.getByLabelText('日期*'), { target: { value: '2026-05-01' } })
+      fireEvent.click(submitButton)
+
+      expect(onResume).toHaveBeenCalledWith({
+        type: 'clarify_slots',
+        action: 'submit',
+        values: {
+          date: '2026-05-01',
+        },
+      })
+
+      expect(screen.getByRole('button', { name: '取消' })).toBeTruthy()
+    })
+  })
+
+  describe('edit_draft_tasks stale state', () => {
+    it('does not retain old task values across interactions', () => {
+      const firstInteraction: WorkspaceInteraction = {
+        runId: 'run_1',
+        id: 'interaction_1',
+        type: 'edit_draft_tasks',
+        message: '编辑任务',
+        actions: ['save', 'cancel'],
+        tasks: [
+          {
+            id: 'task_1',
+            intent: 'create',
+            target: 'notes',
+            title: '旧任务标题',
+            confidence: 0.9,
+            ambiguities: [],
+            corrections: [],
+            slots: {},
+          },
+        ],
+      }
+
+      const secondInteraction: WorkspaceInteraction = {
+        runId: 'run_2',
+        id: 'interaction_2',
+        type: 'edit_draft_tasks',
+        message: '编辑任务',
+        actions: ['save', 'cancel'],
+        tasks: [
+          {
+            id: 'task_2',
+            intent: 'create',
+            target: 'notes',
+            title: '新任务标题',
+            confidence: 0.9,
+            ambiguities: [],
+            corrections: [],
+            slots: {},
+          },
+        ],
+      }
+
+      const { rerender } = render(
+        <WorkspaceRunPanel
+          status="awaiting_user"
+          assistantText={null}
+          interaction={firstInteraction}
+          onResume={() => {}}
+        />
+      )
+
+      expect(screen.getByDisplayValue('旧任务标题')).toBeTruthy()
+      expect(screen.queryByDisplayValue('新任务标题')).toBeNull()
+
+      rerender(
+        <WorkspaceRunPanel
+          status="awaiting_user"
+          assistantText={null}
+          interaction={secondInteraction}
+          onResume={() => {}}
+        />
+      )
+
+      expect(screen.queryByDisplayValue('旧任务标题')).toBeNull()
+      expect(screen.getByDisplayValue('新任务标题')).toBeTruthy()
+    })
+  })
+
+  describe('error state recovery guidance', () => {
+    it('includes heading and helper text for actionable errors', () => {
+      render(
+        <WorkspaceRunPanel
+          status="error"
+          assistantText={null}
+          result={{
+            kind: 'error',
+            phase: 'parse_failed',
+            message: '没有理解这次请求。',
+          }}
+        />
+      )
+
+      expect(screen.getByText('这次没有完成处理')).toBeTruthy()
+      expect(screen.getByText('没有理解这次请求。')).toBeTruthy()
+      expect(screen.getByText(/可以换成更明确的说法/)).toBeTruthy()
+    })
   })
 })

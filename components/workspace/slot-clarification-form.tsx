@@ -1,8 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
@@ -12,27 +11,13 @@ import type { ClarifySlotsInteraction, WorkspaceInteractionResponse } from '@/sh
 
 type SlotClarificationFormProps = {
   interaction: ClarifySlotsInteraction
+  formId: string
   onSubmit: (response: WorkspaceInteractionResponse) => void
 }
 
-export function SlotClarificationForm({ interaction, onSubmit }: SlotClarificationFormProps) {
+export function SlotClarificationForm({ interaction, formId, onSubmit }: SlotClarificationFormProps) {
   const [values, setValues] = useState<Record<string, string>>({})
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSubmit({
-      type: 'clarify_slots',
-      action: 'submit',
-      values,
-    })
-  }
-
-  const handleCancel = () => {
-    onSubmit({
-      type: 'clarify_slots',
-      action: 'cancel',
-    })
-  }
+  const idPrefix = useId()
 
   const handleChange = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value }))
@@ -44,31 +29,38 @@ export function SlotClarificationForm({ interaction, onSubmit }: SlotClarificati
         <p className="text-sm text-on-surface-variant">{interaction.message}</p>
       </div>
 
-      <form onSubmit={handleSubmit} className={`${workspaceSurfaceClassName} p-4 space-y-4`}>
-        {interaction.fields.map((field) => (
-          <div key={field.key} className="space-y-2">
-            <Label htmlFor={field.key}>
-              {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
-            </Label>
-            <Input
-              id={field.key}
-              placeholder={field.placeholder}
-              value={values[field.key] || ''}
-              onChange={(e) => handleChange(field.key, e.target.value)}
-              required={field.required}
-            />
-          </div>
-        ))}
+      <form
+        id={formId}
+        className={`${workspaceSurfaceClassName} p-4 space-y-4`}
+        onSubmit={(event) => {
+          event.preventDefault()
+          onSubmit({
+            type: 'clarify_slots',
+            action: 'submit',
+            values,
+          })
+        }}
+      >
+        {interaction.fields.map((field) => {
+          const inputId = `${idPrefix}-${field.key}`
 
-        <div className="flex items-center gap-2 pt-2">
-          <Button type="submit" variant="default" size="sm">
-            提交
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={handleCancel}>
-            取消
-          </Button>
-        </div>
+          return (
+            <div key={field.key} className="space-y-2">
+              <Label htmlFor={inputId}>
+                {field.label}
+                {field.required && <span className="text-destructive ml-1">*</span>}
+              </Label>
+              <Input
+                id={inputId}
+                placeholder={field.placeholder}
+                value={values[field.key] || ''}
+                onChange={(e) => handleChange(field.key, e.target.value)}
+                required={field.required}
+                name={field.key}
+              />
+            </div>
+          )
+        })}
       </form>
     </div>
   )

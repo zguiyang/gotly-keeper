@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
 import { Button } from '@/components/ui/button'
@@ -473,13 +473,17 @@ function FinalResult({
   }
 
   if (status === 'error' || result?.kind === 'error') {
+    const detailMessage = result?.kind === 'error'
+      ? result.message
+      : errorMessage ?? '处理失败'
+
     return (
       <div className="rounded-[1rem] border border-destructive/15 bg-destructive/5 px-4 py-3">
-        <p className="text-sm font-semibold text-destructive">
-          {result?.kind === 'error'
-            ? result.message
-            : errorMessage ?? '处理失败，请换个说法再试一次。'}
+        <p className="text-sm font-semibold text-destructive">这次没有完成处理</p>
+        <p className="mt-1.5 text-sm text-destructive/80">
+          {detailMessage}
         </p>
+        <p className="mt-3 text-xs text-on-surface-variant/70">可以换成更明确的说法，让 AI 助手更容易理解你的需求。</p>
         {elapsedText ? (
           <p className="mt-2 text-xs text-on-surface-variant/70">{elapsedText}</p>
         ) : null}
@@ -763,22 +767,42 @@ function getBatchStepItem(step: WorkspaceBatchResult['stepResults'][number]) {
 
 function InteractionPanel({
   interaction,
+  candidateSelection,
+  onCandidateSelect,
+  slotFormId,
   onResume,
   draftEditorRef,
 }: {
   interaction: WorkspaceInteraction
+  candidateSelection: string | null
+  onCandidateSelect: (candidateId: string) => void
+  slotFormId: string
   onResume: (response: WorkspaceInteractionResponse) => void
   draftEditorRef?: React.Ref<DraftTaskEditorHandle>
 }) {
   switch (interaction.type) {
     case 'select_candidate':
-      return <CandidatePicker interaction={interaction} onSubmit={onResume} />
+      return (
+        <CandidatePicker
+          key={interaction.id}
+          interaction={interaction}
+          selectedId={candidateSelection}
+          onSelect={onCandidateSelect}
+        />
+      )
     case 'clarify_slots':
-      return <SlotClarificationForm interaction={interaction} onSubmit={onResume} />
+      return (
+        <SlotClarificationForm
+          key={interaction.id}
+          interaction={interaction}
+          formId={slotFormId}
+          onSubmit={onResume}
+        />
+      )
     case 'edit_draft_tasks':
-      return <DraftTaskEditor ref={draftEditorRef} interaction={interaction} />
+      return <DraftTaskEditor key={interaction.id} ref={draftEditorRef} interaction={interaction} />
     case 'confirm_plan':
-      return <PlanPreviewCard interaction={interaction} onSubmit={onResume} />
+      return <PlanPreviewCard key={interaction.id} interaction={interaction} />
     default:
       return null
   }
@@ -816,7 +840,13 @@ export function WorkspaceRunPanel({
   const resolvedResult = toLegacyResultData(result)
   const draftEditorRef = useRef<DraftTaskEditorHandle>(null)
   const [detailsExpanded, setDetailsExpanded] = useState(false)
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null)
+  const slotFormId = useId()
   const showDisclosure = status !== 'streaming' && (understandingPreview || planPreview)
+
+  useEffect(() => {
+    setSelectedCandidateId(null)
+  }, [interaction?.id])
 
   const headerTitle = status === 'awaiting_user'
     ? null
@@ -848,6 +878,61 @@ export function WorkspaceRunPanel({
             variant="ghost"
             size="sm"
             onClick={() => onResume({ type: 'edit_draft_tasks', action: 'cancel' })}
+          >
+            取消
+          </Button>
+        </>
+      )
+    }
+
+    if (interaction.type === 'select_candidate') {
+      return (
+        <>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => {
+              if (selectedCandidateId) {
+                onResume({ type: 'select_candidate', action: 'select', candidateId: selectedCandidateId })
+              }
+            }}
+            disabled={!selectedCandidateId}
+          >
+            选择
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onResume({ type: 'select_candidate', action: 'skip' })}
+          >
+            跳过
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onResume({ type: 'select_candidate', action: 'cancel' })}
+          >
+            取消
+          </Button>
+        </>
+      )
+    }
+
+    if (interaction.type === 'clarify_slots') {
+      return (
+        <>
+          <Button
+            variant="default"
+            size="sm"
+            type="submit"
+            form={slotFormId}
+          >
+            提交
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onResume({ type: 'clarify_slots', action: 'cancel' })}
           >
             取消
           </Button>
@@ -913,7 +998,14 @@ export function WorkspaceRunPanel({
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
             >
-              <InteractionPanel interaction={interaction} onResume={onResume} draftEditorRef={draftEditorRef} />
+              <InteractionPanel
+                interaction={interaction}
+                candidateSelection={selectedCandidateId}
+                onCandidateSelect={setSelectedCandidateId}
+                slotFormId={slotFormId}
+                onResume={onResume}
+                draftEditorRef={draftEditorRef}
+              />
             </motion.div>
           ) : status === 'streaming' ? (
             <motion.div
