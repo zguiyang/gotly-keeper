@@ -266,6 +266,43 @@ describe('workspace-run-understanding', () => {
     expect(result.draftTasks.map((task) => task.id)).toEqual(['task_1', 'task_2'])
   })
 
+  it('passes abort signal to the run model', async () => {
+    const controller = new AbortController()
+    const runModel = vi.fn().mockResolvedValue({
+      draftTasks: [
+        {
+          id: 'task_1',
+          intent: 'create',
+          target: 'todos',
+          title: '给产品经理发报价',
+          confidence: 0.91,
+          ambiguities: [],
+          corrections: [],
+          slots: {},
+        },
+      ],
+    })
+
+    await understandWorkspaceRunInput({
+      normalized: {
+        rawText: '给产品经理发报价',
+        normalizedText: '给产品经理发报价',
+        urls: [],
+        separators: [],
+        typoCandidates: [],
+        timeHints: [],
+      },
+      runModel,
+      signal: controller.signal,
+    })
+
+    expect(runModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        signal: controller.signal,
+      })
+    )
+  })
+
   it('accepts AI-friendly slotEntries and converts them to slots', async () => {
     const result = await understandWorkspaceRunInput({
       normalized: {

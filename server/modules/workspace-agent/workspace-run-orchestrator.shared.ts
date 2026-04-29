@@ -5,6 +5,7 @@ export type PhaseContext = {
   runId: string
   userId: string
   onEvent?: (event: WorkspaceRunStreamEvent) => void
+  signal?: AbortSignal
 }
 
 export function emitEvent(ctx: PhaseContext, event: WorkspaceRunStreamEvent) {

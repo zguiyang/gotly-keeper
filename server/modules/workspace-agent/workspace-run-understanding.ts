@@ -128,6 +128,7 @@ function prefersModelSchema(value: unknown) {
 export type WorkspaceRunModel = (input: {
   systemPrompt: string
   userPrompt: string
+  signal?: AbortSignal
 }) => Promise<unknown>
 
 export class WorkspaceRunUnderstandingError extends Error {
@@ -156,6 +157,7 @@ function toDraftTasks(tasks: z.infer<typeof understandingTaskSchema>[]): DraftWo
 export async function understandWorkspaceRunInput(input: {
   normalized: NormalizedWorkspaceRunInput
   runModel: WorkspaceRunModel
+  signal?: AbortSignal
 }): Promise<WorkspaceUnderstandingPreview> {
   const [systemPrompt, userPrompt] = await Promise.all([
     buildWorkspaceSystemPrompt('workspace-run/system', {}),
@@ -167,6 +169,7 @@ export async function understandWorkspaceRunInput(input: {
   const modelOutput = await input.runModel({
     systemPrompt,
     userPrompt,
+    signal: input.signal,
   })
 
   if (prefersModelSchema(modelOutput)) {

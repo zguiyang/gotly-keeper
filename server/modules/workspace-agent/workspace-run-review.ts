@@ -94,6 +94,7 @@ type ReviewWorkspaceRunPlanInput = {
   plan: ReviewablePlan
   understandingPreview: WorkspaceUnderstandingPreview | null
   updatedAt: string
+  draftTasksConfirmed?: boolean
 }
 
 type ReviewWorkspaceRunPlanDecision =
@@ -519,13 +520,23 @@ export function reviewWorkspaceRunPlan(
     }
   }
 
-  if (input.draftTasks.length > 1) {
+  if (input.draftTasks.length > 1 && !input.draftTasksConfirmed) {
     return buildEditDraftTasksDecision({
       runId: input.runId,
       draftTasks: input.draftTasks,
       plan: input.plan,
       understandingPreview: input.understandingPreview,
       updatedAt: input.updatedAt,
+    })
+  }
+
+  if (input.draftTasks.length > 1) {
+    return buildConfirmPlanDecision({
+      runId: input.runId,
+      plan: input.plan,
+      understandingPreview: input.understandingPreview,
+      updatedAt: input.updatedAt,
+      message: '草稿任务已确认，请确认执行计划。',
     })
   }
 

@@ -30,6 +30,7 @@ async function runUnderstand(
   const understanding = await understandWorkspaceRunInput({
     normalized,
     runModel,
+    signal: ctx.signal,
   })
   emitEvent(ctx, { type: 'phase_completed', phase: 'understand', output: understanding })
   return understanding
@@ -48,6 +49,7 @@ async function runPlan(
       const result = await runModel({
         systemPrompt: '',
         userPrompt: JSON.stringify(draftTask),
+        signal: ctx.signal,
       })
       return result as WorkspaceRunPlanHint | null
     } catch {
@@ -175,7 +177,7 @@ export async function handleNewInput(
   const runId = createRunId()
   const updatedAt = new Date().toISOString()
 
-  const ctx: PhaseContext = { runId, userId, onEvent }
+  const ctx: PhaseContext = { runId, userId, onEvent, signal: options.signal }
 
   try {
     const normalized = await runNormalize(ctx, request.text)
