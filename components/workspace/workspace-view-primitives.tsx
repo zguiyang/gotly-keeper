@@ -32,6 +32,18 @@ const workspaceContentCardSurfaceClassName =
 const workspaceCriticalSurfaceClassName =
   'rounded-[14px] border border-destructive/24 bg-destructive/[0.045] shadow-[var(--shadow-elevation-1)]'
 
+const workspaceRunShellClassName =
+  'mb-8 rounded-[1.75rem] border border-border/10 bg-surface-container-lowest px-4 py-4 shadow-[var(--shadow-soft)] sm:px-5'
+
+const workspaceRunScrollBodyClassName =
+  'min-h-0 overflow-y-auto'
+
+const workspaceRunActionBarClassName =
+  'flex items-center gap-2 pt-4'
+
+const workspaceRunSectionClassName =
+  'space-y-3'
+
 type WorkspacePageHeaderProps = {
   title: string
   description?: string
@@ -185,6 +197,10 @@ export {
   workspaceCriticalSurfaceClassName,
   workspaceListSurfaceClassName,
   workspacePanelSurfaceClassName,
+  workspaceRunActionBarClassName,
+  workspaceRunScrollBodyClassName,
+  workspaceRunSectionClassName,
+  workspaceRunShellClassName,
   workspaceSurfaceClassName,
   WorkspaceTypeBadge,
 }
