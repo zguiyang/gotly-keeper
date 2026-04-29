@@ -390,6 +390,12 @@ function StreamingSinglePanel({
   )
 }
 
+function getMarker(isActive: boolean, isCompleted: boolean) {
+  if (isActive) return { symbol: '○', className: 'text-primary' }
+  if (isCompleted) return { symbol: '✓', className: 'text-emerald-500' }
+  return { symbol: '·', className: 'text-on-surface-variant/40' }
+}
+
 function StreamingMultiPanel({
   planPreview,
   timeline,
@@ -405,42 +411,28 @@ function StreamingMultiPanel({
   const isComposePhase = visiblePhase.phase === 'compose'
 
   return (
-    <div className="space-y-4 px-1 sm:px-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className={workspacePillClassName}>处理中</span>
-        <span className="text-sm font-medium text-on-surface">{planPreview.summary}</span>
-      </div>
+    <div className="space-y-3 px-1 sm:px-2">
+      <p className="text-sm font-medium text-on-surface">{planPreview.summary}</p>
 
-      <div className="space-y-2">
-        {visibleSteps.map((step, index) => {
+      <ol className="space-y-1.5">
+        {visibleSteps.map((step) => {
           const absoluteIndex = planPreview.steps.findIndex((candidate) => candidate.id === step.id)
           const isActive = activeIndex !== null ? absoluteIndex === activeIndex : false
           const isCompleted = isComposePhase || areToolsFinished || absoluteIndex < nextIndex
-          const isNext = activeIndex === null ? absoluteIndex === nextIndex : absoluteIndex === activeIndex + 1
+          const marker = getMarker(isActive, isCompleted)
 
           return (
-          <div
-            key={step.id}
-            className={isActive
-              ? 'rounded-[0.95rem] border border-primary/15 bg-primary/6 px-3 py-2.5'
-              : isCompleted
-                ? 'rounded-[0.95rem] border border-emerald-500/15 bg-emerald-500/6 px-3 py-2.5'
-              : 'rounded-[0.95rem] border border-border/10 bg-muted/35 px-3 py-2.5'}
-          >
-            <p className={isActive
-              ? 'text-xs font-medium text-primary/80'
-              : isCompleted
-                ? 'text-xs font-medium text-emerald-600 dark:text-emerald-400'
-                : 'text-xs font-medium text-on-surface-variant/70'}>
-              {isActive ? '当前动作' : isCompleted ? '已完成动作' : isNext ? '接续动作' : '后续动作'}
-            </p>
-            <p className="mt-1 text-sm leading-6 text-on-surface">
-              {step.preview}
-            </p>
-          </div>
+            <li key={step.id} className="flex items-start gap-2">
+              <span className={`mt-0.5 shrink-0 text-sm leading-6 ${marker.className}`}>
+                {marker.symbol}
+              </span>
+              <p className={`min-w-0 text-sm leading-6 ${isActive ? 'font-medium text-on-surface' : isCompleted ? 'text-on-surface-variant/70' : 'text-on-surface-variant/50'}`}>
+                {step.preview}
+              </p>
+            </li>
           )
         })}
-      </div>
+      </ol>
     </div>
   )
 }
@@ -483,16 +475,10 @@ function FinalResult({
   if (status === 'error' || result?.kind === 'error') {
     return (
       <div className="rounded-[1rem] border border-destructive/15 bg-destructive/5 px-4 py-3">
-        <p className="mb-1 text-sm font-semibold text-destructive">
-          这次没有完成处理
-        </p>
-        <p className="text-sm font-medium text-destructive">
+        <p className="text-sm font-semibold text-destructive">
           {result?.kind === 'error'
             ? result.message
             : errorMessage ?? '处理失败，请换个说法再试一次。'}
-        </p>
-        <p className="mt-1 text-xs leading-5 text-on-surface-variant/80">
-          可以换成更明确的说法，比如“总结最近笔记重点”或“查找上周待办”。
         </p>
         {elapsedText ? (
           <p className="mt-2 text-xs text-on-surface-variant/70">{elapsedText}</p>
@@ -500,6 +486,23 @@ function FinalResult({
       </div>
     )
   }
+
+  if (result?.kind === 'query') {
+    if (result.total === 0) {
+    return (
+      <div className="space-y-2">
+          <p className="text-sm font-semibold text-on-surface">没有找到相关内容</p>
+          {assistantText ? (
+            <p className="text-sm leading-6 text-on-surface-variant/80">
+              {assistantText}
+            </p>
+          ) : null}
+          {elapsedText ? (
+            <p className="text-xs text-on-surface-variant/70">{elapsedText}</p>
+          ) : null}
+        </div>
+      )
+    }
 
   if (result?.kind === 'query') {
     if (result.total === 0) {
