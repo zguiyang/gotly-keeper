@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
 import { Button } from '@/components/ui/button'
@@ -504,26 +504,6 @@ function FinalResult({
       )
     }
 
-  if (result?.kind === 'query') {
-    if (result.total === 0) {
-    return (
-      <div className="rounded-[1rem] border border-border/10 bg-muted/35 px-4 py-4">
-          <p className="text-sm font-semibold text-on-surface">没有找到相关内容</p>
-          {assistantText ? (
-            <p className="mt-1 text-sm leading-6 text-on-surface-variant/80">
-              {assistantText}
-            </p>
-          ) : null}
-          <p className="mt-1 text-xs leading-5 text-on-surface-variant/70">
-            可以换个关键词，或先在上方保存一条新记录。
-          </p>
-          {elapsedText ? (
-            <p className="mt-2 text-xs text-on-surface-variant/70">{elapsedText}</p>
-          ) : null}
-        </div>
-      )
-    }
-
     return (
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
@@ -835,6 +815,8 @@ export function WorkspaceRunPanel({
   const resolvedPlanPreview = planPreview ?? derivePlanPreviewFromTimeline(timeline)
   const resolvedResult = toLegacyResultData(result)
   const draftEditorRef = useRef<DraftTaskEditorHandle>(null)
+  const [detailsExpanded, setDetailsExpanded] = useState(false)
+  const showDisclosure = status !== 'streaming' && (understandingPreview || planPreview)
 
   const headerTitle = status === 'awaiting_user'
     ? null
@@ -966,6 +948,70 @@ export function WorkspaceRunPanel({
           )}
         </AnimatePresence>
       </div>
+
+      {showDisclosure ? (
+        <div className="mt-3 border-t border-border/10 pt-3">
+          <button
+            type="button"
+            onClick={() => setDetailsExpanded((prev) => !prev)}
+            className="text-xs font-medium text-on-surface-variant/60 transition-colors hover:text-on-surface-variant"
+            aria-expanded={detailsExpanded}
+          >
+            {detailsExpanded ? '收起详情' : '展开详情'}
+          </button>
+
+          {detailsExpanded ? (
+            <div className="mt-3 space-y-3">
+              {understandingPreview ? (
+                <div className="space-y-2 rounded-[0.75rem] bg-muted/30 px-3 py-2.5">
+                  <p className="text-xs text-on-surface-variant/50">原始输入</p>
+                  <p className="text-sm text-on-surface">{understandingPreview.rawInput}</p>
+
+                  {understandingPreview.normalizedInput !== understandingPreview.rawInput ? (
+                    <div className="space-y-1">
+                      <p className="text-xs text-on-surface-variant/50">标准化后</p>
+                      <p className="text-sm text-on-surface">{understandingPreview.normalizedInput}</p>
+                    </div>
+                  ) : null}
+
+                  {understandingPreview.corrections.length > 0 ? (
+                    <div className="space-y-1">
+                      <p className="text-xs text-on-surface-variant/50">修正</p>
+                      <p className="text-sm text-on-surface">{understandingPreview.corrections.join('、')}</p>
+                    </div>
+                  ) : null}
+
+                  {understandingPreview.draftTasks.length > 0 ? (
+                    <div className="space-y-1">
+                      <p className="text-xs text-on-surface-variant/50">识别任务 ({understandingPreview.draftTasks.length})</p>
+                      <ol className="space-y-1">
+                        {understandingPreview.draftTasks.map((task) => (
+                          <li key={task.id} className="text-sm text-on-surface">
+                            {task.title}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {planPreview ? (
+                <div className="space-y-2 rounded-[0.75rem] bg-muted/30 px-3 py-2.5">
+                  <p className="text-xs text-on-surface-variant/50">执行步骤 ({planPreview.steps.length})</p>
+                  <ol className="space-y-1">
+                    {planPreview.steps.map((step) => (
+                      <li key={step.id} className="text-sm text-on-surface">
+                        {step.preview}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {status === 'awaiting_user' && interaction ? (
         <footer

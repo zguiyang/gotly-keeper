@@ -118,6 +118,66 @@ describe('WorkspaceRunPanel', () => {
     })
   })
 
+  describe('details disclosure', () => {
+    it('shows a details toggle for preview data', () => {
+      render(
+        <WorkspaceRunPanel
+          status="success"
+          assistantText="已保存笔记。"
+          result={{
+            action: 'create',
+            ok: true,
+            target: 'notes',
+            item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note' },
+          }}
+          understandingPreview={{
+            rawInput: '记一下：首页 slogan 想走轻管家感',
+            normalizedInput: '记一下：首页 slogan 想走轻管家感',
+            draftTasks: [],
+            corrections: [],
+          }}
+        />
+      )
+
+      expect(screen.getByRole('button', { name: /展开详情|查看详情/ })).toBeTruthy()
+    })
+
+    it('moves raw input behind disclosure', () => {
+      render(
+        <WorkspaceRunPanel
+          status="success"
+          assistantText="已保存笔记。"
+          result={{
+            action: 'create',
+            ok: true,
+            target: 'notes',
+            item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note' },
+          }}
+          understandingPreview={{
+            rawInput: '记一下：首页 slogan 想走轻管家感',
+            normalizedInput: '标准化后的输入',
+            draftTasks: [],
+            corrections: ['修正1'],
+          }}
+        />
+      )
+
+      expect(screen.queryByText('标准化后')).toBeNull()
+      expect(screen.getByText(/展开详情|查看详情/)).toBeTruthy()
+    })
+
+    it('does not show disclosure when no preview data exists', () => {
+      render(
+        <WorkspaceRunPanel
+          status="success"
+          assistantText="处理完成"
+        />
+      )
+
+      expect(screen.queryByRole('button', { name: /展开详情|查看详情/ })).toBeNull()
+    })
+  })
+
   describe('final result hierarchy', () => {
     it('shows result items without replaying full plan text', () => {
       render(
