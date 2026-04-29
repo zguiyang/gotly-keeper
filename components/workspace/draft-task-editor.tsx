@@ -2,10 +2,18 @@
 
 import { forwardRef, useImperativeHandle, useState } from 'react'
 
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldSeparator,
+} from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-
-import { workspaceRunSectionClassName } from './workspace-view-primitives'
+import { Separator } from '@/components/ui/separator'
 
 import type { DraftWorkspaceTask, EditDraftTasksInteraction } from '@/shared/workspace/workspace-run-protocol'
 
@@ -49,54 +57,105 @@ export const DraftTaskEditor = forwardRef<DraftTaskEditorHandle, DraftTaskEditor
     }
 
     return (
-      <section className={workspaceRunSectionClassName}>
-        <h3 className="text-xs font-semibold text-on-surface-variant">任务</h3>
-        <ol className="space-y-3">
+      <Card className="overflow-hidden rounded-[1.35rem] border-border/15 bg-surface-container-lowest/95 shadow-[var(--shadow-elevation-1)]">
+        <CardHeader className="gap-2 px-5 py-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-[11px] font-medium tracking-normal">
+              多任务校对
+            </Badge>
+            <Badge variant="outline" className="rounded-full px-2.5 py-1 text-[11px] font-medium tracking-normal">
+              {tasks.length} 条任务
+            </Badge>
+          </div>
+          <div className="flex flex-col gap-1">
+            <CardTitle className="text-base text-on-surface">确认任务内容后继续</CardTitle>
+            <p className="text-sm leading-6 text-on-surface-variant">
+              优先修改标题；附加信息会作为执行时的上下文一起保存。
+            </p>
+          </div>
+        </CardHeader>
+
+        <Separator className="bg-border/10" />
+
+        <CardContent className="px-5 py-5">
+          <ol className="flex flex-col gap-4">
           {tasks.map((task, index) => (
-            <li key={task.id} className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-on-surface-variant/60">
-                  {getIntentLabel(task.intent)} · {getTargetLabel(task.target)}
-                </span>
-                <span className="text-xs text-on-surface-variant/40">
-                  置信度: {Math.round(task.confidence * 100)}%
-                </span>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`task-title-${index}`} className="text-xs">
-                  标题
-                </Label>
-                <Input
-                  id={`task-title-${index}`}
-                  value={task.title}
-                  onChange={(e) => updateTask(index, { title: e.target.value })}
-                />
-              </div>
-              {Object.keys(task.slots).length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-xs">附加信息</Label>
-                  <div className="space-y-2">
-                    {Object.entries(task.slots).map(([key, value]) => (
-                      <div key={key} className="flex items-center gap-2">
-                        <span className="text-xs text-on-surface-variant w-20">{key}:</span>
-                        <Input
-                          value={value}
-                          onChange={(e) =>
-                            updateTask(index, {
-                              slots: { ...task.slots, [key]: e.target.value },
-                            })
-                          }
-                          className="flex-1"
-                        />
-                      </div>
-                    ))}
-                  </div>
+            <li
+              key={task.id}
+              className="rounded-[1rem] border border-border/10 bg-muted/25 p-4 transition-[transform,border-color,background-color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-px hover:border-border/20 hover:bg-muted/35"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[10px] tracking-normal">
+                    任务 {index + 1}
+                  </Badge>
+                  <Badge variant="secondary" className="rounded-full px-2.5 py-0.5 text-[10px] tracking-normal">
+                    {getIntentLabel(task.intent)}
+                  </Badge>
+                  <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[10px] tracking-normal">
+                    {getTargetLabel(task.target)}
+                  </Badge>
                 </div>
-              )}
+                <span className="text-xs font-medium tabular-nums text-on-surface-variant/60">
+                  置信度 {Math.round(task.confidence * 100)}%
+                </span>
+              </div>
+
+              <FieldGroup className="mt-4 gap-4">
+                <Field>
+                  <FieldLabel htmlFor={`task-title-${index}`} className="text-xs font-semibold tracking-[0.12em] text-on-surface-variant/75 uppercase">
+                    标题
+                  </FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id={`task-title-${index}`}
+                      value={task.title}
+                      onChange={(e) => updateTask(index, { title: e.target.value })}
+                      name={`task-title-${index}`}
+                    />
+                    <FieldDescription>这条标题会直接影响后续保存与执行内容。</FieldDescription>
+                  </FieldContent>
+                </Field>
+
+                {Object.keys(task.slots).length > 0 ? (
+                  <>
+                    <FieldSeparator />
+                    <FieldGroup className="gap-3">
+                      {Object.entries(task.slots).map(([key, value]) => {
+                        const inputId = `task-slot-${index}-${key}`
+
+                        return (
+                          <Field key={key}>
+                            <FieldLabel
+                              htmlFor={inputId}
+                              className="text-xs font-semibold tracking-[0.12em] text-on-surface-variant/70 uppercase"
+                            >
+                              {key}
+                            </FieldLabel>
+                            <FieldContent>
+                              <Input
+                                id={inputId}
+                                value={value}
+                                onChange={(e) =>
+                                  updateTask(index, {
+                                    slots: { ...task.slots, [key]: e.target.value },
+                                  })
+                                }
+                                name={inputId}
+                              />
+                            </FieldContent>
+                          </Field>
+                        )
+                      })}
+                    </FieldGroup>
+                  </>
+                ) : null}
+              </FieldGroup>
             </li>
           ))}
-        </ol>
-      </section>
+          </ol>
+        </CardContent>
+      </Card>
     )
   }
 )
