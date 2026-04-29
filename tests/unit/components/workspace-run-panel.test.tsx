@@ -72,6 +72,92 @@ describe('WorkspaceRunPanel', () => {
     })
   })
 
+  describe('streaming narrative', () => {
+    it('shows lightweight progress for a single-task streaming state', () => {
+      render(
+        <WorkspaceRunPanel
+          status="streaming"
+          assistantText={null}
+          timeline={[
+            { type: 'phase_started', phase: 'plan' },
+            { type: 'phase_completed', phase: 'plan' },
+            { type: 'tool_call_started', toolName: 'create_note', preview: '正在创建笔记' },
+          ]}
+          planPreview={{
+            summary: '准备执行 1 个任务。',
+            steps: [{ id: 'step_1', toolName: 'create_note', title: '创建笔记', preview: '创建笔记：首页 slogan 想走轻管家感' }],
+          }}
+        />
+      )
+
+      expect(screen.getByTestId('workspace-run-panel')).toBeTruthy()
+    })
+
+    it('shows a single active stage heading without pill overload', () => {
+      render(
+        <WorkspaceRunPanel
+          status="streaming"
+          assistantText={null}
+          timeline={[
+            { type: 'phase_started', phase: 'plan' },
+            { type: 'phase_completed', phase: 'plan' },
+            { type: 'tool_call_started', toolName: 'create_todo', preview: '创建待办：明天下午发报价' },
+          ]}
+          planPreview={{
+            summary: '准备执行 2 个任务。',
+            steps: [
+              { id: 'step_1', toolName: 'create_todo', title: '创建待办', preview: '创建待办：明天下午发报价' },
+              { id: 'step_2', toolName: 'create_note', title: '创建笔记', preview: '创建笔记：首页文案要更轻' },
+            ],
+          }}
+        />
+      )
+
+      const pills = screen.queryAllByText('处理中')
+      expect(pills.length).toBeLessThan(2)
+    })
+  })
+
+  describe('final result hierarchy', () => {
+    it('shows result items without replaying full plan text', () => {
+      render(
+        <WorkspaceRunPanel
+          status="success"
+          assistantText="已保存笔记。"
+          result={{
+            kind: 'batch',
+            summary: '执行了 1/1 个步骤',
+            stepResults: [{
+              stepId: 'step_1',
+              toolName: 'create_note',
+              result: { ok: true, target: 'notes', action: 'create', item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note' } },
+            }],
+          }}
+        />
+      )
+
+      expect(screen.getByText('已保存笔记。')).toBeTruthy()
+    })
+
+    it('prefers concise summary over duplicated plan text', () => {
+      render(
+        <WorkspaceRunPanel
+          status="success"
+          assistantText="已完成全部操作。"
+          result={{
+            action: 'create',
+            ok: true,
+            target: 'notes',
+            item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note' },
+          }}
+        />
+      )
+
+      expect(screen.getByText(/已创建/)).toBeTruthy()
+      expect(screen.getByText('已完成全部操作。')).toBeTruthy()
+    })
+  })
+
   it('collapses to the final result after a successful single-task run', () => {
     render(
       <WorkspaceRunPanel
