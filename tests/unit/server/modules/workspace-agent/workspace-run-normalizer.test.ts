@@ -37,6 +37,12 @@ describe('workspace-run-normalizer', () => {
     expect(normalizeWorkspaceRunInput(input).separators).toEqual([',', ';', '。'])
   })
 
+  it('extracts relative chinese time phrases into timeHints', () => {
+    const input = '五分钟后提醒我发周报'
+
+    expect(normalizeWorkspaceRunInput(input).timeHints).toEqual(['五分钟后'])
+  })
+
   it('extracts urls without swallowing trailing punctuation', () => {
     const input = '保存这个链接 https://example.com/pricing。'
 

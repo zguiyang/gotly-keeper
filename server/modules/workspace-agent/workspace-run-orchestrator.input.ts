@@ -6,6 +6,7 @@ import { emitEvent, createRunId, getToolResultError, getToolNameFromAction } fro
 import { planWorkspaceRun } from './workspace-run-planner'
 import { buildWorkspaceRunPreview } from './workspace-run-preview'
 import { reviewWorkspaceRunPlan } from './workspace-run-review'
+import { normalizeTodoDraftTaskTimes } from './workspace-run-time-normalization'
 import { isWorkspaceRunModelError } from './workspace-run-runtime'
 import { understandWorkspaceRunInput } from './workspace-run-understanding'
 
@@ -204,12 +205,20 @@ export async function handleNewInput(
   try {
     const normalized = await runNormalize(ctx, request.text)
     const understanding = await runUnderstand(ctx, normalized, runModel)
+    const normalizedDraftTasks = normalizeTodoDraftTaskTimes(
+      understanding.draftTasks,
+      normalized.timeHints
+    )
+    const normalizedUnderstanding = {
+      ...understanding,
+      draftTasks: normalizedDraftTasks,
+    }
 
-    const draftTasks = understanding.draftTasks as Parameters<typeof reviewWorkspaceRunPlan>[0]['draftTasks']
+    const draftTasks = normalizedUnderstanding.draftTasks as Parameters<typeof reviewWorkspaceRunPlan>[0]['draftTasks']
 
-    const plannerResult = await runPlan(ctx, understanding.draftTasks, searchCandidates, runModel)
+    const plannerResult = await runPlan(ctx, normalizedUnderstanding.draftTasks, searchCandidates, runModel)
 
-    const reviewResult = await runReview(ctx, draftTasks, plannerResult, understanding, updatedAt)
+    const reviewResult = await runReview(ctx, draftTasks, plannerResult, normalizedUnderstanding, updatedAt)
 
     if (reviewResult.status === 'reject') {
       emitEvent(ctx, {
@@ -229,7 +238,7 @@ export async function handleNewInput(
     }
 
     if (reviewResult.status === 'auto_execute') {
-      const preview = await runPreview(ctx, understanding, plannerResult)
+      const preview = await runPreview(ctx, normalizedUnderstanding, plannerResult)
       const executeResult = await runExecute(ctx, plannerResult.steps, userId)
 
       const failedStep = executeResult.stepResults.find((r) => !r.result.ok)
@@ -261,12 +270,12 @@ export async function handleNewInput(
           : await runCompose(
               ctx,
               {
-                intent: understanding.draftTasks[0].intent as WorkspaceIntent,
-                target: understanding.draftTasks[0].target as Exclude<WorkspaceTarget, 'mixed'>,
+                intent: normalizedUnderstanding.draftTasks[0].intent as WorkspaceIntent,
+                target: normalizedUnderstanding.draftTasks[0].target as Exclude<WorkspaceTarget, 'mixed'>,
               },
               {
-                intent: understanding.draftTasks[0].intent as WorkspaceIntent,
-                target: understanding.draftTasks[0].target as WorkspaceTarget,
+                intent: normalizedUnderstanding.draftTasks[0].intent as WorkspaceIntent,
+                target: normalizedUnderstanding.draftTasks[0].target as WorkspaceTarget,
                 toolName: plannerResult.steps[0]
                   ? getToolNameFromAction(plannerResult.steps[0].action)
                   : 'create_todo',
