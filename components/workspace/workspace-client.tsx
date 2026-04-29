@@ -80,6 +80,9 @@ export function WorkspaceClient({
     onResult: handleWorkspaceResult,
   })
   const hasRunPanel = state.status !== 'idle'
+  const elapsedMs = state.startedAt
+    ? Math.max(0, (state.endedAt ?? Date.now()) - state.startedAt)
+    : null
 
   async function handleSubmit() {
     if (isSubmittingRef.current || state.status === 'streaming') {
@@ -189,6 +192,7 @@ export function WorkspaceClient({
             timeline={state.timeline}
             understandingPreview={state.result?.preview?.understanding ?? null}
             planPreview={state.result?.preview?.plan ?? null}
+            elapsedMs={elapsedMs}
             onResume={resumeInteraction}
           />
         )}

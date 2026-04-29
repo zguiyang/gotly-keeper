@@ -22,6 +22,8 @@ export type WorkspaceRunUiState = {
   timeline: WorkspaceRunStreamEvent[]
   result: WorkspaceRunResult | null
   errorMessage: string | null
+  startedAt: number | null
+  endedAt: number | null
 }
 
 const INITIAL_RUN_STATE: WorkspaceRunUiState = {
@@ -29,6 +31,15 @@ const INITIAL_RUN_STATE: WorkspaceRunUiState = {
   timeline: [],
   result: null,
   errorMessage: null,
+  startedAt: null,
+  endedAt: null,
+}
+
+function parseRunStartedAt(runId: string) {
+  const [, startedAtText] = runId.split('_')
+  const startedAt = Number.parseInt(startedAtText ?? '', 10)
+
+  return Number.isFinite(startedAt) ? startedAt : Date.now()
 }
 
 export function useWorkspaceStream(options: {
@@ -39,11 +50,15 @@ export function useWorkspaceStream(options: {
   })
   const abortControllerRef = useRef<AbortController | null>(null)
   const requestIdRef = useRef(0)
+  const runStartedAtRef = useRef<number | null>(null)
 
   const loadCurrentAwaitingRun = useCallback(async () => {
     try {
       const result = await fetchCurrentWorkspaceRun()
       if (result.ok && result.run) {
+        const startedAt = parseRunStartedAt(result.run.runId)
+        runStartedAtRef.current = startedAt
+
         setState({
           status: 'awaiting_user',
           runId: result.run.runId,
@@ -51,6 +66,8 @@ export function useWorkspaceStream(options: {
           timeline: result.run.timeline,
           result: null,
           errorMessage: null,
+          startedAt,
+          endedAt: Date.now(),
         })
       }
     } catch {
@@ -75,12 +92,19 @@ export function useWorkspaceStream(options: {
       abortControllerRef.current?.abort()
       const abortController = new AbortController()
       abortControllerRef.current = abortController
+      const startedAt = request.kind === 'resume'
+        ? (runStartedAtRef.current ?? state.startedAt ?? Date.now())
+        : Date.now()
+
+      runStartedAtRef.current = startedAt
 
       setState({
         status: 'streaming',
         timeline: [],
         result: null,
         errorMessage: null,
+        startedAt,
+        endedAt: null,
       })
 
       try {
@@ -114,6 +138,8 @@ export function useWorkspaceStream(options: {
                     timeline: [...current.timeline, event],
                     result: null,
                     errorMessage: null,
+                    startedAt: current.startedAt,
+                    endedAt: Date.now(),
                   }))
                   break
 
@@ -123,6 +149,8 @@ export function useWorkspaceStream(options: {
                     timeline: [...current.timeline, event],
                     result: event.result,
                     errorMessage: null,
+                    startedAt: current.startedAt,
+                    endedAt: Date.now(),
                   }))
                   options.onResult?.(event.result)
                   break
@@ -133,6 +161,8 @@ export function useWorkspaceStream(options: {
                     timeline: [...current.timeline, event],
                     result: null,
                     errorMessage: event.error.message,
+                    startedAt: current.startedAt,
+                    endedAt: Date.now(),
                   }))
                   break
               }
@@ -150,6 +180,7 @@ export function useWorkspaceStream(options: {
                 timeline: [],
                 result: null,
                 errorMessage: error.message,
+                endedAt: Date.now(),
               }))
             },
           },
@@ -167,6 +198,7 @@ export function useWorkspaceStream(options: {
           result: null,
           errorMessage:
             error instanceof Error ? error.message : '处理失败，请重试。',
+          endedAt: Date.now(),
         }))
       } finally {
         if (abortControllerRef.current === abortController) {
@@ -174,7 +206,7 @@ export function useWorkspaceStream(options: {
         }
       }
     },
-    [options]
+    [options, state.startedAt]
   )
 
   const submitInput = useCallback(
@@ -215,6 +247,7 @@ export function useWorkspaceStream(options: {
   )
 
   const resetRun = useCallback(() => {
+    runStartedAtRef.current = null
     setState({ ...INITIAL_RUN_STATE })
   }, [])
 
