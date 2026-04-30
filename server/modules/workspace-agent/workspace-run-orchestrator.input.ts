@@ -38,6 +38,19 @@ async function runUnderstand(
   return understanding
 }
 
+async function runResolveTodoTimes(
+  ctx: PhaseContext,
+  draftTasks: DraftWorkspaceTask[],
+  fallbackTimeHints: string[],
+  referenceTime: string
+) {
+  return normalizeTodoDraftTaskTimes(draftTasks, {
+    fallbackTimeHints,
+    referenceTime,
+    signal: ctx.signal,
+  })
+}
+
 async function runPlan(
   ctx: PhaseContext,
   draftTasks: DraftWorkspaceTask[],
@@ -75,7 +88,8 @@ async function runReview(
   draftTasks: Parameters<typeof reviewWorkspaceRunPlan>[0]['draftTasks'],
   plan: WorkspaceRunPlannerResult,
   understandingPreview: Parameters<typeof reviewWorkspaceRunPlan>[0]['understandingPreview'],
-  updatedAt: string
+  updatedAt: string,
+  referenceTime: string
 ) {
   emitEvent(ctx, { type: 'phase_started', phase: 'review' })
 
@@ -96,6 +110,7 @@ async function runReview(
     },
     understandingPreview,
     updatedAt,
+    referenceTime,
   })
 
   emitEvent(ctx, { type: 'phase_completed', phase: 'review', output: reviewResult })
@@ -205,9 +220,11 @@ export async function handleNewInput(
   try {
     const normalized = await runNormalize(ctx, request.text)
     const understanding = await runUnderstand(ctx, normalized, runModel)
-    const normalizedDraftTasks = normalizeTodoDraftTaskTimes(
+    const normalizedDraftTasks = await runResolveTodoTimes(
+      ctx,
       understanding.draftTasks,
-      normalized.timeHints
+      normalized.timeHints,
+      updatedAt
     )
     const normalizedUnderstanding = {
       ...understanding,
@@ -218,7 +235,14 @@ export async function handleNewInput(
 
     const plannerResult = await runPlan(ctx, normalizedUnderstanding.draftTasks, searchCandidates, runModel)
 
-    const reviewResult = await runReview(ctx, draftTasks, plannerResult, normalizedUnderstanding, updatedAt)
+    const reviewResult = await runReview(
+      ctx,
+      draftTasks,
+      plannerResult,
+      normalizedUnderstanding,
+      updatedAt,
+      updatedAt
+    )
 
     if (reviewResult.status === 'reject') {
       emitEvent(ctx, {

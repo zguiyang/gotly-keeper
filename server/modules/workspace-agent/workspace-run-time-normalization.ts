@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { parseTodoTime } from '@/server/services/time/todo-time-parser'
+import { resolveTodoTimeWithAi } from '@/server/services/time/resolve-todo-time-with-ai'
 
 import type { DraftWorkspaceTask } from '@/shared/workspace/workspace-run-protocol'
 
@@ -16,10 +16,15 @@ function hasTodoTimeSlot(task: DraftWorkspaceTask) {
   )
 }
 
-export function normalizeTodoDraftTaskTimes(
+export async function normalizeTodoDraftTaskTimes(
   tasks: DraftWorkspaceTask[],
-  fallbackTimeHints: string[] = []
-): DraftWorkspaceTask[] {
+  options: {
+    fallbackTimeHints?: string[]
+    referenceTime: string
+    signal?: AbortSignal
+  }
+): Promise<DraftWorkspaceTask[]> {
+  const fallbackTimeHints = options.fallbackTimeHints ?? []
   const todoTaskIndexes = tasks.reduce<number[]>((indexes, task, index) => {
     if (task.target === 'todos') {
       indexes.push(index)
@@ -28,7 +33,7 @@ export function normalizeTodoDraftTaskTimes(
     return indexes
   }, [])
 
-  return tasks.map((task) => {
+  return Promise.all(tasks.map(async (task) => {
     if (task.target !== 'todos') {
       return task
     }
@@ -38,22 +43,21 @@ export function normalizeTodoDraftTaskTimes(
         ? fallbackTimeHints[0]
         : null
 
-    const parsed = parseTodoTime({
-      rawText: singleTodoFallbackTimeHint,
+    const parsed = await resolveTodoTimeWithAi({
+      title: task.title,
       slots: task.slots,
+      fallbackTimeHint: singleTodoFallbackTimeHint,
+      referenceTime: options.referenceTime,
+      signal: options.signal,
     })
-
-    if (!parsed) {
-      return task
-    }
 
     return {
       ...task,
       slots: {
         ...task.slots,
-        timeText: parsed.timeText,
+        ...(parsed.timeText ? { timeText: parsed.timeText } : {}),
         ...(parsed.dueAt ? { dueAt: parsed.dueAt } : {}),
       },
     }
-  })
+  }))
 }

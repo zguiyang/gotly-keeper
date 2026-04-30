@@ -2,18 +2,32 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { normalizeTodoDraftTaskTimes } from '@/server/modules/workspace-agent/workspace-run-time-normalization'
 
+const mocks = vi.hoisted(() => ({
+  resolveTodoTimeWithAi: vi.fn(),
+}))
+
+vi.mock('@/server/services/time/resolve-todo-time-with-ai', () => ({
+  resolveTodoTimeWithAi: mocks.resolveTodoTimeWithAi,
+}))
+
 describe('workspace-run-time-normalization', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-04-29T02:10:00.000Z'))
+    vi.clearAllMocks()
   })
 
   afterEach(() => {
     vi.useRealTimers()
   })
 
-  it('adds canonical timeText and dueAt to todo draft tasks before planning', () => {
-    const result = normalizeTodoDraftTaskTimes([
+  it('adds canonical timeText and dueAt to todo draft tasks before planning', async () => {
+    mocks.resolveTodoTimeWithAi.mockResolvedValueOnce({
+      timeText: '五分钟后',
+      dueAt: '2026-04-29T02:15:00.000Z',
+    })
+
+    const result = await normalizeTodoDraftTaskTimes([
       {
         id: 'draft_1',
         intent: 'create',
@@ -26,7 +40,10 @@ describe('workspace-run-time-normalization', () => {
           time: '五分钟后',
         },
       },
-    ])
+    ], {
+      fallbackTimeHints: [],
+      referenceTime: '2026-04-29T02:10:00.000Z',
+    })
 
     expect(result).toEqual([
       {
@@ -46,8 +63,13 @@ describe('workspace-run-time-normalization', () => {
     ])
   })
 
-  it('fills a missing todo time slot from a single normalized time hint', () => {
-    const result = normalizeTodoDraftTaskTimes(
+  it('fills a missing todo time slot from a single normalized time hint', async () => {
+    mocks.resolveTodoTimeWithAi.mockResolvedValueOnce({
+      timeText: '两小时后',
+      dueAt: '2026-04-29T04:10:00.000Z',
+    })
+
+    const result = await normalizeTodoDraftTaskTimes(
       [
         {
           id: 'draft_1',
@@ -60,7 +82,10 @@ describe('workspace-run-time-normalization', () => {
           slots: {},
         },
       ],
-      ['两小时后']
+      {
+        fallbackTimeHints: ['两小时后'],
+        referenceTime: '2026-04-29T02:10:00.000Z',
+      }
     )
 
     expect(result).toEqual([
@@ -80,8 +105,13 @@ describe('workspace-run-time-normalization', () => {
     ])
   })
 
-  it('normalizes aliased dueTime slots into canonical timeText and dueAt', () => {
-    const result = normalizeTodoDraftTaskTimes([
+  it('normalizes aliased dueTime slots into canonical timeText and dueAt', async () => {
+    mocks.resolveTodoTimeWithAi.mockResolvedValueOnce({
+      timeText: '本周五下班前',
+      dueAt: '2026-05-01T10:00:00.000Z',
+    })
+
+    const result = await normalizeTodoDraftTaskTimes([
       {
         id: 'draft_1',
         intent: 'create',
@@ -94,7 +124,10 @@ describe('workspace-run-time-normalization', () => {
           dueTime: '本周五下班前',
         },
       },
-    ])
+    ], {
+      fallbackTimeHints: [],
+      referenceTime: '2026-04-29T02:10:00.000Z',
+    })
 
     expect(result).toEqual([
       {
@@ -108,14 +141,19 @@ describe('workspace-run-time-normalization', () => {
         slots: {
           dueTime: '本周五下班前',
           timeText: '本周五下班前',
-          dueAt: '2026-05-01T15:59:59.000Z',
+          dueAt: '2026-05-01T10:00:00.000Z',
         },
       },
     ])
   })
 
-  it('normalizes fallback weekend phrases into concrete dueAt values', () => {
-    const result = normalizeTodoDraftTaskTimes(
+  it('keeps timeText and clears dueAt when ai time resolution fails', async () => {
+    mocks.resolveTodoTimeWithAi.mockResolvedValueOnce({
+      timeText: '这周末',
+      dueAt: null,
+    })
+
+    const result = await normalizeTodoDraftTaskTimes(
       [
         {
           id: 'draft_1',
@@ -128,7 +166,10 @@ describe('workspace-run-time-normalization', () => {
           slots: {},
         },
       ],
-      ['这周末']
+      {
+        fallbackTimeHints: ['这周末'],
+        referenceTime: '2026-04-29T02:10:00.000Z',
+      }
     )
 
     expect(result).toEqual([
@@ -142,7 +183,6 @@ describe('workspace-run-time-normalization', () => {
         corrections: [],
         slots: {
           timeText: '这周末',
-          dueAt: '2026-05-03T15:59:59.000Z',
         },
       },
     ])

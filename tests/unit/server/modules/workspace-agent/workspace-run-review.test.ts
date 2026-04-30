@@ -881,6 +881,7 @@ describe('workspace-run-review', () => {
     expect(result.status).toBe('await_user')
     expect(result.snapshot).toEqual({
       runId: 'run_1',
+      referenceTime: updatedAt,
       phase: 'review',
       status: 'awaiting_user',
       interactionId: expect.any(String),
@@ -888,9 +889,9 @@ describe('workspace-run-review', () => {
         runId: 'run_1',
         type: 'clarify_slots',
       }),
-      preview: {
+      preview: expect.objectContaining({
         plan: expect.any(Object),
-      },
+      }),
       timeline: [
         { type: 'phase_started', phase: 'review' },
         {
@@ -907,5 +908,38 @@ describe('workspace-run-review', () => {
       updatedAt,
     })
     expect(JSON.parse(JSON.stringify(result.snapshot ?? null))).toEqual(result.snapshot)
+  })
+
+  it('does not block todo creation when the only ambiguity is a vague time phrase', () => {
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [
+        createDraftTask({
+          title: '尽快处理报销',
+          ambiguities: ['时间表述“尽快”不明确'],
+          slots: {},
+        }),
+      ],
+      plan: createPlan({
+        steps: [
+          {
+            action: 'create_todo',
+            target: 'todos',
+            title: '尽快处理报销',
+            requiresUserApproval: false,
+            risk: 'low',
+            id: 'step_1',
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview(),
+      updatedAt,
+    })
+
+    expect(result).toEqual({
+      status: 'auto_execute',
+      reason: 'single_low_risk_clear_task',
+      snapshot: null,
+    })
   })
 })
