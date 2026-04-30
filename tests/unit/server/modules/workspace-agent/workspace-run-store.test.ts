@@ -202,6 +202,21 @@ describe('workspace-run-store', () => {
     })
   })
 
+  describe('failAwaitingRuns', () => {
+    it('fails all awaiting runs for a user', async () => {
+      const updateWhereMock = vi.fn().mockResolvedValue({ rowCount: 3 })
+      mocks.db.update.mockReturnValue({
+        set: vi.fn().mockReturnValue({ where: updateWhereMock }),
+      })
+
+      const result = await store.failAwaitingRuns('user_1')
+
+      expect(result).toBe(3)
+      expect(mocks.db.update).toHaveBeenCalled()
+      expect(updateWhereMock).toHaveBeenCalled()
+    })
+  })
+
   describe('deleteRun', () => {
     it('deletes the run by runId and userId', async () => {
       const deleteWhereMock = vi.fn().mockResolvedValue(undefined)

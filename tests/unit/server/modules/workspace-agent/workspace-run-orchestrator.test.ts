@@ -19,6 +19,7 @@ function isPhaseEvent(event: unknown): event is PhaseEvent {
 const createMockStore = (): WorkspaceRunStore => ({
   saveSnapshot: vi.fn().mockResolvedValue(undefined),
   loadLatestAwaiting: vi.fn().mockResolvedValue(null),
+  failAwaitingRuns: vi.fn().mockResolvedValue(0),
   updateRunStatus: vi.fn().mockResolvedValue(true),
   deleteRun: vi.fn().mockResolvedValue(undefined),
 })
@@ -346,6 +347,71 @@ describe('workspace-run-orchestrator', () => {
   })
 
   describe('resume flow', () => {
+    it('cancelling a pending run clears all awaiting runs for the user', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const store = createMockStore()
+      store.loadLatestAwaiting = vi.fn().mockResolvedValue({
+        runId: 'run_123',
+        phase: 'review',
+        status: 'awaiting_user',
+        interactionId: 'run_123_clarify',
+        interaction: {
+          runId: 'run_123',
+          id: 'run_123_clarify',
+          type: 'clarify_slots',
+          message: '请补充信息',
+          actions: ['submit', 'cancel'] as const,
+          fields: [
+            {
+              key: 'details',
+              label: '请补充任务信息',
+              required: true,
+            },
+          ],
+        },
+        timeline: [],
+        preview: { plan: null },
+        understandingPreview: {
+          rawInput: '记个待办：尽快处理报销',
+          normalizedInput: '记个待办：尽快处理报销',
+          draftTasks: [
+            {
+              id: 'draft_1',
+              intent: 'create',
+              target: 'todos',
+              title: '尽快处理报销',
+              confidence: 0.95,
+              ambiguities: ['时间表述模糊'],
+              corrections: [],
+              slots: {},
+            },
+          ],
+          corrections: [],
+        },
+        planPreview: null,
+        correctionNotes: [],
+        updatedAt: new Date().toISOString(),
+      })
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'resume',
+          runId: 'run_123',
+          interactionId: 'run_123_clarify',
+          response: { type: 'clarify_slots', action: 'cancel' },
+        },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.phase).toBe('cancelled')
+      expect(store.failAwaitingRuns).toHaveBeenCalledWith('user_123')
+    })
+
     it('advances to confirm_plan after saving multi-task draft edits', async () => {
       const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
 
@@ -437,6 +503,7 @@ describe('workspace-run-orchestrator', () => {
           interaction: expect.objectContaining({ type: 'confirm_plan' }),
         })
       )
+      expect(store.failAwaitingRuns).toHaveBeenCalledWith('user_123', { excludeRunId: 'run_123' })
       expect(events).not.toContainEqual(
         expect.objectContaining({
           type: 'awaiting_user',
@@ -542,6 +609,41 @@ describe('workspace-run-orchestrator', () => {
 
       expect(result.ok).toBe(false)
       expect(result.phase).toBe('not_found')
+    })
+  })
+
+  describe('awaiting run lifecycle', () => {
+    it('clears older awaiting runs before saving a new awaiting snapshot', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const store = createMockStore()
+      const ambiguousModel: WorkspaceRunModel = async () => ({
+        draftTasks: [
+          {
+            id: 'draft_1',
+            intent: 'create',
+            target: 'todos',
+            title: '尽快处理报销',
+            confidence: 0.95,
+            ambiguities: ['时间表述模糊'],
+            corrections: [],
+            slots: {},
+          },
+        ],
+      })
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '记个待办：尽快处理报销' },
+        store,
+        runModel: ambiguousModel,
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('review')
+      expect(store.failAwaitingRuns).toHaveBeenCalledWith('user_123')
+      expect(store.saveSnapshot).toHaveBeenCalled()
     })
   })
 })

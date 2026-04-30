@@ -133,6 +133,7 @@ export async function fetchCurrentWorkspaceRun(): Promise<FetchCurrentWorkspaceR
     headers: {
       accept: 'application/json',
     },
+    cache: 'no-store',
   })
 
   if (!response.ok) {
