@@ -11,8 +11,8 @@ import {
 import type {
   WorkspacePendingRunSnapshot,
   WorkspaceRunResult,
+  WorkspaceRunStreamEvent as WorkspaceRunEvent,
 } from '@/shared/workspace/workspace-run-protocol'
-import type { WorkspaceRunEvent } from '@/shared/workspace/workspace-runner.types'
 
 describe('workspace run protocol', () => {
   it('accepts a new input run request', () => {
@@ -354,7 +354,10 @@ describe('workspace run protocol', () => {
           },
         },
         data: {
-          created: 1,
+          ok: true,
+          action: 'create',
+          target: 'todos',
+          item: null,
         },
       },
     })
@@ -388,6 +391,11 @@ describe('workspace run protocol', () => {
         ],
       },
       preview: null,
+      timeline: [],
+      understandingPreview: null,
+      planPreview: null,
+      correctionNotes: [],
+      updatedAt: '2026-04-30T08:00:00.000Z',
     }
     const result: WorkspaceRunResult = {
       summary: '已完成。',
@@ -428,6 +436,11 @@ describe('workspace run protocol', () => {
           },
         },
         preview: null,
+        timeline: [],
+        understandingPreview: null,
+        planPreview: null,
+        correctionNotes: [],
+        updatedAt: '2026-04-30T08:00:00.000Z',
       })
     ).toThrow()
 
@@ -456,6 +469,11 @@ describe('workspace run protocol', () => {
           },
         },
         preview: null,
+        timeline: [],
+        understandingPreview: null,
+        planPreview: null,
+        correctionNotes: [],
+        updatedAt: '2026-04-30T08:00:00.000Z',
       })
     ).toThrow()
   })

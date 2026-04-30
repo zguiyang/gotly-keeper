@@ -23,21 +23,24 @@ import {
 } from './workspace-view-primitives'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
+import {
+  workspacePlanPreviewSchema,
+  workspacePreviewSchema,
+  workspaceUnderstandingPreviewSchema,
+} from '@/shared/workspace/workspace-run-protocol'
 import type {
   WorkspaceInteraction,
   WorkspaceInteractionResponse,
+  WorkspaceRunResult,
+  WorkspaceRunStepResult,
   WorkspaceRunStreamEvent,
+  WorkspaceRunToolResult,
   WorkspaceUnderstandingPreview,
   WorkspacePlanPreview,
 } from '@/shared/workspace/workspace-run-protocol'
-import type {
-  WorkspaceRunApiData,
-  WorkspaceRunApiPhase,
-} from '@/shared/workspace/workspace-runner.types'
 
 type VisibleWorkspaceRunPhase = {
   phase:
-    | WorkspaceRunApiPhase['phase']
     | 'normalize'
     | 'understand'
     | 'plan'
@@ -129,52 +132,47 @@ function getToolLabel(toolName: string) {
   return toolName
 }
 
-function isWorkspacePlanPreview(value: unknown): value is WorkspacePlanPreview {
-  return Boolean(
-    value &&
-    typeof value === 'object' &&
-    'summary' in value &&
-    typeof value.summary === 'string' &&
-    'steps' in value &&
-    Array.isArray(value.steps)
-  )
-}
-
 function derivePlanPreviewFromTimeline(timeline: WorkspaceRunStreamEvent[]) {
   for (const event of [...timeline].reverse()) {
     if (event.type !== 'phase_completed') {
       continue
     }
 
-    if (event.phase === 'preview' && isWorkspacePlanPreview((event.output as { plan?: unknown } | undefined)?.plan)) {
-      return (event.output as { plan: WorkspacePlanPreview }).plan
+    if (event.phase === 'preview') {
+      const parsedPreview = workspacePreviewSchema.safeParse(event.output)
+      if (parsedPreview.success) {
+        return parsedPreview.data.plan ?? null
+      }
     }
 
-    if (event.phase === 'plan' && isWorkspacePlanPreview(event.output)) {
-      return event.output
+    if (event.phase === 'plan') {
+      const parsedPlan = workspacePlanPreviewSchema.safeParse(event.output)
+      if (parsedPlan.success) {
+        return parsedPlan.data
+      }
+    }
+  }
+
+  return null
+}
+
+function deriveUnderstandingPreviewFromTimeline(timeline: WorkspaceRunStreamEvent[]) {
+  for (const event of [...timeline].reverse()) {
+    if (event.type !== 'phase_completed') {
+      continue
     }
 
-    if (
-      event.phase === 'plan' &&
-      event.output &&
-      typeof event.output === 'object' &&
-      'summary' in event.output &&
-      typeof event.output.summary === 'string' &&
-      'steps' in event.output &&
-      Array.isArray(event.output.steps)
-    ) {
-      return {
-        summary: event.output.summary,
-        steps: event.output.steps
-          .filter((step): step is { id: string; action: string; title?: string } => (
-            Boolean(step && typeof step === 'object' && 'id' in step && 'action' in step)
-          ))
-          .map((step) => ({
-            id: step.id,
-            toolName: step.action,
-            title: getToolLabel(step.action),
-            preview: `${getToolLabel(step.action)}：${step.title ?? ''}`.trimEnd(),
-          })),
+    if (event.phase === 'preview') {
+      const parsedPreview = workspacePreviewSchema.safeParse(event.output)
+      if (parsedPreview.success) {
+        return parsedPreview.data.understanding ?? null
+      }
+    }
+
+    if (event.phase === 'understand') {
+      const parsedUnderstanding = workspaceUnderstandingPreviewSchema.safeParse(event.output)
+      if (parsedUnderstanding.success) {
+        return parsedUnderstanding.data
       }
     }
   }
@@ -183,7 +181,6 @@ function derivePlanPreviewFromTimeline(timeline: WorkspaceRunStreamEvent[]) {
 }
 
 function getVisiblePhase(
-  phases: WorkspaceRunApiPhase[] = [],
   timeline: WorkspaceRunStreamEvent[] = []
 ): VisibleWorkspaceRunPhase {
   const phaseEvent = [...timeline]
@@ -204,15 +201,11 @@ function getVisiblePhase(
     }
   }
 
-  return (
-    phases.findLast((phase) => phase.status === 'active') ??
-    phases.findLast((phase) => phase.status === 'failed') ??
-    phases.at(-1) ?? {
-      phase: 'parse' as const,
-      status: 'active' as const,
-      message: '正在准备执行',
-    }
-  )
+  return {
+    phase: 'normalize',
+    status: 'active',
+    message: '正在准备执行',
+  }
 }
 
 function getPhaseFallbackMessage(visiblePhase: VisibleWorkspaceRunPhase) {
@@ -463,6 +456,94 @@ function StreamingPanel({
   return <StreamingSinglePanel lines={collectProcessLines(timeline, visiblePhase)} />
 }
 
+type WorkspaceDisplayResult =
+  | {
+      kind: 'query'
+      target: 'notes' | 'todos' | 'bookmarks' | 'mixed'
+      items: AssetListItem[]
+      total: number
+    }
+  | {
+      kind: 'mutation'
+      action: 'create' | 'update'
+      target: 'notes' | 'todos' | 'bookmarks'
+      item: AssetListItem | null
+    }
+  | {
+      kind: 'batch'
+      summary: string
+      stepResults: WorkspaceRunStepResult[]
+    }
+  | {
+      kind: 'error'
+      message: string
+    }
+
+function normalizeWorkspaceResultData(
+  data: WorkspaceRunToolResult | null | undefined
+): WorkspaceDisplayResult | null {
+  if (!data || typeof data !== 'object') {
+    return null
+  }
+
+  if (
+    data.ok &&
+    Array.isArray(data.items) &&
+    typeof data.total === 'number' &&
+    data.target
+  ) {
+    return {
+      kind: 'query',
+      target: data.target,
+      items: data.items,
+      total: data.total,
+    }
+  }
+
+  if (data.ok && data.action && data.target && data.target !== 'mixed') {
+    return {
+      kind: 'mutation',
+      action: data.action,
+      target: data.target,
+      item: data.item ?? null,
+    }
+  }
+
+  if (!data.ok) {
+    return {
+      kind: 'error',
+      message: data.message ?? '处理失败',
+    }
+  }
+
+  return null
+}
+
+function normalizeFinalResult(result: WorkspaceRunResult | null): WorkspaceDisplayResult | null {
+  if (!result) {
+    return null
+  }
+
+  if (Array.isArray(result.stepResults) && result.stepResults.length > 1) {
+    return {
+      kind: 'batch',
+      summary: result.summary,
+      stepResults: result.stepResults,
+    }
+  }
+
+  const dataResult = normalizeWorkspaceResultData(result.data)
+  if (dataResult) {
+    return dataResult
+  }
+
+  if (Array.isArray(result.stepResults) && result.stepResults.length === 1) {
+    return normalizeWorkspaceResultData(result.stepResults[0]?.result)
+  }
+
+  return null
+}
+
 function FinalResult({
   assistantText,
   result,
@@ -471,7 +552,7 @@ function FinalResult({
   elapsedMs,
 }: {
   assistantText: string | null
-  result: WorkspaceRunApiData | WorkspaceBatchResult | null
+  result: WorkspaceDisplayResult | null
   errorMessage: string | null
   status: 'streaming' | 'success' | 'error'
   elapsedMs?: number | null
@@ -663,15 +744,6 @@ function FinalResult({
   )
 }
 
-type WorkspaceToolSuccessData = {
-  ok: true
-  target: 'notes' | 'todos' | 'bookmarks' | 'mixed'
-  items?: AssetListItem[]
-  total?: number
-  action?: 'create' | 'update'
-  item?: AssetListItem | null
-}
-
 type WorkspaceBatchResult = {
   kind: 'batch'
   summary: string
@@ -682,91 +754,10 @@ type WorkspaceBatchResult = {
   }>
 }
 
-function isWorkspaceToolSuccessData(value: WorkspaceRunApiData | WorkspaceToolSuccessData | WorkspaceBatchResult | null): value is WorkspaceToolSuccessData {
-  return Boolean(value && typeof value === 'object' && 'ok' in value && value.ok === true)
-}
-
-function isWorkspaceBatchResult(value: WorkspaceRunApiData | WorkspaceToolSuccessData | WorkspaceBatchResult | null): value is WorkspaceBatchResult {
-  return Boolean(
-    value &&
-    typeof value === 'object' &&
-    'kind' in value &&
-    value.kind === 'batch' &&
-    'stepResults' in value &&
-    Array.isArray(value.stepResults)
-  )
-}
-
-function toLegacyResultData(
-  result: WorkspaceRunApiData | WorkspaceToolSuccessData | WorkspaceBatchResult | null
-): WorkspaceRunApiData | null {
-  if (isWorkspaceBatchResult(result)) {
-    return result
-  }
-
-  if (!isWorkspaceToolSuccessData(result)) {
-    return result
-  }
-
-  if (result.action && result.target !== 'mixed') {
-    return {
-      kind: 'mutation',
-      action: result.action,
-      target: result.target,
-      item: result.item ?? null,
-    }
-  }
-
-  if (Array.isArray(result.items) && typeof result.total === 'number') {
-    return {
-      kind: 'query',
-      target: result.target,
-      items: result.items,
-      total: result.total,
-    }
-  }
-
-  return null
-}
-
-function getBatchStepItem(step: WorkspaceBatchResult['stepResults'][number]) {
-  if (!step.result || typeof step.result !== 'object') {
-    return null
-  }
-
-  const result = step.result as {
-    ok?: boolean
-    action?: 'create' | 'update'
-    target?: 'notes' | 'todos' | 'bookmarks' | 'mixed'
-    item?: AssetListItem | null
-    total?: number
-    items?: AssetListItem[]
-    message?: string
-  }
-
-  if (result.ok && result.action && result.target && result.target !== 'mixed') {
-    return {
-      kind: 'mutation' as const,
-      action: result.action,
-      target: result.target,
-      item: result.item ?? null,
-    }
-  }
-
-  if (result.ok && Array.isArray(result.items) && typeof result.total === 'number' && result.target) {
-    return {
-      kind: 'query' as const,
-      target: result.target,
-      total: result.total,
-      items: result.items,
-    }
-  }
-
-  if (result.ok === false) {
-    return {
-      kind: 'error' as const,
-      message: result.message ?? '处理失败',
-    }
+function getBatchStepItem(step: WorkspaceRunStepResult) {
+  const normalized = normalizeWorkspaceResultData(step.result)
+  if (normalized) {
+    return normalized
   }
 
   return {
@@ -841,7 +832,6 @@ function InteractionActionIntro({
 export function WorkspaceRunPanel({
   status,
   assistantText,
-  phases = [],
   result = null,
   errorMessage = null,
   interaction,
@@ -853,8 +843,7 @@ export function WorkspaceRunPanel({
 }: {
   status: 'idle' | 'streaming' | 'awaiting_user' | 'success' | 'error'
   assistantText: string | null
-  phases?: WorkspaceRunApiPhase[]
-  result?: WorkspaceRunApiData | WorkspaceToolSuccessData | WorkspaceBatchResult | null
+  result?: WorkspaceRunResult | null
   errorMessage?: string | null
   runId?: string
   interaction?: WorkspaceInteraction
@@ -865,14 +854,19 @@ export function WorkspaceRunPanel({
   correctionNotes?: string[]
   onResume?: (response: WorkspaceInteractionResponse) => void
 }) {
-  const visiblePhase = getVisiblePhase(phases, timeline)
-  const resolvedPlanPreview = planPreview ?? derivePlanPreviewFromTimeline(timeline)
-  const resolvedResult = toLegacyResultData(result)
+  const visiblePhase = getVisiblePhase(timeline)
+  const resolvedUnderstandingPreview =
+    understandingPreview ?? deriveUnderstandingPreviewFromTimeline(timeline)
+  const resolvedPlanPreview =
+    planPreview ?? derivePlanPreviewFromTimeline(timeline)
+  const resolvedResult = normalizeFinalResult(result)
   const draftEditorRef = useRef<DraftTaskEditorHandle>(null)
   const [detailsExpanded, setDetailsExpanded] = useState(false)
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null)
   const slotFormId = useId()
-  const showDisclosure = status !== 'streaming' && (understandingPreview || planPreview)
+  const showDisclosure =
+    status !== 'streaming' &&
+    (resolvedUnderstandingPreview || resolvedPlanPreview)
 
   useEffect(() => {
     setSelectedCandidateId(null)
@@ -1081,30 +1075,30 @@ export function WorkspaceRunPanel({
 
           {detailsExpanded ? (
             <div className="mt-3 space-y-3">
-              {understandingPreview ? (
+              {resolvedUnderstandingPreview ? (
                 <div className="space-y-2 rounded-[0.75rem] bg-muted/30 px-3 py-2.5">
                   <p className="text-xs text-on-surface-variant/50">原始输入</p>
-                  <p className="text-sm text-on-surface">{understandingPreview.rawInput}</p>
+                  <p className="text-sm text-on-surface">{resolvedUnderstandingPreview.rawInput}</p>
 
-                  {understandingPreview.normalizedInput !== understandingPreview.rawInput ? (
+                  {resolvedUnderstandingPreview.normalizedInput !== resolvedUnderstandingPreview.rawInput ? (
                     <div className="space-y-1">
                       <p className="text-xs text-on-surface-variant/50">标准化后</p>
-                      <p className="text-sm text-on-surface">{understandingPreview.normalizedInput}</p>
+                      <p className="text-sm text-on-surface">{resolvedUnderstandingPreview.normalizedInput}</p>
                     </div>
                   ) : null}
 
-                  {understandingPreview.corrections.length > 0 ? (
+                  {resolvedUnderstandingPreview.corrections.length > 0 ? (
                     <div className="space-y-1">
                       <p className="text-xs text-on-surface-variant/50">修正</p>
-                      <p className="text-sm text-on-surface">{understandingPreview.corrections.join('、')}</p>
+                      <p className="text-sm text-on-surface">{resolvedUnderstandingPreview.corrections.join('、')}</p>
                     </div>
                   ) : null}
 
-                  {understandingPreview.draftTasks.length > 0 ? (
+                  {resolvedUnderstandingPreview.draftTasks.length > 0 ? (
                     <div className="space-y-1">
-                      <p className="text-xs text-on-surface-variant/50">识别任务 ({understandingPreview.draftTasks.length})</p>
+                      <p className="text-xs text-on-surface-variant/50">识别任务 ({resolvedUnderstandingPreview.draftTasks.length})</p>
                       <ol className="space-y-1">
-                        {understandingPreview.draftTasks.map((task) => (
+                        {resolvedUnderstandingPreview.draftTasks.map((task) => (
                           <li key={task.id} className="text-sm text-on-surface">
                             {task.title}
                           </li>
@@ -1115,11 +1109,11 @@ export function WorkspaceRunPanel({
                 </div>
               ) : null}
 
-              {planPreview ? (
+              {resolvedPlanPreview ? (
                 <div className="space-y-2 rounded-[0.75rem] bg-muted/30 px-3 py-2.5">
-                  <p className="text-xs text-on-surface-variant/50">执行步骤 ({planPreview.steps.length})</p>
+                  <p className="text-xs text-on-surface-variant/50">执行步骤 ({resolvedPlanPreview.steps.length})</p>
                   <ol className="space-y-1">
-                    {planPreview.steps.map((step) => (
+                    {resolvedPlanPreview.steps.map((step) => (
                       <li key={step.id} className="text-sm text-on-surface">
                         {step.preview}
                       </li>

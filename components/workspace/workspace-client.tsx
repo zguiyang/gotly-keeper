@@ -14,7 +14,18 @@ import { RecentItem } from './workspace-result-panels'
 import { WorkspaceRunPanel } from './workspace-run-panel'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
-import type { WorkspaceRunResult } from '@/shared/workspace/workspace-run-protocol'
+import type {
+  WorkspaceRunResult,
+  WorkspaceRunToolResult,
+} from '@/shared/workspace/workspace-run-protocol'
+
+function collectCreatedItemsFromToolResult(result: WorkspaceRunToolResult | null | undefined) {
+  if (!result?.ok || result.action !== 'create' || !result.item) {
+    return []
+  }
+
+  return [result.item]
+}
 
 function QuickInputSuggestions({
   onSuggestionClick,
@@ -64,30 +75,11 @@ export function WorkspaceClient({
   const isSubmittingRef = useRef(false)
 
   const handleWorkspaceResult = useCallback((result: WorkspaceRunResult) => {
-    const createdItems: AssetListItem[] = []
-
-    if (Array.isArray(result.stepResults)) {
-      for (const stepResult of result.stepResults) {
-        if (!stepResult || typeof stepResult !== 'object' || !('result' in stepResult)) {
-          continue
-        }
-
-        const rawResult = stepResult.result as {
-          ok?: boolean
-          action?: string
-          item?: AssetListItem
-        } | null
-
-        if (rawResult?.ok && rawResult.action === 'create' && rawResult.item) {
-          createdItems.push(rawResult.item)
-        }
-      }
-    } else {
-      const data = result.data as { kind?: string; action?: string; item?: AssetListItem } | null
-      if (data?.kind === 'mutation' && data.action === 'create' && data.item) {
-        createdItems.push(data.item)
-      }
-    }
+    const createdItems = Array.isArray(result.stepResults)
+      ? result.stepResults.flatMap((stepResult) =>
+          collectCreatedItemsFromToolResult(stepResult.result)
+        )
+      : collectCreatedItemsFromToolResult(result.data ?? null)
 
     if (createdItems.length === 0) {
       return
@@ -208,23 +200,13 @@ export function WorkspaceClient({
             key="run-panel"
             status={state.status}
             assistantText={state.result?.answer ?? state.result?.summary ?? null}
-            result={Array.isArray(state.result?.stepResults) && state.result.stepResults.length > 1
-              ? {
-                  kind: 'batch',
-                  summary: state.result.summary,
-                  stepResults: state.result.stepResults as Array<{
-                    stepId: string
-                    toolName: string
-                    result: unknown
-                  }>,
-                }
-              : state.result?.data as Parameters<typeof WorkspaceRunPanel>[0]['result']}
+            result={state.result}
             errorMessage={state.errorMessage}
             runId={state.runId}
             interaction={state.interaction}
             timeline={state.timeline}
-            understandingPreview={state.result?.preview?.understanding ?? null}
-            planPreview={state.result?.preview?.plan ?? null}
+            understandingPreview={state.understandingPreview ?? state.result?.preview?.understanding ?? null}
+            planPreview={state.planPreview ?? state.result?.preview?.plan ?? null}
             elapsedMs={elapsedMs}
             onResume={resumeInteraction}
           />

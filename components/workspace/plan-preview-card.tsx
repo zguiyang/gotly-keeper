@@ -18,11 +18,10 @@ import {
   workspaceInteractionCardClassName,
 } from './workspace-view-primitives'
 
-import type { ConfirmPlanInteraction, WorkspaceInteractionResponse } from '@/shared/workspace/workspace-run-protocol'
+import type { ConfirmPlanInteraction } from '@/shared/workspace/workspace-run-protocol'
 
 type PlanPreviewCardProps = {
   interaction: ConfirmPlanInteraction
-  onSubmit?: (response: WorkspaceInteractionResponse) => void
 }
 
 export function PlanPreviewCard({ interaction }: PlanPreviewCardProps) {

@@ -10,9 +10,17 @@ import {
 import type {
   WorkspaceInteraction,
   WorkspaceInteractionResponse,
+  WorkspacePendingRunSnapshot,
+  WorkspacePlanPreview,
   WorkspaceRunRequest,
   WorkspaceRunResult,
   WorkspaceRunStreamEvent,
+  WorkspaceUnderstandingPreview,
+} from '@/shared/workspace/workspace-run-protocol'
+import {
+  workspacePlanPreviewSchema,
+  workspacePreviewSchema,
+  workspaceUnderstandingPreviewSchema,
 } from '@/shared/workspace/workspace-run-protocol'
 
 export type WorkspaceRunUiState = {
@@ -21,6 +29,9 @@ export type WorkspaceRunUiState = {
   interaction?: WorkspaceInteraction
   timeline: WorkspaceRunStreamEvent[]
   result: WorkspaceRunResult | null
+  understandingPreview: WorkspaceUnderstandingPreview | null
+  planPreview: WorkspacePlanPreview | null
+  correctionNotes: string[]
   errorMessage: string | null
   startedAt: number | null
   endedAt: number | null
@@ -30,6 +41,9 @@ const INITIAL_RUN_STATE: WorkspaceRunUiState = {
   status: 'idle',
   timeline: [],
   result: null,
+  understandingPreview: null,
+  planPreview: null,
+  correctionNotes: [],
   errorMessage: null,
   startedAt: null,
   endedAt: null,
@@ -40,6 +54,64 @@ function parseRunStartedAt(runId: string) {
   const startedAt = Number.parseInt(startedAtText ?? '', 10)
 
   return Number.isFinite(startedAt) ? startedAt : Date.now()
+}
+
+function extractSnapshotPreviewState(
+  snapshot: Pick<
+    WorkspacePendingRunSnapshot,
+    'understandingPreview' | 'planPreview' | 'correctionNotes'
+  >
+) {
+  return {
+    understandingPreview: snapshot.understandingPreview,
+    planPreview: snapshot.planPreview,
+    correctionNotes: snapshot.correctionNotes,
+  }
+}
+
+function extractEventPreviewState(
+  event: WorkspaceRunStreamEvent
+): Partial<
+  Pick<
+    WorkspaceRunUiState,
+    'understandingPreview' | 'planPreview' | 'correctionNotes'
+  >
+> {
+  if (event.type !== 'phase_completed') {
+    return {}
+  }
+
+  if (event.phase === 'understand') {
+    const parsed = workspaceUnderstandingPreviewSchema.safeParse(event.output)
+    if (parsed.success) {
+      return {
+        understandingPreview: parsed.data,
+        correctionNotes: parsed.data.corrections,
+      }
+    }
+  }
+
+  if (event.phase === 'preview') {
+    const parsed = workspacePreviewSchema.safeParse(event.output)
+    if (parsed.success) {
+      return {
+        understandingPreview: parsed.data.understanding ?? null,
+        planPreview: parsed.data.plan ?? null,
+        correctionNotes: parsed.data.understanding?.corrections ?? [],
+      }
+    }
+  }
+
+  if (event.phase === 'plan') {
+    const parsed = workspacePlanPreviewSchema.safeParse(event.output)
+    if (parsed.success) {
+      return {
+        planPreview: parsed.data,
+      }
+    }
+  }
+
+  return {}
 }
 
 export function useWorkspaceStream(options: {
@@ -65,6 +137,7 @@ export function useWorkspaceStream(options: {
           interaction: result.run.interaction,
           timeline: result.run.timeline,
           result: null,
+          ...extractSnapshotPreviewState(result.run),
           errorMessage: null,
           startedAt,
           endedAt: Date.now(),
@@ -102,6 +175,9 @@ export function useWorkspaceStream(options: {
         status: 'streaming',
         timeline: [],
         result: null,
+        understandingPreview: null,
+        planPreview: null,
+        correctionNotes: [],
         errorMessage: null,
         startedAt,
         endedAt: null,
@@ -122,6 +198,13 @@ export function useWorkspaceStream(options: {
               switch (event.type) {
                 case 'phase_started':
                 case 'phase_completed':
+                  setState((current) => ({
+                    ...current,
+                    timeline: [...current.timeline, event],
+                    ...extractEventPreviewState(event),
+                  }))
+                  break
+
                 case 'tool_call_started':
                 case 'tool_call_completed':
                   setState((current) => ({
@@ -137,6 +220,9 @@ export function useWorkspaceStream(options: {
                     interaction: event.interaction,
                     timeline: [...current.timeline, event],
                     result: null,
+                    understandingPreview: current.understandingPreview,
+                    planPreview: current.planPreview,
+                    correctionNotes: current.correctionNotes,
                     errorMessage: null,
                     startedAt: current.startedAt,
                     endedAt: Date.now(),
@@ -148,6 +234,14 @@ export function useWorkspaceStream(options: {
                     status: 'success',
                     timeline: [...current.timeline, event],
                     result: event.result,
+                    understandingPreview:
+                      event.result.preview?.understanding ??
+                      current.understandingPreview,
+                    planPreview:
+                      event.result.preview?.plan ?? current.planPreview,
+                    correctionNotes:
+                      event.result.preview?.understanding?.corrections ??
+                      current.correctionNotes,
                     errorMessage: null,
                     startedAt: current.startedAt,
                     endedAt: Date.now(),
@@ -160,6 +254,9 @@ export function useWorkspaceStream(options: {
                     status: 'error',
                     timeline: [...current.timeline, event],
                     result: null,
+                    understandingPreview: current.understandingPreview,
+                    planPreview: current.planPreview,
+                    correctionNotes: current.correctionNotes,
                     errorMessage: event.error.message,
                     startedAt: current.startedAt,
                     endedAt: Date.now(),
