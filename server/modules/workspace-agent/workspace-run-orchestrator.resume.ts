@@ -160,11 +160,15 @@ function toReviewablePlan(result: WorkspaceRunPlannerResult): ReviewablePlan {
 
 async function replanDraftTasks(
   tasks: DraftWorkspaceTask[],
-  options: OrchestrateWorkspaceRunOptions
+  options: OrchestrateWorkspaceRunOptions,
+  referenceTime: string
 ) {
   return planWorkspaceRun({
     userId: options.userId,
-    draftTasks: normalizeTodoDraftTaskTimes(tasks),
+    draftTasks: await normalizeTodoDraftTaskTimes(tasks, {
+      referenceTime,
+      signal: options.signal,
+    }),
     searchCandidates: options.searchCandidates,
     runPlanHints: async () => null,
   })
@@ -446,7 +450,9 @@ export async function handleResume(
     draftTasks = mergeClarification(draftTasks, request.response)
   }
 
-  let plannerResult = await replanDraftTasks(draftTasks, options)
+  const referenceTime = snapshot.referenceTime ?? snapshot.updatedAt
+
+  let plannerResult = await replanDraftTasks(draftTasks, options, referenceTime)
 
   if (request.response.type === 'select_candidate' && request.response.action === 'select') {
     plannerResult = applySelectedCandidate(plannerResult, request.response.candidateId)
@@ -482,6 +488,7 @@ export async function handleResume(
       corrections: snapshot.understandingPreview?.corrections ?? [],
     },
     updatedAt: new Date().toISOString(),
+    referenceTime,
     draftTasksConfirmed:
       request.response.type === 'edit_draft_tasks' && request.response.action === 'save',
   })

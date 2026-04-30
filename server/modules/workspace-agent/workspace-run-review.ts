@@ -55,6 +55,7 @@ export type ReviewablePlan = {
 
 export type WorkspaceReviewPendingRunSnapshot = {
   runId: string
+  referenceTime?: string
   phase: 'review'
   status: 'awaiting_user'
   interactionId: string
@@ -94,6 +95,7 @@ type ReviewWorkspaceRunPlanInput = {
   plan: ReviewablePlan
   understandingPreview: WorkspaceUnderstandingPreview | null
   updatedAt: string
+  referenceTime?: string
   draftTasksConfirmed?: boolean
 }
 
@@ -141,6 +143,7 @@ function toPlanPreview(plan: ReviewablePlan): WorkspacePlanPreview {
 
 function buildSnapshot(input: {
   runId: string
+  referenceTime?: string
   interaction: WorkspaceReviewPendingRunSnapshot['interaction']
   understandingPreview: WorkspaceUnderstandingPreview | null
   plan: ReviewablePlan
@@ -152,6 +155,7 @@ function buildSnapshot(input: {
 
   return {
     runId: input.runId,
+    referenceTime: input.referenceTime ?? input.updatedAt,
     phase: 'review',
     status: 'awaiting_user',
     interactionId: input.interaction.id,
@@ -321,6 +325,18 @@ function hasWriteTitleDrift(task: ReviewableDraftTask, step: ReviewablePlanStep)
   return baselineTitle !== stepTitle
 }
 
+function hasOnlyIgnorableTodoTimeAmbiguities(task: ReviewableDraftTask, step: ReviewablePlanStep) {
+  if (task.target !== 'todos' || step.action !== 'create_todo') {
+    return false
+  }
+
+  if (task.ambiguities.length === 0) {
+    return false
+  }
+
+  return task.ambiguities.every((ambiguity) => /^时间表述.+不明确$/.test(ambiguity))
+}
+
 function getCorrectionNotes(input: ReviewWorkspaceRunPlanInput, task: ReviewableDraftTask) {
   return [...new Set([...task.corrections, ...(input.understandingPreview?.corrections ?? [])])]
 }
@@ -330,6 +346,7 @@ function buildConfirmPlanDecision(input: {
   plan: ReviewablePlan
   understandingPreview: WorkspaceUnderstandingPreview | null
   updatedAt: string
+  referenceTime?: string
   message: string
   correctionNotes?: WorkspaceCorrectionNote[]
   candidateId?: string
@@ -345,6 +362,7 @@ function buildConfirmPlanDecision(input: {
     reason: 'confirm_plan',
     snapshot: buildSnapshot({
       runId: input.runId,
+      referenceTime: input.referenceTime,
       interaction: {
         runId: input.runId,
         id: interactionId,
@@ -367,6 +385,7 @@ function buildClarifyDecision(input: {
   plan: ReviewablePlan
   understandingPreview: WorkspaceUnderstandingPreview | null
   updatedAt: string
+  referenceTime?: string
   interactionIdSuffix: string
   message: string
   fields: NonNullable<WorkspaceReviewPendingRunSnapshot['interaction']['fields']>
@@ -382,6 +401,7 @@ function buildClarifyDecision(input: {
     reason: 'clarify_slots',
     snapshot: buildSnapshot({
       runId: input.runId,
+      referenceTime: input.referenceTime,
       interaction: {
         runId: input.runId,
         id: interactionId,
@@ -403,6 +423,7 @@ function buildEditDraftTasksDecision(input: {
   plan: ReviewablePlan
   understandingPreview: WorkspaceUnderstandingPreview | null
   updatedAt: string
+  referenceTime?: string
 }): {
   status: 'await_user'
   reason: 'edit_draft_tasks'
@@ -415,6 +436,7 @@ function buildEditDraftTasksDecision(input: {
     reason: 'edit_draft_tasks',
     snapshot: buildSnapshot({
       runId: input.runId,
+      referenceTime: input.referenceTime,
       interaction: {
         runId: input.runId,
         id: interactionId,
@@ -435,6 +457,7 @@ function buildUpdateDecision(input: {
   plan: ReviewablePlan
   understandingPreview: WorkspaceUnderstandingPreview | null
   updatedAt: string
+  referenceTime?: string
   candidates: ReviewableCandidate[]
 }): {
   status: 'await_user'
@@ -449,6 +472,7 @@ function buildUpdateDecision(input: {
       reason: 'select_candidate',
       snapshot: buildSnapshot({
         runId: input.runId,
+        referenceTime: input.referenceTime,
         interaction: {
           runId: input.runId,
           id: interactionId,
@@ -473,6 +497,7 @@ function buildUpdateDecision(input: {
       plan: input.plan,
       understandingPreview: input.understandingPreview,
       updatedAt: input.updatedAt,
+      referenceTime: input.referenceTime,
       message: `找到一个待更新候选：${candidateTitle}，请确认后执行。`,
       candidateId,
     })
@@ -483,6 +508,7 @@ function buildUpdateDecision(input: {
     plan: input.plan,
     understandingPreview: input.understandingPreview,
     updatedAt: input.updatedAt,
+    referenceTime: input.referenceTime,
     interactionIdSuffix: 'clarify_update',
     message: '没有找到明确的待办，请补充识别信息。',
     fields: [
@@ -527,6 +553,7 @@ export function reviewWorkspaceRunPlan(
       plan: input.plan,
       understandingPreview: input.understandingPreview,
       updatedAt: input.updatedAt,
+      referenceTime: input.referenceTime,
     })
   }
 
@@ -536,6 +563,7 @@ export function reviewWorkspaceRunPlan(
       plan: input.plan,
       understandingPreview: input.understandingPreview,
       updatedAt: input.updatedAt,
+      referenceTime: input.referenceTime,
       message: '草稿任务已确认，请确认执行计划。',
     })
   }
@@ -556,6 +584,7 @@ export function reviewWorkspaceRunPlan(
       plan: input.plan,
       understandingPreview: input.understandingPreview,
       updatedAt: input.updatedAt,
+      referenceTime: input.referenceTime,
       candidates: step.candidates ?? [],
     })
   }
@@ -566,18 +595,20 @@ export function reviewWorkspaceRunPlan(
       plan: input.plan,
       understandingPreview: input.understandingPreview,
       updatedAt: input.updatedAt,
+      referenceTime: input.referenceTime,
       interactionIdSuffix: 'clarify_confidence',
       message: '这条任务的意图还不够确定，请补充说明。',
       fields: buildClarifyFields(task),
     })
   }
 
-  if (task.ambiguities.length > 0) {
+  if (task.ambiguities.length > 0 && !hasOnlyIgnorableTodoTimeAmbiguities(task, step)) {
     return buildClarifyDecision({
       runId: input.runId,
       plan: input.plan,
       understandingPreview: input.understandingPreview,
       updatedAt: input.updatedAt,
+      referenceTime: input.referenceTime,
       interactionIdSuffix: 'clarify_ambiguity',
       message: '还有未消除的歧义，请先澄清。',
       fields: buildClarifyFields(task),
@@ -592,6 +623,7 @@ export function reviewWorkspaceRunPlan(
       plan: input.plan,
       understandingPreview: input.understandingPreview,
       updatedAt: input.updatedAt,
+      referenceTime: input.referenceTime,
       message: '检测到纠正内容，请确认再执行。',
       correctionNotes,
     })
@@ -603,6 +635,7 @@ export function reviewWorkspaceRunPlan(
       plan: input.plan,
       understandingPreview: input.understandingPreview,
       updatedAt: input.updatedAt,
+      referenceTime: input.referenceTime,
       interactionIdSuffix: 'clarify_required_fields',
       message: '执行前还缺少必要字段，请补充。',
       fields: buildClarifyFields(task),
@@ -622,6 +655,7 @@ export function reviewWorkspaceRunPlan(
       plan: input.plan,
       understandingPreview: input.understandingPreview,
       updatedAt: input.updatedAt,
+      referenceTime: input.referenceTime,
       message: '计划标题与原始写入标题存在差异，请确认后执行。',
     })
   }
@@ -647,6 +681,7 @@ export function reviewWorkspaceRunPlan(
     plan: input.plan,
     understandingPreview: input.understandingPreview,
     updatedAt: input.updatedAt,
+    referenceTime: input.referenceTime,
     message: '请确认执行计划。',
   })
 }
