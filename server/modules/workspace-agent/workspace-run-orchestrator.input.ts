@@ -340,7 +340,7 @@ export async function handleNewInput(
     }
 
     if (reviewResult.status === 'await_user') {
-      await store.updateRunStatus(runId, userId, 'awaiting_user')
+      await store.failAwaitingRuns(userId)
       await store.saveSnapshot(reviewResult.snapshot, userId)
 
       emitEvent(ctx, {

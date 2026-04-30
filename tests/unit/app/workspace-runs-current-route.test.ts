@@ -25,6 +25,7 @@ describe('/api/workspace/runs/current GET', () => {
     const res = await GET()
 
     expect(res.status).toBe(200)
+    expect(res.headers.get('cache-control')).toBe('no-store')
     await expect(res.json()).resolves.toEqual({ ok: true, run: null })
   })
 
@@ -54,6 +55,7 @@ describe('/api/workspace/runs/current GET', () => {
     const res = await GET()
 
     expect(res.status).toBe(200)
+    expect(res.headers.get('cache-control')).toBe('no-store')
     await expect(res.json()).resolves.toMatchObject({
       ok: true,
       run: {

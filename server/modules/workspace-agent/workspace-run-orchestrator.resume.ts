@@ -355,7 +355,12 @@ async function failRun(
   code: string,
   message: string
 ) {
-  await store.updateRunStatus(runId, userId, 'failed')
+  const clearedCount = await store.failAwaitingRuns(userId)
+
+  if (clearedCount === 0) {
+    await store.updateRunStatus(runId, userId, 'failed')
+  }
+
   emitEvent(ctx, {
     type: 'run_failed',
     error: {
@@ -515,6 +520,7 @@ export async function handleResume(
   }
 
   if (reviewDecision.status === 'await_user') {
+    await store.failAwaitingRuns(userId, { excludeRunId: request.runId })
     await store.saveSnapshot(reviewDecision.snapshot, userId)
     emitEvent(ctx, {
       type: 'awaiting_user',

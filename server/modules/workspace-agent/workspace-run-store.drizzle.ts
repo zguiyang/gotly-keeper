@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, ne } from 'drizzle-orm'
 
 import { db } from '@/server/lib/db'
 import { workspaceRuns } from '@/server/lib/db/schema'
@@ -57,6 +57,30 @@ export function createWorkspaceRunStore(): WorkspaceRunStore {
       }
 
       return row.snapshot as unknown as WorkspaceReviewPendingRunSnapshot
+    },
+
+    async failAwaitingRuns(
+      userId: string,
+      options?: { excludeRunId?: string }
+    ): Promise<number> {
+      const filters = [
+        eq(workspaceRuns.userId, userId),
+        eq(workspaceRuns.status, 'awaiting_user'),
+      ]
+
+      if (options?.excludeRunId) {
+        filters.push(ne(workspaceRuns.runId, options.excludeRunId))
+      }
+
+      const result = await db
+        .update(workspaceRuns)
+        .set({
+          status: 'failed',
+          updatedAt: now(),
+        })
+        .where(and(...filters))
+
+      return result.rowCount ?? 0
     },
 
     async updateRunStatus(runId: string, userId: string, status: WorkspaceRunStatus): Promise<boolean> {
