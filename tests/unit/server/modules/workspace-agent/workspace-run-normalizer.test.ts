@@ -43,6 +43,13 @@ describe('workspace-run-normalizer', () => {
     expect(normalizeWorkspaceRunInput(input).timeHints).toEqual(['五分钟后'])
   })
 
+  it('extracts weekend next-month and cutoff time phrases into timeHints', () => {
+    expect(normalizeWorkspaceRunInput('这周末买菜').timeHints).toEqual(['这周末'])
+    expect(normalizeWorkspaceRunInput('下周末整理房间').timeHints).toEqual(['下周末'])
+    expect(normalizeWorkspaceRunInput('下个月1号提交发票').timeHints).toEqual(['下个月1号'])
+    expect(normalizeWorkspaceRunInput('本周五下班前发合同').timeHints).toEqual(['本周五下班前'])
+  })
+
   it('extracts urls without swallowing trailing punctuation', () => {
     const input = '保存这个链接 https://example.com/pricing。'
 

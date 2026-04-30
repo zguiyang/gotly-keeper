@@ -13,6 +13,7 @@ import {
 import type { NormalizedWorkspaceRunInput } from './workspace-run-normalizer'
 
 const commandOnlyTitleRegex = /^(帮我记一下|帮我记个待办|记一下|记个待办|帮我)[：:，,;；。\s]*$/
+const leadingPunctuationRegex = /^[：:，,;；。\s]+/
 const allowedIntentSchema = z.enum([
   'create',
   'query',
@@ -24,6 +25,13 @@ const understandingSlotEntrySchema = z.object({
   key: z.string().trim().min(1),
   value: z.string(),
 })
+
+const SLOT_KEY_ALIASES: Record<string, string> = {
+  due: 'timeText',
+  dueDate: 'timeText',
+  dueText: 'timeText',
+  dueTime: 'timeText',
+}
 
 const understandingTaskSchema = workspaceDraftTaskSchema
   .extend({
@@ -92,7 +100,18 @@ const understandingModelTaskSchema = workspaceDraftTaskSchema
   })
 
 function slotEntriesToSlots(slotEntries: Array<{ key: string; value: string }>): Record<string, string> {
-  return Object.fromEntries(slotEntries.map((entry) => [entry.key, entry.value]))
+  const slots: Record<string, string> = {}
+
+  for (const entry of slotEntries) {
+    const canonicalKey = SLOT_KEY_ALIASES[entry.key] ?? entry.key
+    if (canonicalKey in slots) {
+      continue
+    }
+
+    slots[canonicalKey] = entry.value
+  }
+
+  return slots
 }
 
 export const understandingModelResultSchema = z.object({
@@ -142,6 +161,49 @@ function dedupeCorrections(corrections: string[]): string[] {
   return Array.from(new Set(corrections))
 }
 
+function normalizeTodoTitleFromTimeHints(task: DraftWorkspaceTask, timeHints: string[]) {
+  if (task.target !== 'todos' || (task.intent !== 'create' && task.intent !== 'update')) {
+    return task
+  }
+
+  const trimmedTitle = task.title.trim()
+  if (!trimmedTitle) {
+    return task
+  }
+
+  for (const timeHint of timeHints) {
+    const hint = timeHint.trim()
+    if (!hint) {
+      continue
+    }
+
+    const hintIndex = trimmedTitle.indexOf(hint)
+    if (hintIndex < 0) {
+      continue
+    }
+
+    const suffix = trimmedTitle
+      .slice(hintIndex + hint.length)
+      .replace(leadingPunctuationRegex, '')
+      .trim()
+
+    if (!suffix || commandOnlyTitleRegex.test(suffix)) {
+      continue
+    }
+
+    return {
+      ...task,
+      title: suffix,
+    }
+  }
+
+  return task
+}
+
+function normalizeDraftTaskTitles(tasks: DraftWorkspaceTask[], timeHints: string[]) {
+  return tasks.map((task) => normalizeTodoTitleFromTimeHints(task, timeHints))
+}
+
 function typoCandidatesToCorrections(
   typoCandidates: NormalizedWorkspaceRunInput['typoCandidates']
 ): string[] {
@@ -182,7 +244,10 @@ export async function understandWorkspaceRunInput(input: {
     return {
       rawInput: input.normalized.rawText,
       normalizedInput: input.normalized.normalizedText,
-      draftTasks: toDraftTasks(normalizeModelDraftTasks(modelParsed.data.draftTasks)),
+      draftTasks: normalizeDraftTaskTitles(
+        toDraftTasks(normalizeModelDraftTasks(modelParsed.data.draftTasks)),
+        input.normalized.timeHints
+      ),
       corrections: dedupeCorrections(typoCandidatesToCorrections(input.normalized.typoCandidates)),
     }
   }
@@ -203,7 +268,10 @@ export async function understandWorkspaceRunInput(input: {
     return {
       rawInput: input.normalized.rawText,
       normalizedInput: input.normalized.normalizedText,
-      draftTasks: toDraftTasks(normalizeModelDraftTasks(modelParsed.data.draftTasks)),
+      draftTasks: normalizeDraftTaskTitles(
+        toDraftTasks(normalizeModelDraftTasks(modelParsed.data.draftTasks)),
+        input.normalized.timeHints
+      ),
       corrections: dedupeCorrections(typoCandidatesToCorrections(input.normalized.typoCandidates)),
     }
   }
@@ -217,7 +285,7 @@ export async function understandWorkspaceRunInput(input: {
   return {
     rawInput: input.normalized.rawText,
     normalizedInput: input.normalized.normalizedText,
-    draftTasks: toDraftTasks(validated.data.draftTasks),
+    draftTasks: normalizeDraftTaskTitles(toDraftTasks(validated.data.draftTasks), input.normalized.timeHints),
     corrections: dedupeCorrections(typoCandidatesToCorrections(input.normalized.typoCandidates)),
   }
 }

@@ -5,7 +5,15 @@ import { parseTodoTime } from '@/server/services/time/todo-time-parser'
 import type { DraftWorkspaceTask } from '@/shared/workspace/workspace-run-protocol'
 
 function hasTodoTimeSlot(task: DraftWorkspaceTask) {
-  return Boolean(task.slots.timeText || task.slots.time || task.slots.dueAt)
+  return Boolean(
+    task.slots.timeText ||
+      task.slots.due ||
+      task.slots.time ||
+      task.slots.dueAt ||
+      task.slots.dueTime ||
+      task.slots.dueText ||
+      task.slots.dueDate
+  )
 }
 
 export function normalizeTodoDraftTaskTimes(
