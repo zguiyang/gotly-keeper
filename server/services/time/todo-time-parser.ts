@@ -4,7 +4,15 @@ import { Culture, recognizeDateTime } from '@microsoft/recognizers-text-suite'
 
 import { ASIA_SHANGHAI_TIME_ZONE, dayjs } from '@/shared/time/dayjs'
 
-type TodoTimeSourceSlot = 'timeText' | 'time' | 'dueAt' | 'rawText'
+type TodoTimeSourceSlot =
+  | 'due'
+  | 'timeText'
+  | 'time'
+  | 'dueAt'
+  | 'dueDate'
+  | 'dueText'
+  | 'dueTime'
+  | 'rawText'
 
 export type ParseTodoTimeInput = {
   rawText?: string | null
@@ -36,6 +44,26 @@ function resolveSource(input: ParseTodoTimeInput): { text: string; sourceSlot: T
   const slotTimeText = getTrimmedValue(input.slots?.timeText)
   if (slotTimeText) {
     return { text: slotTimeText, sourceSlot: 'timeText' }
+  }
+
+  const slotDue = getTrimmedValue(input.slots?.due)
+  if (slotDue) {
+    return { text: slotDue, sourceSlot: 'due' }
+  }
+
+  const slotDueTime = getTrimmedValue(input.slots?.dueTime)
+  if (slotDueTime) {
+    return { text: slotDueTime, sourceSlot: 'dueTime' }
+  }
+
+  const slotDueText = getTrimmedValue(input.slots?.dueText)
+  if (slotDueText) {
+    return { text: slotDueText, sourceSlot: 'dueText' }
+  }
+
+  const slotDueDate = getTrimmedValue(input.slots?.dueDate)
+  if (slotDueDate) {
+    return { text: slotDueDate, sourceSlot: 'dueDate' }
   }
 
   const legacyTime = getTrimmedValue(input.slots?.time)
@@ -127,10 +155,58 @@ function resolveRelativeDueAt(text: string) {
   return current.add(amount, 'day').toISOString()
 }
 
+function resolveRelativeMonthDueAt(text: string) {
+  const match = text.match(/^下个月([0-9一二三四五六七八九十两]+)[日号]$/)
+  if (!match) {
+    return null
+  }
+
+  const [, dayText] = match
+  const dayOfMonth = parseChineseInteger(dayText)
+  if (!dayOfMonth) {
+    return null
+  }
+
+  const nextMonth = dayjs().tz(ASIA_SHANGHAI_TIME_ZONE).add(1, 'month')
+  if (dayOfMonth > nextMonth.daysInMonth()) {
+    return null
+  }
+
+  return nextMonth.date(dayOfMonth).hour(23).minute(59).second(59).millisecond(0).toISOString()
+}
+
+function resolveWeekendDueAt(text: string) {
+  if (text !== '这周末' && text !== '本周末' && text !== '下周末') {
+    return null
+  }
+
+  const current = dayjs().tz(ASIA_SHANGHAI_TIME_ZONE)
+  const daysUntilSunday = (7 - current.day()) % 7
+  const extraWeeks = text === '下周末' ? 1 : 0
+
+  return current
+    .add(daysUntilSunday + extraWeeks * 7, 'day')
+    .hour(23)
+    .minute(59)
+    .second(59)
+    .millisecond(0)
+    .toISOString()
+}
+
 function resolveRecognizedDueAt(text: string) {
   const relativeDueAt = resolveRelativeDueAt(text)
   if (relativeDueAt) {
     return relativeDueAt
+  }
+
+  const relativeMonthDueAt = resolveRelativeMonthDueAt(text)
+  if (relativeMonthDueAt) {
+    return relativeMonthDueAt
+  }
+
+  const weekendDueAt = resolveWeekendDueAt(text)
+  if (weekendDueAt) {
+    return weekendDueAt
   }
 
   const results = recognizeDateTime(text, Culture.Chinese)

@@ -21,6 +21,7 @@ You support the workspace run pipeline across normalize, understand, and later p
 
 - A single user request may contain multiple commands.
 - Split compound input into multiple draft tasks when the user clearly asks for more than one action or target.
+- Do not split a single todo just because it includes setup text, a short leading note, or a comma-separated context phrase before the main action.
 - Keep each draft task atomic and independently actionable.
 - Do not collapse unrelated actions into one title.
 

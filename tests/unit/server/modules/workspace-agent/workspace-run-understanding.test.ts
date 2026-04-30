@@ -59,6 +59,46 @@ describe('workspace-run-understanding', () => {
     })
   })
 
+  it('extracts the action-only todo title when the model title still contains a time phrase', async () => {
+    const runModel = vi.fn().mockResolvedValue({
+      draftTasks: [
+        {
+          id: 'task_1',
+          intent: 'create',
+          target: 'todos',
+          title: '定位样本，这周末买菜',
+          confidence: 0.93,
+          ambiguities: [],
+          corrections: [],
+          slots: {
+            time: '这周末',
+          },
+        },
+      ],
+    })
+
+    const result = await understandWorkspaceRunInput({
+      normalized: {
+        rawText: '记个待办：定位样本，这周末买菜',
+        normalizedText: '记个待办：定位样本，这周末买菜',
+        urls: [],
+        separators: ['，'],
+        typoCandidates: [],
+        timeHints: ['这周末'],
+      },
+      runModel,
+    })
+
+    expect(result.draftTasks).toEqual([
+      expect.objectContaining({
+        title: '买菜',
+        slots: {
+          time: '这周末',
+        },
+      }),
+    ])
+  })
+
   it('rejects empty draft tasks', async () => {
     await expect(
       understandWorkspaceRunInput({
@@ -346,6 +386,76 @@ describe('workspace-run-understanding', () => {
           summary: '产品定价说明',
         },
       },
+    ])
+  })
+
+  it('canonicalizes aliased time slot keys from slotEntries', async () => {
+    const result = await understandWorkspaceRunInput({
+      normalized: {
+        rawText: '记个待办：下个月1号提交发票',
+        normalizedText: '记个待办：下个月1号提交发票',
+        urls: [],
+        separators: ['：'],
+        typoCandidates: [],
+        timeHints: ['下个月1号'],
+      },
+      runModel: vi.fn().mockResolvedValue({
+        draftTasks: [
+          {
+            id: 'task_1',
+            intent: 'create',
+            target: 'todos',
+            title: '提交发票',
+            confidence: 0.92,
+            ambiguities: [],
+            corrections: [],
+            slotEntries: [{ key: 'dueDate', value: '下个月1号' }],
+          },
+        ],
+      }),
+    })
+
+    expect(result.draftTasks).toEqual([
+      expect.objectContaining({
+        slots: {
+          timeText: '下个月1号',
+        },
+      }),
+    ])
+  })
+
+  it('canonicalizes generic due slot keys from slotEntries', async () => {
+    const result = await understandWorkspaceRunInput({
+      normalized: {
+        rawText: '记个待办：本周五下班前发合同',
+        normalizedText: '记个待办：本周五下班前发合同',
+        urls: [],
+        separators: ['：'],
+        typoCandidates: [],
+        timeHints: ['本周五下班前'],
+      },
+      runModel: vi.fn().mockResolvedValue({
+        draftTasks: [
+          {
+            id: 'task_1',
+            intent: 'create',
+            target: 'todos',
+            title: '发合同',
+            confidence: 0.92,
+            ambiguities: [],
+            corrections: [],
+            slotEntries: [{ key: 'due', value: '本周五下班前' }],
+          },
+        ],
+      }),
+    })
+
+    expect(result.draftTasks).toEqual([
+      expect.objectContaining({
+        slots: {
+          timeText: '本周五下班前',
+        },
+      }),
     ])
   })
 

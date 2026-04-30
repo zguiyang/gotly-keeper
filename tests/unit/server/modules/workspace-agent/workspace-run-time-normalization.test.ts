@@ -79,4 +79,72 @@ describe('workspace-run-time-normalization', () => {
       },
     ])
   })
+
+  it('normalizes aliased dueTime slots into canonical timeText and dueAt', () => {
+    const result = normalizeTodoDraftTaskTimes([
+      {
+        id: 'draft_1',
+        intent: 'create',
+        target: 'todos',
+        title: '发合同',
+        confidence: 0.94,
+        ambiguities: [],
+        corrections: [],
+        slots: {
+          dueTime: '本周五下班前',
+        },
+      },
+    ])
+
+    expect(result).toEqual([
+      {
+        id: 'draft_1',
+        intent: 'create',
+        target: 'todos',
+        title: '发合同',
+        confidence: 0.94,
+        ambiguities: [],
+        corrections: [],
+        slots: {
+          dueTime: '本周五下班前',
+          timeText: '本周五下班前',
+          dueAt: '2026-05-01T15:59:59.000Z',
+        },
+      },
+    ])
+  })
+
+  it('normalizes fallback weekend phrases into concrete dueAt values', () => {
+    const result = normalizeTodoDraftTaskTimes(
+      [
+        {
+          id: 'draft_1',
+          intent: 'create',
+          target: 'todos',
+          title: '买菜',
+          confidence: 0.94,
+          ambiguities: [],
+          corrections: [],
+          slots: {},
+        },
+      ],
+      ['这周末']
+    )
+
+    expect(result).toEqual([
+      {
+        id: 'draft_1',
+        intent: 'create',
+        target: 'todos',
+        title: '买菜',
+        confidence: 0.94,
+        ambiguities: [],
+        corrections: [],
+        slots: {
+          timeText: '这周末',
+          dueAt: '2026-05-03T15:59:59.000Z',
+        },
+      },
+    ])
+  })
 })

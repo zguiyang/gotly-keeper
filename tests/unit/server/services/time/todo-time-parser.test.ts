@@ -52,4 +52,60 @@ describe('todo-time-parser', () => {
       sourceSlot: 'time',
     })
   })
+
+  it('accepts aliased todo time slots from understanding output', () => {
+    const result = parseTodoTime({
+      slots: {
+        dueDate: '下个月1号',
+      },
+    })
+
+    expect(result).toEqual({
+      rawText: '下个月1号',
+      timeText: '下个月1号',
+      dueAt: '2026-05-01T15:59:59.000Z',
+      sourceSlot: 'dueDate',
+    })
+  })
+
+  it('accepts generic due slots from understanding output', () => {
+    const result = parseTodoTime({
+      slots: {
+        due: '本周五下班前',
+      },
+    })
+
+    expect(result).toEqual({
+      rawText: '本周五下班前',
+      timeText: '本周五下班前',
+      dueAt: '2026-05-01T15:59:59.000Z',
+      sourceSlot: 'due',
+    })
+  })
+
+  it('resolves this weekend to the end of Sunday in Shanghai time', () => {
+    const result = parseTodoTime({
+      rawText: '这周末',
+    })
+
+    expect(result).toEqual({
+      rawText: '这周末',
+      timeText: '这周末',
+      dueAt: '2026-05-03T15:59:59.000Z',
+      sourceSlot: 'rawText',
+    })
+  })
+
+  it('resolves next weekend to the end of the following Sunday in Shanghai time', () => {
+    const result = parseTodoTime({
+      rawText: '下周末',
+    })
+
+    expect(result).toEqual({
+      rawText: '下周末',
+      timeText: '下周末',
+      dueAt: '2026-05-10T15:59:59.000Z',
+      sourceSlot: 'rawText',
+    })
+  })
 })
