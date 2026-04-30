@@ -26,6 +26,7 @@ import type { AssetListItem } from '@/shared/assets/assets.types'
 import {
   workspacePlanPreviewSchema,
   workspacePreviewSchema,
+  type WorkspaceRunPhase,
   workspaceUnderstandingPreviewSchema,
 } from '@/shared/workspace/workspace-run-protocol'
 import type {
@@ -40,14 +41,7 @@ import type {
 } from '@/shared/workspace/workspace-run-protocol'
 
 type VisibleWorkspaceRunPhase = {
-  phase:
-    | 'normalize'
-    | 'understand'
-    | 'plan'
-    | 'review'
-    | 'preview'
-    | 'execute'
-    | 'compose'
+  phase: WorkspaceRunPhase
   status: 'active' | 'done' | 'failed' | 'skipped'
   message?: string
 }
@@ -76,14 +70,6 @@ function getPhaseTitle(phase: VisibleWorkspaceRunPhase['phase']) {
 
   if (phase === 'preview') {
     return '正在整理执行预览'
-  }
-
-  if (phase === 'parse') {
-    return '正在解析你的输入'
-  }
-
-  if (phase === 'route') {
-    return '正在判断处理方式'
   }
 
   if (phase === 'execute') {
@@ -227,14 +213,6 @@ function getPhaseFallbackMessage(visiblePhase: VisibleWorkspaceRunPhase) {
 
   if (visiblePhase.phase === 'preview') {
     return '正在整理给你看的执行预览。'
-  }
-
-  if (visiblePhase.phase === 'parse') {
-    return '正在理解意图、对象和时间线。'
-  }
-
-  if (visiblePhase.phase === 'route') {
-    return '正在决定保存、查询还是整理已有内容。'
   }
 
   if (visiblePhase.phase === 'execute') {
