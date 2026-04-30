@@ -3,6 +3,7 @@ import 'server-only'
 import { ACTION_LABELS } from './workspace-run-action-labels'
 
 import type {
+  DraftWorkspaceTask,
   WorkspaceCandidate,
   WorkspaceInteraction,
   WorkspacePlanPreview,
@@ -82,7 +83,7 @@ type ReviewWorkspaceRunPlanInput = {
   draftTasksConfirmed?: boolean
 }
 
-type ReviewWorkspaceRunPlanDecision =
+export type ReviewWorkspaceRunPlanDecision =
   | {
       status: 'reject'
       reason: 'invalid_plan'
@@ -170,10 +171,13 @@ function toInteractionCandidates(candidates: ReviewableCandidate[]): WorkspaceCa
   }))
 }
 
-function serializeDraftTask(task: ReviewableDraftTask): ReviewableDraftTask {
-  const slots = Object.fromEntries(
-    Object.entries(task.slots).filter(([, value]) => typeof value === 'string')
-  )
+function serializeDraftTask(task: ReviewableDraftTask): DraftWorkspaceTask {
+  const slots: Record<string, string> = {}
+  for (const [key, value] of Object.entries(task.slots)) {
+    if (typeof value === 'string') {
+      slots[key] = value
+    }
+  }
 
   return {
     ...task,
@@ -367,7 +371,7 @@ function buildClarifyDecision(input: {
   referenceTime?: string
   interactionIdSuffix: string
   message: string
-  fields: NonNullable<WorkspaceReviewPendingRunSnapshot['interaction']['fields']>
+  fields: Extract<WorkspaceInteraction, { type: 'clarify_slots' }>['fields']
 }): {
   status: 'await_user'
   reason: 'clarify_slots'

@@ -1,4 +1,5 @@
 import type { ZodType } from 'zod'
+import type { WorkspaceRunToolResult } from '@/shared/workspace/workspace-run-protocol'
 
 export type WorkspaceIntent = 'query' | 'summarize' | 'create' | 'update'
 
@@ -27,20 +28,7 @@ export type WorkspaceExecutionPlan = {
   needsCompose: boolean
 }
 
-export type WorkspaceToolResult =
-  | {
-      ok: true
-      target: Exclude<WorkspaceTarget, 'mixed'> | 'mixed'
-      items?: unknown[]
-      total?: number
-      action?: 'create' | 'update'
-      item?: unknown
-    }
-  | {
-      ok: false
-      code: string
-      message: string
-    }
+export type WorkspaceToolResult = WorkspaceRunToolResult
 
 export type WorkspaceToolContext = {
   userId: string

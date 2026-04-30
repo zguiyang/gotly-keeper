@@ -5,11 +5,28 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { WorkspaceRunPanel } from '@/components/workspace/workspace-run-panel'
 
+import type { AssetListItem } from '@/shared/assets/assets.types'
 import type { WorkspaceInteraction } from '@/shared/workspace/workspace-run-protocol'
 
 afterEach(() => {
   cleanup()
 })
+
+function createAssetItem(overrides: Partial<AssetListItem> = {}): AssetListItem {
+  return {
+    id: 'asset_1',
+    originalText: '原始内容',
+    title: '默认标题',
+    excerpt: '默认摘要',
+    type: 'note',
+    url: null,
+    timeText: null,
+    dueAt: null,
+    completed: false,
+    createdAt: new Date('2026-04-27T00:00:00.000Z'),
+    ...overrides,
+  }
+}
 
 describe('WorkspaceRunPanel', () => {
   describe('shell layout contract', () => {
@@ -258,7 +275,12 @@ describe('WorkspaceRunPanel', () => {
               {
                 stepId: 'step_1',
                 toolName: 'create_note',
-                result: { ok: true, target: 'notes', action: 'create', item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note' } },
+                result: {
+                  ok: true,
+                  target: 'notes',
+                  action: 'create',
+                  item: createAssetItem({ id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test' }),
+                },
               },
             ],
           }}
@@ -335,7 +357,7 @@ describe('WorkspaceRunPanel', () => {
           {
             type: 'tool_call_completed',
             toolName: 'create_note',
-            result: { ok: true },
+            result: { ok: true, target: 'notes', action: 'create', item: null },
           },
           {
             type: 'run_completed',
