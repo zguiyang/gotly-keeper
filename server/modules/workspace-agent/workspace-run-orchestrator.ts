@@ -12,6 +12,7 @@ import type { WorkspaceRunModel } from './workspace-run-understanding'
 import type {
   WorkspacePendingRunSnapshot,
   WorkspaceRunRequest,
+  WorkspaceRunResult,
   WorkspaceRunStreamEvent,
 } from '@/shared/workspace/workspace-run-protocol'
 
@@ -32,15 +33,17 @@ export type OrchestrateWorkspaceRunOptions = {
   signal?: AbortSignal
 }
 
-export async function orchestrateWorkspaceRun(
-  options: OrchestrateWorkspaceRunOptions
-): Promise<{
+export type WorkspaceRunOrchestratorResult = {
   ok: boolean
   phase?: string
   message?: string
-  result?: unknown
-  snapshot?: unknown
-}> {
+  result?: WorkspaceRunResult
+  snapshot?: WorkspacePendingRunSnapshot
+}
+
+export async function orchestrateWorkspaceRun(
+  options: OrchestrateWorkspaceRunOptions
+): Promise<WorkspaceRunOrchestratorResult> {
   const { request, signal } = options
 
   if (signal?.aborted) {
@@ -74,6 +77,5 @@ export async function getCurrentAwaitingWorkspaceRun(
   userId: string
 ): Promise<WorkspacePendingRunSnapshot | null> {
   const store = createWorkspaceRunStore()
-  const snapshot = await store.loadLatestAwaiting(userId)
-  return snapshot as WorkspacePendingRunSnapshot | null
+  return store.loadLatestAwaiting(userId)
 }

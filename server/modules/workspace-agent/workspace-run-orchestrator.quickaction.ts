@@ -1,6 +1,9 @@
 import { handleNewInput } from './workspace-run-orchestrator.input'
 
-import type { OrchestrateWorkspaceRunOptions } from './workspace-run-orchestrator'
+import type {
+  OrchestrateWorkspaceRunOptions,
+  WorkspaceRunOrchestratorResult,
+} from './workspace-run-orchestrator'
 
 
 const QUICK_ACTION_PROMPTS = {
@@ -11,12 +14,7 @@ const QUICK_ACTION_PROMPTS = {
 
 export async function handleQuickAction(
   options: OrchestrateWorkspaceRunOptions
-): Promise<{
-  ok: boolean
-  phase?: string
-  message?: string
-  result?: unknown
-}> {
+): Promise<WorkspaceRunOrchestratorResult> {
   const { request } = options
 
   if (request.kind !== 'quick-action') {

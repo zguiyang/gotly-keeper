@@ -1,12 +1,10 @@
 'use client'
 
 import {
+  type WorkspacePendingRunSnapshot,
   workspaceRunStreamEventSchema,
-  type WorkspaceInteraction,
-  type WorkspacePlanPreview,
   type WorkspaceRunRequest,
   type WorkspaceRunStreamEvent,
-  type WorkspaceUnderstandingPreview,
 } from '@/shared/workspace/workspace-run-protocol'
 
 type WorkspaceRunEventHandlers = {
@@ -116,15 +114,7 @@ export async function streamWorkspaceRunEvents(
 
 export type FetchCurrentWorkspaceRunResult = {
   ok: true
-  run: {
-    runId: string
-    interaction: WorkspaceInteraction
-    timeline: WorkspaceRunStreamEvent[]
-    understandingPreview: WorkspaceUnderstandingPreview | null
-    planPreview: WorkspacePlanPreview | null
-    correctionNotes: string[]
-    updatedAt: string
-  } | null
+  run: WorkspacePendingRunSnapshot | null
 }
 
 export async function fetchCurrentWorkspaceRun(): Promise<FetchCurrentWorkspaceRunResult> {

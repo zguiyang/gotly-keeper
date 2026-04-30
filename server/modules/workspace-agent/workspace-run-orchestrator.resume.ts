@@ -16,7 +16,10 @@ import {
 import { normalizeTodoDraftTaskTimes } from './workspace-run-time-normalization'
 
 import type { WorkspaceToolContext, WorkspaceToolResult, WorkspaceIntent, WorkspaceTarget } from './types'
-import type { OrchestrateWorkspaceRunOptions } from './workspace-run-orchestrator'
+import type {
+  OrchestrateWorkspaceRunOptions,
+  WorkspaceRunOrchestratorResult,
+} from './workspace-run-orchestrator'
 import type { PhaseContext } from './workspace-run-orchestrator.shared'
 import type {
   DraftWorkspaceTask,
@@ -326,24 +329,22 @@ async function executePlannedRun(input: {
 
   await input.store.updateRunStatus(input.runId, input.userId, 'completed')
 
+  const completedResult = buildCompletedRunResult({
+    executeResult,
+    preview,
+    answer: composeResult.answer,
+    data: executeResult.stepResults.length > 1 ? null : firstOkResult,
+  })
+
   emitEvent(input.ctx, {
     type: 'run_completed',
-    result: buildCompletedRunResult({
-      executeResult,
-      preview,
-      answer: composeResult.answer,
-      data: executeResult.stepResults.length > 1 ? null : firstOkResult,
-    }),
+    result: completedResult,
   })
 
   return {
     ok: true,
     phase: 'completed',
-    result: {
-      summary: executeResult.summary,
-      answer: composeResult.answer,
-      preview: input.snapshot.preview,
-    },
+    result: completedResult,
   } as const
 }
 
@@ -379,13 +380,7 @@ async function failRun(
 
 export async function handleResume(
   options: OrchestrateWorkspaceRunOptions
-): Promise<{
-  ok: boolean
-  phase?: string
-  message?: string
-  result?: unknown
-  snapshot?: unknown
-}> {
+): Promise<WorkspaceRunOrchestratorResult> {
   const { userId, request, store, onEvent } = options
 
   if (request.kind !== 'resume') {

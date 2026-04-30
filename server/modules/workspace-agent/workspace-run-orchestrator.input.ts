@@ -12,6 +12,7 @@ import { understandWorkspaceRunInput } from './workspace-run-understanding'
 
 import type { WorkspaceToolContext, WorkspaceToolResult, WorkspaceIntent, WorkspaceTarget } from './types'
 import type { OrchestrateWorkspaceRunOptions } from './workspace-run-orchestrator'
+import type { WorkspaceRunOrchestratorResult } from './workspace-run-orchestrator'
 import type { PhaseContext } from './workspace-run-orchestrator.shared'
 import type { WorkspaceRunPlannerResult, WorkspaceRunPlanHint } from './workspace-run-planner'
 import type { WorkspaceInteraction, DraftWorkspaceTask } from '@/shared/workspace/workspace-run-protocol'
@@ -199,13 +200,7 @@ async function runBatchCompose(
 
 export async function handleNewInput(
   options: OrchestrateWorkspaceRunOptions
-): Promise<{
-  ok: boolean
-  phase?: string
-  message?: string
-  result?: unknown
-  snapshot?: unknown
-}> {
+): Promise<WorkspaceRunOrchestratorResult> {
   const { userId, request, store, runModel, searchCandidates, onEvent } = options
 
   if (request.kind !== 'input') {
@@ -324,11 +319,12 @@ export async function handleNewInput(
         return {
           ok: true,
           phase: 'completed',
-          result: {
-            summary: executeResult.summary,
+          result: buildCompletedRunResult({
+            executeResult,
             answer: composeResult.answer,
             preview,
-          },
+            data: executeResult.stepResults.length > 1 ? null : firstOkResult,
+          }),
         }
       }
 
