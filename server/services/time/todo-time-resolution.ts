@@ -206,7 +206,7 @@ function resolveRelativeDay(text: string, reference: dayjs.Dayjs) {
 
   const [, dayLabel, daypart, hourText, halfToken, minuteText] = match
   const dayOffset = dayLabel === '今天' ? 0 : dayLabel === '明天' ? 1 : 2
-  let resolved = reference.add(dayOffset, 'day')
+  const resolved = reference.add(dayOffset, 'day')
 
   const clock = parseClockTime(hourText, minuteText, halfToken, daypart)
   if (clock) {
@@ -253,7 +253,7 @@ function resolveWeekday(text: string, reference: dayjs.Dayjs) {
     base = base.add(7, 'day')
   }
 
-  let resolved = base.add(targetIsoWeekday - 1, 'day')
+  const resolved = base.add(targetIsoWeekday - 1, 'day')
   const clock = parseClockTime(hourText, minuteText, halfToken, daypart)
 
   if (clock) {
@@ -328,7 +328,7 @@ function resolveCalendarDate(text: string, reference: dayjs.Dayjs) {
   }
 
   const year = yearText ? Number.parseInt(yearText, 10) : inferYear(month, dayOfMonth, reference)
-  let resolved = reference.year(year).month(month - 1).date(dayOfMonth)
+  const resolved = reference.year(year).month(month - 1).date(dayOfMonth)
 
   if (!resolved.isValid() || resolved.month() !== month - 1 || resolved.date() !== dayOfMonth) {
     return null

@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { resolveTodoTimeWithAi as ResolveTodoTimeWithAi } from '@/server/services/time/resolve-todo-time-with-ai'
+
 const mocks = vi.hoisted(() => ({
   generateText: vi.fn(),
   getAiProvider: vi.fn(),
@@ -28,14 +30,18 @@ vi.mock('@/server/lib/prompt-template', () => ({
   renderPrompt: mocks.renderPrompt,
 }))
 
-import { resolveTodoTimeWithAi } from '@/server/services/time/resolve-todo-time-with-ai'
-
 describe('resolve-todo-time-with-ai', () => {
+  let resolveTodoTimeWithAi: typeof ResolveTodoTimeWithAi
+
   beforeEach(() => {
     vi.clearAllMocks()
     mocks.getAiProvider.mockReturnValue({ provider: 'mock-model' })
     mocks.buildWorkspaceSystemPrompt.mockResolvedValue('system prompt')
     mocks.renderPrompt.mockResolvedValue('user prompt')
+  })
+
+  beforeEach(async () => {
+    ;({ resolveTodoTimeWithAi } = await import('@/server/services/time/resolve-todo-time-with-ai'))
   })
 
   it('returns the structured dueAt produced by the model flow', async () => {
