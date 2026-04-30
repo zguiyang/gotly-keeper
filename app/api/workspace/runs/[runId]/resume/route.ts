@@ -3,10 +3,13 @@ import { createWorkspaceRunRuntime } from '@/server/modules/workspace-agent'
 import { orchestrateWorkspaceRun } from '@/server/modules/workspace-agent/workspace-run-orchestrator'
 import { workspaceRunRequestSchema } from '@/shared/workspace/workspace-run-protocol'
 
-import type { WorkspaceRunRequest } from '@/shared/workspace/workspace-run-protocol'
+import type {
+  WorkspaceRunRequest,
+  WorkspaceRunStreamEvent,
+} from '@/shared/workspace/workspace-run-protocol'
 
-function encodeSseEvent(event: unknown) {
-  return `event: ${(event as { type: string }).type}\ndata: ${JSON.stringify(event)}\n\n`
+function encodeSseEvent(event: WorkspaceRunStreamEvent) {
+  return `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`
 }
 
 export async function POST(
@@ -29,7 +32,7 @@ export async function POST(
     return Response.json({ error: '请求参数无效。' }, { status: 400 })
   }
 
-  const request = parsed.data as WorkspaceRunRequest
+  const request: WorkspaceRunRequest = parsed.data
 
   if (request.kind !== 'resume' || request.runId !== runId) {
     return Response.json({ error: '请求参数无效。' }, { status: 400 })
@@ -56,7 +59,7 @@ export async function POST(
 
       req.signal.addEventListener('abort', handleAbort, { once: true })
 
-      const writeEvent = (event: unknown) => {
+      const writeEvent = (event: WorkspaceRunStreamEvent) => {
         if (closed || req.signal.aborted) {
           return
         }
