@@ -128,10 +128,14 @@ describe('WorkspaceRunPanel', () => {
           status="success"
           assistantText="已保存笔记。"
           result={{
-            action: 'create',
-            ok: true,
-            target: 'notes',
-            item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note', url: null, timeText: null, dueAt: null, completed: false, createdAt: new Date() },
+            summary: '已保存笔记。',
+            preview: null,
+            data: {
+              ok: true,
+              action: 'create',
+              target: 'notes',
+              item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note', url: null, timeText: null, dueAt: null, completed: false, createdAt: new Date() },
+            },
           }}
           understandingPreview={{
             rawInput: '记一下：首页 slogan 想走轻管家感',
@@ -145,16 +149,56 @@ describe('WorkspaceRunPanel', () => {
       expect(screen.getByRole('button', { name: /展开详情|查看详情/ })).toBeTruthy()
     })
 
+    it('shows a details toggle when preview data can be derived from timeline', () => {
+      render(
+        <WorkspaceRunPanel
+          status="success"
+          assistantText="已保存笔记。"
+          timeline={[
+            {
+              type: 'phase_completed',
+              phase: 'preview',
+              output: {
+                understanding: {
+                  rawInput: '记一下：首页 slogan 想走轻管家感',
+                  normalizedInput: '记一下：首页 slogan 想走轻管家感',
+                  draftTasks: [],
+                  corrections: [],
+                },
+                plan: {
+                  summary: '准备执行 1 个任务。',
+                  steps: [
+                    {
+                      id: 'step_1',
+                      toolName: 'create_note',
+                      title: '创建笔记',
+                      preview: '创建笔记：首页 slogan 想走轻管家感',
+                    },
+                  ],
+                },
+              },
+            },
+          ]}
+        />
+      )
+
+      expect(screen.getByRole('button', { name: /展开详情|查看详情/ })).toBeTruthy()
+    })
+
     it('moves raw input behind disclosure', () => {
       render(
         <WorkspaceRunPanel
           status="success"
           assistantText="已保存笔记。"
           result={{
-            action: 'create',
-            ok: true,
-            target: 'notes',
-            item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note', url: null, timeText: null, dueAt: null, completed: false, createdAt: new Date() },
+            summary: '已保存笔记。',
+            preview: null,
+            data: {
+              ok: true,
+              action: 'create',
+              target: 'notes',
+              item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note', url: null, timeText: null, dueAt: null, completed: false, createdAt: new Date() },
+            },
           }}
           understandingPreview={{
             rawInput: '记一下：首页 slogan 想走轻管家感',
@@ -208,13 +252,15 @@ describe('WorkspaceRunPanel', () => {
           status="success"
           assistantText="已保存笔记。"
           result={{
-            kind: 'batch',
             summary: '执行了 1/1 个步骤',
-            stepResults: [{
-              stepId: 'step_1',
-              toolName: 'create_note',
-              result: { ok: true, target: 'notes', action: 'create', item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note' } },
-            }],
+            preview: null,
+            stepResults: [
+              {
+                stepId: 'step_1',
+                toolName: 'create_note',
+                result: { ok: true, target: 'notes', action: 'create', item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note' } },
+              },
+            ],
           }}
         />
       )
@@ -228,15 +274,18 @@ describe('WorkspaceRunPanel', () => {
           status="success"
           assistantText="已完成全部操作。"
           result={{
-            action: 'create',
-            ok: true,
-            target: 'notes',
-            item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note', url: null, timeText: null, dueAt: null, completed: false, createdAt: new Date() },
+            summary: '已完成全部操作。',
+            preview: null,
+            data: {
+              ok: true,
+              action: 'create',
+              target: 'notes',
+              item: { id: 'note_1', originalText: 'test', title: 'test', excerpt: 'test', type: 'note', url: null, timeText: null, dueAt: null, completed: false, createdAt: new Date() },
+            },
           }}
         />
       )
 
-      expect(screen.getByText(/已创建/)).toBeTruthy()
       expect(screen.getByText('已完成全部操作。')).toBeTruthy()
     })
   })
@@ -248,27 +297,31 @@ describe('WorkspaceRunPanel', () => {
         assistantText="已保存笔记：首页 slogan 想走轻管家感。"
         elapsedMs={117000}
         result={{
-          action: 'create',
-          ok: true,
-          target: 'notes',
-          item: {
-            id: 'note_1',
-            originalText: '首页 slogan 想走轻管家感',
-            title: '首页 slogan 想走轻管家感',
-            excerpt: '首页 slogan 想走轻管家感',
-            type: 'note',
-            content: '首页 slogan 想走轻管家感',
-            summary: null,
-            url: null,
-            timeText: null,
-            dueAt: null,
-            completed: false,
-            bookmarkMeta: null,
-            lifecycleStatus: 'active',
-            archivedAt: null,
-            trashedAt: null,
-            createdAt: new Date('2026-04-28T12:52:51.899Z'),
-            updatedAt: new Date('2026-04-28T12:52:51.899Z'),
+          summary: '执行了 1/1 个步骤',
+          preview: null,
+          data: {
+            ok: true,
+            action: 'create',
+            target: 'notes',
+            item: {
+              id: 'note_1',
+              originalText: '首页 slogan 想走轻管家感',
+              title: '首页 slogan 想走轻管家感',
+              excerpt: '首页 slogan 想走轻管家感',
+              type: 'note',
+              content: '首页 slogan 想走轻管家感',
+              summary: null,
+              url: null,
+              timeText: null,
+              dueAt: null,
+              completed: false,
+              bookmarkMeta: null,
+              lifecycleStatus: 'active',
+              archivedAt: null,
+              trashedAt: null,
+              createdAt: new Date('2026-04-28T12:52:51.899Z'),
+              updatedAt: new Date('2026-04-28T12:52:51.899Z'),
+            },
           },
         }}
         timeline={[
@@ -324,7 +377,6 @@ describe('WorkspaceRunPanel', () => {
       />
     )
 
-    expect(screen.getByText('已创建笔记')).toBeTruthy()
     expect(screen.getByText('已保存笔记：首页 slogan 想走轻管家感。')).toBeTruthy()
     expect(screen.getByText('耗时 1m57s')).toBeTruthy()
     expect(screen.queryByText('理解预览')).toBeNull()
@@ -458,8 +510,8 @@ describe('WorkspaceRunPanel', () => {
         assistantText="已执行 3 个任务：添加待办“熬药”、保存笔记“不要吃生冷食物”、收藏链接 https://github.com/zguiyang。"
         elapsedMs={2400}
         result={{
-          kind: 'batch',
           summary: '执行了 3/3 个步骤',
+          preview: null,
           stepResults: [
             {
               stepId: 'step_1',
@@ -642,15 +694,10 @@ describe('WorkspaceRunPanel', () => {
         />
       )
 
-      const selectButton = screen.getByRole('button', { name: '选择' })
+      const selectButton = screen.getByRole('button', { name: '使用这条候选' })
       expect((selectButton as HTMLButtonElement).disabled).toBe(true)
 
-      const candidateCard = screen.getByText('发报价').closest('div[class*="cursor-pointer"]')
-      expect(candidateCard).toBeTruthy()
-
-      if (candidateCard) {
-        fireEvent.click(candidateCard)
-      }
+      fireEvent.click(screen.getByRole('button', { name: '发报价 匹配' }))
 
       expect((selectButton as HTMLButtonElement).disabled).toBe(false)
       fireEvent.click(selectButton)
@@ -686,7 +733,7 @@ describe('WorkspaceRunPanel', () => {
         />
       )
 
-      const submitButton = screen.getByRole('button', { name: '提交' })
+      const submitButton = screen.getByRole('button', { name: '提交信息' })
       fireEvent.click(submitButton)
       expect(onResume).not.toHaveBeenCalled()
 
@@ -779,11 +826,7 @@ describe('WorkspaceRunPanel', () => {
         <WorkspaceRunPanel
           status="error"
           assistantText={null}
-          result={{
-            kind: 'error',
-            phase: 'parse_failed',
-            message: '没有理解这次请求。',
-          }}
+          errorMessage="没有理解这次请求。"
         />
       )
 

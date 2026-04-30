@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import type { AssetListItem } from '@/shared/assets/assets.types'
+
 export const workspaceRunPhaseSchema = z.enum([
   'normalize',
   'understand',
@@ -226,13 +228,50 @@ export const workspaceRunRequestSchema = z.discriminatedUnion('kind', [
 
 export type WorkspaceRunRequest = z.infer<typeof workspaceRunRequestSchema>
 
+export type WorkspaceRunToolResult =
+  | {
+      ok: true
+      target: 'notes' | 'todos' | 'bookmarks' | 'mixed'
+      items?: AssetListItem[]
+      total?: number
+      action?: 'create' | 'update'
+      item?: AssetListItem | null
+    }
+  | {
+      ok: false
+      code?: string
+      message: string
+    }
+
+export type WorkspaceRunStepResult = {
+  stepId: string
+  toolName: string
+  result: WorkspaceRunToolResult
+}
+
+const workspaceRunToolResultSchema = z.custom<WorkspaceRunToolResult>((value) => {
+  return typeof value === 'object' && value !== null && 'ok' in value
+})
+
+const workspaceRunStepResultSchema = z.object({
+  stepId: z.string(),
+  toolName: z.string(),
+  result: workspaceRunToolResultSchema,
+}) satisfies z.ZodType<WorkspaceRunStepResult>
+
 const workspaceRunResultSchema = z.object({
   summary: z.string(),
   answer: z.string().optional(),
   preview: workspacePreviewSchema.nullable().optional(),
-  data: z.unknown().nullable().optional(),
-  stepResults: z.array(z.unknown()).optional(),
-})
+  data: workspaceRunToolResultSchema.nullable().optional(),
+  stepResults: z.array(workspaceRunStepResultSchema).optional(),
+}) satisfies z.ZodType<{
+  summary: string
+  answer?: string
+  preview?: WorkspaceRunPreview | null
+  data?: WorkspaceRunToolResult | null
+  stepResults?: WorkspaceRunStepResult[]
+}>
 
 export type WorkspaceRunResult = z.infer<typeof workspaceRunResultSchema>
 
@@ -243,37 +282,6 @@ const workspaceRunErrorSchema = z.object({
 })
 
 export type WorkspaceRunError = z.infer<typeof workspaceRunErrorSchema>
-
-const workspacePendingRunSnapshotSchema = z
-  .object({
-    runId: z.string(),
-    phase: workspaceRunPhaseSchema,
-    status: z.literal('awaiting_user'),
-    interactionId: z.string(),
-    interaction: workspaceInteractionSchema,
-    preview: workspacePreviewSchema.nullable(),
-  })
-  .superRefine((snapshot, ctx) => {
-    if (snapshot.interaction.runId !== snapshot.runId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'interaction.runId must match snapshot.runId',
-        path: ['interaction', 'runId'],
-      })
-    }
-
-    if (snapshot.interaction.id !== snapshot.interactionId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'interaction.id must match snapshot.interactionId',
-        path: ['interaction', 'id'],
-      })
-    }
-  })
-
-export type WorkspacePendingRunSnapshot = z.infer<
-  typeof workspacePendingRunSnapshotSchema
->
 
 export const workspaceRunStreamEventSchema = z.discriminatedUnion('type', [
   z.object({
@@ -297,7 +305,7 @@ export const workspaceRunStreamEventSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('tool_call_completed'),
     toolName: z.string(),
-    result: z.unknown(),
+    result: workspaceRunToolResultSchema,
   }),
   z.object({
     type: z.literal('run_completed'),
@@ -311,6 +319,43 @@ export const workspaceRunStreamEventSchema = z.discriminatedUnion('type', [
 
 export type WorkspaceRunStreamEvent = z.infer<
   typeof workspaceRunStreamEventSchema
+>
+
+const workspacePendingRunSnapshotSchema = z
+  .object({
+    runId: z.string(),
+    referenceTime: z.string().optional(),
+    phase: workspaceRunPhaseSchema,
+    status: z.literal('awaiting_user'),
+    interactionId: z.string(),
+    interaction: workspaceInteractionSchema,
+    preview: workspacePreviewSchema.nullable(),
+    timeline: z.array(workspaceRunStreamEventSchema),
+    understandingPreview: workspaceUnderstandingPreviewSchema.nullable(),
+    planPreview: workspacePlanPreviewSchema.nullable(),
+    correctionNotes: z.array(z.string()),
+    updatedAt: z.string(),
+  })
+  .superRefine((snapshot, ctx) => {
+    if (snapshot.interaction.runId !== snapshot.runId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'interaction.runId must match snapshot.runId',
+        path: ['interaction', 'runId'],
+      })
+    }
+
+    if (snapshot.interaction.id !== snapshot.interactionId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'interaction.id must match snapshot.interactionId',
+        path: ['interaction', 'id'],
+      })
+    }
+  })
+
+export type WorkspacePendingRunSnapshot = z.infer<
+  typeof workspacePendingRunSnapshotSchema
 >
 
 export {
