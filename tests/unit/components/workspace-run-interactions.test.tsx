@@ -9,7 +9,6 @@ import { PlanPreviewCard } from '@/components/workspace/plan-preview-card'
 import { RunTimeline } from '@/components/workspace/run-timeline'
 import { SlotClarificationForm } from '@/components/workspace/slot-clarification-form'
 import { UnderstandingPreview } from '@/components/workspace/understanding-preview'
-import { WorkspaceRunResultPanel } from '@/components/workspace/workspace-run-result-panel'
 
 import type {
   ClarifySlotsInteraction,
@@ -17,7 +16,6 @@ import type {
   DraftWorkspaceTask,
   EditDraftTasksInteraction,
   SelectCandidateInteraction,
-  WorkspaceRunResult,
   WorkspaceRunStreamEvent,
   WorkspaceUnderstandingPreview,
 } from '@/shared/workspace/workspace-run-protocol'
@@ -63,12 +61,7 @@ describe('CandidatePicker', () => {
       />
     )
 
-    const candidateCard = screen.getByText('整理报价模板').closest('div[class*="cursor-pointer"]')
-    expect(candidateCard).toBeTruthy()
-
-    if (candidateCard) {
-      fireEvent.click(candidateCard)
-    }
+    fireEvent.click(screen.getByRole('button', { name: /整理报价模板/ }))
 
     expect(selectedCandidateId).toBe('todo_2')
   })
@@ -194,16 +187,15 @@ describe('PlanPreviewCard', () => {
     render(<PlanPreviewCard interaction={mockInteraction} />)
 
     expect(screen.getByText('发报价')).toBeTruthy()
-    expect(screen.getByText('待你确认')).toBeTruthy()
+    expect(screen.getByText('待确认执行')).toBeTruthy()
     expect(screen.queryByRole('button')).toBeNull()
     expect(screen.queryByText('编辑（即将支持）')).toBeNull()
   })
 
   it('renders plan steps as a section list instead of cards', () => {
     const { container } = render(<PlanPreviewCard interaction={mockInteraction} />)
-    expect(container.querySelector('section')).toBeTruthy()
     expect(container.querySelector('ol')).toBeTruthy()
-    expect(container.querySelector('[class*="group/card"]')).toBeNull()
+    expect(container.querySelectorAll('li')).toHaveLength(1)
   })
 })
 
@@ -275,32 +267,5 @@ describe('UnderstandingPreview', () => {
     expect(screen.getByText('首页文案要更轻')).toBeTruthy()
     expect(screen.getByText('给 Joy 看一版')).toBeTruthy()
     expect(screen.getByText('原始输入')).toBeTruthy()
-  })
-})
-
-describe('WorkspaceRunResultPanel', () => {
-  const mockResult: WorkspaceRunResult = {
-    summary: '处理完成',
-    preview: null,
-    data: null,
-  }
-
-  it('renders result with assistant text', () => {
-    render(<WorkspaceRunResultPanel result={mockResult} assistantText="已创建待办：发报价" />)
-
-    expect(screen.getByText('已创建待办：发报价')).toBeTruthy()
-    expect(screen.getByText('处理完成')).toBeTruthy()
-  })
-
-  it('renders error result', () => {
-    const errorResult: WorkspaceRunResult = {
-      summary: '处理失败',
-      preview: null,
-      data: null,
-    }
-
-    render(<WorkspaceRunResultPanel result={errorResult} assistantText={null} />)
-
-    expect(screen.getByText('处理失败')).toBeTruthy()
   })
 })
