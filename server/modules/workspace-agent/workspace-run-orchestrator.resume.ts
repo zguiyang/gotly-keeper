@@ -15,7 +15,7 @@ import {
 } from './workspace-run-review'
 import { normalizeTodoDraftTaskTimes } from './workspace-run-time-normalization'
 
-import type { WorkspaceToolContext, WorkspaceToolResult, WorkspaceIntent, WorkspaceTarget } from './types'
+import type { WorkspaceToolContext, WorkspaceIntent, WorkspaceTarget } from './types'
 import type {
   OrchestrateWorkspaceRunOptions,
   WorkspaceRunOrchestratorResult,
@@ -23,7 +23,6 @@ import type {
 import type { PhaseContext } from './workspace-run-orchestrator.shared'
 import type {
   DraftWorkspaceTask,
-  WorkspaceInteraction,
   WorkspaceInteractionResponse,
   WorkspacePlanPreview,
   WorkspaceRunRequest,
@@ -93,7 +92,7 @@ function toDraftWorkspaceTasks(
     return snapshot.interaction.tasks.map((task) => ({
       id: task.id,
       intent: task.intent,
-      target: task.target === 'external' ? 'mixed' : task.target,
+      target: task.target,
       title: task.title ?? '',
       confidence: task.confidence,
       ambiguities: task.ambiguities,
@@ -301,12 +300,7 @@ async function executePlannedRun(input: {
 
   const firstTask = input.draftTasks[0]
   const toolName = firstOkStep.toolName
-  const preview = input.snapshot.preview
-    ? {
-        understanding: input.snapshot.understandingPreview ?? undefined,
-        plan: input.snapshot.preview.plan ?? undefined,
-      }
-    : undefined
+  const preview = input.snapshot.preview ?? undefined
   const composeResult = executeResult.stepResults.length > 1
     ? await runBatchCompose(input.ctx, { preview, executeResult })
     : await runCompose(
@@ -519,7 +513,7 @@ export async function handleResume(
     await store.saveSnapshot(reviewDecision.snapshot, userId)
     emitEvent(ctx, {
       type: 'awaiting_user',
-      interaction: reviewDecision.snapshot.interaction as unknown as WorkspaceInteraction,
+      interaction: reviewDecision.snapshot.interaction,
     })
 
     return {

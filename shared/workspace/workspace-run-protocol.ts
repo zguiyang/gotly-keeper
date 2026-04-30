@@ -332,7 +332,6 @@ const workspacePendingRunSnapshotSchema = z
     preview: workspacePreviewSchema.nullable(),
     timeline: z.array(workspaceRunStreamEventSchema),
     understandingPreview: workspaceUnderstandingPreviewSchema.nullable(),
-    planPreview: workspacePlanPreviewSchema.nullable(),
     correctionNotes: z.array(z.string()),
     updatedAt: z.string(),
   })

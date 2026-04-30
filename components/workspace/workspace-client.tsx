@@ -205,8 +205,8 @@ export function WorkspaceClient({
             runId={state.runId}
             interaction={state.interaction}
             timeline={state.timeline}
-            understandingPreview={state.understandingPreview ?? state.result?.preview?.understanding ?? null}
-            planPreview={state.planPreview ?? state.result?.preview?.plan ?? null}
+            understandingPreview={state.understandingPreview}
+            planPreview={state.planPreview}
             elapsedMs={elapsedMs}
             onResume={resumeInteraction}
           />

@@ -6,13 +6,15 @@ import { emitEvent, createRunId, getToolResultError, getToolNameFromAction } fro
 import { planWorkspaceRun } from './workspace-run-planner'
 import { buildWorkspaceRunPreview } from './workspace-run-preview'
 import { reviewWorkspaceRunPlan } from './workspace-run-review'
-import { normalizeTodoDraftTaskTimes } from './workspace-run-time-normalization'
 import { isWorkspaceRunModelError } from './workspace-run-runtime'
+import { normalizeTodoDraftTaskTimes } from './workspace-run-time-normalization'
 import { understandWorkspaceRunInput } from './workspace-run-understanding'
 
 import type { WorkspaceToolContext, WorkspaceToolResult, WorkspaceIntent, WorkspaceTarget } from './types'
-import type { OrchestrateWorkspaceRunOptions } from './workspace-run-orchestrator'
-import type { WorkspaceRunOrchestratorResult } from './workspace-run-orchestrator'
+import type {
+  OrchestrateWorkspaceRunOptions,
+  WorkspaceRunOrchestratorResult,
+} from './workspace-run-orchestrator'
 import type { PhaseContext } from './workspace-run-orchestrator.shared'
 import type { WorkspaceRunPlannerResult, WorkspaceRunPlanHint } from './workspace-run-planner'
 import type { WorkspaceInteraction, DraftWorkspaceTask } from '@/shared/workspace/workspace-run-protocol'

@@ -15,8 +15,8 @@ export type WorkspaceCorrectionNote = string
 
 export type ReviewableDraftTask = {
   id: string
-  intent: 'create' | 'query' | 'summarize' | 'update' | 'unsupported'
-  target: 'notes' | 'todos' | 'bookmarks' | 'mixed' | 'external'
+  intent: 'create' | 'query' | 'summarize' | 'update'
+  target: 'notes' | 'todos' | 'bookmarks' | 'mixed'
   title?: string
   confidence: number
   ambiguities: string[]
@@ -59,30 +59,13 @@ export type WorkspaceReviewPendingRunSnapshot = {
   phase: 'review'
   status: 'awaiting_user'
   interactionId: string
-  interaction: {
-    runId: string
-    id: string
-    type: 'confirm_plan' | 'select_candidate' | 'clarify_slots' | 'edit_draft_tasks'
-    message: string
-    actions: readonly string[]
-    plan?: WorkspacePlanPreview
-    target?: 'todo'
-    candidates?: WorkspaceCandidate[]
-    fields?: {
-      key: string
-      label: string
-      required: boolean
-      placeholder?: string
-    }[]
-    tasks?: ReviewableDraftTask[]
-  }
+  interaction: WorkspaceInteraction
   timeline: WorkspaceRunStreamEvent[]
   preview: {
-    plan: WorkspacePlanPreview | null
-    candidateId?: string
-  }
+    understanding?: WorkspaceUnderstandingPreview
+    plan?: WorkspacePlanPreview
+  } | null
   understandingPreview: WorkspaceUnderstandingPreview | null
-  planPreview: WorkspacePlanPreview | null
   correctionNotes: WorkspaceCorrectionNote[]
   updatedAt: string
 }
@@ -102,7 +85,7 @@ type ReviewWorkspaceRunPlanInput = {
 type ReviewWorkspaceRunPlanDecision =
   | {
       status: 'reject'
-      reason: 'unsupported_external_action'
+      reason: 'invalid_plan'
     }
   | {
       status: 'auto_execute'
@@ -149,7 +132,6 @@ function buildSnapshot(input: {
   plan: ReviewablePlan
   updatedAt: string
   correctionNotes?: WorkspaceCorrectionNote[]
-  candidateId?: string
 }): WorkspaceReviewPendingRunSnapshot {
   const planPreview = toPlanPreview(input.plan)
 
@@ -167,15 +149,14 @@ function buildSnapshot(input: {
       },
       {
         type: 'awaiting_user',
-        interaction: input.interaction as unknown as WorkspaceInteraction,
+        interaction: input.interaction,
       },
     ],
     preview: {
+      ...(input.understandingPreview ? { understanding: input.understandingPreview } : {}),
       plan: planPreview,
-      candidateId: input.candidateId,
     },
     understandingPreview: input.understandingPreview,
-    planPreview,
     correctionNotes: input.correctionNotes ?? input.understandingPreview?.corrections ?? [],
     updatedAt: input.updatedAt,
   }
@@ -293,7 +274,7 @@ function isStepConsistentWithTask(task: ReviewableDraftTask, step: ReviewablePla
     return false
   }
 
-  if (task.target !== 'mixed' && task.target !== 'external' && step.target !== task.target) {
+  if (task.target !== 'mixed' && step.target !== task.target) {
     return false
   }
 
@@ -349,7 +330,6 @@ function buildConfirmPlanDecision(input: {
   referenceTime?: string
   message: string
   correctionNotes?: WorkspaceCorrectionNote[]
-  candidateId?: string
 }): {
   status: 'await_user'
   reason: 'confirm_plan'
@@ -375,7 +355,6 @@ function buildConfirmPlanDecision(input: {
       plan: input.plan,
       updatedAt: input.updatedAt,
       correctionNotes: input.correctionNotes,
-      candidateId: input.candidateId,
     }),
   }
 }
@@ -491,7 +470,6 @@ function buildUpdateDecision(input: {
 
   if (input.candidates.length === 1) {
     const candidateTitle = input.candidates[0]?.title ?? '该待办'
-    const candidateId = input.candidates[0]?.id
     return buildConfirmPlanDecision({
       runId: input.runId,
       plan: input.plan,
@@ -499,7 +477,6 @@ function buildUpdateDecision(input: {
       updatedAt: input.updatedAt,
       referenceTime: input.referenceTime,
       message: `找到一个待更新候选：${candidateTitle}，请确认后执行。`,
-      candidateId,
     })
   }
 
@@ -528,21 +505,14 @@ export function reviewWorkspaceRunPlan(
   if (input.draftTasks.length === 0 || input.plan.steps.length === 0) {
     return {
       status: 'reject',
-      reason: 'unsupported_external_action',
-    }
-  }
-
-  if (input.draftTasks.some((task) => task.intent === 'unsupported' || task.target === 'external')) {
-    return {
-      status: 'reject',
-      reason: 'unsupported_external_action',
+      reason: 'invalid_plan',
     }
   }
 
   if (input.draftTasks.length === 1 && input.plan.steps.length !== 1) {
     return {
       status: 'reject',
-      reason: 'unsupported_external_action',
+      reason: 'invalid_plan',
     }
   }
 
@@ -575,7 +545,7 @@ export function reviewWorkspaceRunPlan(
     if (!isStepConsistentWithTask(task, step)) {
       return {
         status: 'reject',
-        reason: 'unsupported_external_action',
+        reason: 'invalid_plan',
       }
     }
 
@@ -645,7 +615,7 @@ export function reviewWorkspaceRunPlan(
   if (!isStepConsistentWithTask(task, step)) {
     return {
       status: 'reject',
-      reason: 'unsupported_external_action',
+      reason: 'invalid_plan',
     }
   }
 

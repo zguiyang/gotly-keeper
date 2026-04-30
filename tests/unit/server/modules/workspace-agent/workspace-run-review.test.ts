@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
-
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -59,40 +56,6 @@ function createUnderstandingPreview(
 const updatedAt = '2026-04-27T12:00:00.000Z'
 
 describe('workspace-run-review', () => {
-  it('rejects unsupported intent first', () => {
-    const result = reviewWorkspaceRunPlan({
-      runId: 'run_1',
-      draftTasks: [createDraftTask({ intent: 'unsupported', title: undefined })],
-      plan: createPlan(),
-      understandingPreview: createUnderstandingPreview({
-        draftTasks: [createDraftTask({ intent: 'unsupported', title: undefined })],
-      }),
-      updatedAt,
-    })
-
-    expect(result).toEqual({
-      status: 'reject',
-      reason: 'unsupported_external_action',
-    })
-  })
-
-  it('rejects external target first', () => {
-    const result = reviewWorkspaceRunPlan({
-      runId: 'run_1',
-      draftTasks: [createDraftTask({ target: 'external' })],
-      plan: createPlan(),
-      understandingPreview: createUnderstandingPreview({
-        draftTasks: [createDraftTask({ target: 'external' })],
-      }),
-      updatedAt,
-    })
-
-    expect(result).toEqual({
-      status: 'reject',
-      reason: 'unsupported_external_action',
-    })
-  })
-
   it('awaits user edit when more than one draft task exists', () => {
     const draftTasks = [
       createDraftTask({ slots: { title: '给客户发报价', done: true, count: 2 } as Record<string, unknown> }),
@@ -290,7 +253,7 @@ describe('workspace-run-review', () => {
     })
     expect(result.snapshot?.interaction.message).toContain('给客户发报价')
     expect(result.snapshot?.preview).toMatchObject({
-      candidateId: 'todo_1',
+      plan: expect.any(Object),
     })
   })
 
@@ -331,7 +294,7 @@ describe('workspace-run-review', () => {
 
     expect(result).toEqual({
       status: 'reject',
-      reason: 'unsupported_external_action',
+      reason: 'invalid_plan',
     })
   })
 
@@ -364,7 +327,7 @@ describe('workspace-run-review', () => {
 
     expect(result).toEqual({
       status: 'reject',
-      reason: 'unsupported_external_action',
+      reason: 'invalid_plan',
     })
   })
 
@@ -669,7 +632,7 @@ describe('workspace-run-review', () => {
 
     expect(result).toEqual({
       status: 'reject',
-      reason: 'unsupported_external_action',
+      reason: 'invalid_plan',
     })
   })
 
@@ -710,7 +673,7 @@ describe('workspace-run-review', () => {
 
     expect(result).toEqual({
       status: 'reject',
-      reason: 'unsupported_external_action',
+      reason: 'invalid_plan',
     })
   })
 
@@ -736,7 +699,7 @@ describe('workspace-run-review', () => {
 
     expect(result).toEqual({
       status: 'reject',
-      reason: 'unsupported_external_action',
+      reason: 'invalid_plan',
     })
   })
 
@@ -847,7 +810,7 @@ describe('workspace-run-review', () => {
 
     expect(result).toEqual({
       status: 'reject',
-      reason: 'unsupported_external_action',
+      reason: 'invalid_plan',
     })
   })
 
@@ -862,7 +825,7 @@ describe('workspace-run-review', () => {
 
     expect(result).toEqual({
       status: 'reject',
-      reason: 'unsupported_external_action',
+      reason: 'invalid_plan',
     })
   })
 
@@ -889,9 +852,10 @@ describe('workspace-run-review', () => {
         runId: 'run_1',
         type: 'clarify_slots',
       }),
-      preview: expect.objectContaining({
+      preview: {
+        understanding: understandingPreview,
         plan: expect.any(Object),
-      }),
+      },
       timeline: [
         { type: 'phase_started', phase: 'review' },
         {
@@ -903,7 +867,6 @@ describe('workspace-run-review', () => {
         },
       ],
       understandingPreview,
-      planPreview: expect.any(Object),
       correctionNotes: [],
       updatedAt,
     })

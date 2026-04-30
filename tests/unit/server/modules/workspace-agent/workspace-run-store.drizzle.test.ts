@@ -64,17 +64,6 @@ function createSnapshot(overrides: Partial<WorkspaceReviewPendingRunSnapshot> = 
       },
     },
     understandingPreview: null,
-    planPreview: {
-      summary: '准备执行 1 个任务。',
-      steps: [
-        {
-          id: 'step_1',
-          toolName: 'create_todo',
-          title: '给客户发报价',
-          preview: '创建待办：给客户发报价',
-        },
-      ],
-    },
     correctionNotes: [],
     updatedAt: '2026-04-27T12:00:00.000Z',
     ...overrides,

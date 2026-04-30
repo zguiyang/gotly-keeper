@@ -23,21 +23,16 @@ import {
 } from './workspace-view-primitives'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
-import {
-  workspacePlanPreviewSchema,
-  workspacePreviewSchema,
-  type WorkspaceRunPhase,
-  workspaceUnderstandingPreviewSchema,
-} from '@/shared/workspace/workspace-run-protocol'
 import type {
   WorkspaceInteraction,
   WorkspaceInteractionResponse,
+  WorkspacePlanPreview,
+  type WorkspaceRunPhase,
   WorkspaceRunResult,
   WorkspaceRunStepResult,
   WorkspaceRunStreamEvent,
   WorkspaceRunToolResult,
   WorkspaceUnderstandingPreview,
-  WorkspacePlanPreview,
 } from '@/shared/workspace/workspace-run-protocol'
 
 type VisibleWorkspaceRunPhase = {
@@ -116,54 +111,6 @@ function getToolLabel(toolName: string) {
   if (toolName === 'query_assets') return '查询内容'
   if (toolName === 'summarize_assets') return '总结内容'
   return toolName
-}
-
-function derivePlanPreviewFromTimeline(timeline: WorkspaceRunStreamEvent[]) {
-  for (const event of [...timeline].reverse()) {
-    if (event.type !== 'phase_completed') {
-      continue
-    }
-
-    if (event.phase === 'preview') {
-      const parsedPreview = workspacePreviewSchema.safeParse(event.output)
-      if (parsedPreview.success) {
-        return parsedPreview.data.plan ?? null
-      }
-    }
-
-    if (event.phase === 'plan') {
-      const parsedPlan = workspacePlanPreviewSchema.safeParse(event.output)
-      if (parsedPlan.success) {
-        return parsedPlan.data
-      }
-    }
-  }
-
-  return null
-}
-
-function deriveUnderstandingPreviewFromTimeline(timeline: WorkspaceRunStreamEvent[]) {
-  for (const event of [...timeline].reverse()) {
-    if (event.type !== 'phase_completed') {
-      continue
-    }
-
-    if (event.phase === 'preview') {
-      const parsedPreview = workspacePreviewSchema.safeParse(event.output)
-      if (parsedPreview.success) {
-        return parsedPreview.data.understanding ?? null
-      }
-    }
-
-    if (event.phase === 'understand') {
-      const parsedUnderstanding = workspaceUnderstandingPreviewSchema.safeParse(event.output)
-      if (parsedUnderstanding.success) {
-        return parsedUnderstanding.data
-      }
-    }
-  }
-
-  return null
 }
 
 function getVisiblePhase(
@@ -722,16 +669,6 @@ function FinalResult({
   )
 }
 
-type WorkspaceBatchResult = {
-  kind: 'batch'
-  summary: string
-  stepResults: Array<{
-    stepId: string
-    toolName: string
-    result: unknown
-  }>
-}
-
 function getBatchStepItem(step: WorkspaceRunStepResult) {
   const normalized = normalizeWorkspaceResultData(step.result)
   if (normalized) {
@@ -833,10 +770,6 @@ export function WorkspaceRunPanel({
   onResume?: (response: WorkspaceInteractionResponse) => void
 }) {
   const visiblePhase = getVisiblePhase(timeline)
-  const resolvedUnderstandingPreview =
-    understandingPreview ?? deriveUnderstandingPreviewFromTimeline(timeline)
-  const resolvedPlanPreview =
-    planPreview ?? derivePlanPreviewFromTimeline(timeline)
   const resolvedResult = normalizeFinalResult(result)
   const draftEditorRef = useRef<DraftTaskEditorHandle>(null)
   const [detailsExpanded, setDetailsExpanded] = useState(false)
@@ -844,7 +777,7 @@ export function WorkspaceRunPanel({
   const slotFormId = useId()
   const showDisclosure =
     status !== 'streaming' &&
-    (resolvedUnderstandingPreview || resolvedPlanPreview)
+    (understandingPreview || planPreview)
 
   useEffect(() => {
     setSelectedCandidateId(null)
@@ -1013,7 +946,7 @@ export function WorkspaceRunPanel({
               transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
             >
               <StreamingPanel
-                planPreview={resolvedPlanPreview}
+                planPreview={planPreview}
                 timeline={timeline}
                 visiblePhase={visiblePhase}
               />
@@ -1053,30 +986,30 @@ export function WorkspaceRunPanel({
 
           {detailsExpanded ? (
             <div className="mt-3 space-y-3">
-              {resolvedUnderstandingPreview ? (
+              {understandingPreview ? (
                 <div className="space-y-2 rounded-[0.75rem] bg-muted/30 px-3 py-2.5">
                   <p className="text-xs text-on-surface-variant/50">原始输入</p>
-                  <p className="text-sm text-on-surface">{resolvedUnderstandingPreview.rawInput}</p>
+                  <p className="text-sm text-on-surface">{understandingPreview.rawInput}</p>
 
-                  {resolvedUnderstandingPreview.normalizedInput !== resolvedUnderstandingPreview.rawInput ? (
+                  {understandingPreview.normalizedInput !== understandingPreview.rawInput ? (
                     <div className="space-y-1">
                       <p className="text-xs text-on-surface-variant/50">标准化后</p>
-                      <p className="text-sm text-on-surface">{resolvedUnderstandingPreview.normalizedInput}</p>
+                      <p className="text-sm text-on-surface">{understandingPreview.normalizedInput}</p>
                     </div>
                   ) : null}
 
-                  {resolvedUnderstandingPreview.corrections.length > 0 ? (
+                  {understandingPreview.corrections.length > 0 ? (
                     <div className="space-y-1">
                       <p className="text-xs text-on-surface-variant/50">修正</p>
-                      <p className="text-sm text-on-surface">{resolvedUnderstandingPreview.corrections.join('、')}</p>
+                      <p className="text-sm text-on-surface">{understandingPreview.corrections.join('、')}</p>
                     </div>
                   ) : null}
 
-                  {resolvedUnderstandingPreview.draftTasks.length > 0 ? (
+                  {understandingPreview.draftTasks.length > 0 ? (
                     <div className="space-y-1">
-                      <p className="text-xs text-on-surface-variant/50">识别任务 ({resolvedUnderstandingPreview.draftTasks.length})</p>
+                      <p className="text-xs text-on-surface-variant/50">识别任务 ({understandingPreview.draftTasks.length})</p>
                       <ol className="space-y-1">
-                        {resolvedUnderstandingPreview.draftTasks.map((task) => (
+                        {understandingPreview.draftTasks.map((task) => (
                           <li key={task.id} className="text-sm text-on-surface">
                             {task.title}
                           </li>
@@ -1087,11 +1020,11 @@ export function WorkspaceRunPanel({
                 </div>
               ) : null}
 
-              {resolvedPlanPreview ? (
+              {planPreview ? (
                 <div className="space-y-2 rounded-[0.75rem] bg-muted/30 px-3 py-2.5">
-                  <p className="text-xs text-on-surface-variant/50">执行步骤 ({resolvedPlanPreview.steps.length})</p>
+                  <p className="text-xs text-on-surface-variant/50">执行步骤 ({planPreview.steps.length})</p>
                   <ol className="space-y-1">
-                    {resolvedPlanPreview.steps.map((step) => (
+                    {planPreview.steps.map((step) => (
                       <li key={step.id} className="text-sm text-on-surface">
                         {step.preview}
                       </li>

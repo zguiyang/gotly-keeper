@@ -393,7 +393,6 @@ describe('workspace run protocol', () => {
       preview: null,
       timeline: [],
       understandingPreview: null,
-      planPreview: null,
       correctionNotes: [],
       updatedAt: '2026-04-30T08:00:00.000Z',
     }
@@ -438,7 +437,6 @@ describe('workspace run protocol', () => {
         preview: null,
         timeline: [],
         understandingPreview: null,
-        planPreview: null,
         correctionNotes: [],
         updatedAt: '2026-04-30T08:00:00.000Z',
       })
@@ -471,7 +469,6 @@ describe('workspace run protocol', () => {
         preview: null,
         timeline: [],
         understandingPreview: null,
-        planPreview: null,
         correctionNotes: [],
         updatedAt: '2026-04-30T08:00:00.000Z',
       })
