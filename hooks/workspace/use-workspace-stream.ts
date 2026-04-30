@@ -6,18 +6,15 @@ import {
   fetchCurrentWorkspaceRun,
   streamWorkspaceRunEvents,
 } from '@/client/workspace/workspace-run-events.client'
-
-import type {
-  WorkspaceInteraction,
-  WorkspaceInteractionResponse,
-  WorkspacePendingRunSnapshot,
-  WorkspacePlanPreview,
-  WorkspaceRunRequest,
-  WorkspaceRunResult,
-  WorkspaceRunStreamEvent,
-  WorkspaceUnderstandingPreview,
-} from '@/shared/workspace/workspace-run-protocol'
 import {
+  type WorkspaceInteraction,
+  type WorkspaceInteractionResponse,
+  type WorkspacePendingRunSnapshot,
+  type WorkspacePlanPreview,
+  type WorkspaceRunRequest,
+  type WorkspaceRunResult,
+  type WorkspaceRunStreamEvent,
+  type WorkspaceUnderstandingPreview,
   workspacePlanPreviewSchema,
   workspacePreviewSchema,
   workspaceUnderstandingPreviewSchema,
@@ -59,12 +56,13 @@ function parseRunStartedAt(runId: string) {
 function extractSnapshotPreviewState(
   snapshot: Pick<
     WorkspacePendingRunSnapshot,
-    'understandingPreview' | 'planPreview' | 'correctionNotes'
+    'preview' | 'understandingPreview' | 'correctionNotes'
   >
 ) {
   return {
-    understandingPreview: snapshot.understandingPreview,
-    planPreview: snapshot.planPreview,
+    understandingPreview:
+      snapshot.preview?.understanding ?? snapshot.understandingPreview,
+    planPreview: snapshot.preview?.plan ?? null,
     correctionNotes: snapshot.correctionNotes,
   }
 }

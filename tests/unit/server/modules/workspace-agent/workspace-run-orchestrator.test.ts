@@ -371,7 +371,7 @@ describe('workspace-run-orchestrator', () => {
           ],
         },
         timeline: [],
-        preview: { plan: null },
+        preview: null,
         understandingPreview: {
           rawInput: '记个待办：尽快处理报销',
           normalizedInput: '记个待办：尽快处理报销',
@@ -389,7 +389,6 @@ describe('workspace-run-orchestrator', () => {
           ],
           corrections: [],
         },
-        planPreview: null,
         correctionNotes: [],
         updatedAt: new Date().toISOString(),
       })
@@ -463,14 +462,13 @@ describe('workspace-run-orchestrator', () => {
           tasks: draftTasks,
         },
         timeline: [],
-        preview: { plan: null },
+        preview: null,
         understandingPreview: {
           rawInput: '五分钟后提醒我熬药，帮我几个笔记，不要吃生冷食物，最后收藏一下：https://github.com/zguiyang',
           normalizedInput: '五分钟后提醒我熬药，帮我几个笔记，不要吃生冷食物，最后收藏一下：https://github.com/zguiyang',
           draftTasks,
           corrections: [],
         },
-        planPreview: null,
         correctionNotes: [],
         updatedAt: new Date().toISOString(),
       })
@@ -529,7 +527,19 @@ describe('workspace-run-orchestrator', () => {
           actions: ['confirm', 'edit', 'cancel'] as const,
         },
         timeline: [],
-        preview: { plan: null },
+        preview: {
+          plan: {
+            summary: 'Test plan',
+            steps: [
+              {
+                id: 'step_1',
+                toolName: 'update_todo',
+                title: '更新待办',
+                preview: '更新待办',
+              },
+            ],
+          },
+        },
         understandingPreview: {
           rawInput: '把给客户发报价标记完成',
           normalizedInput: '把给客户发报价标记完成',
@@ -549,17 +559,6 @@ describe('workspace-run-orchestrator', () => {
             },
           ],
           corrections: [],
-        },
-        planPreview: {
-          summary: 'Test plan',
-          steps: [
-            {
-              id: 'step_1',
-              toolName: 'update_todo',
-              title: '更新待办',
-              preview: '更新待办',
-            },
-          ],
         },
         correctionNotes: [],
         updatedAt: new Date().toISOString(),

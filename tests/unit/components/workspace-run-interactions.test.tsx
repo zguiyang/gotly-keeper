@@ -13,7 +13,6 @@ import { UnderstandingPreview } from '@/components/workspace/understanding-previ
 import type {
   ClarifySlotsInteraction,
   ConfirmPlanInteraction,
-  DraftWorkspaceTask,
   EditDraftTasksInteraction,
   SelectCandidateInteraction,
   WorkspaceRunStreamEvent,
