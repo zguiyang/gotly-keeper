@@ -27,7 +27,7 @@ import type {
   WorkspaceInteraction,
   WorkspaceInteractionResponse,
   WorkspacePlanPreview,
-  type WorkspaceRunPhase,
+  WorkspaceRunPhase,
   WorkspaceRunResult,
   WorkspaceRunStepResult,
   WorkspaceRunStreamEvent,
@@ -404,9 +404,11 @@ type WorkspaceDisplayResult =
       message: string
     }
 
+type WorkspaceStepDisplayResult = Exclude<WorkspaceDisplayResult, { kind: 'batch' }>
+
 function normalizeWorkspaceResultData(
   data: WorkspaceRunToolResult | null | undefined
-): WorkspaceDisplayResult | null {
+): WorkspaceStepDisplayResult | null {
   if (!data || typeof data !== 'object') {
     return null
   }

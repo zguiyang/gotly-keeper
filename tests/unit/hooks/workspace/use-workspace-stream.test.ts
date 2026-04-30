@@ -220,7 +220,11 @@ describe('useWorkspaceStream', () => {
     const events: WorkspaceRunStreamEvent[] = [
       { type: 'phase_started', phase: 'execute' },
       { type: 'tool_call_started', toolName: 'create_todo', preview: '创建待办：发报价' },
-      { type: 'tool_call_completed', toolName: 'create_todo', result: { ok: true } },
+      {
+        type: 'tool_call_completed',
+        toolName: 'create_todo',
+        result: { ok: true, target: 'todos', action: 'create', item: null },
+      },
       { type: 'phase_completed', phase: 'execute' },
       { type: 'phase_started', phase: 'compose' },
       { type: 'phase_completed', phase: 'compose' },

@@ -189,7 +189,7 @@ function filterItemsByTimeRange(items: AssetListItem[], timeRange: WorkspaceTool
 
 function toQueryResult(
   target: 'notes' | 'todos' | 'bookmarks' | 'mixed',
-  items: unknown[]
+  items: AssetListItem[]
 ): WorkspaceToolResult {
   return {
     ok: true,
@@ -202,7 +202,7 @@ function toQueryResult(
 function toMutationResult(
   target: 'notes' | 'todos' | 'bookmarks',
   action: 'create' | 'update',
-  item: unknown
+  item: AssetListItem | null
 ): WorkspaceToolResult {
   return {
     ok: true,
@@ -447,7 +447,7 @@ export const workspaceTools = {
         selector: input.selector,
       })
 
-      let updatedTodo: unknown = null
+      let updatedTodo: AssetListItem | null = null
 
       const hasFieldPatch =
         input.patch.title !== undefined ||

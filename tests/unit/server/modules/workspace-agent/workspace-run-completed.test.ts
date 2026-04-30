@@ -2,6 +2,24 @@ import { describe, expect, it } from 'vitest'
 
 import { buildBatchAnswer, buildCompletedRunResult } from '@/server/modules/workspace-agent/workspace-run-completed'
 
+import type { AssetListItem } from '@/shared/assets/assets.types'
+
+function createAssetItem(overrides: Partial<AssetListItem> = {}): AssetListItem {
+  return {
+    id: 'asset_1',
+    originalText: '原始内容',
+    title: '默认标题',
+    excerpt: '默认摘要',
+    type: 'note',
+    url: null,
+    timeText: null,
+    dueAt: null,
+    completed: false,
+    createdAt: new Date('2026-04-27T00:00:00.000Z'),
+    ...overrides,
+  }
+}
+
 describe('workspace-run-completed', () => {
   it('builds a multi-task answer from all successful step results', () => {
     const answer = buildBatchAnswer({
@@ -38,9 +56,7 @@ describe('workspace-run-completed', () => {
               ok: true,
               target: 'todos',
               action: 'create',
-              item: {
-                title: '熬药',
-              },
+              item: createAssetItem({ id: 'todo_1', type: 'todo', title: '熬药' }),
             },
           },
           {
@@ -50,9 +66,7 @@ describe('workspace-run-completed', () => {
               ok: true,
               target: 'notes',
               action: 'create',
-              item: {
-                title: '不要吃生冷食物',
-              },
+              item: createAssetItem({ id: 'note_1', title: '不要吃生冷食物' }),
             },
           },
           {
@@ -62,9 +76,12 @@ describe('workspace-run-completed', () => {
               ok: true,
               target: 'bookmarks',
               action: 'create',
-              item: {
+              item: createAssetItem({
+                id: 'bookmark_1',
+                type: 'link',
                 title: 'https://github.com/zguiyang',
-              },
+                url: 'https://github.com/zguiyang',
+              }),
             },
           },
         ],

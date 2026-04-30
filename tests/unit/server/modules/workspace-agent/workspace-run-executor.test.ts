@@ -5,6 +5,7 @@ import { executeWorkspaceTool } from '@/server/modules/workspace-agent/workspace
 
 import type { WorkspaceToolContext } from '@/server/modules/workspace-agent/types'
 import type { WorkspaceRunPlannerAction } from '@/server/modules/workspace-agent/workspace-run-planner'
+import type { AssetListItem } from '@/shared/assets/assets.types'
 
 vi.mock('@/server/modules/workspace-agent/workspace-tools', () => ({
   executeWorkspaceTool: vi.fn(),
@@ -19,6 +20,22 @@ vi.mock('@/server/modules/workspace-agent/workspace-tools', () => ({
 
 const createMockContext = (): WorkspaceToolContext => ({ userId: 'user_123' })
 
+function createAssetItem(overrides: Partial<AssetListItem> = {}): AssetListItem {
+  return {
+    id: 'asset_1',
+    originalText: '原始内容',
+    title: '默认标题',
+    excerpt: '默认摘要',
+    type: 'todo',
+    url: null,
+    timeText: null,
+    dueAt: null,
+    completed: false,
+    createdAt: new Date('2026-04-27T00:00:00.000Z'),
+    ...overrides,
+  }
+}
+
 describe('workspace-run-executor', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -30,7 +47,7 @@ describe('workspace-run-executor', () => {
         ok: true,
         target: 'todos',
         action: 'create',
-        item: { id: 'todo_1', title: 'Test todo' },
+        item: createAssetItem({ id: 'todo_1', title: 'Test todo' }),
       })
 
       const steps = [
@@ -56,7 +73,12 @@ describe('workspace-run-executor', () => {
         ok: true,
         target: 'bookmarks',
         action: 'create',
-        item: { id: 'bookmark_1', title: '官网定价页' },
+        item: createAssetItem({
+          id: 'bookmark_1',
+          type: 'link',
+          title: '官网定价页',
+          url: 'https://example.com/pricing',
+        }),
       })
 
       const steps = [
@@ -146,7 +168,7 @@ describe('workspace-run-executor', () => {
         ok: true,
         target: 'todos',
         action: 'create',
-        item: { id: 'todo_1' },
+        item: createAssetItem({ id: 'todo_1' }),
       })
 
       const steps = [
@@ -213,7 +235,7 @@ describe('workspace-run-executor', () => {
           ok: true,
           target: 'todos',
           action: 'create',
-          item: { id: 'todo_1' },
+          item: createAssetItem({ id: 'todo_1' }),
         })
         .mockResolvedValueOnce({
           ok: false,
@@ -253,13 +275,13 @@ describe('workspace-run-executor', () => {
           ok: true,
           target: 'todos',
           action: 'create',
-          item: { id: 'todo_1' },
+          item: createAssetItem({ id: 'todo_1' }),
         })
         .mockResolvedValueOnce({
           ok: true,
           target: 'todos',
           action: 'create',
-          item: { id: 'todo_2' },
+          item: createAssetItem({ id: 'todo_2' }),
         })
 
       const steps = [
@@ -294,7 +316,7 @@ describe('workspace-run-executor', () => {
           {
             stepId: 'step_1',
             toolName: 'create_todo',
-            result: { ok: true, target: 'todos', action: 'create', item: {} },
+            result: { ok: true, target: 'todos', action: 'create', item: createAssetItem() },
           },
         ],
         summary: '执行了 1/1 个步骤',

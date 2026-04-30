@@ -4,9 +4,13 @@ import {
   reviewWorkspaceRunPlan,
   type ReviewableDraftTask,
   type ReviewablePlan,
+  type ReviewWorkspaceRunPlanDecision,
 } from '@/server/modules/workspace-agent/workspace-run-review'
 
-import type { WorkspaceUnderstandingPreview } from '@/shared/workspace/workspace-run-protocol'
+import type {
+  DraftWorkspaceTask,
+  WorkspaceUnderstandingPreview,
+} from '@/shared/workspace/workspace-run-protocol'
 
 function createDraftTask(overrides: Partial<ReviewableDraftTask> = {}): ReviewableDraftTask {
   return {
@@ -42,15 +46,45 @@ function createPlan(overrides: Partial<ReviewablePlan> = {}): ReviewablePlan {
 }
 
 function createUnderstandingPreview(
-  overrides: Partial<WorkspaceUnderstandingPreview> = {}
+  overrides: Partial<Omit<WorkspaceUnderstandingPreview, 'draftTasks'>> & {
+    draftTasks?: ReviewableDraftTask[]
+  } = {}
 ): WorkspaceUnderstandingPreview {
+  const { draftTasks, ...rest } = overrides
+
   return {
     rawInput: '给客户发报价',
     normalizedInput: '给客户发报价',
-    draftTasks: [createDraftTask()],
+    draftTasks: (draftTasks ?? [createDraftTask()]).map(toPreviewDraftTask),
     corrections: [],
-    ...overrides,
+    ...rest,
   }
+}
+
+function toPreviewDraftTask(task: ReviewableDraftTask): DraftWorkspaceTask {
+  return {
+    id: task.id,
+    intent: task.intent,
+    target: task.target,
+    title: task.title ?? '',
+    confidence: task.confidence,
+    ambiguities: task.ambiguities,
+    corrections: task.corrections,
+    slots: Object.fromEntries(
+      Object.entries(task.slots).filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+    ),
+  }
+}
+
+function expectAwaitUser(
+  result: ReviewWorkspaceRunPlanDecision
+): Extract<ReviewWorkspaceRunPlanDecision, { status: 'await_user' }> {
+  expect(result.status).toBe('await_user')
+  if (result.status !== 'await_user') {
+    throw new Error(`Expected await_user result, received ${result.status}`)
+  }
+
+  return result
 }
 
 const updatedAt = '2026-04-27T12:00:00.000Z'
@@ -90,15 +124,15 @@ describe('workspace-run-review', () => {
       updatedAt,
     })
 
-    expect(result.status).toBe('await_user')
-    expect(result.reason).toBe('edit_draft_tasks')
-    expect(result.snapshot?.interaction).toMatchObject({
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('edit_draft_tasks')
+    expect(awaitUser.snapshot.interaction).toMatchObject({
       type: 'edit_draft_tasks',
       actions: ['save', 'cancel'],
     })
-    expect(result.snapshot?.interaction.type).toBe('edit_draft_tasks')
-    if (result.snapshot?.interaction.type === 'edit_draft_tasks') {
-      expect(result.snapshot.interaction.tasks).toEqual([
+    expect(awaitUser.snapshot.interaction.type).toBe('edit_draft_tasks')
+    if (awaitUser.snapshot.interaction.type === 'edit_draft_tasks') {
+      expect(awaitUser.snapshot.interaction.tasks).toEqual([
         expect.objectContaining({ title: '给客户发报价', slots: { title: '给客户发报价' } }),
         expect.objectContaining({ title: '' }),
       ])
@@ -151,9 +185,9 @@ describe('workspace-run-review', () => {
       draftTasksConfirmed: true,
     })
 
-    expect(result.status).toBe('await_user')
-    expect(result.reason).toBe('confirm_plan')
-    expect(result.snapshot?.interaction).toMatchObject({
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('confirm_plan')
+    expect(awaitUser.snapshot.interaction).toMatchObject({
       type: 'confirm_plan',
       actions: ['confirm', 'edit', 'cancel'],
     })
@@ -201,9 +235,9 @@ describe('workspace-run-review', () => {
       updatedAt,
     })
 
-    expect(result.status).toBe('await_user')
-    expect(result.reason).toBe('select_candidate')
-    expect(result.snapshot?.interaction).toMatchObject({
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('select_candidate')
+    expect(awaitUser.snapshot.interaction).toMatchObject({
       type: 'select_candidate',
       target: 'todo',
       actions: ['select', 'skip', 'cancel'],
@@ -245,14 +279,14 @@ describe('workspace-run-review', () => {
       updatedAt,
     })
 
-    expect(result.status).toBe('await_user')
-    expect(result.reason).toBe('confirm_plan')
-    expect(result.snapshot?.interaction).toMatchObject({
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('confirm_plan')
+    expect(awaitUser.snapshot.interaction).toMatchObject({
       type: 'confirm_plan',
       actions: ['confirm', 'edit', 'cancel'],
     })
-    expect(result.snapshot?.interaction.message).toContain('给客户发报价')
-    expect(result.snapshot?.preview).toMatchObject({
+    expect(awaitUser.snapshot.interaction.message).toContain('给客户发报价')
+    expect(awaitUser.snapshot.preview).toMatchObject({
       plan: expect.any(Object),
     })
   })
@@ -359,9 +393,9 @@ describe('workspace-run-review', () => {
       updatedAt,
     })
 
-    expect(result.status).toBe('await_user')
-    expect(result.reason).toBe('clarify_slots')
-    expect(result.snapshot?.interaction).toMatchObject({
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('clarify_slots')
+    expect(awaitUser.snapshot.interaction).toMatchObject({
       type: 'clarify_slots',
       actions: ['submit', 'cancel'],
     })
@@ -447,13 +481,13 @@ describe('workspace-run-review', () => {
       updatedAt,
     })
 
-    expect(result.status).toBe('await_user')
-    expect(result.reason).toBe('confirm_plan')
-    expect(result.snapshot?.interaction).toMatchObject({
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('confirm_plan')
+    expect(awaitUser.snapshot.interaction).toMatchObject({
       type: 'confirm_plan',
       actions: ['confirm', 'edit', 'cancel'],
     })
-    expect(result.snapshot?.correctionNotes).toEqual(['prcing -> pricing'])
+    expect(awaitUser.snapshot.correctionNotes).toEqual(['prcing -> pricing'])
   })
 
   it('requests plan confirmation when only understandingPreview corrections exist', () => {
@@ -514,9 +548,9 @@ describe('workspace-run-review', () => {
       updatedAt,
     })
 
-    expect(result.status).toBe('await_user')
-    expect(result.reason).toBe('clarify_slots')
-    expect(result.snapshot?.interaction).toMatchObject({
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('clarify_slots')
+    expect(awaitUser.snapshot.interaction).toMatchObject({
       type: 'clarify_slots',
       fields: [
         expect.objectContaining({ key: 'url' }),
@@ -551,9 +585,9 @@ describe('workspace-run-review', () => {
       updatedAt,
     })
 
-    expect(result.status).toBe('await_user')
-    expect(result.reason).toBe('clarify_slots')
-    expect(result.snapshot?.interaction).toMatchObject({
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('clarify_slots')
+    expect(awaitUser.snapshot.interaction).toMatchObject({
       type: 'clarify_slots',
       fields: [
         expect.objectContaining({ key: 'url' }),
@@ -841,8 +875,8 @@ describe('workspace-run-review', () => {
       updatedAt,
     })
 
-    expect(result.status).toBe('await_user')
-    expect(result.snapshot).toEqual({
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.snapshot).toEqual({
       runId: 'run_1',
       referenceTime: updatedAt,
       phase: 'review',
@@ -870,7 +904,7 @@ describe('workspace-run-review', () => {
       correctionNotes: [],
       updatedAt,
     })
-    expect(JSON.parse(JSON.stringify(result.snapshot ?? null))).toEqual(result.snapshot)
+    expect(JSON.parse(JSON.stringify(awaitUser.snapshot))).toEqual(awaitUser.snapshot)
   })
 
   it('does not block todo creation when the only ambiguity is a vague time phrase', () => {
