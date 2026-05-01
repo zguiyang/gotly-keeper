@@ -1,0 +1,15 @@
+# Guard: __tests__ directories forbidden in source tree
+STAGED="$(git diff --cached --name-only)"
+if echo "$STAGED" | grep -qE '(^|/)__tests__(/|$)'; then
+  echo "FAIL: __tests__ directory in staged files. Place tests under root tests/."
+  exit 1
+fi
+
+# Staged-file guards via lint-staged
+npx lint-staged
+
+# Full-tree guards (not file-scoped)
+GUARDS="check-import-boundaries check-boundary-exception-todos check-global-css-placement check-governance-links"
+for g in $GUARDS; do
+  bash ".ai-rules/advanced-workflows/guards/${g}.sh"
+done

@@ -69,7 +69,7 @@ else
   CHANGED_FILES="$(git diff --name-only "${AGAINST_REF}...HEAD")"
 fi
 
-PROTECTED_CHANGES="$(echo "$CHANGED_FILES" | grep -E '^(AGENTS\.md|PROJECT_CAPABILITIES\.md|\.ai-rules/|\.github/workflows/architecture-and-governance-guards\.yml$)' || true)"
+PROTECTED_CHANGES="$(echo "$CHANGED_FILES" | grep -E '^(AGENTS\.md|PROJECT_CAPABILITIES\.md|\.ai-rules/|\.githooks/)' || true)"
 
 if [ -z "$PROTECTED_CHANGES" ]; then
   echo "PASS: no protected governance file changes detected"

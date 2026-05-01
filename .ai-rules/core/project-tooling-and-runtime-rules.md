@@ -185,7 +185,7 @@ Rule-validation scripts live under `.ai-rules/advanced-workflows/guards/`.
 
 Run guard scripts directly by path. Do not expose `.ai-rules/` guards through `package.json`, even when CI uses them.
 
-`check-rules-integrity.sh` is a local approval guard for governance-file edits. It currently protects `AGENTS.md`, `PROJECT_CAPABILITIES.md`, `.ai-rules/**`, and `.github/workflows/architecture-and-governance-guards.yml`. It is not currently a mandatory CI gate, because its purpose is to require explicit operator approval before these governance surfaces change.
+`check-rules-integrity.sh` is a local approval guard for governance-file edits. It currently protects `AGENTS.md`, `PROJECT_CAPABILITIES.md`, `.ai-rules/**`, and `.githooks/**`. It is not currently a mandatory CI gate, because its purpose is to require explicit operator approval before these governance surfaces change.
 
 Examples:
 
