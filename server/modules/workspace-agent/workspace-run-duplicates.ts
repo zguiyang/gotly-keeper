@@ -30,7 +30,7 @@ export async function findWorkspaceRunDuplicateCandidates(input: {
 }): Promise<ReviewableDuplicateCandidate[]> {
   const createSteps = input.plannerResult.steps
     .filter(
-      (step) =>
+      (step): step is typeof step & { action: 'create_note' | 'create_todo' | 'create_bookmark' } =>
         step.action === 'create_note' ||
         step.action === 'create_todo' ||
         step.action === 'create_bookmark'

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   SearchWorkspaceRunCandidates,
 } from '@/server/modules/workspace-agent/workspace-run-planner'
+import type { ReviewableDuplicateCandidate } from '@/server/modules/workspace-agent/workspace-run-duplicates'
 import type { WorkspaceRunStore } from '@/server/modules/workspace-agent/workspace-run-store'
 import type { WorkspaceRunModel } from '@/server/modules/workspace-agent/workspace-run-understanding'
 import type {
@@ -11,7 +12,7 @@ import type {
 } from '@/shared/workspace/workspace-run-protocol'
 
 const duplicateCandidatesMock = vi.hoisted(() => ({
-  findWorkspaceRunDuplicateCandidates: vi.fn(async () => []),
+  findWorkspaceRunDuplicateCandidates: vi.fn<() => Promise<ReviewableDuplicateCandidate[]>>(async () => []),
 }))
 
 vi.mock('@/server/modules/workspace-agent/workspace-run-duplicates', () => ({
@@ -181,6 +182,7 @@ describe('workspace-run-orchestrator', () => {
             intent: 'create',
             target: 'todos',
             title: '记个待办',
+            hasRealContent: false,
             confidence: 0.82,
             ambiguities: [],
             corrections: [],
