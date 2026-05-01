@@ -155,6 +155,50 @@ describe('workspace-run-orchestrator', () => {
       expect(events).toContainEqual(expect.objectContaining({ type: 'phase_started', phase: 'review' }))
       expect(events).toContainEqual(expect.objectContaining({ type: 'phase_completed', phase: 'review' }))
     })
+
+    it('asks for clarification instead of failing when a create intent has only a command prefix', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const events: unknown[] = []
+      const store = createMockStore()
+      const runModel: WorkspaceRunModel = async () => ({
+        draftTasks: [
+          {
+            id: 'draft_1',
+            intent: 'create',
+            target: 'todos',
+            title: '记个待办',
+            confidence: 0.82,
+            ambiguities: [],
+            corrections: [],
+            slots: {},
+          },
+        ],
+      })
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '记个待办' },
+        store,
+        runModel,
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('review')
+      expect(result.snapshot?.interaction).toMatchObject({
+        type: 'clarify_slots',
+        fields: [expect.objectContaining({ key: 'details' })],
+      })
+      expect(store.saveSnapshot).toHaveBeenCalledTimes(1)
+      expect(events).toContainEqual(
+        expect.objectContaining({
+          type: 'awaiting_user',
+          interaction: expect.objectContaining({ type: 'clarify_slots' }),
+        })
+      )
+    })
   })
 
   describe('error handling', () => {
