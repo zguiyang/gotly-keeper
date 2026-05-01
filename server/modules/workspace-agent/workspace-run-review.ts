@@ -196,6 +196,7 @@ function serializeDraftTask(task: ReviewableDraftTask): DraftWorkspaceTask {
     ...task,
     title: task.title ?? '',
     slots,
+    hasRealContent: true,
   }
 }
 
