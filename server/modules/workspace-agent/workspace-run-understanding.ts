@@ -12,7 +12,6 @@ import {
 
 import type { NormalizedWorkspaceRunInput } from './workspace-run-normalizer'
 
-const leadingPunctuationRegex = /^[：:，,;；。\s]+/
 const allowedIntentSchema = z.enum([
   'create',
   'query',
@@ -178,45 +177,6 @@ function dedupeCorrections(corrections: string[]): string[] {
   return Array.from(new Set(corrections))
 }
 
-function normalizeTodoTitleFromTimeHints(task: DraftWorkspaceTask, timeHints: string[]) {
-  if (task.target !== 'todos' || (task.intent !== 'create' && task.intent !== 'update')) {
-    return task
-  }
-
-  const trimmedTitle = task.title.trim()
-  if (!trimmedTitle) {
-    return task
-  }
-
-  for (const timeHint of timeHints) {
-    const hint = timeHint.trim()
-    if (!hint) {
-      continue
-    }
-
-    const hintIndex = trimmedTitle.indexOf(hint)
-    if (hintIndex < 0) {
-      continue
-    }
-
-    const suffix = trimmedTitle
-      .slice(hintIndex + hint.length)
-      .replace(leadingPunctuationRegex, '')
-      .trim()
-
-    if (!suffix || suffix.trim().length === 0) {
-      continue
-    }
-
-    return {
-      ...task,
-      title: suffix,
-    }
-  }
-
-  return task
-}
-
 function normalizeCommandOnlyCreateTitle(task: DraftWorkspaceTask) {
   if (task.intent !== 'create' && task.intent !== 'update') {
     return task
@@ -232,14 +192,8 @@ function normalizeCommandOnlyCreateTitle(task: DraftWorkspaceTask) {
   }
 }
 
-function normalizeDraftTaskTitles(tasks: DraftWorkspaceTask[], timeHints: string[]) {
-  return tasks.map((task) =>
-    normalizeTodoTitleFromTimeHints(normalizeCommandOnlyCreateTitle(task), timeHints)
-  )
-}
-
-function normalizeDraftTasks(tasks: DraftWorkspaceTask[], normalized: NormalizedWorkspaceRunInput) {
-  return normalizeDraftTaskTitles(tasks, normalized.timeHints)
+function normalizeDraftTasks(tasks: DraftWorkspaceTask[], _normalized: NormalizedWorkspaceRunInput) {
+  return tasks.map((task) => normalizeCommandOnlyCreateTitle(task))
 }
 
 function typoCandidatesToCorrections(
