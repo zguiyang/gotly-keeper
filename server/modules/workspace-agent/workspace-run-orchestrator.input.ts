@@ -1,6 +1,6 @@
 import { composeWorkspaceAnswer } from './workspace-compose'
-import { findWorkspaceRunDuplicateCandidates } from './workspace-run-duplicates'
 import { buildBatchAnswer, buildCompletedRunResult } from './workspace-run-completed'
+import { findWorkspaceRunDuplicateCandidates } from './workspace-run-duplicates'
 import { executeWorkspaceRunSteps } from './workspace-run-executor'
 import { normalizeWorkspaceRunInput } from './workspace-run-normalizer'
 import { emitEvent, createRunId, getToolResultError, getToolNameFromAction } from './workspace-run-orchestrator.shared'
@@ -223,7 +223,7 @@ export async function handleNewInput(
     const normalizedDraftTasks = await runResolveTodoTimes(
       ctx,
       understanding.draftTasks,
-      normalized.timeHints,
+      [],
       updatedAt
     )
     const normalizedUnderstanding = {
