@@ -16,6 +16,8 @@ const commandOnlyTitleRegex = /^(帮我记一下|帮我记个待办|记一下|�
 const genericCreateCommandOnlyTitleRegex =
   /^(帮我记一下|帮我记个待办|记一下|记个待办|帮我|存个链接|保存链接|存链接|保存个链接|记个书签|帮我记个书签)[：:，,;；。\s]*$/
 const leadingPunctuationRegex = /^[：:，,;；。\s]+/
+const bookmarkLookupVerbRegex =
+  /(帮我)?(找一下|找找|找到|找出|查一下|查找|搜一下|搜索|翻出|翻一下|看下|看看)(?!.*(保存|存一下|存个|收藏|记一下|新增))/
 const allowedIntentSchema = z.enum([
   'create',
   'query',
@@ -239,6 +241,44 @@ function normalizeDraftTaskTitles(tasks: DraftWorkspaceTask[], timeHints: string
   )
 }
 
+function rewriteBookmarkLookupMisclassification(
+  task: DraftWorkspaceTask,
+  normalized: NormalizedWorkspaceRunInput
+) {
+  if (task.intent !== 'create' || task.target !== 'bookmarks') {
+    return task
+  }
+
+  const url = typeof task.slots.url === 'string' ? task.slots.url.trim() : ''
+  if (url.length > 0 || normalized.urls.length > 0) {
+    return task
+  }
+
+  if (!bookmarkLookupVerbRegex.test(normalized.normalizedText)) {
+    return task
+  }
+
+  const query = task.title.trim()
+  if (query.length === 0) {
+    return task
+  }
+
+  return {
+    ...task,
+    intent: 'query',
+    slots: {
+      ...task.slots,
+      query,
+    },
+  }
+}
+
+function normalizeDraftTasks(tasks: DraftWorkspaceTask[], normalized: NormalizedWorkspaceRunInput) {
+  return normalizeDraftTaskTitles(tasks, normalized.timeHints).map((task) =>
+    rewriteBookmarkLookupMisclassification(task, normalized)
+  )
+}
+
 function typoCandidatesToCorrections(
   typoCandidates: NormalizedWorkspaceRunInput['typoCandidates']
 ): string[] {
@@ -279,9 +319,9 @@ export async function understandWorkspaceRunInput(input: {
     return {
       rawInput: input.normalized.rawText,
       normalizedInput: input.normalized.normalizedText,
-      draftTasks: normalizeDraftTaskTitles(
+      draftTasks: normalizeDraftTasks(
         toDraftTasks(normalizeModelDraftTasks(modelParsed.data.draftTasks)),
-        input.normalized.timeHints
+        input.normalized
       ),
       corrections: dedupeCorrections(typoCandidatesToCorrections(input.normalized.typoCandidates)),
     }
@@ -303,9 +343,9 @@ export async function understandWorkspaceRunInput(input: {
     return {
       rawInput: input.normalized.rawText,
       normalizedInput: input.normalized.normalizedText,
-      draftTasks: normalizeDraftTaskTitles(
+      draftTasks: normalizeDraftTasks(
         toDraftTasks(normalizeModelDraftTasks(modelParsed.data.draftTasks)),
-        input.normalized.timeHints
+        input.normalized
       ),
       corrections: dedupeCorrections(typoCandidatesToCorrections(input.normalized.typoCandidates)),
     }
@@ -320,7 +360,7 @@ export async function understandWorkspaceRunInput(input: {
   return {
     rawInput: input.normalized.rawText,
     normalizedInput: input.normalized.normalizedText,
-    draftTasks: normalizeDraftTaskTitles(toDraftTasks(validated.data.draftTasks), input.normalized.timeHints),
+    draftTasks: normalizeDraftTasks(toDraftTasks(validated.data.draftTasks), input.normalized),
     corrections: dedupeCorrections(typoCandidatesToCorrections(input.normalized.typoCandidates)),
   }
 }

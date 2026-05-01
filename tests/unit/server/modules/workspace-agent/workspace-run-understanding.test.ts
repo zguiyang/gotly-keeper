@@ -349,6 +349,88 @@ describe('workspace-run-understanding', () => {
     )
   })
 
+  it('rewrites obvious bookmark lookup misclassification from create to query', async () => {
+    const result = await understandWorkspaceRunInput({
+      normalized: {
+        rawText: '帮我找一下刚才那个 QA-BOOKMARK-20260501-U1 链接。',
+        normalizedText: '帮我找一下刚才那个 QA-BOOKMARK-20260501-U1 链接。',
+        urls: [],
+        separators: [],
+        typoCandidates: [],
+        timeHints: [],
+      },
+      runModel: vi.fn().mockResolvedValue({
+        draftTasks: [
+          {
+            id: 'task_1',
+            intent: 'create',
+            target: 'bookmarks',
+            title: '刚才那个 QA-BOOKMARK-20260501-U1 链接',
+            confidence: 0.74,
+            ambiguities: [],
+            corrections: [],
+            slots: {},
+          },
+        ],
+      }),
+    })
+
+    expect(result.draftTasks).toEqual([
+      {
+        id: 'task_1',
+        intent: 'query',
+        target: 'bookmarks',
+        title: '刚才那个 QA-BOOKMARK-20260501-U1 链接',
+        confidence: 0.74,
+        ambiguities: [],
+        corrections: [],
+        slots: {
+          query: '刚才那个 QA-BOOKMARK-20260501-U1 链接',
+        },
+      },
+    ])
+  })
+
+  it('keeps explicit bookmark save requests as create even when url is missing', async () => {
+    const result = await understandWorkspaceRunInput({
+      normalized: {
+        rawText: '帮我存一下这个链接，标题叫 QA-BOOKMARK-DRAFT。',
+        normalizedText: '帮我存一下这个链接，标题叫 QA-BOOKMARK-DRAFT。',
+        urls: [],
+        separators: ['，'],
+        typoCandidates: [],
+        timeHints: [],
+      },
+      runModel: vi.fn().mockResolvedValue({
+        draftTasks: [
+          {
+            id: 'task_1',
+            intent: 'create',
+            target: 'bookmarks',
+            title: 'QA-BOOKMARK-DRAFT',
+            confidence: 0.8,
+            ambiguities: [],
+            corrections: [],
+            slots: {},
+          },
+        ],
+      }),
+    })
+
+    expect(result.draftTasks).toEqual([
+      {
+        id: 'task_1',
+        intent: 'create',
+        target: 'bookmarks',
+        title: 'QA-BOOKMARK-DRAFT',
+        confidence: 0.8,
+        ambiguities: [],
+        corrections: [],
+        slots: {},
+      },
+    ])
+  })
+
   it('accepts AI-friendly slotEntries and converts them to slots', async () => {
     const result = await understandWorkspaceRunInput({
       normalized: {
