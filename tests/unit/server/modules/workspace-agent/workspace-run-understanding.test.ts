@@ -117,118 +117,124 @@ describe('workspace-run-understanding', () => {
     ).rejects.toThrow('draftTasks must be non-empty')
   })
 
-  it('rejects command prefixes as full titles', async () => {
-    await expect(
-      understandWorkspaceRunInput({
-        normalized: {
-          rawText: '记个待办',
-          normalizedText: '记个待办',
-          urls: [],
-          separators: [],
-          typoCandidates: [],
-          timeHints: [],
-        },
-        runModel: vi.fn().mockResolvedValue({
-          draftTasks: [
-            {
-              id: 'task_1',
-              intent: 'create',
-              target: 'todos',
-              title: '记个待办',
-              confidence: 0.81,
-              ambiguities: [],
-              corrections: [],
-              slots: {},
-            },
-          ],
-        }),
-      })
-    ).rejects.toThrow('task title cannot be only a command prefix')
+  it('normalizes command-only create titles into missing fields for later clarification', async () => {
+    const result = await understandWorkspaceRunInput({
+      normalized: {
+        rawText: '记个待办',
+        normalizedText: '记个待办',
+        urls: [],
+        separators: [],
+        typoCandidates: [],
+        timeHints: [],
+      },
+      runModel: vi.fn().mockResolvedValue({
+        draftTasks: [
+          {
+            id: 'task_1',
+            intent: 'create',
+            target: 'todos',
+            title: '记个待办',
+            confidence: 0.81,
+            ambiguities: [],
+            corrections: [],
+            slots: {},
+          },
+        ],
+      }),
+    })
+
+    expect(result.draftTasks).toEqual([
+      expect.objectContaining({
+        id: 'task_1',
+        intent: 'create',
+        target: 'todos',
+        title: '',
+      }),
+    ])
   })
 
-  it('rejects combined command prefixes as full titles', async () => {
-    await expect(
-      understandWorkspaceRunInput({
-        normalized: {
-          rawText: '帮我记一下',
-          normalizedText: '帮我记一下',
-          urls: [],
-          separators: [],
-          typoCandidates: [],
-          timeHints: [],
-        },
-        runModel: vi.fn().mockResolvedValue({
-          draftTasks: [
-            {
-              id: 'task_1',
-              intent: 'create',
-              target: 'todos',
-              title: '帮我记一下',
-              confidence: 0.81,
-              ambiguities: [],
-              corrections: [],
-              slots: {},
-            },
-          ],
-        }),
-      })
-    ).rejects.toThrow('task title cannot be only a command prefix')
+  it('normalizes combined command prefixes for create intents instead of rejecting them', async () => {
+    const first = await understandWorkspaceRunInput({
+      normalized: {
+        rawText: '帮我记一下',
+        normalizedText: '帮我记一下',
+        urls: [],
+        separators: [],
+        typoCandidates: [],
+        timeHints: [],
+      },
+      runModel: vi.fn().mockResolvedValue({
+        draftTasks: [
+          {
+            id: 'task_1',
+            intent: 'create',
+            target: 'todos',
+            title: '帮我记一下',
+            confidence: 0.81,
+            ambiguities: [],
+            corrections: [],
+            slots: {},
+          },
+        ],
+      }),
+    })
 
-    await expect(
-      understandWorkspaceRunInput({
-        normalized: {
-          rawText: '帮我记个待办',
-          normalizedText: '帮我记个待办',
-          urls: [],
-          separators: [],
-          typoCandidates: [],
-          timeHints: [],
-        },
-        runModel: vi.fn().mockResolvedValue({
-          draftTasks: [
-            {
-              id: 'task_1',
-              intent: 'create',
-              target: 'todos',
-              title: '帮我记个待办',
-              confidence: 0.81,
-              ambiguities: [],
-              corrections: [],
-              slots: {},
-            },
-          ],
-        }),
-      })
-    ).rejects.toThrow('task title cannot be only a command prefix')
+    const second = await understandWorkspaceRunInput({
+      normalized: {
+        rawText: '帮我记个待办',
+        normalizedText: '帮我记个待办',
+        urls: [],
+        separators: [],
+        typoCandidates: [],
+        timeHints: [],
+      },
+      runModel: vi.fn().mockResolvedValue({
+        draftTasks: [
+          {
+            id: 'task_1',
+            intent: 'create',
+            target: 'todos',
+            title: '帮我记个待办',
+            confidence: 0.81,
+            ambiguities: [],
+            corrections: [],
+            slots: {},
+          },
+        ],
+      }),
+    })
+
+    expect(first.draftTasks[0]?.title).toBe('')
+    expect(second.draftTasks[0]?.title).toBe('')
   })
 
-  it('rejects whitespace-only titles after trimming', async () => {
-    await expect(
-      understandWorkspaceRunInput({
-        normalized: {
-          rawText: '帮我记一下',
-          normalizedText: '帮我记一下',
-          urls: [],
-          separators: [],
-          typoCandidates: [],
-          timeHints: [],
-        },
-        runModel: vi.fn().mockResolvedValue({
-          draftTasks: [
-            {
-              id: 'task_1',
-              intent: 'create',
-              target: 'todos',
-              title: '   ',
-              confidence: 0.81,
-              ambiguities: [],
-              corrections: [],
-              slots: {},
-            },
-          ],
-        }),
-      })
-    ).rejects.toThrow()
+  it('normalizes whitespace-only create titles after trimming', async () => {
+    const result = await understandWorkspaceRunInput({
+      normalized: {
+        rawText: '帮我记一下',
+        normalizedText: '帮我记一下',
+        urls: [],
+        separators: [],
+        typoCandidates: [],
+        timeHints: [],
+      },
+      runModel: vi.fn().mockResolvedValue({
+        draftTasks: [
+          {
+            id: 'task_1',
+            intent: 'create',
+            target: 'todos',
+            title: '   ',
+            confidence: 0.81,
+            ambiguities: [],
+            corrections: [],
+            slots: {},
+          },
+        ],
+      }),
+    })
+
+    expect(result.draftTasks[0]?.title).toBe('')
   })
 
   it('rejects tasks missing required fields', async () => {

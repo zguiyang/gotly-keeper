@@ -168,7 +168,11 @@ export function WorkspaceClient({
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={state.status === 'streaming' || state.status === 'awaiting_user'}
+            disabled={
+              state.status === 'streaming' ||
+              state.status === 'awaiting_user' ||
+              inputValue.trim().length === 0
+            }
             className="absolute right-3 bottom-3 h-8 rounded-full px-3 text-xs sm:right-4 sm:bottom-3.5 sm:h-9 sm:px-4 sm:text-sm"
           >
             {state.status === 'streaming' ? (

@@ -13,6 +13,8 @@ import {
 import type { NormalizedWorkspaceRunInput } from './workspace-run-normalizer'
 
 const commandOnlyTitleRegex = /^(帮我记一下|帮我记个待办|记一下|记个待办|帮我)[：:，,;；。\s]*$/
+const genericCreateCommandOnlyTitleRegex =
+  /^(帮我记一下|帮我记个待办|记一下|记个待办|帮我|存个链接|保存链接|存链接|保存个链接|记个书签|帮我记个书签)[：:，,;；。\s]*$/
 const leadingPunctuationRegex = /^[：:，,;；。\s]+/
 const allowedIntentSchema = z.enum([
   'create',
@@ -38,10 +40,18 @@ const understandingTaskSchema = workspaceDraftTaskSchema
     confidence: z.number().min(0).max(1),
     intent: allowedIntentSchema,
     target: allowedTargetSchema,
-    title: z.string().transform((title) => title.trim()).pipe(z.string().min(1)),
+    title: z.string().transform((title) => title.trim()),
   })
   .superRefine((task, ctx) => {
-    if (commandOnlyTitleRegex.test(task.title)) {
+    if (task.title.length === 0 && (task.intent === 'query' || task.intent === 'summarize')) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'task title cannot be empty for read intents',
+        path: ['title'],
+      })
+    }
+
+    if (commandOnlyTitleRegex.test(task.title) && (task.intent === 'query' || task.intent === 'summarize')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'task title cannot be only a command prefix',
@@ -64,11 +74,19 @@ const understandingModelTaskSchema = workspaceDraftTaskSchema
     confidence: z.number().min(0).max(1),
     intent: allowedIntentSchema,
     target: allowedTargetSchema,
-    title: z.string().transform((title) => title.trim()).pipe(z.string().min(1)),
+    title: z.string().transform((title) => title.trim()),
     slotEntries: z.array(understandingSlotEntrySchema).default([]),
   })
   .superRefine((task, ctx) => {
-    if (commandOnlyTitleRegex.test(task.title)) {
+    if (task.title.length === 0 && (task.intent === 'query' || task.intent === 'summarize')) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'task title cannot be empty for read intents',
+        path: ['title'],
+      })
+    }
+
+    if (commandOnlyTitleRegex.test(task.title) && (task.intent === 'query' || task.intent === 'summarize')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'task title cannot be only a command prefix',
@@ -200,8 +218,25 @@ function normalizeTodoTitleFromTimeHints(task: DraftWorkspaceTask, timeHints: st
   return task
 }
 
+function normalizeCommandOnlyCreateTitle(task: DraftWorkspaceTask) {
+  if (task.intent !== 'create' && task.intent !== 'update') {
+    return task
+  }
+
+  if (!genericCreateCommandOnlyTitleRegex.test(task.title)) {
+    return task
+  }
+
+  return {
+    ...task,
+    title: '',
+  }
+}
+
 function normalizeDraftTaskTitles(tasks: DraftWorkspaceTask[], timeHints: string[]) {
-  return tasks.map((task) => normalizeTodoTitleFromTimeHints(task, timeHints))
+  return tasks.map((task) =>
+    normalizeTodoTitleFromTimeHints(normalizeCommandOnlyCreateTitle(task), timeHints)
+  )
 }
 
 function typoCandidatesToCorrections(
