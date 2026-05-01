@@ -49,13 +49,13 @@ function TimelineItem({
       case 'phase_started':
         return <Circle className="size-4 text-primary/60" />
       case 'phase_completed':
-        return <CheckCircle2 className="size-4 text-emerald-500" />
+        return <CheckCircle2 className="size-4 text-status-success" />
       case 'tool_call_started':
         return <Loader2 className="size-4 text-amber-500 animate-spin" />
       case 'tool_call_completed':
-        return <CheckCircle2 className="size-4 text-emerald-500" />
+        return <CheckCircle2 className="size-4 text-status-success" />
       case 'run_completed':
-        return <CheckCircle2 className="size-4 text-emerald-500" />
+        return <CheckCircle2 className="size-4 text-status-success" />
       case 'run_failed':
         return <AlertCircle className="size-4 text-destructive" />
       default:
