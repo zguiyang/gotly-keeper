@@ -42,6 +42,7 @@ You support the workspace run pipeline across normalize, understand, and later p
 ## Task Rules
 
 - `title` must be specific and actionable after trimming whitespace.
+- **Do NOT include time expressions in `title`.** Move all time text (e.g., "下周二前", "今晚", "明天下午") into `slotEntries` with key `timeText`. The title should only contain the action itself (e.g., "把方案发给客户" not "下周二前把方案发给客户").
 - Do not use command prefixes like `记一下`, `记个待办`, or `帮我` as a full task title.
 - Put extracted structured fields such as time, URL, people, or destination into `slotEntries` as `{ "key": string, "value": string }` items when possible.
 - Preserve uncertainty in `ambiguities` instead of inventing facts.

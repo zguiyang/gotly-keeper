@@ -28,6 +28,7 @@ If the input is compound, split it into multiple draft tasks.
 
 Constraints:
 - `title` must be non-empty after trimming whitespace.
+- **Time expressions must NOT appear in `title`.** Extract all time-related text (e.g., "下周二前", "今晚", "明天下午", "周五") and place it in `slotEntries` as `{ "key": "timeText", "value": "下周二" }`. The title must be a clean action description free of time adverbs.
 - Set `hasRealContent` to `false` when the user only gave a command phrase
   (e.g., "记一下", "帮我", "save for me") without substantive title or content.
   Set `hasRealContent` to `true` when the user provided a meaningful title or content.
