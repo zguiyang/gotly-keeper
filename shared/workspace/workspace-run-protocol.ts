@@ -22,6 +22,7 @@ const workspaceDraftTaskSchema = z.object({
   confidence: z.number(),
   ambiguities: z.array(z.string()),
   corrections: z.array(z.string()),
+  hasRealContent: z.boolean().optional(),
   slots: z.record(z.string(), z.string()),
 })
 

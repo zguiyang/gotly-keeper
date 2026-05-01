@@ -15,7 +15,7 @@ import {
   type WorkspaceReviewPendingRunSnapshot,
 } from './workspace-run-review'
 import { normalizeTodoDraftTaskTimes } from './workspace-run-time-normalization'
-import { buildWorkspaceRunPreview } from './workspace-run-preview'
+import { buildWorkspaceRunPreview } from './workspace-run-preview' 
 
 import type { WorkspaceToolContext, WorkspaceIntent, WorkspaceTarget } from './types'
 import type {
@@ -103,6 +103,7 @@ function toDraftWorkspaceTasks(
       slots: Object.fromEntries(
         Object.entries(task.slots).filter(([, value]) => typeof value === 'string')
       ) as Record<string, string>,
+      hasRealContent: (task as Record<string, unknown>).hasRealContent === false ? false : true,
     }))
   }
 

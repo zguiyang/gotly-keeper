@@ -27,6 +27,9 @@ If the input is compound, split it into multiple draft tasks.
 
 Constraints:
 - `title` must be non-empty after trimming whitespace.
+- Set `hasRealContent` to `false` when the user only gave a command phrase
+  (e.g., "记一下", "帮我", "save for me") without substantive title or content.
+  Set `hasRealContent` to `true` when the user provided a meaningful title or content.
 - `target` must be one of `notes`, `todos`, `bookmarks`.
 - `update` is only allowed when `target` is `todos`.
 - `confidence` must be a number from `0` to `1`.

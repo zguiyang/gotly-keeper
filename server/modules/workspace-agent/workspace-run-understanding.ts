@@ -12,12 +12,7 @@ import {
 
 import type { NormalizedWorkspaceRunInput } from './workspace-run-normalizer'
 
-const commandOnlyTitleRegex = /^(帮我记一下|帮我记个待办|记一下|记个待办|帮我)[：:，,;；。\s]*$/
-const genericCreateCommandOnlyTitleRegex =
-  /^(帮我记一下|帮我记个待办|记一下|记个待办|帮我|存个链接|保存链接|存链接|保存个链接|记个书签|帮我记个书签)[：:，,;；。\s]*$/
 const leadingPunctuationRegex = /^[：:，,;；。\s]+/
-const bookmarkLookupVerbRegex =
-  /(帮我)?(找一下|找找|找到|找出|查一下|查找|搜一下|搜索|翻出|翻一下|看下|看看)(?!.*(保存|存一下|存个|收藏|记一下|新增))/
 const allowedIntentSchema = z.enum([
   'create',
   'query',
@@ -43,6 +38,7 @@ const understandingTaskSchema = workspaceDraftTaskSchema
     intent: allowedIntentSchema,
     target: allowedTargetSchema,
     title: z.string().transform((title) => title.trim()),
+    hasRealContent: z.boolean().default(true),
   })
   .superRefine((task, ctx) => {
     if (task.title.length === 0 && (task.intent === 'query' || task.intent === 'summarize')) {
@@ -53,10 +49,10 @@ const understandingTaskSchema = workspaceDraftTaskSchema
       })
     }
 
-    if (commandOnlyTitleRegex.test(task.title) && (task.intent === 'query' || task.intent === 'summarize')) {
+    if (!task.hasRealContent && (task.intent === 'query' || task.intent === 'summarize')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'task title cannot be only a command prefix',
+        message: 'task title must have real content for read intents',
         path: ['title'],
       })
     }
@@ -77,6 +73,7 @@ const understandingModelTaskSchema = workspaceDraftTaskSchema
     intent: allowedIntentSchema,
     target: allowedTargetSchema,
     title: z.string().transform((title) => title.trim()),
+    hasRealContent: z.boolean().default(true),
     slotEntries: z.array(understandingSlotEntrySchema).default([]),
   })
   .superRefine((task, ctx) => {
@@ -88,10 +85,10 @@ const understandingModelTaskSchema = workspaceDraftTaskSchema
       })
     }
 
-    if (commandOnlyTitleRegex.test(task.title) && (task.intent === 'query' || task.intent === 'summarize')) {
+    if (!task.hasRealContent && (task.intent === 'query' || task.intent === 'summarize')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'task title cannot be only a command prefix',
+        message: 'task title must have real content for read intents',
         path: ['title'],
       })
     }
@@ -207,7 +204,7 @@ function normalizeTodoTitleFromTimeHints(task: DraftWorkspaceTask, timeHints: st
       .replace(leadingPunctuationRegex, '')
       .trim()
 
-    if (!suffix || commandOnlyTitleRegex.test(suffix)) {
+    if (!suffix || suffix.trim().length === 0) {
       continue
     }
 
@@ -225,7 +222,7 @@ function normalizeCommandOnlyCreateTitle(task: DraftWorkspaceTask) {
     return task
   }
 
-  if (!genericCreateCommandOnlyTitleRegex.test(task.title)) {
+  if (task.hasRealContent) {
     return task
   }
 
@@ -241,42 +238,8 @@ function normalizeDraftTaskTitles(tasks: DraftWorkspaceTask[], timeHints: string
   )
 }
 
-function rewriteBookmarkLookupMisclassification(
-  task: DraftWorkspaceTask,
-  normalized: NormalizedWorkspaceRunInput
-) {
-  if (task.intent !== 'create' || task.target !== 'bookmarks') {
-    return task
-  }
-
-  const url = typeof task.slots.url === 'string' ? task.slots.url.trim() : ''
-  if (url.length > 0 || normalized.urls.length > 0) {
-    return task
-  }
-
-  if (!bookmarkLookupVerbRegex.test(normalized.normalizedText)) {
-    return task
-  }
-
-  const query = task.title.trim()
-  if (query.length === 0) {
-    return task
-  }
-
-  return {
-    ...task,
-    intent: 'query',
-    slots: {
-      ...task.slots,
-      query,
-    },
-  }
-}
-
 function normalizeDraftTasks(tasks: DraftWorkspaceTask[], normalized: NormalizedWorkspaceRunInput) {
-  return normalizeDraftTaskTitles(tasks, normalized.timeHints).map((task) =>
-    rewriteBookmarkLookupMisclassification(task, normalized)
-  )
+  return normalizeDraftTaskTitles(tasks, normalized.timeHints)
 }
 
 function typoCandidatesToCorrections(
