@@ -18,7 +18,7 @@ const allowedIntentSchema = z.enum([
   'summarize',
   'update',
 ])
-const allowedTargetSchema = z.enum(['notes', 'todos', 'bookmarks'])
+const allowedTargetSchema = z.enum(['notes', 'todos', 'bookmarks', 'mixed'])
 const understandingSlotEntrySchema = z.object({
   key: z.string().trim().min(1),
   value: z.string(),

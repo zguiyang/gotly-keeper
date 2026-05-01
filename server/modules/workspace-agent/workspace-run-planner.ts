@@ -156,7 +156,7 @@ function buildToolInput(task: DraftWorkspaceTask, action: WorkspaceRunPlannerAct
       title: title ?? task.title.trim(),
       details: getStringSlot(task, 'details') ?? getStringSlot(task, 'content'),
       timeText: getStringSlot(task, 'timeText') ?? (isIsoDateTime(slotDueAt) ? undefined : slotDueAt),
-      dueAt: isIsoDateTime(slotDueAt) ? slotDueAt : undefined,
+      dueAt: isIsoDateTime(slotDueAt) && slotDueAt ? new Date(slotDueAt).toISOString() : undefined,
     }
   }
 

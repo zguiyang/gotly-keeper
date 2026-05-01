@@ -671,6 +671,19 @@ export function reviewWorkspaceRunPlan(
     })
   }
 
+  if (task.confidence < 0.4) {
+    return buildClarifyDecision({
+      runId: input.runId,
+      plan: input.plan,
+      understandingPreview: input.understandingPreview,
+      updatedAt: input.updatedAt,
+      referenceTime: input.referenceTime,
+      interactionIdSuffix: 'clarify_confidence',
+      message: '无法理解你的意图。当前支持：创建笔记、待办、书签，以及查询与更新待办。请换一种说法试试。',
+      fields: buildClarifyFields(task),
+    })
+  }
+
   if (task.confidence < MIN_AUTO_EXECUTE_CONFIDENCE) {
     return buildClarifyDecision({
       runId: input.runId,

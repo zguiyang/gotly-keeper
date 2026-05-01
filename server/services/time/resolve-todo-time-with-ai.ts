@@ -135,7 +135,11 @@ export async function resolveTodoTimeWithAi(
       },
     })
 
-    return todoTimeResolutionSchema.parse(result.output)
+    const parsed = todoTimeResolutionSchema.parse(result.output)
+    return {
+      timeText: parsed.timeText,
+      dueAt: parsed.dueAt ? new Date(parsed.dueAt).toISOString() : null,
+    }
   } catch (error) {
     console.warn('[todo-time-ai] resolution failed, returning no due date', {
       error: parseAiError(error).message,
