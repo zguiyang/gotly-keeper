@@ -172,3 +172,28 @@ export async function getNoteById(
 
   return row ? toNoteListItem(row) : null
 }
+
+export async function findDuplicateNotes(input: {
+  userId: string
+  content: string
+}): Promise<NoteListItem[]> {
+  const content = input.content.trim()
+  if (!content) {
+    return []
+  }
+
+  const rows = await db
+    .select()
+    .from(notes)
+    .where(
+      and(
+        eq(notes.userId, input.userId),
+        eq(notes.lifecycleStatus, ASSET_LIFECYCLE_STATUS.ACTIVE),
+        or(eq(notes.content, content), eq(notes.originalText, content))
+      )
+    )
+    .orderBy(desc(notes.createdAt))
+    .limit(NOTE_LIST_LIMIT_DEFAULT)
+
+  return rows.map(toNoteListItem)
+}

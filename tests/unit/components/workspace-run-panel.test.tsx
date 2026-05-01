@@ -90,6 +90,46 @@ describe('WorkspaceRunPanel', () => {
       const content = screen.getByTestId('workspace-run-panel-content')
       expect(content.className).toMatch(/overflow-y-auto/)
     })
+
+    it('renders duplicate confirmation actions for awaiting_user status', () => {
+      const onResume = vi.fn()
+
+      render(
+        <WorkspaceRunPanel
+          status="awaiting_user"
+          assistantText={null}
+          interaction={{
+            runId: 'run_1',
+            id: 'interaction_duplicate',
+            type: 'confirm_duplicate',
+            target: 'bookmark',
+            message: '发现可能重复的书签。',
+            actions: ['create', 'skip', 'cancel'],
+            current: {
+              stepId: 'step_1',
+              title: 'OpenAI',
+              preview: '创建书签：OpenAI',
+            },
+            duplicates: [
+              {
+                id: 'bookmark_1',
+                label: 'OpenAI',
+                reason: 'URL 完全一致',
+              },
+            ],
+          }}
+          onResume={onResume}
+        />
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: '仍然创建' }))
+      expect(onResume).toHaveBeenCalledWith({
+        type: 'confirm_duplicate',
+        action: 'create',
+      })
+      expect(screen.getByRole('button', { name: '跳过这项' })).toBeTruthy()
+      expect(screen.getByRole('button', { name: '取消' })).toBeTruthy()
+    })
   })
 
   describe('streaming narrative', () => {

@@ -372,6 +372,41 @@ export async function listCompletedTodos({
   return rows.map(toTodoListItem)
 }
 
+export async function findDuplicateTodos(input: {
+  userId: string
+  title: string
+  dueAt?: Date | null
+  timeText?: string | null
+}): Promise<TodoListItem[]> {
+  const title = input.title.trim()
+  if (!title) {
+    return []
+  }
+
+  const dueAtCondition = input.dueAt instanceof Date
+    ? eq(todos.dueAt, input.dueAt)
+    : isNull(todos.dueAt)
+  const timeText = input.timeText?.trim()
+  const timeTextCondition = timeText ? eq(todos.timeText, timeText) : isNull(todos.timeText)
+
+  const rows = await db
+    .select()
+    .from(todos)
+    .where(
+      and(
+        eq(todos.userId, input.userId),
+        eq(todos.lifecycleStatus, ASSET_LIFECYCLE_STATUS.ACTIVE),
+        or(eq(todos.title, title), eq(todos.originalText, title)),
+        dueAtCondition,
+        timeTextCondition
+      )
+    )
+    .orderBy(desc(todos.createdAt))
+    .limit(TODO_LIST_LIMIT_DEFAULT)
+
+  return rows.map(toTodoListItem)
+}
+
 export async function getTodoById(
   todoId: string,
   userId: string,

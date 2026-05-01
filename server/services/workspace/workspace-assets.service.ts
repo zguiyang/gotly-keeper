@@ -4,13 +4,31 @@ import {
   buildPendingBookmarkMetaForResponse,
   scheduleBookmarkEnrichTask,
 } from '@/server/services/bookmark/bookmark-enrich.service'
-import { createBookmark, listBookmarks, type BookmarkListItem } from '@/server/services/bookmarks'
-import { createNote, listNotes, type NoteListItem } from '@/server/services/notes'
+import {
+  createBookmark,
+  findDuplicateBookmarks,
+  listBookmarks,
+  type BookmarkListItem,
+} from '@/server/services/bookmarks'
+import {
+  createNote,
+  findDuplicateNotes,
+  listNotes,
+  type NoteListItem,
+} from '@/server/services/notes'
 import { searchAssets } from '@/server/services/search'
 import { deleteEmbeddingsForAsset } from '@/server/services/search/semantic-search.service'
-import { createTodo, listTodos, setTodoCompletion, updateTodo, type TodoListItem } from '@/server/services/todos'
+import {
+  createTodo,
+  findDuplicateTodos,
+  listTodos,
+  setTodoCompletion,
+  updateTodo,
+  type TodoListItem,
+} from '@/server/services/todos'
 import { ASSET_LIFECYCLE_STATUS, type AssetLifecycleStatus } from '@/shared/assets/asset-lifecycle.types'
 import { type AssetListItem } from '@/shared/assets/assets.types'
+import type { WorkspaceCandidate } from '@/shared/workspace/workspace-run-protocol'
 import { type WorkspaceAgentTimeFilter } from '@/shared/workspace/workspace-run.types'
 
 export const WORKSPACE_ASSETS_ERROR_CODES = {
@@ -29,6 +47,23 @@ export class WorkspaceAssetsError extends Error {
     super(publicMessage)
     this.name = 'WorkspaceAssetsError'
   }
+}
+
+export type WorkspaceCreateDuplicateCheckStep = {
+  stepId: string
+  action: 'create_note' | 'create_todo' | 'create_bookmark'
+  target: 'notes' | 'todos' | 'bookmarks'
+  title?: string
+  content?: string
+  url?: string
+  timeText?: string | null
+  dueAt?: Date | null
+}
+
+export type WorkspaceCreateDuplicateCheckResult = {
+  stepId: string
+  target: 'note' | 'todo' | 'bookmark'
+  duplicates: WorkspaceCandidate[]
 }
 
 function toAssetListItemFromNote(note: NoteListItem): AssetListItem {
@@ -94,6 +129,110 @@ function toAssetListItemFromBookmark(bookmark: BookmarkListItem): AssetListItem 
     createdAt: bookmark.createdAt,
     updatedAt: bookmark.updatedAt,
   }
+}
+
+function toCandidateLabel(input: {
+  title?: string | null
+  fallback: string
+}) {
+  const title = input.title?.trim()
+  return title && title.length > 0 ? title : input.fallback
+}
+
+export async function findWorkspaceCreateDuplicates(input: {
+  userId: string
+  steps: WorkspaceCreateDuplicateCheckStep[]
+}): Promise<WorkspaceCreateDuplicateCheckResult[]> {
+  const results: WorkspaceCreateDuplicateCheckResult[] = []
+
+  for (const step of input.steps) {
+    if (step.action === 'create_bookmark') {
+      const url = step.url?.trim()
+      if (!url) {
+        continue
+      }
+
+      const duplicates = await findDuplicateBookmarks({
+        userId: input.userId,
+        url,
+      })
+
+      if (duplicates.length > 0) {
+        results.push({
+          stepId: step.stepId,
+          target: 'bookmark',
+          duplicates: duplicates.map((bookmark) => ({
+            id: bookmark.id,
+            label: toCandidateLabel({
+              title: bookmark.title,
+              fallback: bookmark.url ?? '已有书签',
+            }),
+            reason: 'URL 完全一致',
+          })),
+        })
+      }
+
+      continue
+    }
+
+    if (step.action === 'create_todo') {
+      const title = step.title?.trim()
+      if (!title) {
+        continue
+      }
+
+      const duplicates = await findDuplicateTodos({
+        userId: input.userId,
+        title,
+        dueAt: step.dueAt ?? null,
+        timeText: step.timeText ?? null,
+      })
+
+      if (duplicates.length > 0) {
+        results.push({
+          stepId: step.stepId,
+          target: 'todo',
+          duplicates: duplicates.map((todo) => ({
+            id: todo.id,
+            label: toCandidateLabel({
+              title: todo.title,
+              fallback: todo.originalText,
+            }),
+            reason: '标题和时间完全一致',
+          })),
+        })
+      }
+
+      continue
+    }
+
+    const content = step.content?.trim()
+    if (!content) {
+      continue
+    }
+
+    const duplicates = await findDuplicateNotes({
+      userId: input.userId,
+      content,
+    })
+
+    if (duplicates.length > 0) {
+      results.push({
+        stepId: step.stepId,
+        target: 'note',
+        duplicates: duplicates.map((note) => ({
+          id: note.id,
+          label: toCandidateLabel({
+            title: note.title,
+            fallback: note.originalText,
+          }),
+          reason: '内容完全一致',
+        })),
+      })
+    }
+  }
+
+  return results
 }
 
 export async function createWorkspaceNoteAsset(input: {

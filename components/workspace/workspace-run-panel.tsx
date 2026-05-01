@@ -23,6 +23,11 @@ import {
 } from './workspace-view-primitives'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
+import {
+  workspacePlanPreviewSchema,
+  workspacePreviewSchema,
+  workspaceUnderstandingPreviewSchema,
+} from '@/shared/workspace/workspace-run-protocol'
 import type {
   WorkspaceInteraction,
   WorkspaceInteractionResponse,
@@ -683,6 +688,85 @@ function getBatchStepItem(step: WorkspaceRunStepResult) {
   }
 }
 
+function derivePreviewStateFromTimeline(timeline: WorkspaceRunStreamEvent[]) {
+  let understandingPreview: WorkspaceUnderstandingPreview | null = null
+  let planPreview: WorkspacePlanPreview | null = null
+
+  for (const event of timeline) {
+    if (event.type !== 'phase_completed') {
+      continue
+    }
+
+    if (event.phase === 'preview') {
+      const parsed = workspacePreviewSchema.safeParse(event.output)
+      if (parsed.success) {
+        understandingPreview = parsed.data.understanding ?? understandingPreview
+        planPreview = parsed.data.plan ?? planPreview
+      }
+      continue
+    }
+
+    if (event.phase === 'understand' && understandingPreview === null) {
+      const parsed = workspaceUnderstandingPreviewSchema.safeParse(event.output)
+      if (parsed.success) {
+        understandingPreview = parsed.data
+      }
+      continue
+    }
+
+    if (event.phase === 'plan' && planPreview === null) {
+      const parsed = workspacePlanPreviewSchema.safeParse(event.output)
+      if (parsed.success) {
+        planPreview = parsed.data
+      }
+    }
+  }
+
+  return {
+    understandingPreview,
+    planPreview,
+  }
+}
+
+function DuplicateConfirmationCard({
+  interaction,
+}: {
+  interaction: Extract<WorkspaceInteraction, { type: 'confirm_duplicate' }>
+}) {
+  const targetLabelMap = {
+    todo: '待办',
+    note: '笔记',
+    bookmark: '书签',
+  } as const
+
+  return (
+    <div className="space-y-3 rounded-[1rem] border border-border/10 bg-muted/35 px-4 py-3">
+      <div className="space-y-1">
+        <p className="text-xs text-on-surface-variant/60">疑似重复{targetLabelMap[interaction.target]}</p>
+        <p className="text-sm font-medium text-on-surface">{interaction.current.title}</p>
+        <p className="text-sm text-on-surface-variant/80">{interaction.current.preview}</p>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-xs text-on-surface-variant/60">已存在内容</p>
+        <ol className="space-y-2">
+          {interaction.duplicates.map((candidate) => (
+            <li
+              key={candidate.id}
+              className="rounded-[0.85rem] border border-border/10 bg-surface-container-lowest/80 px-3 py-2"
+            >
+              <p className="text-sm text-on-surface">{candidate.label}</p>
+              {candidate.reason ? (
+                <p className="mt-1 text-xs text-on-surface-variant/70">{candidate.reason}</p>
+              ) : null}
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  )
+}
+
 function InteractionPanel({
   interaction,
   candidateSelection,
@@ -717,6 +801,8 @@ function InteractionPanel({
           onSubmit={onResume}
         />
       )
+    case 'confirm_duplicate':
+      return <DuplicateConfirmationCard key={interaction.id} interaction={interaction} />
     case 'edit_draft_tasks':
       return <DraftTaskEditor key={interaction.id} ref={draftEditorRef} interaction={interaction} />
     case 'confirm_plan':
@@ -741,6 +827,10 @@ function InteractionActionIntro({
 
   if (interaction.type === 'select_candidate') {
     return '选择最合适的候选内容，或跳过这次匹配。'
+  }
+
+  if (interaction.type === 'confirm_duplicate') {
+    return '这条内容看起来和已有记录重复，你可以继续创建，也可以只跳过这一项。'
   }
 
   return '补充缺失信息后即可继续。'
@@ -773,13 +863,16 @@ export function WorkspaceRunPanel({
 }) {
   const visiblePhase = getVisiblePhase(timeline)
   const resolvedResult = normalizeFinalResult(result)
+  const derivedPreviewState = derivePreviewStateFromTimeline(timeline)
+  const resolvedUnderstandingPreview = understandingPreview ?? derivedPreviewState.understandingPreview
+  const resolvedPlanPreview = planPreview ?? derivedPreviewState.planPreview
   const draftEditorRef = useRef<DraftTaskEditorHandle>(null)
   const [detailsExpanded, setDetailsExpanded] = useState(false)
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null)
   const slotFormId = useId()
   const showDisclosure =
     status !== 'streaming' &&
-    (understandingPreview || planPreview)
+    (resolvedUnderstandingPreview || resolvedPlanPreview)
 
   useEffect(() => {
     setSelectedCandidateId(null)
@@ -893,6 +986,35 @@ export function WorkspaceRunPanel({
       )
     }
 
+    if (interaction.type === 'confirm_duplicate') {
+      return (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="default"
+            onClick={() => onResume({ type: 'confirm_duplicate', action: 'create' })}
+            className={workspacePrimaryActionButtonClassName}
+          >
+            <Check data-icon="inline-start" />
+            仍然创建
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => onResume({ type: 'confirm_duplicate', action: 'skip' })}
+            className={workspaceSecondaryActionButtonClassName}
+          >
+            跳过这项
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => onResume({ type: 'confirm_duplicate', action: 'cancel' })}
+            className={workspaceSecondaryActionButtonClassName}
+          >
+            取消
+          </Button>
+        </div>
+      )
+    }
+
     return null
   }
 
@@ -948,7 +1070,7 @@ export function WorkspaceRunPanel({
               transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
             >
               <StreamingPanel
-                planPreview={planPreview}
+                planPreview={resolvedPlanPreview}
                 timeline={timeline}
                 visiblePhase={visiblePhase}
               />
@@ -988,30 +1110,30 @@ export function WorkspaceRunPanel({
 
           {detailsExpanded ? (
             <div className="mt-3 space-y-3">
-              {understandingPreview ? (
+              {resolvedUnderstandingPreview ? (
                 <div className="space-y-2 rounded-[0.75rem] bg-muted/30 px-3 py-2.5">
                   <p className="text-xs text-on-surface-variant/50">原始输入</p>
-                  <p className="text-sm text-on-surface">{understandingPreview.rawInput}</p>
+                  <p className="text-sm text-on-surface">{resolvedUnderstandingPreview.rawInput}</p>
 
-                  {understandingPreview.normalizedInput !== understandingPreview.rawInput ? (
+                  {resolvedUnderstandingPreview.normalizedInput !== resolvedUnderstandingPreview.rawInput ? (
                     <div className="space-y-1">
                       <p className="text-xs text-on-surface-variant/50">标准化后</p>
-                      <p className="text-sm text-on-surface">{understandingPreview.normalizedInput}</p>
+                      <p className="text-sm text-on-surface">{resolvedUnderstandingPreview.normalizedInput}</p>
                     </div>
                   ) : null}
 
-                  {understandingPreview.corrections.length > 0 ? (
+                  {resolvedUnderstandingPreview.corrections.length > 0 ? (
                     <div className="space-y-1">
                       <p className="text-xs text-on-surface-variant/50">修正</p>
-                      <p className="text-sm text-on-surface">{understandingPreview.corrections.join('、')}</p>
+                      <p className="text-sm text-on-surface">{resolvedUnderstandingPreview.corrections.join('、')}</p>
                     </div>
                   ) : null}
 
-                  {understandingPreview.draftTasks.length > 0 ? (
+                  {resolvedUnderstandingPreview.draftTasks.length > 0 ? (
                     <div className="space-y-1">
-                      <p className="text-xs text-on-surface-variant/50">识别任务 ({understandingPreview.draftTasks.length})</p>
+                      <p className="text-xs text-on-surface-variant/50">识别任务 ({resolvedUnderstandingPreview.draftTasks.length})</p>
                       <ol className="space-y-1">
-                        {understandingPreview.draftTasks.map((task) => (
+                        {resolvedUnderstandingPreview.draftTasks.map((task) => (
                           <li key={task.id} className="text-sm text-on-surface">
                             {task.title}
                           </li>
@@ -1022,11 +1144,11 @@ export function WorkspaceRunPanel({
                 </div>
               ) : null}
 
-              {planPreview ? (
+              {resolvedPlanPreview ? (
                 <div className="space-y-2 rounded-[0.75rem] bg-muted/30 px-3 py-2.5">
-                  <p className="text-xs text-on-surface-variant/50">执行步骤 ({planPreview.steps.length})</p>
+                  <p className="text-xs text-on-surface-variant/50">执行步骤 ({resolvedPlanPreview.steps.length})</p>
                   <ol className="space-y-1">
-                    {planPreview.steps.map((step) => (
+                    {resolvedPlanPreview.steps.map((step) => (
                       <li key={step.id} className="text-sm text-on-surface">
                         {step.preview}
                       </li>

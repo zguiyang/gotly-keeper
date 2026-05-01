@@ -5,6 +5,7 @@ import { ACTION_LABELS } from './workspace-run-action-labels'
 import type {
   DraftWorkspaceTask,
   WorkspaceCandidate,
+  WorkspaceDuplicateReviewState,
   WorkspaceInteraction,
   WorkspacePlanPreview,
   WorkspaceRunStreamEvent,
@@ -68,6 +69,7 @@ export type WorkspaceReviewPendingRunSnapshot = {
   } | null
   understandingPreview: WorkspaceUnderstandingPreview | null
   correctionNotes: WorkspaceCorrectionNote[]
+  duplicateReview?: WorkspaceDuplicateReviewState
   updatedAt: string
 }
 
@@ -81,6 +83,8 @@ type ReviewWorkspaceRunPlanInput = {
   updatedAt: string
   referenceTime?: string
   draftTasksConfirmed?: boolean
+  duplicateCandidates?: ReviewableDuplicateCandidate[]
+  duplicateReview?: WorkspaceDuplicateReviewState
 }
 
 export type ReviewWorkspaceRunPlanDecision =
@@ -97,11 +101,18 @@ export type ReviewWorkspaceRunPlanDecision =
       status: 'await_user'
       reason:
         | 'edit_draft_tasks'
+        | 'confirm_duplicate'
         | 'select_candidate'
         | 'clarify_slots'
         | 'confirm_plan'
       snapshot: WorkspaceReviewPendingRunSnapshot
     }
+
+export type ReviewableDuplicateCandidate = {
+  stepId: string
+  target: 'todo' | 'note' | 'bookmark'
+  duplicates: WorkspaceCandidate[]
+}
 
 const MIN_AUTO_EXECUTE_CONFIDENCE = 0.78
 
@@ -133,6 +144,7 @@ function buildSnapshot(input: {
   plan: ReviewablePlan
   updatedAt: string
   correctionNotes?: WorkspaceCorrectionNote[]
+  duplicateReview?: WorkspaceDuplicateReviewState
 }): WorkspaceReviewPendingRunSnapshot {
   const planPreview = toPlanPreview(input.plan)
 
@@ -159,6 +171,7 @@ function buildSnapshot(input: {
     },
     understandingPreview: input.understandingPreview,
     correctionNotes: input.correctionNotes ?? input.understandingPreview?.corrections ?? [],
+    duplicateReview: input.duplicateReview,
     updatedAt: input.updatedAt,
   }
 }
@@ -334,6 +347,7 @@ function buildConfirmPlanDecision(input: {
   referenceTime?: string
   message: string
   correctionNotes?: WorkspaceCorrectionNote[]
+  duplicateReview?: WorkspaceDuplicateReviewState
 }): {
   status: 'await_user'
   reason: 'confirm_plan'
@@ -359,6 +373,7 @@ function buildConfirmPlanDecision(input: {
       plan: input.plan,
       updatedAt: input.updatedAt,
       correctionNotes: input.correctionNotes,
+      duplicateReview: input.duplicateReview,
     }),
   }
 }
@@ -431,6 +446,76 @@ function buildEditDraftTasksDecision(input: {
       understandingPreview: input.understandingPreview,
       plan: input.plan,
       updatedAt: input.updatedAt,
+    }),
+  }
+}
+
+function getUnresolvedDuplicateCandidate(input: ReviewWorkspaceRunPlanInput) {
+  const decisions = new Set((input.duplicateReview?.decisions ?? []).map((decision) => decision.stepId))
+
+  return (input.duplicateCandidates ?? []).find((candidate) => !decisions.has(candidate.stepId))
+}
+
+function canAutoExecuteConfirmedMultiTask(input: ReviewWorkspaceRunPlanInput) {
+  if (input.draftTasks.length <= 1 || !input.draftTasksConfirmed) {
+    return false
+  }
+
+  if ((input.duplicateReview?.decisions ?? []).length === 0) {
+    return false
+  }
+
+  return input.plan.steps.length > 0 && input.plan.steps.every(
+    (step) => step.risk === 'low' && step.requiresUserApproval === false
+  )
+}
+
+function buildConfirmDuplicateDecision(input: {
+  runId: string
+  plan: ReviewablePlan
+  understandingPreview: WorkspaceUnderstandingPreview | null
+  updatedAt: string
+  referenceTime?: string
+  candidate: ReviewableDuplicateCandidate
+  duplicateReview?: WorkspaceDuplicateReviewState
+}): {
+  status: 'await_user'
+  reason: 'confirm_duplicate'
+  snapshot: WorkspaceReviewPendingRunSnapshot
+} {
+  const interactionId = createInteractionId(input.runId, `confirm_duplicate_${input.candidate.stepId}`)
+  const step = input.plan.steps.find((planStep) => planStep.id === input.candidate.stepId)
+  const previewStep = step ? mapPlanStepToPreviewStep(step) : null
+  const targetLabelMap = {
+    todo: '待办',
+    note: '笔记',
+    bookmark: '书签',
+  } as const
+
+  return {
+    status: 'await_user',
+    reason: 'confirm_duplicate',
+    snapshot: buildSnapshot({
+      runId: input.runId,
+      referenceTime: input.referenceTime,
+      interaction: {
+        runId: input.runId,
+        id: interactionId,
+        type: 'confirm_duplicate',
+        target: input.candidate.target,
+        message: `发现可能重复的${targetLabelMap[input.candidate.target]}，请确认是否仍然创建。`,
+        actions: ['create', 'skip', 'cancel'],
+        current: {
+          stepId: input.candidate.stepId,
+          title: step?.title ?? previewStep?.title ?? '创建内容',
+          preview: previewStep?.preview ?? '创建内容',
+        },
+        duplicates: input.candidate.duplicates,
+      },
+      understandingPreview: input.understandingPreview,
+      plan: input.plan,
+      updatedAt: input.updatedAt,
+      duplicateReview: input.duplicateReview,
     }),
   }
 }
@@ -532,6 +617,27 @@ export function reviewWorkspaceRunPlan(
   }
 
   if (input.draftTasks.length > 1) {
+    const duplicateCandidate = getUnresolvedDuplicateCandidate(input)
+    if (duplicateCandidate) {
+      return buildConfirmDuplicateDecision({
+        runId: input.runId,
+        plan: input.plan,
+        understandingPreview: input.understandingPreview,
+        updatedAt: input.updatedAt,
+        referenceTime: input.referenceTime,
+        candidate: duplicateCandidate,
+        duplicateReview: input.duplicateReview,
+      })
+    }
+
+    if (canAutoExecuteConfirmedMultiTask(input)) {
+      return {
+        status: 'auto_execute',
+        reason: 'single_low_risk_clear_task',
+        snapshot: null,
+      }
+    }
+
     return buildConfirmPlanDecision({
       runId: input.runId,
       plan: input.plan,
@@ -539,6 +645,7 @@ export function reviewWorkspaceRunPlan(
       updatedAt: input.updatedAt,
       referenceTime: input.referenceTime,
       message: '草稿任务已确认，请确认执行计划。',
+      duplicateReview: input.duplicateReview,
     })
   }
 
@@ -589,20 +696,6 @@ export function reviewWorkspaceRunPlan(
     })
   }
 
-  const correctionNotes = getCorrectionNotes(input, task)
-
-  if (correctionNotes.length > 0) {
-    return buildConfirmPlanDecision({
-      runId: input.runId,
-      plan: input.plan,
-      understandingPreview: input.understandingPreview,
-      updatedAt: input.updatedAt,
-      referenceTime: input.referenceTime,
-      message: '检测到纠正内容，请确认再执行。',
-      correctionNotes,
-    })
-  }
-
   if (task && step && hasMissingRequiredWriteFields(task, step)) {
     return buildClarifyDecision({
       runId: input.runId,
@@ -623,6 +716,34 @@ export function reviewWorkspaceRunPlan(
     }
   }
 
+  const duplicateCandidate = getUnresolvedDuplicateCandidate(input)
+  if (duplicateCandidate) {
+    return buildConfirmDuplicateDecision({
+      runId: input.runId,
+      plan: input.plan,
+      understandingPreview: input.understandingPreview,
+      updatedAt: input.updatedAt,
+      referenceTime: input.referenceTime,
+      candidate: duplicateCandidate,
+      duplicateReview: input.duplicateReview,
+    })
+  }
+
+  const correctionNotes = getCorrectionNotes(input, task)
+
+  if (correctionNotes.length > 0) {
+    return buildConfirmPlanDecision({
+      runId: input.runId,
+      plan: input.plan,
+      understandingPreview: input.understandingPreview,
+      updatedAt: input.updatedAt,
+      referenceTime: input.referenceTime,
+      message: '检测到纠正内容，请确认再执行。',
+      correctionNotes,
+      duplicateReview: input.duplicateReview,
+    })
+  }
+
   if (hasWriteTitleDrift(task, step)) {
     return buildConfirmPlanDecision({
       runId: input.runId,
@@ -631,6 +752,7 @@ export function reviewWorkspaceRunPlan(
       updatedAt: input.updatedAt,
       referenceTime: input.referenceTime,
       message: '计划标题与原始写入标题存在差异，请确认后执行。',
+      duplicateReview: input.duplicateReview,
     })
   }
 
@@ -657,5 +779,6 @@ export function reviewWorkspaceRunPlan(
     updatedAt: input.updatedAt,
     referenceTime: input.referenceTime,
     message: '请确认执行计划。',
+    duplicateReview: input.duplicateReview,
   })
 }

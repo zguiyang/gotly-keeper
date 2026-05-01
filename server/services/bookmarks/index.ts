@@ -5,6 +5,7 @@ export { type Bookmark } from './bookmarks.schema'
 
 export { createBookmark } from './bookmarks.command'
 export {
+  findDuplicateBookmarks,
   listBookmarks,
   listBookmarksPage,
   getBookmarkById,
