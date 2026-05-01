@@ -87,22 +87,24 @@ describe('useWorkspaceStream', () => {
         timeline: [
           { type: 'phase_completed', phase: 'preview', output: {} },
         ],
+        preview: {
+          plan: {
+            summary: '准备执行 1 个任务。',
+            steps: [
+              {
+                id: 'step_1',
+                toolName: 'update_todo',
+                title: '更新待办',
+                preview: '更新待办：给客户发报价',
+              },
+            ],
+          },
+        },
         understandingPreview: {
           rawInput: '把报价改到后天下午',
           normalizedInput: '把报价改到后天下午',
           draftTasks: [],
           corrections: ['后天下午 -> 2026-04-29 15:00'],
-        },
-        planPreview: {
-          summary: '准备执行 1 个任务。',
-          steps: [
-            {
-              id: 'step_1',
-              toolName: 'update_todo',
-              title: '更新待办',
-              preview: '更新待办：给客户发报价',
-            },
-          ],
         },
         correctionNotes: ['后天下午 -> 2026-04-29 15:00'],
         updatedAt: '2026-04-27T01:00:00.000Z',

@@ -1,4 +1,5 @@
 import { composeWorkspaceAnswer } from './workspace-compose'
+import { findWorkspaceRunDuplicateCandidates } from './workspace-run-duplicates'
 import { buildBatchAnswer, buildCompletedRunResult } from './workspace-run-completed'
 import { executeWorkspaceRunSteps } from './workspace-run-executor'
 import { normalizeWorkspaceRunInput } from './workspace-run-normalizer'
@@ -92,7 +93,8 @@ async function runReview(
   plan: WorkspaceRunPlannerResult,
   understandingPreview: Parameters<typeof reviewWorkspaceRunPlan>[0]['understandingPreview'],
   updatedAt: string,
-  referenceTime: string
+  referenceTime: string,
+  duplicateCandidates: Parameters<typeof reviewWorkspaceRunPlan>[0]['duplicateCandidates']
 ) {
   emitEvent(ctx, { type: 'phase_started', phase: 'review' })
 
@@ -114,6 +116,7 @@ async function runReview(
     understandingPreview,
     updatedAt,
     referenceTime,
+    duplicateCandidates,
   })
 
   emitEvent(ctx, { type: 'phase_completed', phase: 'review', output: reviewResult })
@@ -231,6 +234,10 @@ export async function handleNewInput(
     const draftTasks = normalizedUnderstanding.draftTasks as Parameters<typeof reviewWorkspaceRunPlan>[0]['draftTasks']
 
     const plannerResult = await runPlan(ctx, normalizedUnderstanding.draftTasks, searchCandidates, runModel)
+    const duplicateCandidates = await findWorkspaceRunDuplicateCandidates({
+      userId,
+      plannerResult,
+    })
 
     const reviewResult = await runReview(
       ctx,
@@ -238,7 +245,8 @@ export async function handleNewInput(
       plannerResult,
       normalizedUnderstanding,
       updatedAt,
-      updatedAt
+      updatedAt,
+      duplicateCandidates
     )
 
     if (reviewResult.status === 'reject') {

@@ -244,6 +244,122 @@ describe('workspace-run-review', () => {
     })
   })
 
+  it('requests duplicate confirmation for single create steps with duplicate hits', () => {
+    const draftTask = createDraftTask({
+      target: 'todos',
+      title: '给客户发报价',
+      slots: {
+        title: '给客户发报价',
+        timeText: '明天下午',
+      },
+    })
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [draftTask],
+      plan: createPlan({
+        steps: [
+          {
+            id: 'step_1',
+            action: 'create_todo',
+            target: 'todos',
+            title: '给客户发报价',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+      updatedAt,
+      duplicateCandidates: [
+        {
+          stepId: 'step_1',
+          target: 'todo',
+          duplicates: [
+            {
+              id: 'todo_1',
+              label: '给客户发报价',
+              reason: '标题和时间完全一致',
+            },
+          ],
+        },
+      ],
+    })
+
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('confirm_duplicate')
+    expect(awaitUser.snapshot.interaction).toMatchObject({
+      type: 'confirm_duplicate',
+      target: 'todo',
+      actions: ['create', 'skip', 'cancel'],
+      current: {
+        stepId: 'step_1',
+        title: '给客户发报价',
+      },
+    })
+  })
+
+  it('prioritizes multi-task draft editing before duplicate confirmation', () => {
+    const draftTasks = [
+      createDraftTask({
+        id: 'task_1',
+        target: 'todos',
+        title: '给客户发报价',
+        slots: { title: '给客户发报价' },
+      }),
+      createDraftTask({
+        id: 'task_2',
+        target: 'notes',
+        title: '记录会议纪要',
+        slots: {},
+      }),
+    ]
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks,
+      plan: createPlan({
+        summary: '准备执行 2 个任务。',
+        steps: [
+          {
+            id: 'step_1',
+            action: 'create_todo',
+            target: 'todos',
+            title: '给客户发报价',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+          {
+            id: 'step_2',
+            action: 'create_note',
+            target: 'notes',
+            title: '记录会议纪要',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks }),
+      updatedAt,
+      duplicateCandidates: [
+        {
+          stepId: 'step_1',
+          target: 'todo',
+          duplicates: [
+            {
+              id: 'todo_1',
+              label: '给客户发报价',
+              reason: '标题完全一致',
+            },
+          ],
+        },
+      ],
+    })
+
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('edit_draft_tasks')
+  })
+
   it('does not ask candidate selection when update has only one candidate', () => {
     const draftTask = createDraftTask({
       intent: 'update',

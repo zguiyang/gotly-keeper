@@ -69,6 +69,14 @@ const workspaceCandidateSchema = z.object({
 
 export type WorkspaceCandidate = z.infer<typeof workspaceCandidateSchema>
 
+const workspaceDuplicateCurrentSchema = z.object({
+  stepId: z.string(),
+  title: z.string(),
+  preview: z.string(),
+})
+
+export type WorkspaceDuplicateCurrent = z.infer<typeof workspaceDuplicateCurrentSchema>
+
 const workspaceClarificationFieldSchema = z.object({
   key: z.string(),
   label: z.string(),
@@ -109,6 +117,20 @@ const workspaceInteractionSchema = z.discriminatedUnion('type', [
   z.object({
     runId: z.string(),
     id: z.string(),
+    type: z.literal('confirm_duplicate'),
+    target: z.enum(['todo', 'note', 'bookmark']),
+    message: z.string(),
+    actions: z.tuple([
+      z.literal('create'),
+      z.literal('skip'),
+      z.literal('cancel'),
+    ]),
+    current: workspaceDuplicateCurrentSchema,
+    duplicates: z.array(workspaceCandidateSchema),
+  }),
+  z.object({
+    runId: z.string(),
+    id: z.string(),
     type: z.literal('clarify_slots'),
     message: z.string(),
     actions: z.tuple([z.literal('submit'), z.literal('cancel')]),
@@ -134,6 +156,11 @@ export type ConfirmPlanInteraction = Extract<
 export type SelectCandidateInteraction = Extract<
   WorkspaceInteraction,
   { type: 'select_candidate' }
+>
+
+export type ConfirmDuplicateInteraction = Extract<
+  WorkspaceInteraction,
+  { type: 'confirm_duplicate' }
 >
 
 export type ClarifySlotsInteraction = Extract<
@@ -174,6 +201,20 @@ export const workspaceInteractionResponseSchema = z.discriminatedUnion('type', [
     }),
     z.object({
       type: z.literal('select_candidate'),
+      action: z.literal('cancel'),
+    }),
+  ]),
+  z.discriminatedUnion('action', [
+    z.object({
+      type: z.literal('confirm_duplicate'),
+      action: z.literal('create'),
+    }),
+    z.object({
+      type: z.literal('confirm_duplicate'),
+      action: z.literal('skip'),
+    }),
+    z.object({
+      type: z.literal('confirm_duplicate'),
       action: z.literal('cancel'),
     }),
   ]),
@@ -321,6 +362,19 @@ export type WorkspaceRunStreamEvent = z.infer<
   typeof workspaceRunStreamEventSchema
 >
 
+const workspaceDuplicateDecisionSchema = z.object({
+  stepId: z.string(),
+  action: z.enum(['create', 'skip']),
+})
+
+const workspaceDuplicateReviewStateSchema = z.object({
+  draftTasksConfirmed: z.boolean().default(false),
+  decisions: z.array(workspaceDuplicateDecisionSchema),
+})
+
+export type WorkspaceDuplicateDecision = z.infer<typeof workspaceDuplicateDecisionSchema>
+export type WorkspaceDuplicateReviewState = z.infer<typeof workspaceDuplicateReviewStateSchema>
+
 const workspacePendingRunSnapshotSchema = z
   .object({
     runId: z.string(),
@@ -333,6 +387,7 @@ const workspacePendingRunSnapshotSchema = z
     timeline: z.array(workspaceRunStreamEventSchema),
     understandingPreview: workspaceUnderstandingPreviewSchema.nullable(),
     correctionNotes: z.array(z.string()),
+    duplicateReview: workspaceDuplicateReviewStateSchema.optional(),
     updatedAt: z.string(),
   })
   .superRefine((snapshot, ctx) => {
@@ -360,7 +415,9 @@ export type WorkspacePendingRunSnapshot = z.infer<
 export {
   workspaceCandidateSchema,
   workspaceClarificationFieldSchema,
+  workspaceDuplicateCurrentSchema,
   workspaceDraftTaskSchema,
+  workspaceDuplicateReviewStateSchema,
   workspaceInteractionSchema,
   workspacePendingRunSnapshotSchema,
   workspacePlanPreviewSchema,

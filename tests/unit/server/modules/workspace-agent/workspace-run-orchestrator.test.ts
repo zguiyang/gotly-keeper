@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type {
   SearchWorkspaceRunCandidates,
@@ -9,6 +9,14 @@ import type {
   DraftWorkspaceTask,
   WorkspaceRunStreamEvent,
 } from '@/shared/workspace/workspace-run-protocol'
+
+const duplicateCandidatesMock = vi.hoisted(() => ({
+  findWorkspaceRunDuplicateCandidates: vi.fn(async () => []),
+}))
+
+vi.mock('@/server/modules/workspace-agent/workspace-run-duplicates', () => ({
+  findWorkspaceRunDuplicateCandidates: duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates,
+}))
 
 type PhaseEvent = Extract<WorkspaceRunStreamEvent, { type: 'phase_started' | 'phase_completed' }>
 
@@ -48,6 +56,11 @@ const createMockSearchCandidates = (): SearchWorkspaceRunCandidates => {
 }
 
 describe('workspace-run-orchestrator', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates.mockResolvedValue([])
+  })
+
   describe('aborted signal', () => {
     it('returns aborted when signal is already aborted', async () => {
       const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
@@ -452,6 +465,7 @@ describe('workspace-run-orchestrator', () => {
 
       expect(result.ok).toBe(false)
       expect(result.phase).toBe('cancelled')
+      expect(result.message).toBe('已取消这次处理。')
       expect(store.failAwaitingRuns).toHaveBeenCalledWith('user_123')
     })
 
@@ -552,6 +566,301 @@ describe('workspace-run-orchestrator', () => {
           interaction: expect.objectContaining({ type: 'edit_draft_tasks' }),
         })
       )
+    })
+
+    it('advances to the next duplicate confirmation after skipping the current duplicate step', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const store = createMockStore()
+      duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates.mockResolvedValueOnce([
+        {
+          stepId: 'step_1',
+          target: 'todo',
+          duplicates: [
+            { id: 'todo_1', label: '给客户发报价', reason: '标题和时间完全一致' },
+          ],
+        },
+        {
+          stepId: 'step_2',
+          target: 'bookmark',
+          duplicates: [
+            { id: 'bookmark_1', label: 'OpenAI', reason: 'URL 完全一致' },
+          ],
+        },
+      ])
+      const draftTasks: DraftWorkspaceTask[] = [
+        {
+          id: 'task_1',
+          intent: 'create',
+          target: 'todos',
+          title: '给客户发报价',
+          confidence: 0.95,
+          ambiguities: [],
+          corrections: [],
+          slots: { title: '给客户发报价', timeText: '明天下午' },
+        },
+        {
+          id: 'task_2',
+          intent: 'create',
+          target: 'bookmarks',
+          title: 'OpenAI',
+          confidence: 0.93,
+          ambiguities: [],
+          corrections: [],
+          slots: { url: 'https://openai.com' },
+        },
+      ]
+
+      store.loadLatestAwaiting = vi.fn().mockResolvedValue({
+        runId: 'run_123',
+        phase: 'review',
+        status: 'awaiting_user',
+        interactionId: 'run_123_confirm_duplicate_step_1',
+        interaction: {
+          runId: 'run_123',
+          id: 'run_123_confirm_duplicate_step_1',
+          type: 'confirm_duplicate',
+          target: 'todo',
+          message: '发现可能重复的待办。',
+          actions: ['create', 'skip', 'cancel'] as const,
+          current: {
+            stepId: 'step_1',
+            title: '给客户发报价',
+            preview: '创建待办：给客户发报价',
+          },
+          duplicates: [
+            { id: 'todo_1', label: '给客户发报价', reason: '标题和时间完全一致' },
+          ],
+        },
+        timeline: [],
+        preview: null,
+        understandingPreview: {
+          rawInput: '明天下午给客户发报价，并收藏 https://openai.com',
+          normalizedInput: '明天下午给客户发报价，并收藏 https://openai.com',
+          draftTasks,
+          corrections: [],
+        },
+        correctionNotes: [],
+        duplicateReview: {
+          draftTasksConfirmed: true,
+          decisions: [],
+        },
+        updatedAt: new Date().toISOString(),
+      })
+
+      const events: unknown[] = []
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'resume',
+          runId: 'run_123',
+          interactionId: 'run_123_confirm_duplicate_step_1',
+          response: { type: 'confirm_duplicate', action: 'skip' },
+        },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (event) => events.push(event),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('review')
+      expect(events).toContainEqual(
+        expect.objectContaining({
+          type: 'awaiting_user',
+          interaction: expect.objectContaining({
+            type: 'confirm_duplicate',
+            current: expect.objectContaining({ stepId: 'step_2' }),
+          }),
+        })
+      )
+    })
+
+    it('completes without executing when all duplicate create steps are skipped', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const store = createMockStore()
+      duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates.mockResolvedValueOnce([
+        {
+          stepId: 'step_1',
+          target: 'todo',
+          duplicates: [
+            { id: 'todo_1', label: '给客户发报价', reason: '标题和时间完全一致' },
+          ],
+        },
+      ])
+      const draftTasks: DraftWorkspaceTask[] = [
+        {
+          id: 'task_1',
+          intent: 'create',
+          target: 'todos',
+          title: '给客户发报价',
+          confidence: 0.95,
+          ambiguities: [],
+          corrections: [],
+          slots: { title: '给客户发报价', timeText: '明天下午' },
+        },
+      ]
+
+      store.loadLatestAwaiting = vi.fn().mockResolvedValue({
+        runId: 'run_123',
+        phase: 'review',
+        status: 'awaiting_user',
+        interactionId: 'run_123_confirm_duplicate_step_1',
+        interaction: {
+          runId: 'run_123',
+          id: 'run_123_confirm_duplicate_step_1',
+          type: 'confirm_duplicate',
+          target: 'todo',
+          message: '发现可能重复的待办。',
+          actions: ['create', 'skip', 'cancel'] as const,
+          current: {
+            stepId: 'step_1',
+            title: '给客户发报价',
+            preview: '创建待办：给客户发报价',
+          },
+          duplicates: [
+            { id: 'todo_1', label: '给客户发报价', reason: '标题和时间完全一致' },
+          ],
+        },
+        timeline: [],
+        preview: {
+          plan: {
+            summary: '准备执行 1 个任务。',
+            steps: [
+              {
+                id: 'step_1',
+                toolName: 'create_todo',
+                title: '给客户发报价',
+                preview: '创建待办：给客户发报价',
+              },
+            ],
+          },
+        },
+        understandingPreview: {
+          rawInput: '明天下午给客户发报价',
+          normalizedInput: '明天下午给客户发报价',
+          draftTasks,
+          corrections: [],
+        },
+        correctionNotes: [],
+        duplicateReview: {
+          draftTasksConfirmed: false,
+          decisions: [],
+        },
+        updatedAt: new Date().toISOString(),
+      })
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'resume',
+          runId: 'run_123',
+          interactionId: 'run_123_confirm_duplicate_step_1',
+          response: { type: 'confirm_duplicate', action: 'skip' },
+        },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('completed')
+      expect(result.result?.summary).toContain('跳过')
+      expect(result.result?.preview?.plan?.steps ?? []).toEqual([])
+    })
+
+    it('executes remaining low-risk steps directly after skipping duplicates in confirmed multi-task flow', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const store = createMockStore()
+      duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates.mockResolvedValueOnce([
+        {
+          stepId: 'step_1',
+          target: 'todo',
+          duplicates: [
+            { id: 'todo_1', label: '给客户发报价', reason: '标题和时间完全一致' },
+          ],
+        },
+      ])
+
+      const draftTasks: DraftWorkspaceTask[] = [
+        {
+          id: 'task_1',
+          intent: 'create',
+          target: 'todos',
+          title: '给客户发报价',
+          confidence: 0.95,
+          ambiguities: [],
+          corrections: [],
+          slots: { title: '给客户发报价', timeText: '明天下午' },
+        },
+        {
+          id: 'task_2',
+          intent: 'create',
+          target: 'bookmarks',
+          title: 'OpenAI',
+          confidence: 0.95,
+          ambiguities: [],
+          corrections: [],
+          slots: { url: 'https://openai.com' },
+        },
+      ]
+
+      store.loadLatestAwaiting = vi.fn().mockResolvedValue({
+        runId: 'run_123',
+        phase: 'review',
+        status: 'awaiting_user',
+        interactionId: 'run_123_confirm_duplicate_step_1',
+        interaction: {
+          runId: 'run_123',
+          id: 'run_123_confirm_duplicate_step_1',
+          type: 'confirm_duplicate',
+          target: 'todo',
+          message: '发现可能重复的待办。',
+          actions: ['create', 'skip', 'cancel'] as const,
+          current: {
+            stepId: 'step_1',
+            title: '给客户发报价',
+            preview: '创建待办：给客户发报价',
+          },
+          duplicates: [
+            { id: 'todo_1', label: '给客户发报价', reason: '标题和时间完全一致' },
+          ],
+        },
+        timeline: [],
+        preview: null,
+        understandingPreview: {
+          rawInput: '明天下午给客户发报价，并收藏 https://openai.com',
+          normalizedInput: '明天下午给客户发报价，并收藏 https://openai.com',
+          draftTasks,
+          corrections: [],
+        },
+        correctionNotes: [],
+        duplicateReview: {
+          draftTasksConfirmed: true,
+          decisions: [],
+        },
+        updatedAt: new Date().toISOString(),
+      })
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'resume',
+          runId: 'run_123',
+          interactionId: 'run_123_confirm_duplicate_step_1',
+          response: { type: 'confirm_duplicate', action: 'skip' },
+        },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.phase).not.toBe('review')
+      expect(['completed', 'execute']).toContain(result.phase)
+      expect(store.saveSnapshot).not.toHaveBeenCalled()
     })
 
     it('preserves candidates when resuming from snapshot', async () => {

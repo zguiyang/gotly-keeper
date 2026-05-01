@@ -5,6 +5,7 @@ export { type Note } from './notes.schema'
 
 export { createNote } from './notes.command'
 export {
+  findDuplicateNotes,
   listNotes,
   listNotesPage,
   getNoteById,

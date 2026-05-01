@@ -1,4 +1,5 @@
 import { composeWorkspaceAnswer } from './workspace-compose'
+import { findWorkspaceRunDuplicateCandidates } from './workspace-run-duplicates'
 import { buildBatchAnswer, buildCompletedRunResult } from './workspace-run-completed'
 import { executeWorkspaceRunSteps } from './workspace-run-executor'
 import {
@@ -14,6 +15,7 @@ import {
   type WorkspaceReviewPendingRunSnapshot,
 } from './workspace-run-review'
 import { normalizeTodoDraftTaskTimes } from './workspace-run-time-normalization'
+import { buildWorkspaceRunPreview } from './workspace-run-preview'
 
 import type { WorkspaceToolContext, WorkspaceIntent, WorkspaceTarget } from './types'
 import type {
@@ -23,6 +25,7 @@ import type {
 import type { PhaseContext } from './workspace-run-orchestrator.shared'
 import type {
   DraftWorkspaceTask,
+  WorkspaceDuplicateReviewState,
   WorkspaceInteractionResponse,
   WorkspacePlanPreview,
   WorkspaceRunRequest,
@@ -235,6 +238,57 @@ function applyEditedPlan(
   }
 }
 
+function applyDuplicateDecision(
+  state: WorkspaceDuplicateReviewState | undefined,
+  interaction: WorkspaceReviewPendingRunSnapshot['interaction'],
+  response: Extract<
+    WorkspaceInteractionResponse,
+    { type: 'confirm_duplicate'; action: 'create' | 'skip' }
+  >
+): WorkspaceDuplicateReviewState {
+  if (interaction.type !== 'confirm_duplicate') {
+    return state ?? {
+      draftTasksConfirmed: false,
+      decisions: [],
+    }
+  }
+
+  const decisions = (state?.decisions ?? []).filter(
+    (decision) => decision.stepId !== interaction.current.stepId
+  )
+
+  return {
+    draftTasksConfirmed: state?.draftTasksConfirmed ?? false,
+    decisions: [
+      ...decisions,
+      {
+        stepId: interaction.current.stepId,
+        action: response.action,
+      },
+    ],
+  }
+}
+
+function applySkippedDuplicateSteps(
+  plannerResult: WorkspaceRunPlannerResult,
+  duplicateReview: WorkspaceDuplicateReviewState | undefined
+): WorkspaceRunPlannerResult {
+  const skippedStepIds = new Set(
+    (duplicateReview?.decisions ?? [])
+      .filter((decision) => decision.action === 'skip')
+      .map((decision) => decision.stepId)
+  )
+
+  if (skippedStepIds.size === 0) {
+    return plannerResult
+  }
+
+  return {
+    ...plannerResult,
+    steps: plannerResult.steps.filter((step) => !skippedStepIds.has(step.id)),
+  }
+}
+
 async function runBatchCompose(
   ctx: PhaseContext,
   input: {
@@ -254,6 +308,46 @@ async function runBatchCompose(
 
   emitEvent(ctx, { type: 'phase_completed', phase: 'compose', output: result })
   return result
+}
+
+async function completeSkippedDuplicateRun(input: {
+  ctx: PhaseContext
+  store: OrchestrateWorkspaceRunOptions['store']
+  runId: string
+  userId: string
+  snapshot: WorkspaceReviewPendingRunSnapshot
+  plannerResult: WorkspaceRunPlannerResult
+  duplicateReview: WorkspaceDuplicateReviewState | undefined
+}) {
+  await input.store.updateRunStatus(input.runId, input.userId, 'completed')
+
+  const skippedCount = (input.duplicateReview?.decisions ?? []).filter(
+    (decision) => decision.action === 'skip'
+  ).length
+
+  const result = {
+    summary: `已跳过 ${skippedCount} 个疑似重复项，未创建新内容。`,
+    answer: '这些疑似重复的创建步骤都已跳过，没有新增内容。',
+    preview: buildWorkspaceRunPreview({
+      runId: input.runId,
+      understandingPreview:
+        input.snapshot.preview?.understanding ?? input.snapshot.understandingPreview,
+      plannerResult: input.plannerResult,
+    }),
+    data: null,
+    stepResults: [],
+  } satisfies WorkspaceRunResult
+
+  emitEvent(input.ctx, {
+    type: 'run_completed',
+    result,
+  })
+
+  return {
+    ok: true,
+    phase: 'completed',
+    result,
+  } as const
 }
 
 async function executePlannedRun(input: {
@@ -300,7 +394,12 @@ async function executePlannedRun(input: {
 
   const firstTask = input.draftTasks[0]
   const toolName = firstOkStep.toolName
-  const preview = input.snapshot.preview ?? undefined
+  const preview = buildWorkspaceRunPreview({
+    runId: input.runId,
+    understandingPreview:
+      input.snapshot.preview?.understanding ?? input.snapshot.understandingPreview,
+    plannerResult: input.plannerResult,
+  })
   const composeResult = executeResult.stepResults.length > 1
     ? await runBatchCompose(input.ctx, { preview, executeResult })
     : await runCompose(
@@ -422,7 +521,7 @@ export async function handleResume(
   }
 
   if (request.response.action === 'cancel') {
-    return failRun(ctx, store, request.runId, userId, 'CANCELLED', 'User cancelled')
+    return failRun(ctx, store, request.runId, userId, 'CANCELLED', '已取消这次处理。')
   }
 
   if (request.response.type === 'select_candidate' && request.response.action === 'skip') {
@@ -447,6 +546,7 @@ export async function handleResume(
   const referenceTime = snapshot.referenceTime ?? snapshot.updatedAt
 
   let plannerResult = await replanDraftTasks(draftTasks, options, referenceTime)
+  let duplicateReview = snapshot.duplicateReview
 
   if (request.response.type === 'select_candidate' && request.response.action === 'select') {
     plannerResult = applySelectedCandidate(plannerResult, request.response.candidateId)
@@ -456,10 +556,96 @@ export async function handleResume(
     plannerResult = applyEditedPlan(plannerResult, request.response.editedPlan)
   }
 
+  if (request.response.type === 'confirm_duplicate') {
+    duplicateReview = applyDuplicateDecision(duplicateReview, snapshot.interaction, request.response)
+    const duplicateCandidates = await findWorkspaceRunDuplicateCandidates({
+      userId,
+      plannerResult,
+    })
+    plannerResult = applySkippedDuplicateSteps(plannerResult, duplicateReview)
+
+    if (plannerResult.steps.length === 0) {
+      return completeSkippedDuplicateRun({
+        ctx,
+        store,
+        runId: request.runId,
+        userId,
+        snapshot,
+        plannerResult,
+        duplicateReview,
+      })
+    }
+
+    const reviewDecision = reviewWorkspaceRunPlan({
+      runId: request.runId,
+      draftTasks: toReviewableDraftTasks(draftTasks),
+      plan: toReviewablePlan(plannerResult),
+      understandingPreview: {
+        rawInput: snapshot.understandingPreview?.rawInput ?? '',
+        normalizedInput: snapshot.understandingPreview?.normalizedInput ?? '',
+        draftTasks,
+        corrections: snapshot.understandingPreview?.corrections ?? [],
+      },
+      updatedAt: new Date().toISOString(),
+      referenceTime,
+      draftTasksConfirmed: duplicateReview?.draftTasksConfirmed ?? false,
+      duplicateCandidates,
+      duplicateReview,
+    })
+
+    emitEvent(ctx, { type: 'phase_started', phase: 'review' })
+    emitEvent(ctx, { type: 'phase_completed', phase: 'review', output: reviewDecision })
+
+    if (reviewDecision.status === 'await_user') {
+      await store.failAwaitingRuns(userId, { excludeRunId: request.runId })
+      await store.saveSnapshot(reviewDecision.snapshot, userId)
+      emitEvent(ctx, {
+        type: 'awaiting_user',
+        interaction: reviewDecision.snapshot.interaction,
+      })
+
+      return {
+        ok: true,
+        phase: 'review',
+        snapshot: reviewDecision.snapshot,
+      }
+    }
+
+    if (reviewDecision.status === 'reject') {
+      await store.updateRunStatus(request.runId, userId, 'failed')
+      emitEvent(ctx, {
+        type: 'run_failed',
+        error: {
+          code: 'REJECTED',
+          message: `Run rejected: ${reviewDecision.reason}`,
+          retryable: false,
+        },
+      })
+
+      return {
+        ok: false,
+        phase: 'review',
+        message: `Run rejected: ${reviewDecision.reason}`,
+      }
+    }
+
+    return executePlannedRun({
+      ctx,
+      userId,
+      store,
+      runId: request.runId,
+      snapshot,
+      plannerResult,
+      draftTasks,
+    })
+  }
+
   if (
     request.response.type === 'confirm_plan' ||
     request.response.type === 'select_candidate'
   ) {
+    plannerResult = applySkippedDuplicateSteps(plannerResult, duplicateReview)
+
     return executePlannedRun({
       ctx,
       userId,
@@ -484,7 +670,19 @@ export async function handleResume(
     updatedAt: new Date().toISOString(),
     referenceTime,
     draftTasksConfirmed:
-      request.response.type === 'edit_draft_tasks' && request.response.action === 'save',
+      (request.response.type === 'edit_draft_tasks' && request.response.action === 'save') ||
+      duplicateReview?.draftTasksConfirmed,
+    duplicateCandidates: await findWorkspaceRunDuplicateCandidates({
+      userId,
+      plannerResult,
+    }),
+    duplicateReview:
+      request.response.type === 'edit_draft_tasks' && request.response.action === 'save'
+        ? {
+            draftTasksConfirmed: true,
+            decisions: duplicateReview?.decisions ?? [],
+          }
+        : duplicateReview,
   })
 
   emitEvent(ctx, { type: 'phase_started', phase: 'review' })

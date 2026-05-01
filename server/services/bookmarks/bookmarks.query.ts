@@ -170,3 +170,28 @@ export async function getBookmarkById(
 
   return row ? toBookmarkListItem(row) : null
 }
+
+export async function findDuplicateBookmarks(input: {
+  userId: string
+  url: string
+}): Promise<BookmarkListItem[]> {
+  const url = input.url.trim()
+  if (!url) {
+    return []
+  }
+
+  const rows = await db
+    .select()
+    .from(bookmarks)
+    .where(
+      and(
+        eq(bookmarks.userId, input.userId),
+        eq(bookmarks.lifecycleStatus, ASSET_LIFECYCLE_STATUS.ACTIVE),
+        eq(bookmarks.url, url)
+      )
+    )
+    .orderBy(desc(bookmarks.createdAt))
+    .limit(BOOKMARK_LIST_LIMIT_DEFAULT)
+
+  return rows.map(toBookmarkListItem)
+}

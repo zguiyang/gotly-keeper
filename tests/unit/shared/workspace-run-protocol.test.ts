@@ -41,6 +41,45 @@ describe('workspace run protocol', () => {
     })
   })
 
+  it('accepts duplicate confirmation interactions and responses', () => {
+    expect(
+      workspaceInteractionSchema.parse({
+        runId: 'run_123',
+        id: 'interaction_duplicate',
+        type: 'confirm_duplicate',
+        target: 'todo',
+        message: '发现一条可能重复的待办。',
+        actions: ['create', 'skip', 'cancel'],
+        current: {
+          stepId: 'step_1',
+          title: '给客户发报价',
+          preview: '创建待办：给客户发报价',
+        },
+        duplicates: [
+          {
+            id: 'todo_123',
+            label: '给客户发报价',
+            reason: '标题和时间完全一致',
+          },
+        ],
+      })
+    ).toMatchObject({
+      type: 'confirm_duplicate',
+      target: 'todo',
+      actions: ['create', 'skip', 'cancel'],
+    })
+
+    expect(
+      workspaceInteractionResponseSchema.parse({
+        type: 'confirm_duplicate',
+        action: 'skip',
+      })
+    ).toEqual({
+      type: 'confirm_duplicate',
+      action: 'skip',
+    })
+  })
+
   it('binds interaction response actions to their required payloads', () => {
     expect(
       workspaceInteractionResponseSchema.parse({
