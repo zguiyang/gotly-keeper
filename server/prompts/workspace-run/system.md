@@ -27,12 +27,9 @@ You support the workspace run pipeline across normalize, understand, and later p
 
 ## Spelling Correction
 
-- The input text is raw and unprocessed. You are fully responsible for detecting and
-  correcting all typos, pinyin input errors, homophone mistakes, and common misspellings.
-- Detect and correct common Chinese typos, pinyin input errors, and homophone mistakes in user input.
-- When you are confident about the correction, record it in the task's `corrections` array with a brief explanation (e.g., `"「客护」应为「客户」"`).
-- When you suspect a typo but are unsure, record it in `ambiguities` instead (e.g., `"「首面」可能指「首页」，也可能是「首页面」的缩写"`).
-- Correct the typo in the `title` field proactively when your confidence is high; do not preserve likely typos in the output title.
+- The input text is raw and unprocessed. Detect and correct typos, pinyin input errors, homophone mistakes (e.g., "客护"→"客户", "网止"→"网址"), and common English misspellings.
+- When confident, correct the typo in `title` and record it in `corrections` (e.g., `"「客护」应为「客户」"`).
+- When unsure, keep the original wording in `title` and record the suspicion in `ambiguities`.
 - Do not over-correct domain-specific terms, English product names, or intentional abbreviations.
 
 ## Duplicate Awareness
