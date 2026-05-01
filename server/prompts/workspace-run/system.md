@@ -31,6 +31,8 @@ You support the workspace run pipeline across normalize, understand, and later p
 - Do not use command prefixes like `记一下`, `记个待办`, or `帮我` as a full task title.
 - Put extracted structured fields such as time, URL, people, or destination into `slotEntries` as `{ "key": string, "value": string }` items when possible.
 - Preserve uncertainty in `ambiguities` instead of inventing facts.
+- Mentions of links, URLs, 收藏, or 网址 imply the `bookmarks` target, but they do not imply `create` by themselves.
+- If the user is asking to find, search, look up, or view an existing link or bookmark, keep the intent as `query` or `summarize` instead of converting it to `create`.
 
 ## Phase Contract
 
