@@ -47,7 +47,8 @@ Apply these AFTER computing the base date with a tool:
 
 ## Handle "下个月X号"
 
-For "下个月5号": call `compute_date_add({amount:1,unit:"month"})` to get next month, note the month number, then call `resolve_specific_date({month:extractedMonth,day:5})`.
+For "下个月5号": call `compute_date_add({amount:1,unit:"month"})` to get next month, note the MONTH value from the returned date (ignore the day part), then call `resolve_specific_date({month:extractedMonth,day:5})`.
+For "下下个月5号": use `amount:2` instead of `amount:1`.
 
 ## Holiday / Festival Phrases → null
 

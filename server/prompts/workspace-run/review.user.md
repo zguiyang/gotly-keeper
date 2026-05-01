@@ -1,3 +1,5 @@
+<!-- NOTE: This file documents the review decision rules for human reference. The review phase is implemented as pure code in workspace-run-review.ts, not as AI model calls. -->
+
 Review the workspace plan and determine the appropriate next action.
 
 Return only JSON with the review decision.
