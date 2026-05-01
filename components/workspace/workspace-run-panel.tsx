@@ -320,7 +320,7 @@ function StreamingSinglePanel({
 
 function getMarker(isActive: boolean, isCompleted: boolean) {
   if (isActive) return { symbol: '○', className: 'text-primary' }
-  if (isCompleted) return { symbol: '✓', className: 'text-emerald-500' }
+  if (isCompleted) return { symbol: '✓', className: 'text-status-success' }
   return { symbol: '·', className: 'text-on-surface-variant/40' }
 }
 
