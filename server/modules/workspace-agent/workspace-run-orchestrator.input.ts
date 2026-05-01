@@ -63,11 +63,11 @@ async function runPlan(
 ): Promise<WorkspaceRunPlannerResult> {
   emitEvent(ctx, { type: 'phase_started', phase: 'plan' })
 
-  const runPlanHints: (input: { draftTask: DraftWorkspaceTask; userPrompt: string }) => Promise<WorkspaceRunPlanHint | null | undefined> = async ({ draftTask }) => {
+  const runPlanHints: (input: { draftTask: DraftWorkspaceTask; userPrompt: string }) => Promise<WorkspaceRunPlanHint | null | undefined> = async ({ draftTask, userPrompt }) => {
     try {
       const result = await runModel({
         systemPrompt: '',
-        userPrompt: JSON.stringify(draftTask),
+        userPrompt,
         signal: ctx.signal,
       })
       return result as WorkspaceRunPlanHint | null
