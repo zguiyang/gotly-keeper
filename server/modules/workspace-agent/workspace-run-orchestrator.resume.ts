@@ -15,7 +15,7 @@ import {
   type WorkspaceReviewPendingRunSnapshot,
 } from './workspace-run-review'
 import { normalizeTodoDraftTaskTimes } from './workspace-run-time-normalization'
-import { buildWorkspaceRunPreview } from './workspace-run-preview' 
+import { buildWorkspaceRunPreview } from './workspace-run-preview'
 
 import type { WorkspaceToolContext, WorkspaceIntent, WorkspaceTarget } from './types'
 import type {
