@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { generateText, Output, stepCountIs, tool } from 'ai'
+import { generateText, Output, stepCountIs } from 'ai'
 import { z } from 'zod'
 
 import { getAiProvider } from '@/server/lib/ai/ai-provider'
@@ -10,15 +10,11 @@ import { ASSET_INPUT_MODEL_TIMEOUT_MS } from '@/server/lib/config/constants'
 import { renderPrompt } from '@/server/lib/prompt-template'
 import { ASIA_SHANGHAI_TIME_ZONE } from '@/shared/time/dayjs'
 
-import { resolveTodoTimeText } from './todo-time-resolution'
+import { todoTimeTools } from './todo-time-tools'
 
 const todoTimeResolutionSchema = z.object({
   timeText: z.string().nullable(),
   dueAt: z.string().nullable(),
-})
-
-const resolveTimeTextInputSchema = z.object({
-  timeText: z.string().min(1),
 })
 
 type TodoTimeSourceSlot =
@@ -129,21 +125,9 @@ export async function resolveTodoTimeWithAi(
       maxRetries: 1,
       timeout: ASSET_INPUT_MODEL_TIMEOUT_MS,
       abortSignal: input.signal,
-      stopWhen: stepCountIs(3),
-      tools: {
-        resolve_time_text: tool({
-          description:
-            'Resolve a Chinese todo time phrase into a dueAt value using the provided referenceTime and timezone.',
-          inputSchema: resolveTimeTextInputSchema,
-          execute: async ({ timeText }) => {
-            return resolveTodoTimeText({
-              timeText,
-              referenceTime: input.referenceTime,
-              timezone,
-            })
-          },
-        }),
-      },
+      stopWhen: stepCountIs(5),
+      tools: todoTimeTools,
+
       providerOptions: {
         alibaba: {
           enableThinking: false,
@@ -151,16 +135,7 @@ export async function resolveTodoTimeWithAi(
       },
     })
 
-    const parsed = todoTimeResolutionSchema.parse(result.output)
-    if (!parsed.timeText) {
-      return parsed
-    }
-
-    return resolveTodoTimeText({
-      timeText: parsed.timeText,
-      referenceTime: input.referenceTime,
-      timezone,
-    })
+    return todoTimeResolutionSchema.parse(result.output)
   } catch (error) {
     console.warn('[todo-time-ai] resolution failed, returning no due date', {
       error: parseAiError(error).message,

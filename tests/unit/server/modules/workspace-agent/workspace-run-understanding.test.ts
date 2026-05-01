@@ -28,13 +28,7 @@ describe('workspace-run-understanding', () => {
         normalizedText: '帮我记个待办，明天下午三点发 pricing',
         urls: [],
         separators: ['，'],
-        typoCandidates: [
-          {
-            text: 'prcing',
-            suggestion: 'pricing',
-          },
-        ],
-        timeHints: ['明天下午三点'],
+
       },
       runModel,
     })
@@ -57,7 +51,7 @@ describe('workspace-run-understanding', () => {
           },
         },
       ],
-      corrections: ['prcing -> pricing'],
+      corrections: [],
     })
   })
 
@@ -86,8 +80,6 @@ describe('workspace-run-understanding', () => {
         normalizedText: '记个待办：定位样本，这周末买菜',
         urls: [],
         separators: ['，'],
-        typoCandidates: [],
-        timeHints: ['这周末'],
       },
       runModel,
     })
@@ -110,8 +102,6 @@ describe('workspace-run-understanding', () => {
           normalizedText: '记个待办',
           urls: [],
           separators: [],
-          typoCandidates: [],
-          timeHints: [],
         },
         runModel: vi.fn().mockResolvedValue({
           draftTasks: [],
@@ -127,8 +117,6 @@ describe('workspace-run-understanding', () => {
         normalizedText: '记个待办',
         urls: [],
         separators: [],
-        typoCandidates: [],
-        timeHints: [],
       },
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
@@ -164,8 +152,6 @@ describe('workspace-run-understanding', () => {
         normalizedText: '帮我记一下',
         urls: [],
         separators: [],
-        typoCandidates: [],
-        timeHints: [],
       },
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
@@ -190,8 +176,6 @@ describe('workspace-run-understanding', () => {
         normalizedText: '帮我记个待办',
         urls: [],
         separators: [],
-        typoCandidates: [],
-        timeHints: [],
       },
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
@@ -221,8 +205,6 @@ describe('workspace-run-understanding', () => {
         normalizedText: '帮我记一下',
         urls: [],
         separators: [],
-        typoCandidates: [],
-        timeHints: [],
       },
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
@@ -251,8 +233,6 @@ describe('workspace-run-understanding', () => {
           normalizedText: '帮我整理一下',
           urls: [],
           separators: [],
-          typoCandidates: [],
-          timeHints: [],
         },
         runModel: vi.fn().mockResolvedValue({
           draftTasks: [
@@ -310,8 +290,6 @@ describe('workspace-run-understanding', () => {
           '帮我记一下，明天下午三点给产品经理发报价；再保存 https://example.com/pricing',
         urls: ['https://example.com/pricing'],
         separators: ['，', '；'],
-        typoCandidates: [],
-        timeHints: ['明天下午三点'],
       },
       runModel,
     })
@@ -344,8 +322,6 @@ describe('workspace-run-understanding', () => {
         normalizedText: '给产品经理发报价',
         urls: [],
         separators: [],
-        typoCandidates: [],
-        timeHints: [],
       },
       runModel,
       signal: controller.signal,
@@ -365,8 +341,6 @@ describe('workspace-run-understanding', () => {
         normalizedText: '帮我存一下这个链接，标题叫 QA-BOOKMARK-DRAFT。',
         urls: [],
         separators: ['，'],
-        typoCandidates: [],
-        timeHints: [],
       },
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
@@ -407,8 +381,6 @@ describe('workspace-run-understanding', () => {
         normalizedText: '记一下：https://example.com 定价页',
         urls: ['https://example.com'],
         separators: ['：'],
-        typoCandidates: [],
-        timeHints: [],
       },
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
@@ -455,8 +427,6 @@ describe('workspace-run-understanding', () => {
         normalizedText: '记个待办：下个月1号提交发票',
         urls: [],
         separators: ['：'],
-        typoCandidates: [],
-        timeHints: ['下个月1号'],
       },
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
@@ -491,8 +461,6 @@ describe('workspace-run-understanding', () => {
         normalizedText: '记个待办：本周五下班前发合同',
         urls: [],
         separators: ['：'],
-        typoCandidates: [],
-        timeHints: ['本周五下班前'],
       },
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
@@ -528,8 +496,6 @@ describe('workspace-run-understanding', () => {
           normalizedText: '记一下：https://example.com 定价页',
           urls: ['https://example.com'],
           separators: ['：'],
-          typoCandidates: [],
-          timeHints: [],
         },
         runModel: vi.fn().mockResolvedValue({
           draftTasks: [
@@ -560,8 +526,6 @@ describe('workspace-run-understanding', () => {
         normalizedText: '记一下：https://example.com 定价页',
         urls: ['https://example.com'],
         separators: ['：'],
-        typoCandidates: [],
-        timeHints: [],
       },
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
@@ -600,8 +564,6 @@ describe('workspace-run-understanding', () => {
           normalizedText: '帮我归档这条笔记',
           urls: [],
           separators: [],
-          typoCandidates: [],
-          timeHints: [],
         },
         runModel: vi.fn().mockResolvedValue({
           draftTasks: [
@@ -630,8 +592,6 @@ describe('workspace-run-understanding', () => {
           normalizedText: '帮我处理这个请求',
           urls: [],
           separators: [],
-          typoCandidates: [],
-          timeHints: [],
         },
         runModel: vi.fn().mockResolvedValue({
           draftTasks: [
@@ -660,8 +620,6 @@ describe('workspace-run-understanding', () => {
           normalizedText: '更新这条笔记',
           urls: [],
           separators: [],
-          typoCandidates: [],
-          timeHints: [],
         },
         runModel: vi.fn().mockResolvedValue({
           draftTasks: [
@@ -690,8 +648,6 @@ describe('workspace-run-understanding', () => {
           normalizedText: '帮我记个待办',
           urls: [],
           separators: [],
-          typoCandidates: [],
-          timeHints: [],
         },
         runModel: vi.fn().mockResolvedValue({
           draftTasks: [
@@ -720,8 +676,6 @@ describe('workspace-run-understanding', () => {
           normalizedText: '帮我整理这些内容',
           urls: [],
           separators: [],
-          typoCandidates: [],
-          timeHints: [],
         },
         runModel: vi.fn().mockResolvedValue({
           draftTasks: [

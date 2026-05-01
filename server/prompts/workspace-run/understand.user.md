@@ -39,7 +39,11 @@ Constraints:
 
 ## Correction and Ambiguity Rules
 
-- `corrections`: When you detect and fix a clear typo or homophone error (e.g., "客护" → "客户", "网止" → "网址"), apply the correction to `title` and record the change in `corrections` with a brief description like `"「客护」应为「客户」"`.
+- `corrections`: The input text has NOT been pre-processed for typos. You are fully responsible
+  for detecting and correcting all Chinese typos, pinyin input errors, homophone errors
+  (e.g., "客护"→"客户", "网止"→"网址", "提行"→"提醒", "首业"→"首页"), and common English
+  misspellings. Apply the correction to `title` and record the change in `corrections` with
+  a brief description like `"「客护」应为「客户」"`.
 - `ambiguities`: When the user's wording could mean multiple things and you cannot be sure (e.g., "首面" could be "首页" or "首屏"), do NOT guess — keep the original wording in `title` and record your suspicion in `ambiguities` with a note like `"「首面」可能指「首页」"`.
 - Lower `confidence` by 0.1–0.2 when the title contains likely typos or ambiguous terms; this ensures the downstream review step will prompt the user to confirm.
 - Do NOT record trivial whitespace or formatting changes in `corrections`. Only record meaningful semantic corrections.

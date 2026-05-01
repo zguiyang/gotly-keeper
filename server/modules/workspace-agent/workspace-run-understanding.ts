@@ -173,10 +173,6 @@ export class WorkspaceRunUnderstandingError extends Error {
   }
 }
 
-function dedupeCorrections(corrections: string[]): string[] {
-  return Array.from(new Set(corrections))
-}
-
 function normalizeCommandOnlyCreateTitle(task: DraftWorkspaceTask) {
   if (task.intent !== 'create' && task.intent !== 'update') {
     return task
@@ -192,14 +188,8 @@ function normalizeCommandOnlyCreateTitle(task: DraftWorkspaceTask) {
   }
 }
 
-function normalizeDraftTasks(tasks: DraftWorkspaceTask[], _normalized: NormalizedWorkspaceRunInput) {
+function normalizeDraftTasks(tasks: DraftWorkspaceTask[]) {
   return tasks.map((task) => normalizeCommandOnlyCreateTitle(task))
-}
-
-function typoCandidatesToCorrections(
-  typoCandidates: NormalizedWorkspaceRunInput['typoCandidates']
-): string[] {
-  return typoCandidates.map((candidate) => `${candidate.text} -> ${candidate.suggestion}`)
 }
 
 function toDraftTasks(tasks: z.infer<typeof understandingTaskSchema>[]): DraftWorkspaceTask[] {
@@ -238,9 +228,8 @@ export async function understandWorkspaceRunInput(input: {
       normalizedInput: input.normalized.normalizedText,
       draftTasks: normalizeDraftTasks(
         toDraftTasks(normalizeModelDraftTasks(modelParsed.data.draftTasks)),
-        input.normalized
       ),
-      corrections: dedupeCorrections(typoCandidatesToCorrections(input.normalized.typoCandidates)),
+      corrections: [],
     }
   }
 
@@ -262,9 +251,8 @@ export async function understandWorkspaceRunInput(input: {
       normalizedInput: input.normalized.normalizedText,
       draftTasks: normalizeDraftTasks(
         toDraftTasks(normalizeModelDraftTasks(modelParsed.data.draftTasks)),
-        input.normalized
       ),
-      corrections: dedupeCorrections(typoCandidatesToCorrections(input.normalized.typoCandidates)),
+      corrections: [],
     }
   }
 
@@ -277,7 +265,7 @@ export async function understandWorkspaceRunInput(input: {
   return {
     rawInput: input.normalized.rawText,
     normalizedInput: input.normalized.normalizedText,
-    draftTasks: normalizeDraftTasks(toDraftTasks(validated.data.draftTasks), input.normalized),
-    corrections: dedupeCorrections(typoCandidatesToCorrections(input.normalized.typoCandidates)),
+    draftTasks: normalizeDraftTasks(toDraftTasks(validated.data.draftTasks)),
+    corrections: [],
   }
 }
