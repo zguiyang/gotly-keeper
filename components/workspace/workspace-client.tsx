@@ -5,6 +5,7 @@ import { AnimatePresence } from 'motion/react'
 import { useCallback, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { assetTypePresentation } from '@/config/ui/asset-presentation'
 import { useWorkspaceStream } from '@/hooks/workspace/use-workspace-stream'
@@ -91,9 +92,17 @@ export function WorkspaceClient({
     ].slice(0, 10))
   }, [])
 
-  const { state, submitInput, resetRun, resumeInteraction } = useWorkspaceStream({
-    onResult: handleWorkspaceResult,
-  })
+  const {
+    state,
+    pendingRun,
+    pendingRunLoading,
+    pendingRunDismissing,
+    submitInput,
+    resetRun,
+    resumeInteraction,
+    restorePendingRun,
+    dismissPendingRun,
+  } = useWorkspaceStream({ onResult: handleWorkspaceResult })
   const hasRunPanel = state.status !== 'idle'
   const elapsedMs = state.startedAt
     ? Math.max(0, (state.endedAt ?? Date.now()) - state.startedAt)
@@ -198,6 +207,42 @@ export function WorkspaceClient({
         />
       </section>
 
+      {!hasRunPanel && pendingRun && !pendingRunLoading ? (
+        <Card className="mb-5 border-border/10 bg-surface-container-lowest/88 shadow-[var(--shadow-elevation-1)]">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-on-surface">你有一条未完成的处理</p>
+              <p className="text-sm text-on-surface-variant">
+                {pendingRun.interaction.message}
+              </p>
+              <p className="text-xs text-on-surface-variant/80">
+                更新于 {formatAbsoluteTime(pendingRun.updatedAt)}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  void dismissPendingRun()
+                }}
+                disabled={pendingRunDismissing}
+                className="rounded-full"
+              >
+                {pendingRunDismissing ? '忽略中...' : '忽略'}
+              </Button>
+              <Button
+                type="button"
+                onClick={restorePendingRun}
+                className="rounded-full"
+              >
+                继续处理
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <AnimatePresence mode="wait">
         {hasRunPanel && (
           <WorkspaceRunPanel
@@ -217,7 +262,7 @@ export function WorkspaceClient({
         )}
       </AnimatePresence>
 
-      {hasRunPanel && state.status !== 'streaming' ? (
+      {hasRunPanel && state.status !== 'streaming' && state.status !== 'awaiting_user' ? (
         <div className="-mt-4 mb-8 flex justify-end">
           <Button
             type="button"

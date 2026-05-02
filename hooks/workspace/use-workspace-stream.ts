@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
+  dismissCurrentWorkspaceRun,
   fetchCurrentWorkspaceRun,
   streamWorkspaceRunEvents,
 } from '@/client/workspace/workspace-run-events.client'
@@ -118,31 +119,23 @@ export function useWorkspaceStream(options: {
   const [state, setState] = useState<WorkspaceRunUiState>({
     ...INITIAL_RUN_STATE,
   })
+  const [pendingRun, setPendingRun] = useState<WorkspacePendingRunSnapshot | null>(null)
+  const [pendingRunLoading, setPendingRunLoading] = useState(true)
+  const [pendingRunDismissing, setPendingRunDismissing] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
   const requestIdRef = useRef(0)
   const runStartedAtRef = useRef<number | null>(null)
 
   const loadCurrentAwaitingRun = useCallback(async () => {
+    setPendingRunLoading(true)
     try {
       const result = await fetchCurrentWorkspaceRun()
-      if (result.ok && result.run) {
-        const startedAt = parseRunStartedAt(result.run.runId)
-        runStartedAtRef.current = startedAt
-
-        setState({
-          status: 'awaiting_user',
-          runId: result.run.runId,
-          interaction: result.run.interaction,
-          timeline: result.run.timeline,
-          result: null,
-          ...extractSnapshotPreviewState(result.run),
-          errorMessage: null,
-          startedAt,
-          endedAt: Date.now(),
-        })
-      }
+      setPendingRun(result.ok ? result.run : null)
     } catch {
       // silently ignore rehydration errors
+      setPendingRun(null)
+    } finally {
+      setPendingRunLoading(false)
     }
   }, [])
 
@@ -169,6 +162,7 @@ export function useWorkspaceStream(options: {
 
       runStartedAtRef.current = startedAt
 
+      setPendingRun(null)
       setState({
         status: 'streaming',
         timeline: [],
@@ -346,11 +340,52 @@ export function useWorkspaceStream(options: {
     setState({ ...INITIAL_RUN_STATE })
   }, [])
 
+  const restorePendingRun = useCallback(() => {
+    if (!pendingRun) {
+      return
+    }
+
+    const startedAt = parseRunStartedAt(pendingRun.runId)
+    runStartedAtRef.current = startedAt
+
+    setState({
+      status: 'awaiting_user',
+      runId: pendingRun.runId,
+      interaction: pendingRun.interaction,
+      timeline: pendingRun.timeline,
+      result: null,
+      ...extractSnapshotPreviewState(pendingRun),
+      errorMessage: null,
+      startedAt,
+      endedAt: Date.now(),
+    })
+    setPendingRun(null)
+  }, [pendingRun])
+
+  const dismissPendingRun = useCallback(async () => {
+    if (!pendingRun) {
+      return
+    }
+
+    setPendingRunDismissing(true)
+    try {
+      await dismissCurrentWorkspaceRun()
+      setPendingRun(null)
+    } finally {
+      setPendingRunDismissing(false)
+    }
+  }, [pendingRun])
+
   return {
     state,
+    pendingRun,
+    pendingRunLoading,
+    pendingRunDismissing,
     submitInput,
     triggerQuickAction,
     resumeInteraction,
     resetRun,
+    restorePendingRun,
+    dismissPendingRun,
   }
 }

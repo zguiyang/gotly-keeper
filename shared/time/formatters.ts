@@ -7,6 +7,13 @@ export function formatAbsoluteTime(
   return dayjs(date).tz(timezone).format('M月D日 HH:mm')
 }
 
+export function formatAbsoluteDateTime(
+  date: Date | string | number,
+  timezone: string = ASIA_SHANGHAI_TIME_ZONE
+): string {
+  return dayjs(date).tz(timezone).format('YYYY-MM-DD HH:mm')
+}
+
 export function formatBookmarkTime(
   date: Date | string | number,
   baseDate: Date | string | number = new Date()

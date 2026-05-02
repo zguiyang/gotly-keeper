@@ -1,8 +1,10 @@
 'use client'
 
+import { CalendarClock } from 'lucide-react'
 import { forwardRef, useImperativeHandle, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Field,
@@ -14,6 +16,11 @@ import {
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
+import { dayjs, ASIA_SHANGHAI_TIME_ZONE } from '@/shared/time/dayjs'
+import {
+  formatWorkspaceDraftSlotValue,
+  getWorkspaceDraftSlotFields,
+} from '@/shared/workspace/workspace-slot-presentation'
 
 import {
   workspaceInteractionBodyTextClassName,
@@ -48,6 +55,30 @@ export const DraftTaskEditor = forwardRef<DraftTaskEditorHandle, DraftTaskEditor
       })
     }
 
+    const updateTaskSlot = (index: number, key: string, value: string | null) => {
+      setTasks((prev) => {
+        const updated = [...prev]
+        const currentTask = updated[index]
+        const nextSlots = { ...currentTask.slots }
+
+        if (!value || value.trim().length === 0) {
+          if (key === 'dueAt') {
+            nextSlots[key] = ''
+          } else {
+            delete nextSlots[key]
+          }
+        } else {
+          nextSlots[key] = value
+        }
+
+        updated[index] = {
+          ...currentTask,
+          slots: nextSlots,
+        }
+        return updated
+      })
+    }
+
     const getIntentLabel = (intent: string) => {
       if (intent === 'create') return '创建'
       if (intent === 'update') return '更新'
@@ -61,6 +92,35 @@ export const DraftTaskEditor = forwardRef<DraftTaskEditorHandle, DraftTaskEditor
       if (target === 'notes') return '笔记'
       if (target === 'bookmarks') return '书签'
       return '混合'
+    }
+
+    const parseDueAt = (value: string | undefined) => {
+      if (!value) {
+        return null
+      }
+
+      const parsed = dayjs(value)
+      return parsed.isValid() ? parsed.tz(ASIA_SHANGHAI_TIME_ZONE) : null
+    }
+
+    const formatDateValue = (value: string | undefined) =>
+      parseDueAt(value)?.format('YYYY-MM-DD') ?? ''
+
+    const formatTimeValue = (value: string | undefined) =>
+      parseDueAt(value)?.format('HH:mm') ?? ''
+
+    const updateDueAt = (index: number, datePart: string, timePart: string) => {
+      if (!datePart) {
+        updateTaskSlot(index, 'dueAt', '')
+        return
+      }
+
+      const nextTime = timePart || '09:00'
+      const nextDueAt = dayjs
+        .tz(`${datePart}T${nextTime}:00`, ASIA_SHANGHAI_TIME_ZONE)
+        .toISOString()
+
+      updateTaskSlot(index, 'dueAt', nextDueAt)
     }
 
     return (
@@ -130,26 +190,82 @@ export const DraftTaskEditor = forwardRef<DraftTaskEditorHandle, DraftTaskEditor
                     <FieldSeparator />
                     <FieldGroup className="gap-3">
                       <p className="text-[12px] font-medium text-on-surface-variant/68">附加信息</p>
-                      {Object.entries(task.slots).map(([key, value]) => {
-                        const inputId = `task-slot-${index}-${key}`
+                      {getWorkspaceDraftSlotFields(task.slots).map((field) => {
+                        const inputId = `task-slot-${index}-${field.key}`
+
+                        if (field.type === 'datetime') {
+                          const dateValue = formatDateValue(field.value)
+                          const timeValue = formatTimeValue(field.value)
+
+                          return (
+                            <Field key={field.key}>
+                              <FieldLabel
+                                htmlFor={`${inputId}-date`}
+                                className={workspaceInteractionLabelClassName}
+                              >
+                                {field.label}
+                              </FieldLabel>
+                              <FieldContent>
+                                <div className="rounded-[1rem] border border-border/10 bg-background/80 px-3.5 py-3 shadow-[var(--shadow-elevation-1)]">
+                                  <div className="flex items-center gap-2 text-sm font-medium text-on-surface">
+                                    <CalendarClock className="size-4 text-on-surface-variant/70" />
+                                    <span>{formatWorkspaceDraftSlotValue(field)}</span>
+                                  </div>
+                                  <p className="mt-1 text-xs text-on-surface-variant/80">
+                                    保存时会继续使用统一后的截止时间。
+                                  </p>
+                                </div>
+                                <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                                  <Input
+                                    id={`${inputId}-date`}
+                                    type="date"
+                                    value={dateValue}
+                                    onChange={(e) =>
+                                      updateDueAt(index, e.target.value, timeValue)
+                                    }
+                                    name={`${inputId}-date`}
+                                    className={workspaceInteractionInsetFieldClassName}
+                                  />
+                                  <Input
+                                    id={`${inputId}-time`}
+                                    type="time"
+                                    step="60"
+                                    value={timeValue}
+                                    disabled={!dateValue}
+                                    onChange={(e) =>
+                                      updateDueAt(index, dateValue, e.target.value)
+                                    }
+                                    name={`${inputId}-time`}
+                                    className={workspaceInteractionInsetFieldClassName}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => updateTaskSlot(index, field.key, '')}
+                                    className="rounded-full"
+                                  >
+                                    清空
+                                  </Button>
+                                </div>
+                              </FieldContent>
+                            </Field>
+                          )
+                        }
 
                         return (
-                          <Field key={key}>
+                          <Field key={field.key}>
                             <FieldLabel
                               htmlFor={inputId}
                               className={workspaceInteractionLabelClassName}
                             >
-                              {key}
+                              {field.label}
                             </FieldLabel>
                             <FieldContent>
                               <Input
                                 id={inputId}
-                                value={value}
-                                onChange={(e) =>
-                                  updateTask(index, {
-                                    slots: { ...task.slots, [key]: e.target.value },
-                                  })
-                                }
+                                type={field.type}
+                                value={field.value}
+                                onChange={(e) => updateTaskSlot(index, field.key, e.target.value)}
                                 name={inputId}
                                 className={workspaceInteractionInsetFieldClassName}
                               />

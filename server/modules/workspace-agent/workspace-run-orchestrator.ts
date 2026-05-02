@@ -79,3 +79,17 @@ export async function getCurrentAwaitingWorkspaceRun(
   const store = createWorkspaceRunStore()
   return store.loadLatestAwaiting(userId)
 }
+
+export async function dismissCurrentAwaitingWorkspaceRun(
+  userId: string
+): Promise<boolean> {
+  const store = createWorkspaceRunStore()
+  const snapshot = await store.loadLatestAwaiting(userId)
+
+  if (!snapshot) {
+    return false
+  }
+
+  await store.deleteRun(snapshot.runId, userId)
+  return true
+}
