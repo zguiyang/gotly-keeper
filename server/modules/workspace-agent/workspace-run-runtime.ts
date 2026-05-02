@@ -79,6 +79,7 @@ function createRunModel(): WorkspaceRunModel {
       userPrompt: input.userPrompt,
       timeoutMs: WORKSPACE_TASK_PARSE_TIMEOUT_MS,
       abortSignal: input.signal,
+      enableThinking: false,
     })
 
     if (!result.success) {

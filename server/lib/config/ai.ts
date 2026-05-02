@@ -14,3 +14,14 @@ export const AI_MAX_RETRIES = 1
 export const AI_TEMPERATURE = 0
 
 export const AI_CONFIDENCE_THRESHOLD = 0.5
+
+// Enable extended reasoning for complex multi-step tasks.
+// false for simple extraction/generation, true for classification/reasoning/tool-chain.
+export const AI_ENABLE_THINKING = {
+  normalize: false,
+  understand: true,
+  plan: true,
+  timeResolver: true,
+  compose: false,
+  insight: false,
+} as const

@@ -130,7 +130,7 @@ export async function resolveTodoTimeWithAi(
 
       providerOptions: {
         alibaba: {
-          enableThinking: false,
+          enableThinking: true,
         },
       },
     })
