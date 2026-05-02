@@ -1,17 +1,18 @@
 import 'server-only'
 
-import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
-import { buildWorkspaceSystemPrompt, getAiProvider } from '@/server/lib/ai'
 import { BOOKMARK_SUMMARY_LIMIT, BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS } from '@/server/lib/config/ai'
-import { renderPrompt } from '@/server/lib/prompt-template'
 import { listBookmarks } from '@/server/services/bookmarks'
 import { searchAssets } from '@/server/services/search/assets-search.service'
-import { nowIso, dayjs } from '@/shared/time/dayjs'
+import { toAssetListItemFromBookmark } from '@/server/services/workspace/asset-list-item'
+import { dayjs } from '@/shared/time/dayjs'
 
+import {
+  buildWorkspaceAssetPromptInput,
+  generateWorkspaceInsight,
+} from './asset-insight'
 
-import type { BookmarkListItem } from '@/server/services/bookmarks'
 import type { AssetListItem, BookmarkSummaryResult } from '@/shared/assets/assets.types'
 
 type BookmarkSummaryPromptItem = {
@@ -21,37 +22,19 @@ type BookmarkSummaryPromptItem = {
   createdAt: string
 }
 
-function toAssetListItem(bookmark: BookmarkListItem): AssetListItem {
-  return {
-    id: bookmark.id,
-    originalText: bookmark.originalText,
-    title: bookmark.title,
-    excerpt: bookmark.excerpt,
-    type: 'link',
-    note: bookmark.note,
-    summary: bookmark.summary,
-    url: bookmark.url,
-    timeText: null,
-    dueAt: null,
-    completed: false,
-    bookmarkMeta: bookmark.bookmarkMeta,
-    lifecycleStatus: bookmark.lifecycleStatus,
-    archivedAt: bookmark.archivedAt,
-    trashedAt: bookmark.trashedAt,
-    createdAt: bookmark.createdAt,
-    updatedAt: bookmark.updatedAt,
-  }
-}
-
 export function buildBookmarkSummaryPromptInput(
   bookmarks: AssetListItem[]
 ): BookmarkSummaryPromptItem[] {
-  return bookmarks.slice(0, BOOKMARK_SUMMARY_LIMIT).map((bookmark) => ({
-    id: bookmark.id,
-    text: bookmark.originalText,
-    url: bookmark.url,
-    createdAt: dayjs(bookmark.createdAt).toISOString(),
-  }))
+  return buildWorkspaceAssetPromptInput({
+    assets: bookmarks,
+    limit: BOOKMARK_SUMMARY_LIMIT,
+    mapAsset: (bookmark) => ({
+      id: bookmark.id,
+      text: bookmark.originalText,
+      url: bookmark.url,
+      createdAt: dayjs(bookmark.createdAt).toISOString(),
+    }),
+  })
 }
 
 const bookmarkSummaryOutputSchema = z.object({
@@ -74,33 +57,6 @@ function getFallbackBookmarkSummary(bookmarks: AssetListItem[]): BookmarkSummary
   }
 }
 
-function mapSummarySources(
-  bookmarks: AssetListItem[],
-  sourceAssetIds: string[]
-): AssetListItem[] {
-  const requested = new Set(sourceAssetIds)
-  return bookmarks.filter((bookmark) => requested.has(bookmark.id))
-}
-
-function normalizeBookmarkSummaryOutput(
-  output: BookmarkSummaryOutput,
-  bookmarks: AssetListItem[]
-): BookmarkSummaryResult {
-  const validIds = new Set(bookmarks.map((bookmark) => bookmark.id))
-  const filteredSourceIds = output.sourceAssetIds.filter((id) => validIds.has(id))
-  const fallbackIds = bookmarks.slice(0, 5).map((bookmark) => bookmark.id)
-  const finalSourceIds = filteredSourceIds.length ? filteredSourceIds : fallbackIds
-
-  return {
-    headline: output.headline,
-    summary: output.summary,
-    keyPoints: output.keyPoints,
-    sourceAssetIds: finalSourceIds,
-    sources: mapSummarySources(bookmarks, finalSourceIds),
-    generatedAt: dayjs().toDate(),
-  }
-}
-
 export async function summarizeWorkspaceRecentBookmarksInternal(
   userId: string,
   query?: string | null
@@ -113,48 +69,29 @@ export async function summarizeWorkspaceRecentBookmarksInternal(
         typeHint: 'link',
         limit: BOOKMARK_SUMMARY_LIMIT,
       })).filter((asset) => asset.type === 'link')
-    : (await listBookmarks({ userId, limit: BOOKMARK_SUMMARY_LIMIT })).map(toAssetListItem)
+    : (await listBookmarks({ userId, limit: BOOKMARK_SUMMARY_LIMIT })).map(
+        toAssetListItemFromBookmark
+      )
 
-  if (bookmarks.length === 0) {
-    return normalizeBookmarkSummaryOutput(getFallbackBookmarkSummary(bookmarks), bookmarks)
-  }
-
-  const model = getAiProvider()
-  if (!model) {
-    return normalizeBookmarkSummaryOutput(getFallbackBookmarkSummary(bookmarks), bookmarks)
-  }
-
-  try {
-    const [systemPrompt, userPrompt] = await Promise.all([
-      buildWorkspaceSystemPrompt('workspace/bookmark-summary.system'),
-      renderPrompt('workspace/bookmark-summary.user', {
-        payloadJson: JSON.stringify({
-          currentTime: nowIso(),
-          bookmarks: buildBookmarkSummaryPromptInput(bookmarks),
-        }),
-      }),
-    ])
-
-    const result = await generateText({
-      model,
-      output: Output.object({ schema: bookmarkSummaryOutputSchema }),
-      system: systemPrompt,
-      prompt: userPrompt,
-      temperature: 0,
-      maxRetries: 1,
-      timeout: BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS,
-      providerOptions: {
-        alibaba: {
-          enableThinking: false,
-        },
-      },
-    })
-
-    return normalizeBookmarkSummaryOutput(result.output, bookmarks)
-  } catch (error) {
-    console.warn('[bookmarks.summary] AI summary failed; using fallback', {
-      error: error instanceof Error ? error.message : String(error),
-    })
-    return normalizeBookmarkSummaryOutput(getFallbackBookmarkSummary(bookmarks), bookmarks)
-  }
+  return generateWorkspaceInsight({
+    assets: bookmarks,
+    buildPromptInput: buildBookmarkSummaryPromptInput,
+    fallbackOutput: getFallbackBookmarkSummary,
+    schema: bookmarkSummaryOutputSchema,
+    promptKey: 'workspace/bookmark-summary',
+    promptPayloadKey: 'bookmarks',
+    timeoutMs: BOOKMARK_SUMMARY_MODEL_TIMEOUT_MS,
+    logTag: 'bookmarks.summary',
+    logLabel: 'summary',
+    normalizeResult: (output, context) => {
+      return {
+        headline: output.headline,
+        summary: output.summary,
+        keyPoints: output.keyPoints,
+        sourceAssetIds: context.sourceAssetIds,
+        sources: context.sources,
+        generatedAt: context.generatedAt,
+      }
+    },
+  })
 }

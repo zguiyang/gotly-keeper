@@ -1,18 +1,19 @@
 import 'server-only'
 
-import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
-import { buildWorkspaceSystemPrompt } from '@/server/lib/ai'
-import { renderPrompt } from '@/server/lib/prompt-template'
 import { listNotes } from '@/server/services/notes'
 import { searchAssets } from '@/server/services/search/assets-search.service'
-import { nowIso, dayjs } from '@/shared/time/dayjs'
+import { toAssetListItemFromNote } from '@/server/services/workspace/asset-list-item'
+import { dayjs } from '@/shared/time/dayjs'
 
-import { getAiProvider } from '../../lib/ai/ai-provider'
 import { NOTE_SUMMARY_LIMIT, NOTE_SUMMARY_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
 
-import type { NoteListItem } from '@/server/services/notes'
+import {
+  buildWorkspaceAssetPromptInput,
+  generateWorkspaceInsight,
+} from './asset-insight'
+
 import type { AssetListItem, NoteSummaryResult } from '@/shared/assets/assets.types'
 
 type NoteSummaryPromptItem = {
@@ -21,32 +22,16 @@ type NoteSummaryPromptItem = {
   createdAt: string
 }
 
-function toAssetListItem(note: NoteListItem): AssetListItem {
-  return {
-    id: note.id,
-    originalText: note.originalText,
-    title: note.title,
-    excerpt: note.excerpt,
-    type: 'note',
-    url: null,
-    timeText: null,
-    dueAt: null,
-    completed: false,
-    bookmarkMeta: null,
-    lifecycleStatus: note.lifecycleStatus,
-    archivedAt: note.archivedAt,
-    trashedAt: note.trashedAt,
-    createdAt: note.createdAt,
-    updatedAt: note.updatedAt,
-  }
-}
-
 export function buildNoteSummaryPromptInput(notes: AssetListItem[]): NoteSummaryPromptItem[] {
-  return notes.slice(0, NOTE_SUMMARY_LIMIT).map((note) => ({
-    id: note.id,
-    text: note.originalText,
-    createdAt: dayjs(note.createdAt).toISOString(),
-  }))
+  return buildWorkspaceAssetPromptInput({
+    assets: notes,
+    limit: NOTE_SUMMARY_LIMIT,
+    mapAsset: (note) => ({
+      id: note.id,
+      text: note.originalText,
+      createdAt: dayjs(note.createdAt).toISOString(),
+    }),
+  })
 }
 
 const noteSummaryOutputSchema = z.object({
@@ -73,33 +58,6 @@ function getFallbackNoteSummary(notes: AssetListItem[]): NoteSummaryOutput {
   }
 }
 
-function mapSummarySources(
-  notes: AssetListItem[],
-  sourceAssetIds: string[]
-): AssetListItem[] {
-  const requested = new Set(sourceAssetIds)
-  return notes.filter((note) => requested.has(note.id))
-}
-
-function normalizeNoteSummaryOutput(
-  output: NoteSummaryOutput,
-  notes: AssetListItem[]
-): NoteSummaryResult {
-  const validIds = new Set(notes.map((note) => note.id))
-  const filteredSourceIds = output.sourceAssetIds.filter((id) => validIds.has(id))
-  const fallbackIds = notes.slice(0, 5).map((note) => note.id)
-  const finalSourceIds = filteredSourceIds.length ? filteredSourceIds : fallbackIds
-
-  return {
-    headline: output.headline,
-    summary: output.summary,
-    keyPoints: output.keyPoints,
-    sourceAssetIds: finalSourceIds,
-    sources: mapSummarySources(notes, finalSourceIds),
-    generatedAt: dayjs().toDate(),
-  }
-}
-
 export async function summarizeWorkspaceRecentNotesInternal(
   userId: string,
   query?: string | null
@@ -112,48 +70,27 @@ export async function summarizeWorkspaceRecentNotesInternal(
         typeHint: 'note',
         limit: NOTE_SUMMARY_LIMIT,
       })).filter((asset) => asset.type === 'note')
-    : (await listNotes({ userId, limit: NOTE_SUMMARY_LIMIT })).map(toAssetListItem)
+    : (await listNotes({ userId, limit: NOTE_SUMMARY_LIMIT })).map(toAssetListItemFromNote)
 
-  if (notes.length === 0) {
-    return normalizeNoteSummaryOutput(getFallbackNoteSummary(notes), notes)
-  }
-
-  const model = getAiProvider()
-  if (!model) {
-    return normalizeNoteSummaryOutput(getFallbackNoteSummary(notes), notes)
-  }
-
-  try {
-    const [systemPrompt, userPrompt] = await Promise.all([
-      buildWorkspaceSystemPrompt('workspace/note-summary.system'),
-      renderPrompt('workspace/note-summary.user', {
-        payloadJson: JSON.stringify({
-          currentTime: nowIso(),
-          notes: buildNoteSummaryPromptInput(notes),
-        }),
-      }),
-    ])
-
-    const result = await generateText({
-      model,
-      output: Output.object({ schema: noteSummaryOutputSchema }),
-      system: systemPrompt,
-      prompt: userPrompt,
-      temperature: 0,
-      maxRetries: 1,
-      timeout: NOTE_SUMMARY_MODEL_TIMEOUT_MS,
-      providerOptions: {
-        alibaba: {
-          enableThinking: false,
-        },
-      },
-    })
-
-    return normalizeNoteSummaryOutput(result.output, notes)
-  } catch (error) {
-    console.warn('[notes.summary] AI summary failed; using fallback', {
-      error: error instanceof Error ? error.message : String(error),
-    })
-    return normalizeNoteSummaryOutput(getFallbackNoteSummary(notes), notes)
-  }
+  return generateWorkspaceInsight({
+    assets: notes,
+    buildPromptInput: buildNoteSummaryPromptInput,
+    fallbackOutput: getFallbackNoteSummary,
+    schema: noteSummaryOutputSchema,
+    promptKey: 'workspace/note-summary',
+    promptPayloadKey: 'notes',
+    timeoutMs: NOTE_SUMMARY_MODEL_TIMEOUT_MS,
+    logTag: 'notes.summary',
+    logLabel: 'summary',
+    normalizeResult: (output, context) => {
+      return {
+        headline: output.headline,
+        summary: output.summary,
+        keyPoints: output.keyPoints,
+        sourceAssetIds: context.sourceAssetIds,
+        sources: context.sources,
+        generatedAt: context.generatedAt,
+      }
+    },
+  })
 }

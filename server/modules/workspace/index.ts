@@ -7,39 +7,35 @@ import {
   canRestoreFromTrash,
   canUnarchive,
 } from '@/server/services/assets/asset-lifecycle'
-import { scheduleBookmarkEnrichTask } from '@/server/services/bookmark/bookmark-enrich.service'
+import {
+  toAssetListItemFromBookmark,
+  toAssetListItemFromNote,
+  toAssetListItemFromTodo,
+} from '@/server/services/workspace/asset-list-item'
 import {
   archiveBookmark,
   getBookmarkById,
-  listBookmarks,
   listBookmarksPage,
   moveBookmarkToTrash,
   purgeBookmark,
   restoreBookmarkFromTrash,
   unarchiveBookmark,
-  updateBookmark,
-  type BookmarkListItem,
 } from '@/server/services/bookmarks'
 import {
   archiveNote,
   getNoteById,
-  listNotes,
   listNotesPage,
   moveNoteToTrash,
   purgeNote,
   restoreNoteFromTrash,
   unarchiveNote,
-  updateNote,
-  type NoteListItem,
 } from '@/server/services/notes'
-import { deleteEmbeddingsForAsset } from '@/server/services/search/semantic-search.service'
 import {
   archiveTodo,
   getTodoById,
   listCompletedTodos,
   listOverdueTodos,
   listTodoDateMarkers,
-  listTodos,
   listTodosByDueDate,
   listTodosPage,
   listUnscheduledTodos,
@@ -47,7 +43,6 @@ import {
   purgeTodo,
   restoreTodoFromTrash,
   unarchiveTodo,
-  type TodoListItem,
 } from '@/server/services/todos'
 import {
   createWorkspaceLinkAsset,
@@ -55,15 +50,16 @@ import {
   createWorkspaceTodoAsset,
   listWorkspaceAssets as listWorkspaceAssetsService,
   searchWorkspaceAssets as searchWorkspaceAssetsService,
+  updateWorkspaceLinkAsset,
+  updateWorkspaceNoteAsset,
   setWorkspaceTodoAssetCompletion,
   updateWorkspaceTodoAsset,
   WorkspaceAssetsError,
 } from '@/server/services/workspace/workspace-assets.service'
 import {
-  ASSET_LIFECYCLE_STATUS,
   type AssetLifecycleStatus,
+  ASSET_LIFECYCLE_STATUS,
 } from '@/shared/assets/asset-lifecycle.types'
-
 import { summarizeWorkspaceRecentBookmarksInternal } from './bookmarks.summary'
 import {
   createMixedWorkspaceAssetsPage,
@@ -135,86 +131,19 @@ function classifyAssetInput(text: string): AssetInputClassification {
   return { kind: 'note' }
 }
 
-function toAssetListItemFromNote(note: NoteListItem): AssetListItem {
-  return {
-    id: note.id,
-    originalText: note.originalText,
-    title: note.title,
-    excerpt: note.excerpt,
-    type: 'note',
-    content: note.content,
-    summary: note.summary,
-    url: null,
-    timeText: null,
-    dueAt: null,
-    completed: false,
-    bookmarkMeta: null,
-    lifecycleStatus: note.lifecycleStatus,
-    archivedAt: note.archivedAt,
-    trashedAt: note.trashedAt,
-    createdAt: note.createdAt,
-    updatedAt: note.updatedAt,
-  }
-}
-
-function toAssetListItemFromTodo(todo: TodoListItem): AssetListItem {
-  return {
-    id: todo.id,
-    originalText: todo.originalText,
-    title: todo.title,
-    excerpt: todo.excerpt,
-    type: 'todo',
-    content: todo.content,
-    url: null,
-    timeText: todo.timeText,
-    dueAt: todo.dueAt,
-    completed: todo.completed,
-    bookmarkMeta: null,
-    lifecycleStatus: todo.lifecycleStatus,
-    archivedAt: todo.archivedAt,
-    trashedAt: todo.trashedAt,
-    createdAt: todo.createdAt,
-    updatedAt: todo.updatedAt,
-  }
-}
-
-function toAssetListItemFromBookmark(bookmark: BookmarkListItem): AssetListItem {
-  return {
-    id: bookmark.id,
-    originalText: bookmark.originalText,
-    title: bookmark.title,
-    excerpt: bookmark.excerpt,
-    type: 'link',
-    note: bookmark.note,
-    summary: bookmark.summary,
-    url: bookmark.url,
-    timeText: null,
-    dueAt: null,
-    completed: false,
-    bookmarkMeta: bookmark.bookmarkMeta,
-    lifecycleStatus: bookmark.lifecycleStatus,
-    archivedAt: bookmark.archivedAt,
-    trashedAt: bookmark.trashedAt,
-    createdAt: bookmark.createdAt,
-    updatedAt: bookmark.updatedAt,
-  }
-}
-
 export async function createWorkspaceNote(input: {
   userId: string
-  text?: string
-  rawInput?: string
+  rawInput: string
   title?: string | null
   content?: string | null
   summary?: string | null
 }): Promise<Extract<WorkspaceAssetActionResult, { kind: 'created' }>> {
   const asset = await createWorkspaceNoteAsset({
     userId: input.userId,
-    text: input.rawInput === undefined ? input.text ?? '' : undefined,
     rawInput: input.rawInput,
-    title: input.rawInput !== undefined ? input.title ?? null : undefined,
-    content: input.rawInput !== undefined ? input.content ?? null : undefined,
-    summary: input.rawInput !== undefined ? input.summary ?? null : undefined,
+    title: input.title ?? null,
+    content: input.content ?? null,
+    summary: input.summary ?? null,
   })
 
   return { kind: 'created', asset }
@@ -222,8 +151,7 @@ export async function createWorkspaceNote(input: {
 
 export async function createWorkspaceTodo(input: {
   userId: string
-  text?: string
-  rawInput?: string
+  rawInput: string
   title?: string | null
   content?: string | null
   timeText?: string | null
@@ -231,11 +159,11 @@ export async function createWorkspaceTodo(input: {
 }): Promise<Extract<WorkspaceAssetActionResult, { kind: 'created' }>> {
   const asset = await createWorkspaceTodoAsset({
     userId: input.userId,
-    rawInput: input.rawInput ?? input.text ?? '',
-    title: input.rawInput !== undefined ? input.title ?? null : null,
-    content: input.rawInput !== undefined ? input.content ?? null : null,
-    timeText: input.rawInput !== undefined ? input.timeText ?? null : null,
-    dueAt: input.rawInput !== undefined ? input.dueAt ?? null : null,
+    rawInput: input.rawInput,
+    title: input.title ?? null,
+    content: input.content ?? null,
+    timeText: input.timeText ?? null,
+    dueAt: input.dueAt ?? null,
   })
 
   return { kind: 'created', asset }
@@ -243,8 +171,7 @@ export async function createWorkspaceTodo(input: {
 
 export async function createWorkspaceLink(input: {
   userId: string
-  text?: string
-  rawInput?: string
+  rawInput: string
   url: string
   title?: string | null
   note?: string | null
@@ -252,11 +179,11 @@ export async function createWorkspaceLink(input: {
 }): Promise<Extract<WorkspaceAssetActionResult, { kind: 'created' }>> {
   const asset = await createWorkspaceLinkAsset({
     userId: input.userId,
-    rawInput: input.rawInput ?? input.text ?? '',
+    rawInput: input.rawInput,
     url: input.url,
-    title: input.rawInput !== undefined ? input.title ?? null : null,
-    note: input.rawInput !== undefined ? input.note ?? null : null,
-    summary: input.rawInput !== undefined ? input.summary ?? null : null,
+    title: input.title ?? null,
+    note: input.note ?? null,
+    summary: input.summary ?? null,
   })
 
   return { kind: 'created', asset }
@@ -271,7 +198,7 @@ export async function createWorkspaceAsset(input: {
   if (classification.kind === 'link') {
     return createWorkspaceLink({
       userId: input.userId,
-      text: input.text,
+      rawInput: input.text,
       url: classification.url,
     })
   }
@@ -279,13 +206,13 @@ export async function createWorkspaceAsset(input: {
   if (classification.kind === 'todo') {
     return createWorkspaceTodo({
       userId: input.userId,
-      text: input.text,
+      rawInput: input.text,
     })
   }
 
   return createWorkspaceNote({
     userId: input.userId,
-    text: input.text,
+    rawInput: input.text,
   })
 }
 
@@ -294,130 +221,71 @@ export async function setWorkspaceTodoCompletion(input: {
   assetId: string
   completed: boolean
 }): Promise<AssetListItem> {
-  try {
-    return await setWorkspaceTodoAssetCompletion(input)
-  } catch (error) {
-    if (error instanceof WorkspaceAssetsError) {
-      throw new WorkspaceModuleError(error.publicMessage, error.code)
-    }
-
-    throw error
-  }
+  return runWorkspaceAssetMutation(() => setWorkspaceTodoAssetCompletion(input))
 }
 
 export async function updateWorkspaceNote(input: {
   userId: string
   assetId: string
-  text?: string
-  rawInput?: string
+  rawInput: string
   title?: string | null
   content?: string | null
   summary?: string | null
 }): Promise<AssetListItem> {
-  const updated = await updateNote(
-    input.rawInput !== undefined
-      ? {
-          userId: input.userId,
-          noteId: input.assetId,
-          rawInput: input.rawInput,
-          title: input.title,
-          content: input.content,
-          summary: input.summary,
-        }
-      : {
-          userId: input.userId,
-          noteId: input.assetId,
-          text: input.text ?? '',
-        }
+  return runWorkspaceAssetMutation(() =>
+    updateWorkspaceNoteAsset({
+      userId: input.userId,
+      assetId: input.assetId,
+      rawInput: input.rawInput,
+      title: input.title,
+      content: input.content,
+      summary: input.summary,
+    })
   )
-
-  if (!updated) {
-    throw new WorkspaceModuleError(
-      '没有找到这条笔记，或你没有权限更新它。',
-      WORKSPACE_MODULE_ERROR_CODES.ASSET_NOT_FOUND
-    )
-  }
-
-  await deleteEmbeddingsForAsset({ assetType: 'note', assetId: updated.id })
-  return toAssetListItemFromNote(updated)
 }
 
 export async function updateWorkspaceTodo(input: {
   userId: string
   assetId: string
-  text?: string
-  rawInput?: string
+  rawInput: string
   title?: string | null
   content?: string | null
   timeText?: string | null
   dueAt?: Date | null
 }): Promise<AssetListItem> {
-  try {
-    return await updateWorkspaceTodoAsset({
+  return runWorkspaceAssetMutation(() =>
+    updateWorkspaceTodoAsset({
       userId: input.userId,
       assetId: input.assetId,
-      rawInput: input.rawInput ?? input.text ?? '',
-      title: input.rawInput !== undefined ? input.title ?? null : null,
-      content: input.rawInput !== undefined ? input.content ?? null : null,
-      timeText: input.rawInput !== undefined ? input.timeText ?? null : null,
-      dueAt: input.rawInput !== undefined ? input.dueAt ?? null : null,
+      rawInput: input.rawInput,
+      title: input.title ?? null,
+      content: input.content ?? null,
+      timeText: input.timeText ?? null,
+      dueAt: input.dueAt ?? null,
     })
-  } catch (error) {
-    if (error instanceof WorkspaceAssetsError) {
-      throw new WorkspaceModuleError(error.publicMessage, error.code)
-    }
-
-    throw error
-  }
+  )
 }
 
 export async function updateWorkspaceBookmark(input: {
   userId: string
   assetId: string
-  text?: string
-  rawInput?: string
+  rawInput: string
   url: string
   title?: string | null
   note?: string | null
   summary?: string | null
 }): Promise<AssetListItem> {
-  const updated = await updateBookmark(
-    input.rawInput !== undefined
-      ? {
-          userId: input.userId,
-          bookmarkId: input.assetId,
-          rawInput: input.rawInput,
-          url: input.url,
-          title: input.title,
-          note: input.note,
-          summary: input.summary,
-        }
-      : {
-          userId: input.userId,
-          bookmarkId: input.assetId,
-          text: input.text ?? '',
-          url: input.url,
-        }
-  )
-
-  if (!updated) {
-    throw new WorkspaceModuleError(
-      '没有找到这条书签，或你没有权限更新它。',
-      WORKSPACE_MODULE_ERROR_CODES.ASSET_NOT_FOUND
-    )
-  }
-
-  await deleteEmbeddingsForAsset({ assetType: 'link', assetId: updated.item.id })
-
-  if (updated.urlChanged && updated.item.url) {
-    void scheduleBookmarkEnrichTask({
-      bookmarkId: updated.item.id,
+  return runWorkspaceAssetMutation(() =>
+    updateWorkspaceLinkAsset({
       userId: input.userId,
-      url: updated.item.url,
+      assetId: input.assetId,
+      rawInput: input.rawInput,
+      url: input.url,
+      title: input.title,
+      note: input.note,
+      summary: input.summary,
     })
-  }
-
-  return toAssetListItemFromBookmark(updated.item)
+  )
 }
 
 export async function archiveWorkspaceAsset(input: {
@@ -426,33 +294,15 @@ export async function archiveWorkspaceAsset(input: {
   assetType: string
 }): Promise<AssetListItem> {
   assertAssetType(input.assetType)
-  const existing = requireExistingAsset(
-    await getWorkspaceAssetByType({
-      userId: input.userId,
-      assetId: input.assetId,
-      assetType: input.assetType,
-    })
-  )
-
-  if (!canArchive(existing.lifecycleStatus ?? ASSET_LIFECYCLE_STATUS.ACTIVE)) {
-    throw new WorkspaceModuleError(
-      '当前状态不允许归档。',
-      WORKSPACE_MODULE_ERROR_CODES.INVALID_LIFECYCLE_TRANSITION
-    )
-  }
-
-  if (input.assetType === 'note') {
-    const updated = await archiveNote({ userId: input.userId, noteId: input.assetId })
-    return requireExistingAsset(updated ? toAssetListItemFromNote(updated) : null)
-  }
-
-  if (input.assetType === 'todo') {
-    const updated = await archiveTodo({ userId: input.userId, todoId: input.assetId })
-    return requireExistingAsset(updated ? toAssetListItemFromTodo(updated) : null)
-  }
-
-  const updated = await archiveBookmark({ userId: input.userId, bookmarkId: input.assetId })
-  return requireExistingAsset(updated ? toAssetListItemFromBookmark(updated) : null)
+  return mutateWorkspaceAssetLifecycle({
+    userId: input.userId,
+    assetId: input.assetId,
+    assetType: input.assetType,
+    canTransition: canArchive,
+    invalidMessage: '当前状态不允许归档。',
+    invalidCode: WORKSPACE_MODULE_ERROR_CODES.INVALID_LIFECYCLE_TRANSITION,
+    run: (adapter) => adapter.archive(input.assetId, input.userId),
+  })
 }
 
 export async function unarchiveWorkspaceAsset(input: {
@@ -461,33 +311,15 @@ export async function unarchiveWorkspaceAsset(input: {
   assetType: string
 }): Promise<AssetListItem> {
   assertAssetType(input.assetType)
-  const existing = requireExistingAsset(
-    await getWorkspaceAssetByType({
-      userId: input.userId,
-      assetId: input.assetId,
-      assetType: input.assetType,
-    })
-  )
-
-  if (!canUnarchive(existing.lifecycleStatus ?? ASSET_LIFECYCLE_STATUS.ACTIVE)) {
-    throw new WorkspaceModuleError(
-      '当前状态不允许取消归档。',
-      WORKSPACE_MODULE_ERROR_CODES.INVALID_LIFECYCLE_TRANSITION
-    )
-  }
-
-  if (input.assetType === 'note') {
-    const updated = await unarchiveNote({ userId: input.userId, noteId: input.assetId })
-    return requireExistingAsset(updated ? toAssetListItemFromNote(updated) : null)
-  }
-
-  if (input.assetType === 'todo') {
-    const updated = await unarchiveTodo({ userId: input.userId, todoId: input.assetId })
-    return requireExistingAsset(updated ? toAssetListItemFromTodo(updated) : null)
-  }
-
-  const updated = await unarchiveBookmark({ userId: input.userId, bookmarkId: input.assetId })
-  return requireExistingAsset(updated ? toAssetListItemFromBookmark(updated) : null)
+  return mutateWorkspaceAssetLifecycle({
+    userId: input.userId,
+    assetId: input.assetId,
+    assetType: input.assetType,
+    canTransition: canUnarchive,
+    invalidMessage: '当前状态不允许取消归档。',
+    invalidCode: WORKSPACE_MODULE_ERROR_CODES.INVALID_LIFECYCLE_TRANSITION,
+    run: (adapter) => adapter.unarchive(input.assetId, input.userId),
+  })
 }
 
 export async function moveWorkspaceAssetToTrash(input: {
@@ -496,33 +328,15 @@ export async function moveWorkspaceAssetToTrash(input: {
   assetType: string
 }): Promise<AssetListItem> {
   assertAssetType(input.assetType)
-  const existing = requireExistingAsset(
-    await getWorkspaceAssetByType({
-      userId: input.userId,
-      assetId: input.assetId,
-      assetType: input.assetType,
-    })
-  )
-
-  if (!canMoveToTrash(existing.lifecycleStatus ?? ASSET_LIFECYCLE_STATUS.ACTIVE)) {
-    throw new WorkspaceModuleError(
-      '当前状态不允许移动到回收站。',
-      WORKSPACE_MODULE_ERROR_CODES.INVALID_LIFECYCLE_TRANSITION
-    )
-  }
-
-  if (input.assetType === 'note') {
-    const updated = await moveNoteToTrash({ userId: input.userId, noteId: input.assetId })
-    return requireExistingAsset(updated ? toAssetListItemFromNote(updated) : null)
-  }
-
-  if (input.assetType === 'todo') {
-    const updated = await moveTodoToTrash({ userId: input.userId, todoId: input.assetId })
-    return requireExistingAsset(updated ? toAssetListItemFromTodo(updated) : null)
-  }
-
-  const updated = await moveBookmarkToTrash({ userId: input.userId, bookmarkId: input.assetId })
-  return requireExistingAsset(updated ? toAssetListItemFromBookmark(updated) : null)
+  return mutateWorkspaceAssetLifecycle({
+    userId: input.userId,
+    assetId: input.assetId,
+    assetType: input.assetType,
+    canTransition: canMoveToTrash,
+    invalidMessage: '当前状态不允许移动到回收站。',
+    invalidCode: WORKSPACE_MODULE_ERROR_CODES.INVALID_LIFECYCLE_TRANSITION,
+    run: (adapter) => adapter.moveToTrash(input.assetId, input.userId),
+  })
 }
 
 export async function restoreWorkspaceAssetFromTrash(input: {
@@ -531,33 +345,15 @@ export async function restoreWorkspaceAssetFromTrash(input: {
   assetType: string
 }): Promise<AssetListItem> {
   assertAssetType(input.assetType)
-  const existing = requireExistingAsset(
-    await getWorkspaceAssetByType({
-      userId: input.userId,
-      assetId: input.assetId,
-      assetType: input.assetType,
-    })
-  )
-
-  if (!canRestoreFromTrash(existing.lifecycleStatus ?? ASSET_LIFECYCLE_STATUS.ACTIVE)) {
-    throw new WorkspaceModuleError(
-      '当前状态不允许恢复。',
-      WORKSPACE_MODULE_ERROR_CODES.INVALID_LIFECYCLE_TRANSITION
-    )
-  }
-
-  if (input.assetType === 'note') {
-    const updated = await restoreNoteFromTrash({ userId: input.userId, noteId: input.assetId })
-    return requireExistingAsset(updated ? toAssetListItemFromNote(updated) : null)
-  }
-
-  if (input.assetType === 'todo') {
-    const updated = await restoreTodoFromTrash({ userId: input.userId, todoId: input.assetId })
-    return requireExistingAsset(updated ? toAssetListItemFromTodo(updated) : null)
-  }
-
-  const updated = await restoreBookmarkFromTrash({ userId: input.userId, bookmarkId: input.assetId })
-  return requireExistingAsset(updated ? toAssetListItemFromBookmark(updated) : null)
+  return mutateWorkspaceAssetLifecycle({
+    userId: input.userId,
+    assetId: input.assetId,
+    assetType: input.assetType,
+    canTransition: canRestoreFromTrash,
+    invalidMessage: '当前状态不允许恢复。',
+    invalidCode: WORKSPACE_MODULE_ERROR_CODES.INVALID_LIFECYCLE_TRANSITION,
+    run: (adapter) => adapter.restoreFromTrash(input.assetId, input.userId),
+  })
 }
 
 export async function purgeWorkspaceAsset(input: {
@@ -581,14 +377,7 @@ export async function purgeWorkspaceAsset(input: {
     )
   }
 
-  let deleted = false
-  if (input.assetType === 'note') {
-    deleted = await purgeNote({ userId: input.userId, noteId: input.assetId })
-  } else if (input.assetType === 'todo') {
-    deleted = await purgeTodo({ userId: input.userId, todoId: input.assetId })
-  } else {
-    deleted = await purgeBookmark({ userId: input.userId, bookmarkId: input.assetId })
-  }
+  const deleted = await getWorkspaceAssetAdapter(input.assetType).purge(input.assetId, input.userId)
 
   if (!deleted) {
     throw new WorkspaceModuleError(
@@ -615,6 +404,74 @@ type LifecycleMutatedAsset = {
 
 type WorkspaceAssetType = AssetType
 
+type WorkspaceAssetAdapter = {
+  getById: (assetId: string, userId: string) => Promise<AssetListItem | null>
+  listPage: (input: {
+    userId: string
+    pageSize: number
+    cursor?: string | null
+    lifecycleStatus: AssetLifecycleStatus
+  }) => Promise<PaginatedResult<AssetListItem>>
+  archive: (assetId: string, userId: string) => Promise<AssetListItem | null>
+  unarchive: (assetId: string, userId: string) => Promise<AssetListItem | null>
+  moveToTrash: (assetId: string, userId: string) => Promise<AssetListItem | null>
+  restoreFromTrash: (assetId: string, userId: string) => Promise<AssetListItem | null>
+  purge: (assetId: string, userId: string) => Promise<boolean>
+}
+
+type WorkspaceAssetAdapterConfig<TAsset> = {
+  getById: (assetId: string, userId: string) => Promise<TAsset | null>
+  listPage: (input: {
+    userId: string
+    pageSize: number
+    cursor?: string | null
+    lifecycleStatus: AssetLifecycleStatus
+  }) => Promise<PaginatedResult<TAsset>>
+  archive: (assetId: string, userId: string) => Promise<TAsset | null>
+  unarchive: (assetId: string, userId: string) => Promise<TAsset | null>
+  moveToTrash: (assetId: string, userId: string) => Promise<TAsset | null>
+  restoreFromTrash: (assetId: string, userId: string) => Promise<TAsset | null>
+  purge: (assetId: string, userId: string) => Promise<boolean>
+  mapAsset: (asset: TAsset) => AssetListItem
+}
+
+function mapWorkspaceAsset<TAsset>(
+  asset: TAsset | null,
+  mapAsset: (asset: TAsset) => AssetListItem
+): AssetListItem | null {
+  return asset ? mapAsset(asset) : null
+}
+
+function buildWorkspaceAssetAdapter<TAsset>(
+  config: WorkspaceAssetAdapterConfig<TAsset>
+): WorkspaceAssetAdapter {
+  return {
+    getById: async (assetId, userId) =>
+      mapWorkspaceAsset(await config.getById(assetId, userId), config.mapAsset),
+    listPage: async ({ userId, pageSize, cursor, lifecycleStatus }) => {
+      const page = await config.listPage({
+        userId,
+        pageSize,
+        cursor,
+        lifecycleStatus,
+      })
+      return {
+        items: page.items.map(config.mapAsset),
+        pageInfo: page.pageInfo,
+      }
+    },
+    archive: async (assetId, userId) =>
+      mapWorkspaceAsset(await config.archive(assetId, userId), config.mapAsset),
+    unarchive: async (assetId, userId) =>
+      mapWorkspaceAsset(await config.unarchive(assetId, userId), config.mapAsset),
+    moveToTrash: async (assetId, userId) =>
+      mapWorkspaceAsset(await config.moveToTrash(assetId, userId), config.mapAsset),
+    restoreFromTrash: async (assetId, userId) =>
+      mapWorkspaceAsset(await config.restoreFromTrash(assetId, userId), config.mapAsset),
+    purge: config.purge,
+  }
+}
+
 function assertAssetType(type: string): asserts type is WorkspaceAssetType {
   if (type !== 'note' && type !== 'todo' && type !== 'link') {
     throw new WorkspaceModuleError(
@@ -624,29 +481,82 @@ function assertAssetType(type: string): asserts type is WorkspaceAssetType {
   }
 }
 
+function getWorkspaceAssetAdapter(assetType: WorkspaceAssetType): WorkspaceAssetAdapter {
+  if (assetType === 'note') {
+    return buildWorkspaceAssetAdapter({
+      getById: async (assetId, userId) => {
+        return getNoteById(assetId, userId, {
+          includeLifecycleStatuses: ALL_LIFECYCLE_STATUSES,
+        })
+      },
+      listPage: ({ userId, pageSize, cursor, lifecycleStatus }) =>
+        listNotesPage({
+          userId,
+          pageSize,
+          cursor,
+          lifecycleStatus,
+        }),
+      archive: (assetId, userId) => archiveNote({ userId, noteId: assetId }),
+      unarchive: (assetId, userId) => unarchiveNote({ userId, noteId: assetId }),
+      moveToTrash: (assetId, userId) => moveNoteToTrash({ userId, noteId: assetId }),
+      restoreFromTrash: (assetId, userId) => restoreNoteFromTrash({ userId, noteId: assetId }),
+      purge: (assetId, userId) => purgeNote({ userId, noteId: assetId }),
+      mapAsset: toAssetListItemFromNote,
+    })
+  }
+
+  if (assetType === 'todo') {
+    return buildWorkspaceAssetAdapter({
+      getById: async (assetId, userId) => {
+        return getTodoById(assetId, userId, {
+          includeLifecycleStatuses: ALL_LIFECYCLE_STATUSES,
+        })
+      },
+      listPage: ({ userId, pageSize, cursor, lifecycleStatus }) =>
+        listTodosPage({
+          userId,
+          pageSize,
+          cursor,
+          lifecycleStatus,
+        }),
+      archive: (assetId, userId) => archiveTodo({ userId, todoId: assetId }),
+      unarchive: (assetId, userId) => unarchiveTodo({ userId, todoId: assetId }),
+      moveToTrash: (assetId, userId) => moveTodoToTrash({ userId, todoId: assetId }),
+      restoreFromTrash: (assetId, userId) => restoreTodoFromTrash({ userId, todoId: assetId }),
+      purge: (assetId, userId) => purgeTodo({ userId, todoId: assetId }),
+      mapAsset: toAssetListItemFromTodo,
+    })
+  }
+
+  return buildWorkspaceAssetAdapter({
+    getById: async (assetId, userId) => {
+      return getBookmarkById(assetId, userId, {
+        includeLifecycleStatuses: ALL_LIFECYCLE_STATUSES,
+      })
+    },
+    listPage: ({ userId, pageSize, cursor, lifecycleStatus }) =>
+      listBookmarksPage({
+        userId,
+        pageSize,
+        cursor,
+        lifecycleStatus,
+      }),
+    archive: (assetId, userId) => archiveBookmark({ userId, bookmarkId: assetId }),
+    unarchive: (assetId, userId) => unarchiveBookmark({ userId, bookmarkId: assetId }),
+    moveToTrash: (assetId, userId) => moveBookmarkToTrash({ userId, bookmarkId: assetId }),
+    restoreFromTrash: (assetId, userId) =>
+      restoreBookmarkFromTrash({ userId, bookmarkId: assetId }),
+    purge: (assetId, userId) => purgeBookmark({ userId, bookmarkId: assetId }),
+    mapAsset: toAssetListItemFromBookmark,
+  })
+}
+
 async function getWorkspaceAssetByType(input: {
   userId: string
   assetId: string
   assetType: WorkspaceAssetType
 }): Promise<AssetListItem | null> {
-  if (input.assetType === 'note') {
-    const note = await getNoteById(input.assetId, input.userId, {
-      includeLifecycleStatuses: ALL_LIFECYCLE_STATUSES,
-    })
-    return note ? toAssetListItemFromNote(note) : null
-  }
-
-  if (input.assetType === 'todo') {
-    const todo = await getTodoById(input.assetId, input.userId, {
-      includeLifecycleStatuses: ALL_LIFECYCLE_STATUSES,
-    })
-    return todo ? toAssetListItemFromTodo(todo) : null
-  }
-
-  const bookmark = await getBookmarkById(input.assetId, input.userId, {
-    includeLifecycleStatuses: ALL_LIFECYCLE_STATUSES,
-  })
-  return bookmark ? toAssetListItemFromBookmark(bookmark) : null
+  return getWorkspaceAssetAdapter(input.assetType).getById(input.assetId, input.userId)
 }
 
 function requireExistingAsset(asset: AssetListItem | null): AssetListItem {
@@ -658,6 +568,46 @@ function requireExistingAsset(asset: AssetListItem | null): AssetListItem {
   }
 
   return asset
+}
+
+async function runWorkspaceAssetMutation<TResult>(
+  execute: () => Promise<TResult>
+): Promise<TResult> {
+  try {
+    return await execute()
+  } catch (error) {
+    if (error instanceof WorkspaceAssetsError) {
+      throw new WorkspaceModuleError(error.publicMessage, error.code)
+    }
+
+    throw error
+  }
+}
+
+async function mutateWorkspaceAssetLifecycle(input: {
+  userId: string
+  assetId: string
+  assetType: WorkspaceAssetType
+  canTransition: (status: AssetLifecycleStatus) => boolean
+  invalidMessage: string
+  invalidCode: WorkspaceModuleErrorCode
+  run: (adapter: WorkspaceAssetAdapter) => Promise<AssetListItem | null>
+}): Promise<AssetListItem> {
+  const existing = requireExistingAsset(
+    await getWorkspaceAssetByType({
+      userId: input.userId,
+      assetId: input.assetId,
+      assetType: input.assetType,
+    })
+  )
+
+  if (!input.canTransition(existing.lifecycleStatus ?? ASSET_LIFECYCLE_STATUS.ACTIVE)) {
+    throw new WorkspaceModuleError(input.invalidMessage, input.invalidCode)
+  }
+
+  return requireExistingAsset(
+    await input.run(getWorkspaceAssetAdapter(input.assetType))
+  )
 }
 
 export async function listWorkspaceAssets(input: {
@@ -680,59 +630,47 @@ export async function listWorkspaceAssetsPage(input: {
   const lifecycleStatus = input.lifecycleStatus ?? ASSET_LIFECYCLE_STATUS.ACTIVE
 
   if (input.type === 'note') {
-    const page = await listNotesPage({
+    return getWorkspaceAssetAdapter('note').listPage({
       userId: input.userId,
       pageSize,
       cursor: input.cursor,
       lifecycleStatus,
     })
-    return {
-      items: page.items.map(toAssetListItemFromNote),
-      pageInfo: page.pageInfo,
-    }
   }
 
   if (input.type === 'link') {
-    const page = await listBookmarksPage({
+    return getWorkspaceAssetAdapter('link').listPage({
       userId: input.userId,
       pageSize,
       cursor: input.cursor,
       lifecycleStatus,
     })
-    return {
-      items: page.items.map(toAssetListItemFromBookmark),
-      pageInfo: page.pageInfo,
-    }
   }
 
   if (input.type === 'todo') {
-    const page = await listTodosPage({
+    return getWorkspaceAssetAdapter('todo').listPage({
       userId: input.userId,
       pageSize,
       cursor: input.cursor,
       lifecycleStatus,
     })
-    return {
-      items: page.items.map(toAssetListItemFromTodo),
-      pageInfo: page.pageInfo,
-    }
   }
 
   const mixedCursor = decodeMixedWorkspaceAssetsCursor(input.cursor)
   const [notesPage, bookmarksPage, todosPage] = await Promise.all([
-    listNotesPage({
+    getWorkspaceAssetAdapter('note').listPage({
       userId: input.userId,
       pageSize,
       cursor: mixedCursor?.notesCursor ?? null,
       lifecycleStatus,
     }),
-    listBookmarksPage({
+    getWorkspaceAssetAdapter('link').listPage({
       userId: input.userId,
       pageSize,
       cursor: mixedCursor?.bookmarksCursor ?? null,
       lifecycleStatus,
     }),
-    listTodosPage({
+    getWorkspaceAssetAdapter('todo').listPage({
       userId: input.userId,
       pageSize,
       cursor: mixedCursor?.todosCursor ?? null,
@@ -743,18 +681,9 @@ export async function listWorkspaceAssetsPage(input: {
   return createMixedWorkspaceAssetsPage({
     pageSize,
     incomingCursor: mixedCursor,
-    notesPage: {
-      items: notesPage.items.map(toAssetListItemFromNote),
-      pageInfo: notesPage.pageInfo,
-    },
-    bookmarksPage: {
-      items: bookmarksPage.items.map(toAssetListItemFromBookmark),
-      pageInfo: bookmarksPage.pageInfo,
-    },
-    todosPage: {
-      items: todosPage.items.map(toAssetListItemFromTodo),
-      pageInfo: todosPage.pageInfo,
-    },
+    notesPage,
+    bookmarksPage,
+    todosPage,
   })
 }
 
@@ -762,24 +691,24 @@ export async function listWorkspaceLinkAssets(
   userId: string,
   limit?: number
 ): Promise<AssetListItem[]> {
-  const bookmarks = await listBookmarks({
+  return listWorkspaceAssets({
     userId,
     limit: limit ?? 50,
+    type: 'link',
     lifecycleStatus: ASSET_LIFECYCLE_STATUS.ACTIVE,
   })
-  return bookmarks.map(toAssetListItemFromBookmark)
 }
 
 export async function listWorkspaceNoteAssets(
   userId: string,
   limit?: number
 ): Promise<AssetListItem[]> {
-  const notes = await listNotes({
+  return listWorkspaceAssets({
     userId,
     limit: limit ?? 50,
+    type: 'note',
     lifecycleStatus: ASSET_LIFECYCLE_STATUS.ACTIVE,
   })
-  return notes.map(toAssetListItemFromNote)
 }
 
 export async function listWorkspaceRecentAssets(
@@ -793,12 +722,12 @@ export async function listWorkspaceTodoAssets(
   userId: string,
   limit?: number
 ): Promise<AssetListItem[]> {
-  const todos = await listTodos({
+  return listWorkspaceAssets({
     userId,
     limit: limit ?? 50,
+    type: 'todo',
     lifecycleStatus: ASSET_LIFECYCLE_STATUS.ACTIVE,
   })
-  return todos.map(toAssetListItemFromTodo)
 }
 
 export async function listWorkspaceTodosByDate(input: {

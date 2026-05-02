@@ -1,18 +1,19 @@
 import 'server-only'
 
-import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
-import { buildWorkspaceSystemPrompt } from '@/server/lib/ai'
-import { renderPrompt } from '@/server/lib/prompt-template'
 import { searchAssets } from '@/server/services/search/assets-search.service'
 import { listIncompleteTodos } from '@/server/services/todos'
-import { nowIso, dayjs } from '@/shared/time/dayjs'
+import { toAssetListItemFromTodo } from '@/server/services/workspace/asset-list-item'
+import { dayjs } from '@/shared/time/dayjs'
 
-import { getAiProvider } from '../../lib/ai/ai-provider'
 import { TODO_REVIEW_LIMIT, TODO_REVIEW_MODEL_TIMEOUT_MS } from '../../lib/config/constants'
 
-import type { TodoListItem } from '@/server/services/todos'
+import {
+  buildWorkspaceAssetPromptInput,
+  generateWorkspaceInsight,
+} from './asset-insight'
+
 import type { AssetListItem, TodoReviewResult } from '@/shared/assets/assets.types'
 
 export type TodoReviewPromptItem = {
@@ -23,34 +24,18 @@ export type TodoReviewPromptItem = {
   createdAt: string
 }
 
-function toAssetListItem(todo: TodoListItem): AssetListItem {
-  return {
-    id: todo.id,
-    originalText: todo.originalText,
-    title: todo.title,
-    excerpt: todo.excerpt,
-    type: 'todo',
-    url: null,
-    timeText: todo.timeText,
-    dueAt: todo.dueAt,
-    completed: todo.completed,
-    bookmarkMeta: null,
-    lifecycleStatus: todo.lifecycleStatus,
-    archivedAt: todo.archivedAt,
-    trashedAt: todo.trashedAt,
-    createdAt: todo.createdAt,
-    updatedAt: todo.updatedAt,
-  }
-}
-
 export function buildTodoReviewPromptInput(todos: AssetListItem[]): TodoReviewPromptItem[] {
-  return todos.slice(0, TODO_REVIEW_LIMIT).map((todo) => ({
-    id: todo.id,
-    text: todo.originalText,
-    timeText: todo.timeText,
-    dueAt: todo.dueAt ? dayjs(todo.dueAt).toISOString() : null,
-    createdAt: dayjs(todo.createdAt).toISOString(),
-  }))
+  return buildWorkspaceAssetPromptInput({
+    assets: todos,
+    limit: TODO_REVIEW_LIMIT,
+    mapAsset: (todo) => ({
+      id: todo.id,
+      text: todo.originalText,
+      timeText: todo.timeText,
+      dueAt: todo.dueAt ? dayjs(todo.dueAt).toISOString() : null,
+      createdAt: dayjs(todo.createdAt).toISOString(),
+    }),
+  })
 }
 
 const todoReviewOutputSchema = z.object({
@@ -73,33 +58,6 @@ function getFallbackTodoReview(todos: AssetListItem[]): TodoReviewOutput {
   }
 }
 
-function mapReviewSources(
-  todos: AssetListItem[],
-  sourceAssetIds: string[]
-): AssetListItem[] {
-  const requested = new Set(sourceAssetIds)
-  return todos.filter((todo) => requested.has(todo.id))
-}
-
-function normalizeTodoReviewOutput(
-  output: TodoReviewOutput,
-  todos: AssetListItem[]
-): TodoReviewResult {
-  const validIds = new Set(todos.map((todo) => todo.id))
-  const filteredSourceIds = output.sourceAssetIds.filter((id) => validIds.has(id))
-  const fallbackIds = todos.slice(0, 5).map((todo) => todo.id)
-  const finalSourceIds = filteredSourceIds.length ? filteredSourceIds : fallbackIds
-
-  return {
-    headline: output.headline,
-    summary: output.summary,
-    nextActions: output.nextActions,
-    sourceAssetIds: finalSourceIds,
-    sources: mapReviewSources(todos, finalSourceIds),
-    generatedAt: dayjs().toDate(),
-  }
-}
-
 export async function reviewWorkspaceUnfinishedTodosInternal(
   userId: string,
   query?: string | null
@@ -113,48 +71,27 @@ export async function reviewWorkspaceUnfinishedTodosInternal(
         completionHint: 'incomplete',
         limit: TODO_REVIEW_LIMIT,
       })).filter((asset) => asset.type === 'todo')
-    : (await listIncompleteTodos(userId, TODO_REVIEW_LIMIT)).map(toAssetListItem)
+    : (await listIncompleteTodos(userId, TODO_REVIEW_LIMIT)).map(toAssetListItemFromTodo)
 
-  if (todos.length === 0) {
-    return normalizeTodoReviewOutput(getFallbackTodoReview(todos), todos)
-  }
-
-  const model = getAiProvider()
-  if (!model) {
-    return normalizeTodoReviewOutput(getFallbackTodoReview(todos), todos)
-  }
-
-  try {
-    const [systemPrompt, userPrompt] = await Promise.all([
-      buildWorkspaceSystemPrompt('workspace/todo-review.system'),
-      renderPrompt('workspace/todo-review.user', {
-        payloadJson: JSON.stringify({
-          currentTime: nowIso(),
-          todos: buildTodoReviewPromptInput(todos),
-        }),
-      }),
-    ])
-
-    const result = await generateText({
-      model,
-      output: Output.object({ schema: todoReviewOutputSchema }),
-      system: systemPrompt,
-      prompt: userPrompt,
-      temperature: 0,
-      maxRetries: 1,
-      timeout: TODO_REVIEW_MODEL_TIMEOUT_MS,
-      providerOptions: {
-        alibaba: {
-          enableThinking: false,
-        },
-      },
-    })
-
-    return normalizeTodoReviewOutput(result.output, todos)
-  } catch (error) {
-    console.warn('[todos.review] AI review failed; using fallback', {
-      error: error instanceof Error ? error.message : String(error),
-    })
-    return normalizeTodoReviewOutput(getFallbackTodoReview(todos), todos)
-  }
+  return generateWorkspaceInsight({
+    assets: todos,
+    buildPromptInput: buildTodoReviewPromptInput,
+    fallbackOutput: getFallbackTodoReview,
+    schema: todoReviewOutputSchema,
+    promptKey: 'workspace/todo-review',
+    promptPayloadKey: 'todos',
+    timeoutMs: TODO_REVIEW_MODEL_TIMEOUT_MS,
+    logTag: 'todos.review',
+    logLabel: 'review',
+    normalizeResult: (output, context) => {
+      return {
+        headline: output.headline,
+        summary: output.summary,
+        nextActions: output.nextActions,
+        sourceAssetIds: context.sourceAssetIds,
+        sources: context.sources,
+        generatedAt: context.generatedAt,
+      }
+    },
+  })
 }
