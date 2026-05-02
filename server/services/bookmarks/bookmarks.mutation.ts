@@ -45,18 +45,6 @@ function normalizeOptionalText(value?: string | null): string | null | undefined
   return normalized ? normalized : null
 }
 
-function hasStructuredBookmarkUpdateFields(input: {
-  title?: string | null
-  note?: string | null
-  summary?: string | null
-}): boolean {
-  return input.title !== undefined || input.note !== undefined || input.summary !== undefined
-}
-
-function resolveRawInput(input: { rawInput?: string; text?: string }): string {
-  return input.rawInput ?? input.text ?? ''
-}
-
 function normalizeUrlOrThrow(url: string): string {
   const normalized = url.trim()
   if (!normalized) {
@@ -129,15 +117,13 @@ async function updateLifecycle(input: {
 export async function updateBookmark(input: {
   userId: string
   bookmarkId: string
-  rawInput?: string
-  text?: string
+  rawInput: string
   url: string
   title?: string | null
   note?: string | null
   summary?: string | null
 }): Promise<UpdateBookmarkResult | null> {
-  const usesLegacyTextUpdate = input.rawInput === undefined && input.text !== undefined && !hasStructuredBookmarkUpdateFields(input)
-  const trimmedText = normalizeRequiredTextOrThrow(resolveRawInput(input))
+  const trimmedText = normalizeRequiredTextOrThrow(input.rawInput)
   const normalizedUrl = normalizeUrlOrThrow(input.url)
   const normalizedTitle = normalizeOptionalText(input.title)
   const normalizedNote = normalizeOptionalText(input.note)
@@ -168,9 +154,9 @@ export async function updateBookmark(input: {
     .set({
       originalText: trimmedText,
       url: normalizedUrl,
-      title: usesLegacyTextUpdate ? null : normalizedTitle,
-      note: usesLegacyTextUpdate ? null : normalizedNote,
-      summary: usesLegacyTextUpdate ? null : normalizedSummary,
+      title: normalizedTitle,
+      note: normalizedNote,
+      summary: normalizedSummary,
       bookmarkMeta: urlChanged ? createPendingBookmarkMeta() : undefined,
       updatedAt: now(),
     })

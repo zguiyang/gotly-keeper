@@ -42,15 +42,6 @@ function normalizeStructuredField(value: string | null | undefined): string | nu
   return trimmed ? trimmed : null
 }
 
-function hasStructuredTodoUpdateFields(input: {
-  title?: string | null
-  content?: string | null
-  timeText?: string | null
-  dueAt?: Date | null
-}): boolean {
-  return input.title !== undefined || input.content !== undefined || input.timeText !== undefined || input.dueAt !== undefined
-}
-
 async function updateLifecycle(input: {
   userId: string
   todoId: string
@@ -88,31 +79,25 @@ async function updateLifecycle(input: {
 export async function updateTodo(input: {
   userId: string
   todoId: string
-  text?: string
-  rawInput?: string
+  rawInput: string
   title?: string | null
   content?: string | null
   timeText?: string | null
   dueAt?: Date | null
 }): Promise<TodoListItem | null> {
-  const usesLegacyTextUpdate = input.rawInput === undefined && input.text !== undefined && !hasStructuredTodoUpdateFields(input)
   const normalizedTitle = normalizeStructuredField(input.title)
   const normalizedContent = normalizeStructuredField(input.content)
   const normalizedTimeText = normalizeStructuredField(input.timeText)
-  const trimmedText = input.rawInput !== undefined
-    ? normalizeTextOrThrow(input.rawInput)
-    : input.text !== undefined
-      ? normalizeTextOrThrow(input.text)
-      : undefined
+  const trimmedText = normalizeTextOrThrow(input.rawInput)
 
   const [updated] = await db
     .update(todos)
     .set({
       originalText: trimmedText,
-      title: usesLegacyTextUpdate ? null : normalizedTitle,
-      content: usesLegacyTextUpdate ? null : normalizedContent,
-      timeText: usesLegacyTextUpdate ? null : normalizedTimeText,
-      dueAt: usesLegacyTextUpdate ? null : input.dueAt,
+      title: normalizedTitle,
+      content: normalizedContent,
+      timeText: normalizedTimeText,
+      dueAt: input.dueAt,
       updatedAt: now(),
     })
     .where(
