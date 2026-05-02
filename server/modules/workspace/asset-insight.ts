@@ -3,6 +3,7 @@ import 'server-only'
 import { generateText, Output } from 'ai'
 
 import { buildWorkspaceSystemPrompt, getAiProvider } from '@/server/lib/ai'
+import { validateInsightOutput } from '@/server/lib/ai/ai-guard'
 import { AI_MAX_RETRIES, AI_TEMPERATURE } from '@/server/lib/config/ai'
 import { renderPrompt } from '@/server/lib/prompt-template'
 import { nowIso, dayjs } from '@/shared/time/dayjs'
@@ -120,7 +121,16 @@ export async function generateWorkspaceInsight<
       },
     })
 
-    return normalizeWithAssets(result.output)
+    const rawOutput = result.output as TOutput
+    if (typeof (rawOutput as WorkspaceInsightBaseOutput).summary === 'string') {
+      const guardResult = validateInsightOutput((rawOutput as WorkspaceInsightBaseOutput).summary)
+      if (guardResult.warnings.length > 0) {
+        console.warn(`[${logTag}] Insight content guard warnings`, guardResult.warnings)
+      }
+      ;(rawOutput as WorkspaceInsightBaseOutput).summary = guardResult.sanitized
+    }
+
+    return normalizeWithAssets(rawOutput)
   } catch (error) {
     console.warn(`[${logTag}] AI ${logLabel} failed; using fallback`, {
       error: error instanceof Error ? error.message : String(error),

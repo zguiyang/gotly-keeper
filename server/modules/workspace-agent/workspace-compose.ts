@@ -2,6 +2,7 @@ import 'server-only'
 
 import { z } from 'zod'
 
+import { validateComposeOutput } from '@/server/lib/ai/ai-guard'
 import { runAiGeneration } from '@/server/lib/ai/ai-runner'
 import { buildWorkspaceSystemPrompt } from '@/server/lib/ai/ai.prompts'
 import { NOTE_SUMMARY_MODEL_TIMEOUT_MS } from '@/server/lib/config/constants'
@@ -146,9 +147,14 @@ export async function composeWorkspaceAnswer(input: {
       }
     }
 
+    const guardResult = validateComposeOutput(result.data.answer)
+    if (guardResult.warnings.length > 0) {
+      console.warn('[compose] Content guard warnings', guardResult.warnings)
+    }
+
     return {
-      answer: result.data.answer,
-      usedFallback: false,
+      answer: guardResult.sanitized,
+      usedFallback: !guardResult.passed,
     }
   } catch {
     return {
