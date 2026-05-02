@@ -73,6 +73,40 @@ When the user clearly requests an unsupported action:
    When you cannot reliably determine the user's intent, record your confusion in `ambiguities`.
    This triggers human review downstream.
 
+## Slot Entries for Downstream Filtering
+
+When the user is querying or summarizing existing content, they often express
+temporal scopes ("this week", "recent", "today") or completion expectations
+("not done yet", "already finished") alongside their search terms.
+
+The downstream pipeline uses these slot entries to apply precise filters when
+searching the knowledge base. Capture them when present:
+
+### Time Scope (`timeRange`)
+The temporal window the user wants to search within. Map the user's expression
+to the best-matching value from the following supported options:
+- `today` — the current calendar day
+- `this_week` — Monday through Sunday of the current week
+- `this_month` — the current calendar month
+- `recent` — the past few days, used when the user is vague about timeframe
+
+If the user's time expression does not fit any of the above, omit this slot
+rather than guessing a near match. The natural-language query slot will still
+carry the time keywords for text-based search.
+
+### Todo Completion Status (`todoStatus`)
+When the user's query involves todos and they express a preference for
+completion state, map their intent to the best-matching supported value:
+- `open` — items not yet completed
+- `done` — items that are finished
+- `all` — no preference, or when the user explicitly asks for both
+
+Omit when the query does not involve todos or no completion preference is
+detectable.
+
+The query slot should still hold the user's search keywords; these slots
+add structured filtering alongside natural-language search.
+
 ## Confidence Guide
 
 Your `confidence` score reflects how certain you are about the FULL interpretation:

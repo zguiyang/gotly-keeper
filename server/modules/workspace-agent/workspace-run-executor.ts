@@ -31,8 +31,11 @@ const actionToToolMap: Record<string, keyof typeof workspaceTools> = {
   summarize_assets: 'search_all',
 }
 
-function getToolForAction(action: string): keyof typeof workspaceTools | null {
-  return actionToToolMap[action] ?? null
+function getToolForAction(step: WorkspaceRunPlannerStep): keyof typeof workspaceTools | null {
+  if ((step.action === 'query_assets' || step.action === 'summarize_assets') && step.target === 'todos') {
+    return 'search_todos'
+  }
+  return actionToToolMap[step.action] ?? null
 }
 
 function buildToolInputForStep(step: WorkspaceRunPlannerStep): Record<string, unknown> {
@@ -78,7 +81,7 @@ export async function executeWorkspaceRunSteps(
   const stepResults: WorkspaceRunExecutorStepResult[] = []
 
   for (const step of steps) {
-    const toolName = getToolForAction(step.action)
+    const toolName = getToolForAction(step)
 
     if (!toolName) {
       stepResults.push({
