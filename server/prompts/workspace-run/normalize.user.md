@@ -1,24 +1,17 @@
-Normalize this workspace run request for downstream planning.
+## Input
 
-Return only normalized content as structured JSON.
-
-Top-level fields must be exactly:
-- `rawText`: string
-- `normalizedText`: string
-- `urls`: string[]
-- `separators`: string[]
-- `typoCandidates`: array of `{ "text": string, "suggestion": string }`
-- `timeHints`: string[]
-
-Rules:
-- Keep `rawText` equal to the input text.
-- Trim `normalizedText`.
-- Extract URLs into `urls`.
-- Record delimiters `， , ； ; 。` into `separators` in appearance order.
-- Record typo candidates into `typoCandidates`.
-- Record explicit time expressions into `timeHints`.
-- Do not return prose, explanations, markdown, or any extra top-level fields.
-
-Input text:
-
+<raw_text>
 {{{rawText}}}
+</raw_text>
+
+## Task
+
+Normalize the raw text above for downstream planning. Return ONLY structured JSON — no prose.
+
+Output fields:
+- `rawText`: string — the original input (do NOT modify)
+- `normalizedText`: string — cleaned text with greetings/filler removed
+- `urls`: string[] — extracted URLs
+- `separators`: string[] — delimiter characters (`,,，,;,；,.。`) in order of appearance
+- `typoCandidates`: [{text: string, suggestion: string}] — suspected typos and corrections
+- `timeHints`: string[] — explicit time expressions found in the input
