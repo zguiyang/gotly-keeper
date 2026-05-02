@@ -22,30 +22,6 @@ export function createAiRunnerMock<T>(options: AiRunnerMockOptions<T> = {}) {
         data: (resultData ?? ({} as NonNullable<T>)) as T,
       }
     },
-
-    interpretAssetInputWithAi: async function mockInterpretAssetInputWithAi(
-      trimmed: string
-    ): Promise<{ success: true; data: unknown } | { success: false; fallback: true }> {
-      if (!shouldSucceed) {
-        return { success: false, fallback: true }
-      }
-      return {
-        success: true,
-        data: resultData ?? { type: 'note', originalText: trimmed },
-      }
-    },
-
-    summarizeWithAi: async function mockSummarizeWithAi<T>(): Promise<
-      { success: true; data: T } | { success: false; fallback: true }
-    > {
-      if (!shouldSucceed) {
-        return { success: false, fallback: true }
-      }
-      return {
-        success: true,
-        data: (resultData ?? ({} as NonNullable<T>)) as T,
-      }
-    },
   }
 }
 

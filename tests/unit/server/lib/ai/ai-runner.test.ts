@@ -1,11 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { z } from 'zod'
 
-import {
-  interpretAssetInputWithAi,
-  runAiGeneration,
-  summarizeWithAi,
-} from '@/server/lib/ai/ai-runner'
+import { runAiGeneration } from '@/server/lib/ai/ai-runner'
 import { serverEnv } from '@/server/lib/env'
 
 function withAiProviderDisabled<T>(run: () => Promise<T>): Promise<T> {
@@ -34,30 +30,6 @@ describe('ai-runner', () => {
       if (!result.success) {
         expect(result.error.type).toBe('provider')
       }
-    })
-  })
-
-  it('interpretAssetInputWithAi returns fallback when AI provider is unavailable', async () => {
-    await withAiProviderDisabled(async () => {
-      const result = await interpretAssetInputWithAi(
-        'test input',
-        z.object({ intent: z.string() }),
-        'test-system',
-        (text) => text
-      )
-      expect(result).toEqual({ success: false, fallback: true })
-    })
-  })
-
-  it('summarizeWithAi returns fallback when AI provider is unavailable', async () => {
-    await withAiProviderDisabled(async () => {
-      const result = await summarizeWithAi(
-        z.object({ summary: z.string() }),
-        'test-system',
-        { text: 'sample' },
-        100
-      )
-      expect(result).toEqual({ success: false, fallback: true })
     })
   })
 })
