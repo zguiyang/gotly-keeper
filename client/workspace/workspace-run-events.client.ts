@@ -132,3 +132,17 @@ export async function fetchCurrentWorkspaceRun(): Promise<FetchCurrentWorkspaceR
 
   return response.json() as Promise<FetchCurrentWorkspaceRunResult>
 }
+
+export async function dismissCurrentWorkspaceRun(): Promise<void> {
+  const response = await fetch('/api/workspace/runs/current', {
+    method: 'DELETE',
+    headers: {
+      accept: 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null
+    throw new Error(payload?.error ?? '忽略未完成内容失败。')
+  }
+}
