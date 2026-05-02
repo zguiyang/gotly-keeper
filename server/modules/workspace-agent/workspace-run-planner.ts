@@ -173,9 +173,13 @@ function buildToolInput(task: DraftWorkspaceTask, action: WorkspaceRunPlannerAct
   }
 
   if (action === 'query_assets' || action === 'summarize_assets') {
+    const timeRange = getStringSlot(task, 'timeRange')
+    const todoStatus = getStringSlot(task, 'todoStatus')
     return {
       query: getStringSlot(task, 'query') ?? title,
       subjectHint: title,
+      ...(timeRange && { timeRange: { type: timeRange as 'today' | 'recent' | 'this_week' | 'this_month' } }),
+      ...(todoStatus && { status: todoStatus as 'open' | 'done' | 'all' }),
     }
   }
 
@@ -347,14 +351,14 @@ async function buildPlanStep(input: {
   const title = resolveTitle(input.task, hints)
 
   if (!resolved) {
-    return {
+    const resolvedAction: WorkspaceRunPlannerAction = input.task.intent === 'summarize' ? 'summarize_assets' : 'query_assets'
+    return stepFromAction({
       id,
-      action: 'query_assets',
+      action: resolvedAction,
       target: 'mixed',
       title,
-      risk: 'high',
-      requiresUserApproval: true,
-    }
+      task: input.task,
+    })
   }
 
   if (resolved.action === 'update_todo') {
