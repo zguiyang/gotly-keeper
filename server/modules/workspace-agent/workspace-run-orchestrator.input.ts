@@ -1,3 +1,5 @@
+import { buildWorkspaceSystemPrompt } from '@/server/lib/ai/ai.prompts'
+
 import { composeWorkspaceAnswer } from './workspace-compose'
 import { buildBatchAnswer, buildCompletedRunResult } from './workspace-run-completed'
 import { findWorkspaceRunDuplicateCandidates } from './workspace-run-duplicates'
@@ -63,10 +65,14 @@ async function runPlan(
 ): Promise<WorkspaceRunPlannerResult> {
   emitEvent(ctx, { type: 'phase_started', phase: 'plan' })
 
-  const runPlanHints: (input: { draftTask: DraftWorkspaceTask; userPrompt: string }) => Promise<WorkspaceRunPlanHint | null | undefined> = async ({ draftTask, userPrompt }) => {
+  const [planSystemPrompt] = await Promise.all([
+    buildWorkspaceSystemPrompt('workspace-run/system', {}),
+  ])
+
+  const runPlanHints: (input: { draftTask: DraftWorkspaceTask; userPrompt: string }) => Promise<WorkspaceRunPlanHint | null | undefined> = async ({ userPrompt }) => {
     try {
       const result = await runModel({
-        systemPrompt: '',
+        systemPrompt: planSystemPrompt,
         userPrompt,
         signal: ctx.signal,
       })
