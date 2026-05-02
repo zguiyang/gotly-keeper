@@ -6,6 +6,11 @@ import { useEffect, useId, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import {
+  workspacePlanPreviewSchema,
+  workspacePreviewSchema,
+  workspaceUnderstandingPreviewSchema,
+} from '@/shared/workspace/workspace-run-protocol'
 
 import { CandidatePicker } from './candidate-picker'
 import { DraftTaskEditor, type DraftTaskEditorHandle } from './draft-task-editor'
@@ -23,11 +28,6 @@ import {
 } from './workspace-view-primitives'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
-import {
-  workspacePlanPreviewSchema,
-  workspacePreviewSchema,
-  workspaceUnderstandingPreviewSchema,
-} from '@/shared/workspace/workspace-run-protocol'
 import type {
   WorkspaceInteraction,
   WorkspaceInteractionResponse,

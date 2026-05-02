@@ -1,6 +1,6 @@
 import { composeWorkspaceAnswer } from './workspace-compose'
-import { findWorkspaceRunDuplicateCandidates } from './workspace-run-duplicates'
 import { buildBatchAnswer, buildCompletedRunResult } from './workspace-run-completed'
+import { findWorkspaceRunDuplicateCandidates } from './workspace-run-duplicates'
 import { executeWorkspaceRunSteps } from './workspace-run-executor'
 import {
   emitEvent,
@@ -8,6 +8,7 @@ import {
   getToolNameFromAction,
 } from './workspace-run-orchestrator.shared'
 import { planWorkspaceRun, type WorkspaceRunPlannerResult } from './workspace-run-planner'
+import { buildWorkspaceRunPreview } from './workspace-run-preview'
 import {
   reviewWorkspaceRunPlan,
   type ReviewableDraftTask,
@@ -15,7 +16,6 @@ import {
   type WorkspaceReviewPendingRunSnapshot,
 } from './workspace-run-review'
 import { normalizeTodoDraftTaskTimes } from './workspace-run-time-normalization'
-import { buildWorkspaceRunPreview } from './workspace-run-preview'
 
 import type { WorkspaceToolContext, WorkspaceIntent, WorkspaceTarget } from './types'
 import type {

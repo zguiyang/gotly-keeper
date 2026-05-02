@@ -1,5 +1,5 @@
-import type { ZodType } from 'zod'
 import type { WorkspaceRunToolResult } from '@/shared/workspace/workspace-run-protocol'
+import type { ZodType } from 'zod'
 
 export type WorkspaceIntent = 'query' | 'summarize' | 'create' | 'update'
 

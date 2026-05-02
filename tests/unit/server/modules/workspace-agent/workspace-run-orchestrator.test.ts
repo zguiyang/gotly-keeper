@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { ReviewableDuplicateCandidate } from '@/server/modules/workspace-agent/workspace-run-duplicates'
 import type {
   SearchWorkspaceRunCandidates,
 } from '@/server/modules/workspace-agent/workspace-run-planner'
-import type { ReviewableDuplicateCandidate } from '@/server/modules/workspace-agent/workspace-run-duplicates'
 import type { WorkspaceRunStore } from '@/server/modules/workspace-agent/workspace-run-store'
 import type { WorkspaceRunModel } from '@/server/modules/workspace-agent/workspace-run-understanding'
 import type {

@@ -1,11 +1,6 @@
 import 'server-only'
 
 import {
-  toAssetListItemFromBookmark,
-  toAssetListItemFromNote,
-  toAssetListItemFromTodo,
-} from '@/server/services/workspace/asset-list-item'
-import {
   buildPendingBookmarkMetaForResponse,
   scheduleBookmarkEnrichTask,
 } from '@/server/services/bookmark/bookmark-enrich.service'
@@ -30,6 +25,11 @@ import {
   setTodoCompletion,
   updateTodo,
 } from '@/server/services/todos'
+import {
+  toAssetListItemFromBookmark,
+  toAssetListItemFromNote,
+  toAssetListItemFromTodo,
+} from '@/server/services/workspace/asset-list-item'
 import { ASSET_LIFECYCLE_STATUS, type AssetLifecycleStatus } from '@/shared/assets/asset-lifecycle.types'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
