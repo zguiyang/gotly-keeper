@@ -92,7 +92,10 @@ function buildBookmarkRawInput(input: {
   summary?: string | null
   url: string
 }) {
-  return [input.title?.trim(), input.summary?.trim(), input.url.trim()].filter(Boolean).join('\n\n')
+  const url = input.url.trim()
+  const title = input.title?.trim()
+  const dedupedTitle = title && title !== url ? title : null
+  return [dedupedTitle, input.summary?.trim(), url].filter(Boolean).join('\n\n')
 }
 
 function toExactRangeTimeFilter(input: {

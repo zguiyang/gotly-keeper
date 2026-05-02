@@ -53,6 +53,10 @@ When the user clearly requests an unsupported action:
 
 ## Structured Extraction Principles
 
+0. **Command prefixes are STRONG signals for target classification**.
+   "记一下" → notes, "记个待办" / "提醒我" → todos, "收藏" → bookmarks.
+   When content characteristics conflict with the command prefix, prefer the prefix.
+
 1. **Title = pure action description**.
    Remove command prefixes (记一下, 帮我, 收藏) and time expressions from the title.
    "帮我记一下明天要买菜" → title: "买菜".

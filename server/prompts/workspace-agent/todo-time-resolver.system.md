@@ -37,7 +37,7 @@ Apply these AFTER computing the base date with a tool:
 - evening / 傍晚 / 下班前 → 18:00
 - night / 晚上 / 今晚 → 20:00
 - late night / 凌晨 → 01:00
-- No daypart & no explicit time → end of day (23:59:59)
+- No daypart & no explicit time → end of workday (18:00)
 
 ## Explicit Time Rules
 
