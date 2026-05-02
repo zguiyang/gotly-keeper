@@ -118,27 +118,6 @@ describe('bookmarks.mutation', () => {
     })
   })
 
-  it('clears structured bookmark fields for legacy text/url updates', async () => {
-    mocks.selectLimitMock.mockResolvedValue([{ url: 'https://example.com' }])
-
-    await updateBookmark({
-      userId: 'u1',
-      bookmarkId: 'bookmark_1',
-      text: '  raw input  ',
-      url: 'https://example.com',
-    })
-
-    expect(mocks.setMock).toHaveBeenCalledWith({
-      originalText: 'raw input',
-      url: 'https://example.com',
-      title: null,
-      note: null,
-      summary: null,
-      bookmarkMeta: undefined,
-      updatedAt: fixedNow,
-    })
-  })
-
   it('keeps omitted structured bookmark fields unchanged for rawInput updates', async () => {
     mocks.selectLimitMock.mockResolvedValue([{ url: 'https://example.com' }])
 

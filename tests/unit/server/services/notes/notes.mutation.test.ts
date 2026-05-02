@@ -47,7 +47,7 @@ describe('notes.mutation', () => {
   })
 
   it('returns null when note is not found', async () => {
-    const result = await updateNote({ userId: 'u1', noteId: 'note_1', text: '更新后的内容' })
+    const result = await updateNote({ userId: 'u1', noteId: 'note_1', rawInput: '更新后的内容' })
 
     expect(result).toBeNull()
   })
@@ -73,20 +73,6 @@ describe('notes.mutation', () => {
     })
     expect(mocks.toNoteListItemMock).toHaveBeenCalledTimes(1)
     expect(result).toEqual({ id: 'note_1' })
-  })
-
-  it('clears structured note fields for legacy text updates', async () => {
-    mocks.returningMock.mockResolvedValue([{ id: 'note_1' }])
-
-    await updateNote({ userId: 'u1', noteId: 'note_1', text: '  仅保留原始文本  ' })
-
-    expect(mocks.setMock).toHaveBeenCalledWith({
-      originalText: '  仅保留原始文本  ',
-      title: null,
-      content: null,
-      summary: null,
-      updatedAt: fixedNow,
-    })
   })
 
   it('keeps omitted structured note fields unchanged for rawInput updates', async () => {

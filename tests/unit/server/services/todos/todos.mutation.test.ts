@@ -86,25 +86,6 @@ describe('todos.mutation', () => {
     })
   })
 
-  it('clears structured fields for legacy text updates', async () => {
-    mocks.returningMock.mockResolvedValue([{ id: 'todo_1' }])
-
-    await updateTodo({
-      userId: 'u1',
-      todoId: 'todo_1',
-      text: '  明天提交周报  ',
-    })
-
-    expect(mocks.setMock).toHaveBeenCalledWith({
-      originalText: '明天提交周报',
-      title: null,
-      content: null,
-      timeText: null,
-      dueAt: null,
-      updatedAt: fixedNow,
-    })
-  })
-
   it('keeps structured fields unchanged when rawInput omits them', async () => {
     mocks.returningMock.mockResolvedValue([{ id: 'todo_1' }])
 
@@ -130,7 +111,7 @@ describe('todos.mutation', () => {
     await updateTodo({
       userId: 'u1',
       todoId: 'todo_1',
-      text: '  明天提交周报  ',
+      rawInput: '  明天提交周报  ',
       title: null,
       content: null,
       timeText: null,
