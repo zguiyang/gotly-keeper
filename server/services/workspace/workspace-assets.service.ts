@@ -1,6 +1,11 @@
 import 'server-only'
 
 import {
+  toAssetListItemFromBookmark,
+  toAssetListItemFromNote,
+  toAssetListItemFromTodo,
+} from '@/server/services/workspace/asset-list-item'
+import {
   buildPendingBookmarkMetaForResponse,
   scheduleBookmarkEnrichTask,
 } from '@/server/services/bookmark/bookmark-enrich.service'
@@ -8,13 +13,13 @@ import {
   createBookmark,
   findDuplicateBookmarks,
   listBookmarks,
-  type BookmarkListItem,
+  updateBookmark,
 } from '@/server/services/bookmarks'
 import {
   createNote,
   findDuplicateNotes,
   listNotes,
-  type NoteListItem,
+  updateNote,
 } from '@/server/services/notes'
 import { searchAssets } from '@/server/services/search'
 import { deleteEmbeddingsForAsset } from '@/server/services/search/semantic-search.service'
@@ -24,12 +29,12 @@ import {
   listTodos,
   setTodoCompletion,
   updateTodo,
-  type TodoListItem,
 } from '@/server/services/todos'
 import { ASSET_LIFECYCLE_STATUS, type AssetLifecycleStatus } from '@/shared/assets/asset-lifecycle.types'
-import { type AssetListItem } from '@/shared/assets/assets.types'
+
+import type { AssetListItem } from '@/shared/assets/assets.types'
 import type { WorkspaceCandidate } from '@/shared/workspace/workspace-run-protocol'
-import { type WorkspaceAgentTimeFilter } from '@/shared/workspace/workspace-run.types'
+import type { WorkspaceAgentTimeFilter } from '@/shared/workspace/workspace-run.types'
 
 export const WORKSPACE_ASSETS_ERROR_CODES = {
   TODO_NOT_FOUND: 'TODO_NOT_FOUND',
@@ -66,68 +71,49 @@ export type WorkspaceCreateDuplicateCheckResult = {
   duplicates: WorkspaceCandidate[]
 }
 
-function toAssetListItemFromNote(note: NoteListItem): AssetListItem {
-  return {
-    id: note.id,
-    originalText: note.originalText,
-    title: note.title,
-    excerpt: note.excerpt,
-    type: 'note',
-    content: note.content,
-    summary: note.summary,
-    url: null,
-    timeText: null,
-    dueAt: null,
-    completed: false,
-    bookmarkMeta: null,
-    lifecycleStatus: note.lifecycleStatus,
-    archivedAt: note.archivedAt,
-    trashedAt: note.trashedAt,
-    createdAt: note.createdAt,
-    updatedAt: note.updatedAt,
-  }
+type WorkspaceAssetType = 'note' | 'todo' | 'link'
+
+type WorkspaceAssetListAdapter = {
+  list: (input: {
+    userId: string
+    limit: number
+    lifecycleStatus: AssetLifecycleStatus
+  }) => Promise<AssetListItem[]>
 }
 
-function toAssetListItemFromTodo(todo: TodoListItem): AssetListItem {
-  return {
-    id: todo.id,
-    originalText: todo.originalText,
-    title: todo.title,
-    excerpt: todo.excerpt,
-    type: 'todo',
-    content: todo.content,
-    url: null,
-    timeText: todo.timeText,
-    dueAt: todo.dueAt,
-    completed: todo.completed,
-    bookmarkMeta: null,
-    lifecycleStatus: todo.lifecycleStatus,
-    archivedAt: todo.archivedAt,
-    trashedAt: todo.trashedAt,
-    createdAt: todo.createdAt,
-    updatedAt: todo.updatedAt,
+function compareWorkspaceAssetsDesc(left: AssetListItem, right: AssetListItem): number {
+  const createdAtDiff = right.createdAt.getTime() - left.createdAt.getTime()
+  if (createdAtDiff !== 0) {
+    return createdAtDiff
   }
+
+  return right.id.localeCompare(left.id)
 }
 
-function toAssetListItemFromBookmark(bookmark: BookmarkListItem): AssetListItem {
+function getWorkspaceAssetListAdapter(assetType: WorkspaceAssetType): WorkspaceAssetListAdapter {
+  if (assetType === 'note') {
+    return {
+      list: async ({ userId, limit, lifecycleStatus }) => {
+        const notes = await listNotes({ userId, limit, lifecycleStatus })
+        return notes.map(toAssetListItemFromNote)
+      },
+    }
+  }
+
+  if (assetType === 'todo') {
+    return {
+      list: async ({ userId, limit, lifecycleStatus }) => {
+        const todos = await listTodos({ userId, limit, lifecycleStatus })
+        return todos.map(toAssetListItemFromTodo)
+      },
+    }
+  }
+
   return {
-    id: bookmark.id,
-    originalText: bookmark.originalText,
-    title: bookmark.title,
-    excerpt: bookmark.excerpt,
-    type: 'link',
-    note: bookmark.note,
-    summary: bookmark.summary,
-    url: bookmark.url,
-    timeText: null,
-    dueAt: null,
-    completed: false,
-    bookmarkMeta: bookmark.bookmarkMeta,
-    lifecycleStatus: bookmark.lifecycleStatus,
-    archivedAt: bookmark.archivedAt,
-    trashedAt: bookmark.trashedAt,
-    createdAt: bookmark.createdAt,
-    updatedAt: bookmark.updatedAt,
+    list: async ({ userId, limit, lifecycleStatus }) => {
+      const bookmarks = await listBookmarks({ userId, limit, lifecycleStatus })
+      return bookmarks.map(toAssetListItemFromBookmark)
+    },
   }
 }
 
@@ -237,26 +223,18 @@ export async function findWorkspaceCreateDuplicates(input: {
 
 export async function createWorkspaceNoteAsset(input: {
   userId: string
-  text?: string
-  rawInput?: string
+  rawInput: string
   title?: string | null
   content?: string | null
   summary?: string | null
 }): Promise<AssetListItem> {
-  const note = await createNote(
-    input.rawInput !== undefined
-      ? {
-          userId: input.userId,
-          rawInput: input.rawInput,
-          title: input.title,
-          content: input.content,
-          summary: input.summary,
-        }
-      : {
-          userId: input.userId,
-          text: input.text ?? '',
-        }
-  )
+  const note = await createNote({
+    userId: input.userId,
+    rawInput: input.rawInput,
+    title: input.title,
+    content: input.content,
+    summary: input.summary,
+  })
 
   return toAssetListItemFromNote(note)
 }
@@ -310,6 +288,34 @@ export async function createWorkspaceLinkAsset(input: {
   return asset
 }
 
+export async function updateWorkspaceNoteAsset(input: {
+  userId: string
+  assetId: string
+  rawInput: string
+  title?: string | null
+  content?: string | null
+  summary?: string | null
+}): Promise<AssetListItem> {
+  const updated = await updateNote({
+    userId: input.userId,
+    noteId: input.assetId,
+    rawInput: input.rawInput,
+    title: input.title,
+    content: input.content,
+    summary: input.summary,
+  })
+
+  if (!updated) {
+    throw new WorkspaceAssetsError(
+      '没有找到这条笔记，或你没有权限更新它。',
+      WORKSPACE_ASSETS_ERROR_CODES.ASSET_NOT_FOUND
+    )
+  }
+
+  await deleteEmbeddingsForAsset({ assetType: 'note', assetId: updated.id })
+  return toAssetListItemFromNote(updated)
+}
+
 export async function updateWorkspaceTodoAsset(input: {
   userId: string
   assetId: string
@@ -340,6 +346,45 @@ export async function updateWorkspaceTodoAsset(input: {
   return toAssetListItemFromTodo(updated)
 }
 
+export async function updateWorkspaceLinkAsset(input: {
+  userId: string
+  assetId: string
+  rawInput: string
+  url: string
+  title?: string | null
+  note?: string | null
+  summary?: string | null
+}): Promise<AssetListItem> {
+  const updated = await updateBookmark({
+    userId: input.userId,
+    bookmarkId: input.assetId,
+    rawInput: input.rawInput,
+    url: input.url,
+    title: input.title,
+    note: input.note,
+    summary: input.summary,
+  })
+
+  if (!updated) {
+    throw new WorkspaceAssetsError(
+      '没有找到这条书签，或你没有权限更新它。',
+      WORKSPACE_ASSETS_ERROR_CODES.ASSET_NOT_FOUND
+    )
+  }
+
+  await deleteEmbeddingsForAsset({ assetType: 'link', assetId: updated.item.id })
+
+  if (updated.urlChanged && updated.item.url) {
+    void scheduleBookmarkEnrichTask({
+      bookmarkId: updated.item.id,
+      userId: input.userId,
+      url: updated.item.url,
+    })
+  }
+
+  return toAssetListItemFromBookmark(updated.item)
+}
+
 export async function setWorkspaceTodoAssetCompletion(input: {
   userId: string
   assetId: string
@@ -363,7 +408,7 @@ export async function setWorkspaceTodoAssetCompletion(input: {
 
 export async function listWorkspaceAssets(input: {
   userId: string
-  type?: 'note' | 'todo' | 'link' | null
+  type?: WorkspaceAssetType | null
   limit?: number
   lifecycleStatus?: AssetLifecycleStatus
 }): Promise<AssetListItem[]> {
@@ -371,40 +416,49 @@ export async function listWorkspaceAssets(input: {
   const lifecycleStatus = input.lifecycleStatus ?? ASSET_LIFECYCLE_STATUS.ACTIVE
 
   if (input.type === 'note') {
-    const notes = await listNotes({ userId: input.userId, limit, lifecycleStatus })
-    return notes.map(toAssetListItemFromNote)
+    return getWorkspaceAssetListAdapter('note').list({
+      userId: input.userId,
+      limit,
+      lifecycleStatus,
+    })
   }
 
   if (input.type === 'link') {
-    const bookmarks = await listBookmarks({ userId: input.userId, limit, lifecycleStatus })
-    return bookmarks.map(toAssetListItemFromBookmark)
+    return getWorkspaceAssetListAdapter('link').list({
+      userId: input.userId,
+      limit,
+      lifecycleStatus,
+    })
   }
 
   if (input.type === 'todo') {
-    const todos = await listTodos({ userId: input.userId, limit, lifecycleStatus })
-    return todos.map(toAssetListItemFromTodo)
+    return getWorkspaceAssetListAdapter('todo').list({
+      userId: input.userId,
+      limit,
+      lifecycleStatus,
+    })
   }
 
   const [notes, bookmarks, todos] = await Promise.all([
-    listNotes({ userId: input.userId, limit, lifecycleStatus }),
-    listBookmarks({ userId: input.userId, limit, lifecycleStatus }),
-    listTodos({ userId: input.userId, limit, lifecycleStatus }),
+    getWorkspaceAssetListAdapter('note').list({
+      userId: input.userId,
+      limit,
+      lifecycleStatus,
+    }),
+    getWorkspaceAssetListAdapter('link').list({
+      userId: input.userId,
+      limit,
+      lifecycleStatus,
+    }),
+    getWorkspaceAssetListAdapter('todo').list({
+      userId: input.userId,
+      limit,
+      lifecycleStatus,
+    }),
   ])
 
-  const items = [
-    ...notes.map(toAssetListItemFromNote),
-    ...bookmarks.map(toAssetListItemFromBookmark),
-    ...todos.map(toAssetListItemFromTodo),
-  ]
-
-  items.sort((left, right) => {
-    const createdAtDiff = right.createdAt.getTime() - left.createdAt.getTime()
-    if (createdAtDiff !== 0) {
-      return createdAtDiff
-    }
-
-    return right.id.localeCompare(left.id)
-  })
+  const items = [...notes, ...bookmarks, ...todos]
+  items.sort(compareWorkspaceAssetsDesc)
 
   return items.slice(0, limit)
 }
