@@ -43,6 +43,25 @@ function buildToolInputForStep(step: WorkspaceRunPlannerStep): Record<string, un
     ...(step.toolInput ?? {}),
   }
 
+  if (step.selector && (step.action === 'query_assets' || step.action === 'summarize_assets')) {
+    baseInput.selector = step.selector
+  }
+
+  if (step.selector && step.action === 'update_todo') {
+    baseInput.semanticSelector = step.selector
+  }
+
+  if (step.patch && step.action === 'update_todo') {
+    baseInput.patch = {
+      ...step.patch,
+      ...((baseInput.patch as Record<string, unknown> | undefined) ?? {}),
+    }
+  }
+
+  if (step.createPayload && (step.action === 'create_note' || step.action === 'create_todo' || step.action === 'create_bookmark')) {
+    Object.assign(baseInput, step.createPayload)
+  }
+
   if (Object.keys(baseInput).length === 0 && step.title) {
     if (step.action === 'create_note') {
       baseInput.content = step.title
@@ -62,10 +81,6 @@ function buildToolInputForStep(step: WorkspaceRunPlannerStep): Record<string, un
       baseInput.selector = {
         ...((baseInput.selector as Record<string, unknown> | undefined) ?? {}),
         id: firstCandidate.id,
-      }
-      baseInput.patch = {
-        ...((baseInput.patch as Record<string, unknown> | undefined) ?? {}),
-        status: 'done',
       }
     }
   }

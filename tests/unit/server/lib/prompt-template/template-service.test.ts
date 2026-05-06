@@ -39,7 +39,7 @@ describe('prompt-template', () => {
       'Gotly Keeper Workspace Agent System Prompt'
     )
     await expect(renderPrompt('bookmark/content-summary.system', {})).resolves.toContain(
-      '网页摘要助手'
+      'web page summary assistant'
     )
   })
 

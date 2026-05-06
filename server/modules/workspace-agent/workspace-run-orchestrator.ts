@@ -6,8 +6,8 @@ import { handleQuickAction } from './workspace-run-orchestrator.quickaction'
 import { handleResume } from './workspace-run-orchestrator.resume'
 import { createWorkspaceRunStore } from './workspace-run-store.drizzle'
 
-import type { SearchWorkspaceRunCandidates } from './workspace-run-planner'
 import type { PhaseTimings } from './workspace-run-orchestrator.shared'
+import type { SearchWorkspaceRunCandidates } from './workspace-run-planner'
 import type { WorkspaceRunStore } from './workspace-run-store'
 import type { WorkspaceRunModel } from './workspace-run-understanding'
 import type {

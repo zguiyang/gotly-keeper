@@ -32,6 +32,10 @@ export type ReviewableCandidate = {
   title: string
   confidence: number
   matchReason: string
+  status?: 'open' | 'done'
+  createdAt?: string
+  updatedAt?: string
+  preview?: string
 }
 
 export type ReviewablePlanStep = {
@@ -178,6 +182,11 @@ function toInteractionCandidates(candidates: ReviewableCandidate[]): WorkspaceCa
   return candidates.map((candidate) => ({
     id: candidate.id,
     label: candidate.title,
+    type: candidate.type,
+    status: candidate.status,
+    createdAt: candidate.createdAt,
+    updatedAt: candidate.updatedAt,
+    preview: candidate.preview ?? candidate.title,
     reason: `${candidate.matchReason} (${Math.round(candidate.confidence * 100)}%)`,
   }))
 }
@@ -623,11 +632,17 @@ function buildUpdateDecision(input: {
   updatedAt: string
   referenceTime?: string
   candidates: ReviewableCandidate[]
-}): {
-  status: 'await_user'
-  reason: 'select_candidate' | 'clarify_slots' | 'confirm_plan'
-  snapshot: WorkspaceReviewPendingRunSnapshot
-} {
+}):
+  | {
+      status: 'await_user'
+      reason: 'select_candidate' | 'clarify_slots' | 'confirm_plan'
+      snapshot: WorkspaceReviewPendingRunSnapshot
+    }
+  | {
+      status: 'auto_execute'
+      reason: 'single_low_risk_clear_task'
+      snapshot: null
+    } {
   if (input.candidates.length > 1) {
     const interactionId = createInteractionId(input.runId, 'select_candidate')
 
@@ -654,14 +669,24 @@ function buildUpdateDecision(input: {
   }
 
   if (input.candidates.length === 1) {
-    const candidateTitle = input.candidates[0]?.title ?? '该待办'
+    const candidate = input.candidates[0]
+    const isHighConfidence = candidate.confidence >= 0.7
+
+    if (isHighConfidence) {
+      return {
+        status: 'auto_execute',
+        reason: 'single_low_risk_clear_task',
+        snapshot: null,
+      }
+    }
+
     return buildConfirmPlanDecision({
       runId: input.runId,
       plan: input.plan,
       understandingPreview: input.understandingPreview,
       updatedAt: input.updatedAt,
       referenceTime: input.referenceTime,
-      message: `找到一个待更新候选：${candidateTitle}，请确认后执行。`,
+      message: `找到一个待更新候选：${candidate.title}，请确认后执行。`,
     })
   }
 
@@ -758,7 +783,7 @@ export function reviewWorkspaceRunPlan(
       }
     }
 
-    return buildUpdateDecision({
+    const decision = buildUpdateDecision({
       runId: input.runId,
       plan: input.plan,
       understandingPreview: input.understandingPreview,
@@ -766,6 +791,16 @@ export function reviewWorkspaceRunPlan(
       referenceTime: input.referenceTime,
       candidates: step.candidates ?? [],
     })
+
+    if (decision.status === 'auto_execute') {
+      return {
+        status: 'auto_execute',
+        reason: 'single_low_risk_clear_task',
+        snapshot: null,
+      }
+    }
+
+    return decision
   }
 
   if (task.confidence < 0.4) {

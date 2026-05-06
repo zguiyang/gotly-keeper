@@ -41,6 +41,7 @@ describe('workspaceTools', () => {
         subjectHint: null,
         timeRange: null,
         limit: 10,
+        recentFocus: false,
       },
       { userId: 'user_1' }
     )
@@ -50,8 +51,6 @@ describe('workspaceTools', () => {
       query: '项目复盘',
       timeFilter: null,
       typeHint: 'note',
-      limit: 10,
-      preferRecent: undefined,
     })
     expect(result).toEqual({
       ok: true,
@@ -70,6 +69,7 @@ describe('workspaceTools', () => {
         subjectHint: null,
         timeRange: { type: 'today' },
         limit: 10,
+        recentFocus: false,
       },
       { userId: 'user_1' }
     )
@@ -101,6 +101,7 @@ describe('workspaceTools', () => {
         },
         limit: 10,
         status: 'all',
+        recentFocus: false,
       },
       { userId: 'user_1' }
     )
@@ -125,6 +126,7 @@ describe('workspaceTools', () => {
         timeRange: null,
         limit: 10,
         status: 'all',
+        recentFocus: false,
       },
       { userId: 'user_1' }
     )
@@ -164,13 +166,55 @@ describe('workspaceTools', () => {
       query: '木曜日咖啡不存在的冷门内部代号',
       timeFilter: null,
       typeHint: null,
-      limit: 10,
-      preferRecent: undefined,
     })
     expect(result).toEqual({
       ok: true,
       target: 'mixed',
       items: [{ id: 'bookmark_1', type: 'link', title: '竞品参考', createdAt: new Date('2026-04-22T09:00:00.000Z') }],
+      total: 1,
+    })
+  })
+
+  it('search_all uses shared selector semantics when selector is provided', async () => {
+    mocks.searchWorkspaceAssets.mockResolvedValue([
+      { id: 'todo_1', type: 'todo', title: '报价待办', createdAt: new Date('2026-04-22T09:00:00.000Z') },
+    ])
+
+    const result = await executeWorkspaceTool(
+      {
+        toolName: 'search_all',
+        toolInput: {
+          selector: {
+            target: 'mixed',
+            subject: '报价',
+            keywords: ['报价'],
+            timeConstraint: {
+              kind: 'relative_window',
+              anchor: 'now',
+              direction: 'past',
+              unit: 'minute',
+              value: 10,
+              strength: 'hard',
+            },
+            sort: 'recent_first',
+            limit: 5,
+          },
+        },
+      },
+      { userId: 'user_1' }
+    )
+
+    expect(mocks.searchWorkspaceAssets).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user_1',
+        query: '报价',
+        typeHint: null,
+        timeFilter: expect.objectContaining({ kind: 'exact_range' }),
+      })
+    )
+    expect(result).toMatchObject({
+      ok: true,
+      target: 'mixed',
       total: 1,
     })
   })
@@ -197,8 +241,6 @@ describe('workspaceTools', () => {
       query: '刚刚记的报价待办 帮我找一下刚刚记的报价待办',
       timeFilter: null,
       typeHint: 'todo',
-      limit: 1,
-      preferRecent: 'focus',
     })
   })
 
@@ -382,6 +424,73 @@ describe('workspaceTools', () => {
         type: 'todo',
         completed: true,
       },
+    })
+  })
+
+  it('update_todo uses shared selector resolution when semantic selector is provided', async () => {
+    mocks.searchWorkspaceAssets.mockResolvedValue([
+      {
+        id: 'todo_1',
+        type: 'todo',
+        title: '报价待办',
+        completed: false,
+        createdAt: new Date('2026-04-22T10:00:00.000Z'),
+      },
+    ])
+    mocks.updateWorkspaceTodo.mockResolvedValue({
+      id: 'todo_1',
+      type: 'todo',
+      title: '新的报价标题',
+      completed: false,
+    })
+
+    const result = await executeWorkspaceTool(
+      {
+        toolName: 'update_todo',
+        toolInput: {
+          selector: {
+            query: '报价',
+          },
+          semanticSelector: {
+            target: 'todos',
+            subject: '报价',
+            keywords: ['报价'],
+            timeConstraint: {
+              kind: 'recent',
+              strength: 'strong',
+            },
+            sort: 'recent_first',
+            limit: 3,
+          },
+          patch: {
+            title: '新的报价标题',
+          },
+        },
+      },
+      { userId: 'user_1' }
+    )
+
+    expect(mocks.searchWorkspaceAssets).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user_1',
+        query: '报价',
+        typeHint: 'todo',
+      })
+    )
+    expect(mocks.updateWorkspaceTodo).toHaveBeenCalledWith({
+      userId: 'user_1',
+      assetId: 'todo_1',
+      rawInput: '新的报价标题',
+      title: '新的报价标题',
+      content: null,
+      timeText: null,
+      dueAt: null,
+    })
+    expect(result).toMatchObject({
+      ok: true,
+      target: 'todos',
+      action: 'update',
+      item: { id: 'todo_1', title: '新的报价标题' },
     })
   })
 })

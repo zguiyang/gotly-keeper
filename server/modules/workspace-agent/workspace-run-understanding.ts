@@ -73,7 +73,7 @@ const understandingModelTaskSchema = workspaceDraftTaskSchema
     target: allowedTargetSchema,
     title: z.string().transform((title) => title.trim()),
     hasRealContent: z.boolean().default(true),
-    slotEntries: z.array(understandingSlotEntrySchema).default([]),
+    slotEntries: z.array(understandingSlotEntrySchema),
   })
   .superRefine((task, ctx) => {
     if (task.title.length === 0 && (task.intent === 'query' || task.intent === 'summarize')) {
@@ -188,8 +188,38 @@ function normalizeCommandOnlyCreateTitle(task: DraftWorkspaceTask) {
   }
 }
 
+function normalizeTodoCreateTitle(task: DraftWorkspaceTask) {
+  if (task.intent !== 'create' || task.target !== 'todos' || !task.hasRealContent) {
+    return task
+  }
+
+  const timeHint =
+    task.slots.timeText ??
+    task.slots.time ??
+    task.slots.due ??
+    task.slots.dueDate ??
+    task.slots.dueText ??
+    task.slots.dueTime
+
+  if (!timeHint || !task.title.includes(timeHint)) {
+    return task
+  }
+
+  const [, remainder] = task.title.split(timeHint, 2)
+  const normalizedTitle = remainder?.replace(/^[，,、:：;；\s]+/, '').trim() ?? ''
+
+  if (normalizedTitle.length === 0) {
+    return task
+  }
+
+  return {
+    ...task,
+    title: normalizedTitle,
+  }
+}
+
 function normalizeDraftTasks(tasks: DraftWorkspaceTask[]) {
-  return tasks.map((task) => normalizeCommandOnlyCreateTitle(task))
+  return tasks.map((task) => normalizeTodoCreateTitle(normalizeCommandOnlyCreateTitle(task)))
 }
 
 function toDraftTasks(tasks: z.infer<typeof understandingTaskSchema>[]): DraftWorkspaceTask[] {

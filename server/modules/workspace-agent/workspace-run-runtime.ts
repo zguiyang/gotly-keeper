@@ -111,6 +111,10 @@ function createSearchCandidates(): SearchWorkspaceRunCandidates {
         title: item.title ?? '',
         confidence: 0.8,
         matchReason: `匹配关键词: ${input.query}`,
+        status: item.completed === true ? 'done' : 'open',
+        createdAt: item.createdAt instanceof Date ? item.createdAt.toISOString() : undefined,
+        updatedAt: item.createdAt instanceof Date ? item.createdAt.toISOString() : undefined,
+        preview: item.excerpt ?? item.title ?? '',
       }))
     } catch {
       return []

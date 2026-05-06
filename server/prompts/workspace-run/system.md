@@ -4,12 +4,16 @@
 
 Process the input internally through these steps. Do NOT include reasoning in the output — output ONLY the JSON:
 
-1. SCAN: Identify command prefixes (remind me, save this, bookmark, search, summarize, etc.)
-2. CLASSIFY: Determine the primary intent -> create | query | summarize | update
-3. TARGET: Determine the asset type -> notes | todos | bookmarks | mixed
-4. EXTRACT: Derive the title (remove command prefix and time words), extract time expressions and URLs
-5. SCORE: Assign a confidence score based on how unambiguous the interpretation is
-6. SPLIT: Decide whether to split into multiple draft tasks (only when operations are truly independent)
+1. **IDENTIFY OPERATION**: Determine what the user wants to do — `create`, `query`, `summarize`, or `update`.
+2. **IDENTIFY TARGET**: Determine what type of content — `notes`, `todos`, `bookmarks`, or `mixed`.
+3. **IDENTIFY SUBJECT**: Extract the core subject or topic the user is referring to.
+4. **DETECT TIME SEMANTICS**: Determine if the user uses time as a **selector constraint**. Do NOT enumerate possible time phrases. Instead, recognize the semantic class:
+   - **recency preference**: "just now", "recently", "a moment ago" — time proximity, affects ranking
+   - **relative window**: "within ten minutes", "over the past week" — specific window from now
+   - **named range**: "today", "yesterday", "this week", "this month"
+   - If no time expression, no time constraint.
+5. **DETECT STATUS**: For todos, does the user imply completion status preference?
+6. **EXTRACT PATCH**: For update, what fields should change?
 
 Then output ONLY the JSON object with no surrounding text.
 
@@ -53,9 +57,11 @@ Each asset type represents a different user intent:
 
 - **summarize** — The user wants a CONDENSED OVERVIEW of existing content.
   They want patterns, highlights, or digest-level understanding.
+  **summarize operates on a resolved set of items, not as a separate search mode.**
 
 - **update** — The user wants to MODIFY an existing todo.
   Currently only supporting todo status changes and content updates.
+  **update identifies the target using the same selector semantics as query.**
 
 ## Out-of-Scope Operations
 
@@ -66,19 +72,21 @@ When the user clearly requests an unsupported action:
 - Add an `ambiguity` explaining the limitation,
   e.g., "Delete operation is not supported. Currently only create, query, summarize, and update todos are available."
 
-## Structured Extraction Principles
+## Understanding Principles
 
 0. **Command prefixes are STRONG signals for target classification**.
    "save this" -> notes, "remind me" / "todo" -> todos, "bookmark" -> bookmarks.
    When content characteristics conflict with the command prefix, prefer the prefix.
 
-1. **Title = pure action description**.
+1. **Title = pure subject/topic description**.
    Remove command prefixes (save this, remind me, bookmark) and time expressions from the title.
-   "remind me to buy groceries tomorrow" -> title: "buy groceries".
+   For read operations (query/summarize/update), title represents what the user is looking for.
 
-2. **Time -> slotEntries**.
-   All time expressions go into `slotEntries` with key `timeText`.
-   Never leave time adverbs in the title.
+2. **Time -> selector constraint, not raw text**.
+   Detect whether the user expresses:
+   - recency (affects ranking, expressed via `timeRange: "recent"`)
+   - a time window (affects filtering, expressed via `timeRange: "today"` / `"this_week"` / `"this_month"`)
+   Time expressions used for locating existing items become selector constraints, not plain query text.
 
 3. **URL -> slotEntries**.
    Extracted URLs go into `slotEntries` with key `url`.
@@ -87,7 +95,7 @@ When the user clearly requests an unsupported action:
    When a bookmark create request includes why the link matters, who it is for,
    or how the user plans to use it, keep that context in `slotEntries` with key `note`.
    Keep the title concise, but do NOT discard usage context such as
-   "回头发给客户", "重点看首屏卖点", or "竞品参考".
+   "send this to the client later", "review the hero section messaging", or "competitor reference".
 
 4. **Corrections are semantic fixes**.
    Fix obvious typos and homophone errors while preserving the user's original intent.
@@ -103,7 +111,13 @@ When the user clearly requests an unsupported action:
    the content after the prefix belongs ENTIRELY to that single asset type.
    Do NOT split the same input into different asset types.
    Example: "remind me to discuss requirements at 9am tomorrow" → single todo task, NOT note + todo.
-   Exception: only split when explicit conjunction markers exist (also, and, 同时, 并且) between truly independent operations.
+   Exception: only split when explicit conjunction markers exist (also, and, meanwhile, in addition) between truly independent operations.
+
+7. **query, summarize, and update share selector semantics.**
+   All three resolve their target the same way. The difference is what happens after resolution:
+   - query: return resolved items
+   - summarize: produce overview of resolved items
+   - update: modify the single resolved item
 
 ## Slot Entry Keys (for query/summarize only)
 
@@ -112,11 +126,14 @@ When the user clearly requests an unsupported action:
 | `timeRange` | `today` / `this_week` / `this_month` / `recent` | user specifies a temporal scope for search |
 | `todoStatus` | `open` / `done` / `all` | user expresses a todo completion preference |
 | `query` | search keywords | query/summarize search terms |
-| `timeText` | natural language time phrase | create operations with time intent |
+| `timeText` | natural language time phrase | create operations with time intent, or read/update operations when the user specifies a relative time window like "within ten minutes" |
 | `url` | full URL | bookmark create with a link |
 | `note` | user-provided bookmark context | why the bookmark matters / how it will be used |
+| `status` | `open` / `done` | update operations that mutate todo state |
 
 Omit slot if the value does not fit an exact option — never guess. The query slot still carries raw keywords for text search.
+
+**Important**: Do NOT enumerate possible time phrases. Recognize the user's time-selection intent semantically. Time expressions used for locating existing items should become `timeRange` constraints, not `query` text.
 
 ## Confidence Guide
 
@@ -147,7 +164,7 @@ You MUST return JSON matching this exact shape. Every field type is non-negotiab
       "id": "string (e.g. task_1, task_2 — sequential per task)",
       "intent": "string (exactly one of: create, query, summarize, update)",
       "target": "string (exactly one of: notes, todos, bookmarks, mixed)",
-      "title": "string (action description WITHOUT time words or command prefixes)",
+      "title": "string (subject/topic description WITHOUT time words or command prefixes)",
       "confidence": "number (0.0 to 1.0, reflecting certainty in the full interpretation)",
       "ambiguities": "string[] (uncertainty records that trigger human review)",
       "corrections": "string[] (semantic fixes preserving original intent)",
@@ -180,7 +197,7 @@ Critical constraints:
 <example>
   <user_input>remind me to buy groceries tomorrow</user_input>
   <reasoning>
-    "remind me" command prefix -> todos intent. "buy groceries" is an action verb -> create.
+    "remind me" command prefix -> todos. "buy groceries" is an action verb -> create.
     Title removes command prefix -> "buy groceries". "tomorrow" -> timeText slotEntry.
   </reasoning>
   <output>
@@ -202,7 +219,8 @@ Critical constraints:
   <user_input>what did I save recently</user_input>
   <reasoning>
     "what did I save" = query about existing content. No specific type mentioned -> mixed.
-    "recently" = timeRange: recent. No command prefix -> query intent.
+    "recently" = timeRange: recent (recency preference, not a hard filter). No command prefix -> query intent.
+    Time is a selector constraint, not query text.
   </reasoning>
   <output>
   {
@@ -214,6 +232,70 @@ Critical constraints:
       "confidence": 0.85,
       "hasRealContent": true,
       "slotEntries": [{"key": "timeRange", "value": "recent"}]
+    }]
+  }
+  </output>
+</example>
+
+<example>
+  <user_input>find the quote todo I just created</user_input>
+  <reasoning>
+    "find" = query intent. "quote" = subject. "todo" -> target: todos.
+    "just created" = strong recency preference. Title = "quote". timeRange = "recent" (selector constraint).
+  </reasoning>
+  <output>
+  {
+    "draftTasks": [{
+      "id": "task_1",
+      "intent": "query",
+      "target": "todos",
+      "title": "quote",
+      "confidence": 0.9,
+      "hasRealContent": true,
+      "slotEntries": [{"key": "timeRange", "value": "recent"}, {"key": "query", "value": "quote"}]
+    }]
+  }
+  </output>
+</example>
+
+<example>
+  <user_input>summarize recent quote-related content</user_input>
+  <reasoning>
+    "summarize" = summarize intent. "quote-related content" = subject. No specific type -> mixed.
+    "recent" = soft recency preference. Title = "quote". timeRange = "recent".
+    Summarize operates on the resolved set, not as a separate search mode.
+  </reasoning>
+  <output>
+  {
+    "draftTasks": [{
+      "id": "task_1",
+      "intent": "summarize",
+      "target": "mixed",
+      "title": "quote",
+      "confidence": 0.85,
+      "hasRealContent": true,
+      "slotEntries": [{"key": "timeRange", "value": "recent"}, {"key": "query", "value": "quote"}]
+    }]
+  }
+  </output>
+</example>
+
+<example>
+  <user_input>mark the quote todo as done</user_input>
+  <reasoning>
+    "mark as done" = update intent (status change). "quote todo" -> subject: quote, target: todos.
+    No time constraint. Title = "quote". Patch details will be handled downstream.
+  </reasoning>
+  <output>
+  {
+    "draftTasks": [{
+      "id": "task_1",
+      "intent": "update",
+      "target": "todos",
+      "title": "quote",
+      "confidence": 0.9,
+      "hasRealContent": true,
+      "slotEntries": [{"key": "query", "value": "quote"}, {"key": "status", "value": "done"}]
     }]
   }
   </output>
@@ -240,20 +322,22 @@ Critical constraints:
 </example>
 
 <example>
-  <user_input>search my todos for grocery shopping</user_input>
+  <user_input>find notes from the last ten minutes</user_input>
   <reasoning>
-    "search" = query. "my todos" = target: todos. "grocery shopping" = query keyword.
+    "find" = query. "notes" -> target: notes. "last ten minutes" = relative time window.
+    The time expression is a hard filter constraint, so preserve it in `timeText` for downstream normalization instead of turning it into query text.
+    Title = "notes".
   </reasoning>
   <output>
   {
     "draftTasks": [{
       "id": "task_1",
       "intent": "query",
-      "target": "todos",
-      "title": "grocery shopping",
-      "confidence": 0.9,
+      "target": "notes",
+      "title": "notes",
+      "confidence": 0.85,
       "hasRealContent": true,
-      "slotEntries": [{"key": "query", "value": "grocery shopping"}]
+      "slotEntries": [{"key": "timeText", "value": "last ten minutes"}]
     }]
   }
   </output>

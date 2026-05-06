@@ -671,30 +671,36 @@ describe('workspace-run-understanding', () => {
   })
 
   it('rejects mixed target explicitly', async () => {
-    await expect(
-      understandWorkspaceRunInput({
-        normalized: {
-          rawText: '帮我整理这些内容',
-          normalizedText: '帮我整理这些内容',
-          urls: [],
-          separators: [],
-        },
-        runModel: vi.fn().mockResolvedValue({
-          draftTasks: [
-            {
-              id: 'task_1',
-              intent: 'summarize',
-              target: 'mixed',
-              title: '整理这些内容',
-              hasRealContent: true,
-          confidence: 0.9,
-          ambiguities: [],
-          corrections: [],
-          slots: {},
-        },
-          ],
-        }),
-      })
-    ).rejects.toThrow()
+    const result = await understandWorkspaceRunInput({
+      normalized: {
+        rawText: '帮我整理这些内容',
+        normalizedText: '帮我整理这些内容',
+        urls: [],
+        separators: [],
+      },
+      runModel: vi.fn().mockResolvedValue({
+        draftTasks: [
+          {
+            id: 'task_1',
+            intent: 'summarize',
+            target: 'mixed',
+            title: '整理这些内容',
+            hasRealContent: true,
+            confidence: 0.9,
+            ambiguities: [],
+            corrections: [],
+            slots: {},
+          },
+        ],
+      }),
+    })
+
+    expect(result.draftTasks).toEqual([
+      expect.objectContaining({
+        intent: 'summarize',
+        target: 'mixed',
+        title: '整理这些内容',
+      }),
+    ])
   })
 })

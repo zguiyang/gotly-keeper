@@ -394,16 +394,8 @@ describe('workspace-run-review', () => {
       updatedAt,
     })
 
-    const awaitUser = expectAwaitUser(result)
-    expect(awaitUser.reason).toBe('confirm_plan')
-    expect(awaitUser.snapshot.interaction).toMatchObject({
-      type: 'confirm_plan',
-      actions: ['confirm', 'edit', 'cancel'],
-    })
-    expect(awaitUser.snapshot.interaction.message).toContain('给客户发报价')
-    expect(awaitUser.snapshot.preview).toMatchObject({
-      plan: expect.any(Object),
-    })
+    // Single high-confidence candidate → auto_execute (no confirmation needed)
+    expect(result.status).toBe('auto_execute')
   })
 
   it('rejects before update candidate flow when task and update step are inconsistent', () => {
@@ -445,6 +437,83 @@ describe('workspace-run-review', () => {
       status: 'reject',
       reason: 'invalid_plan',
     })
+  })
+
+  it('includes richer candidate context in select_candidate interactions', () => {
+    const draftTask = createDraftTask({
+      intent: 'update',
+      target: 'todos',
+      slots: { query: '报价' },
+    })
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [draftTask],
+      plan: createPlan({
+        steps: [
+          {
+            id: 'step_1',
+            action: 'update_todo',
+            target: 'todos',
+            title: '报价',
+            risk: 'high',
+            requiresUserApproval: true,
+            candidates: [
+              {
+                id: 'todo_1',
+                type: 'todo',
+                title: '报价待办',
+                confidence: 0.94,
+                matchReason: '标题完全匹配',
+                status: 'open',
+                updatedAt: '2026-05-06T10:00:00.000Z',
+                preview: '给客户发报价',
+              },
+              {
+                id: 'todo_2',
+                type: 'todo',
+                title: '报价待办',
+                confidence: 0.82,
+                matchReason: '同主题相关待办',
+                status: 'done',
+                updatedAt: '2026-05-05T10:00:00.000Z',
+                preview: '整理报价材料',
+              },
+            ],
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+      updatedAt,
+    })
+
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('select_candidate')
+    expect(awaitUser.snapshot.interaction).toMatchObject({
+      type: 'select_candidate',
+    })
+    if (awaitUser.snapshot.interaction.type !== 'select_candidate') {
+      throw new Error('Expected select_candidate interaction')
+    }
+
+    expect(awaitUser.snapshot.interaction.candidates).toEqual([
+      expect.objectContaining({
+        id: 'todo_1',
+        label: '报价待办',
+        type: 'todo',
+        status: 'open',
+        updatedAt: '2026-05-06T10:00:00.000Z',
+        preview: '给客户发报价',
+      }),
+      expect.objectContaining({
+        id: 'todo_2',
+        label: '报价待办',
+        type: 'todo',
+        status: 'done',
+        updatedAt: '2026-05-05T10:00:00.000Z',
+        preview: '整理报价材料',
+      }),
+    ])
   })
 
   it('rejects inconsistent non-update step before asking for missing fields', () => {
@@ -1419,6 +1488,9 @@ describe('workspace-run-review', () => {
       const interaction = awaitUser.snapshot.interaction
       expect(interaction.type).toBe('clarify_slots')
       expect(interaction.message).toContain('记待办、笔记还是书签')
+      if (interaction.type !== 'clarify_slots') {
+        throw new Error('Expected clarify_slots interaction')
+      }
       expect(interaction.fields).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ key: 'targetHint', label: '记录类型' }),
@@ -1459,6 +1531,9 @@ describe('workspace-run-review', () => {
       const interaction = awaitUser.snapshot.interaction
       expect(interaction.type).toBe('clarify_slots')
       expect(interaction.message).toContain('关键词')
+      if (interaction.type !== 'clarify_slots') {
+        throw new Error('Expected clarify_slots interaction')
+      }
       expect(interaction.fields).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ key: 'query' }),
@@ -1532,6 +1607,9 @@ describe('workspace-run-review', () => {
       const interaction = awaitUser.snapshot.interaction
       expect(interaction.type).toBe('clarify_slots')
       expect(interaction.message).toContain('时间')
+      if (interaction.type !== 'clarify_slots') {
+        throw new Error('Expected clarify_slots interaction')
+      }
       expect(interaction.fields).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ key: 'timeText' }),
@@ -1571,6 +1649,9 @@ describe('workspace-run-review', () => {
       const interaction = awaitUser.snapshot.interaction
       expect(interaction.type).toBe('clarify_slots')
       expect(interaction.message).toContain('范围')
+      if (interaction.type !== 'clarify_slots') {
+        throw new Error('Expected clarify_slots interaction')
+      }
       expect(interaction.fields).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -1613,6 +1694,9 @@ describe('workspace-run-review', () => {
       const interaction = awaitUser.snapshot.interaction
       expect(interaction.type).toBe('clarify_slots')
       expect(interaction.message).toContain('范围')
+      if (interaction.type !== 'clarify_slots') {
+        throw new Error('Expected clarify_slots interaction')
+      }
       expect(interaction.fields).toEqual(
         expect.arrayContaining([
           expect.objectContaining({

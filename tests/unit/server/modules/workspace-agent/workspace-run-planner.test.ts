@@ -41,6 +41,9 @@ describe('workspace-run-planner', () => {
           title: '记录会议纪要',
           risk: 'low',
           requiresUserApproval: false,
+          createPayload: {
+            content: '记录会议纪要',
+          },
           toolInput: {
             content: '记录会议纪要',
           },
@@ -82,6 +85,10 @@ describe('workspace-run-planner', () => {
         title: '给客户发报价',
         risk: 'low',
         requiresUserApproval: false,
+        createPayload: {
+          title: '给客户发报价',
+          timeText: '明天下午三点',
+        },
         toolInput: {
           title: '给客户发报价',
           timeText: '明天下午三点',
@@ -122,6 +129,11 @@ describe('workspace-run-planner', () => {
         title: '发周报',
         risk: 'low',
         requiresUserApproval: false,
+        createPayload: {
+          title: '发周报',
+          timeText: '五分钟后',
+          dueAt: '2026-04-29T02:15:00.000Z',
+        },
         toolInput: {
           title: '发周报',
           timeText: '五分钟后',
@@ -162,6 +174,10 @@ describe('workspace-run-planner', () => {
         title: '保存官网定价页',
         risk: 'low',
         requiresUserApproval: false,
+        createPayload: {
+          url: 'https://example.com/pricing',
+          title: '保存官网定价页',
+        },
         toolInput: {
           url: 'https://example.com/pricing',
           title: '保存官网定价页',
@@ -237,7 +253,7 @@ describe('workspace-run-planner', () => {
     })
   })
 
-  it('preserves recency words in query_assets tool input', async () => {
+  it('maps recency semantic to selector constraints in query_assets', async () => {
     const result = await planWorkspaceRun({
       userId: 'user_123',
       draftTasks: [
@@ -245,12 +261,13 @@ describe('workspace-run-planner', () => {
           id: 'draft_1',
           intent: 'query',
           target: 'todos',
-          title: '帮我找一下刚刚记的报价待办',
+          title: '报价',
           confidence: 0.92,
           ambiguities: [],
           corrections: [],
           slots: {
-            query: '刚刚记的报价待办',
+            query: '报价',
+            timeRange: 'recent',
           },
         },
       ],
@@ -258,10 +275,15 @@ describe('workspace-run-planner', () => {
       runPlanHints: vi.fn(),
     })
 
-    expect(result.steps[0].toolInput?.query).toContain('刚刚')
-    expect(result.steps[0].toolInput?.subjectHint).toContain('刚刚')
-    expect(result.steps[0].toolInput?.recentFocus).toBe(true)
-    expect(result.steps[0].toolInput?.limit).toBe(1)
+    const step = result.steps[0]
+    expect(step.selector).toMatchObject({
+      target: 'todos',
+      subject: '报价',
+      timeConstraint: { kind: 'recent', strength: 'soft' },
+      sort: 'recent_first',
+    })
+    expect(step.toolInput?.recentFocus).toBe(true)
+    expect(step.toolInput?.limit).toBe(10)
   })
 
   it('maps query intent to a low-risk query_assets step without hints', async () => {
@@ -287,20 +309,18 @@ describe('workspace-run-planner', () => {
       runPlanHints,
     })
 
-    expect(result.steps).toEqual([
-      {
-        id: 'step_1',
-        action: 'query_assets',
-        target: 'notes',
-        title: '查找本周会议纪要',
-        risk: 'low',
-        requiresUserApproval: false,
-        toolInput: {
-          query: '会议纪要',
-          subjectHint: '查找本周会议纪要',
-        },
+    expect(result.steps[0]).toMatchObject({
+      id: 'step_1',
+      action: 'query_assets',
+      target: 'notes',
+      title: '查找本周会议纪要',
+      risk: 'low',
+      requiresUserApproval: false,
+      toolInput: {
+        query: '会议纪要',
+        subjectHint: '查找本周会议纪要',
       },
-    ])
+    })
     expect(runPlanHints).not.toHaveBeenCalled()
   })
 
@@ -325,20 +345,18 @@ describe('workspace-run-planner', () => {
       runPlanHints,
     })
 
-    expect(result.steps).toEqual([
-      {
-        id: 'step_1',
-        action: 'summarize_assets',
-        target: 'bookmarks',
-        title: '总结最近收藏',
-        risk: 'low',
-        requiresUserApproval: false,
-        toolInput: {
-          query: '总结最近收藏',
-          subjectHint: '总结最近收藏',
-        },
+    expect(result.steps[0]).toMatchObject({
+      id: 'step_1',
+      action: 'summarize_assets',
+      target: 'bookmarks',
+      title: '总结最近收藏',
+      risk: 'low',
+      requiresUserApproval: false,
+      toolInput: {
+        query: '总结最近收藏',
+        subjectHint: '总结最近收藏',
       },
-    ])
+    })
     expect(runPlanHints).not.toHaveBeenCalled()
   })
 
@@ -619,6 +637,11 @@ describe('workspace-run-planner', () => {
         title: '保存官网定价页',
         risk: 'low',
         requiresUserApproval: false,
+        createPayload: {
+          url: 'https://example.com/pricing',
+          title: '保存官网定价页',
+          note: '以后要看',
+        },
         toolInput: {
           url: 'https://example.com/pricing',
           title: '保存官网定价页',
@@ -655,20 +678,18 @@ describe('workspace-run-planner', () => {
       runPlanHints,
     })
 
-    expect(result.steps).toEqual([
-      {
-        id: 'step_1',
-        action: 'query_assets',
-        target: 'mixed',
-        title: '查一下这个内容',
-        risk: 'high',
-        requiresUserApproval: true,
-        toolInput: {
-          query: '这个内容',
-          subjectHint: '查一下这个内容',
-        },
+    expect(result.steps[0]).toMatchObject({
+      id: 'step_1',
+      action: 'query_assets',
+      target: 'mixed',
+      title: '查一下这个内容',
+      risk: 'high',
+      requiresUserApproval: true,
+      toolInput: {
+        query: '这个内容',
+        subjectHint: '查一下这个内容',
       },
-    ])
+    })
   })
 
   it('falls back to deterministic path when runPlanHints throws', async () => {
@@ -695,16 +716,14 @@ describe('workspace-run-planner', () => {
     })
 
     expect(runPlanHints).toHaveBeenCalledTimes(1)
-    expect(result.steps).toEqual([
-      expect.objectContaining({
-        id: 'step_1',
-        action: 'query_assets',
-        target: 'mixed',
-        title: '查一下这个内容',
-        risk: 'high',
-        requiresUserApproval: true,
-      }),
-    ])
+    expect(result.steps[0]).toMatchObject({
+      id: 'step_1',
+      action: 'query_assets',
+      target: 'mixed',
+      title: '查一下这个内容',
+      risk: 'high',
+      requiresUserApproval: true,
+    })
   })
 
   it('ignores malformed hint payload fields without throwing', async () => {
@@ -735,20 +754,18 @@ describe('workspace-run-planner', () => {
       runPlanHints,
     })
 
-    expect(result.steps).toEqual([
-      {
-        id: 'step_1',
-        action: 'query_assets',
-        target: 'mixed',
-        title: '查一下这个内容',
-        risk: 'high',
-        requiresUserApproval: true,
-        toolInput: {
-          query: '这个内容',
-          subjectHint: '查一下这个内容',
-        },
+    expect(result.steps[0]).toMatchObject({
+      id: 'step_1',
+      action: 'query_assets',
+      target: 'mixed',
+      title: '查一下这个内容',
+      risk: 'high',
+      requiresUserApproval: true,
+      toolInput: {
+        query: '这个内容',
+        subjectHint: '查一下这个内容',
       },
-    ])
+    })
   })
 
   it('falls back to deterministic path when prompt render fails', async () => {
@@ -790,5 +807,153 @@ describe('workspace-run-planner', () => {
         requiresUserApproval: true,
       }),
     ])
+  })
+
+  // ── Regression: Representative Utterances ───────────────────────────
+  // These test cases reflect the refactored pipeline semantics.
+  // They verify that query, summarize, and update share one selector path.
+
+  it('帮我找一下刚刚记的报价待办 → query, todos, recency constraint', async () => {
+    const result = await planWorkspaceRun({
+      userId: 'user_123',
+      draftTasks: [{
+        id: 'task_1',
+        intent: 'query',
+        target: 'todos',
+        title: '报价',
+        confidence: 0.9,
+        ambiguities: [],
+        corrections: [],
+        slots: { query: '报价', timeRange: 'recent' },
+      }],
+      searchCandidates: vi.fn(),
+      runPlanHints: vi.fn(),
+    })
+
+    const step = result.steps[0]
+    expect(step.action).toBe('query_assets')
+    expect(step.target).toBe('todos')
+    expect(step.selector).toBeDefined()
+    expect(step.selector?.timeConstraint?.kind).toBe('recent')
+    expect(step.selector?.sort).toBe('recent_first')
+    expect(step.selector?.subject).toBe('报价')
+    expect(step.requiresUserApproval).toBe(false)
+  })
+
+  it('帮我总结一下最近的报价相关内容 → summarize, mixed, soft recency', async () => {
+    const result = await planWorkspaceRun({
+      userId: 'user_123',
+      draftTasks: [{
+        id: 'task_1',
+        intent: 'summarize',
+        target: 'mixed',
+        title: '报价',
+        confidence: 0.85,
+        ambiguities: [],
+        corrections: [],
+        slots: { query: '报价', timeRange: 'recent' },
+      }],
+      searchCandidates: vi.fn(),
+      runPlanHints: vi.fn(),
+    })
+
+    const step = result.steps[0]
+    expect(step.action).toBe('summarize_assets')
+    expect(step.target).toBe('mixed')
+    expect(step.selector).toBeDefined()
+    expect(step.selector?.timeConstraint?.kind).toBe('recent')
+    expect(step.selector?.subject).toBe('报价')
+    expect(step.risk).toBe('high')
+    expect(step.requiresUserApproval).toBe(true)
+  })
+
+  it('把报价待办标记为已完成 → update, todos, status done', async () => {
+    const searchCandidates = vi.fn().mockResolvedValue([{
+      id: 'todo_1',
+      type: 'todo',
+      title: '报价',
+      confidence: 0.9,
+      matchReason: '标题匹配',
+    }])
+
+    const result = await planWorkspaceRun({
+      userId: 'user_123',
+      draftTasks: [{
+        id: 'task_1',
+        intent: 'update',
+        target: 'todos',
+        title: '报价',
+        confidence: 0.9,
+        ambiguities: [],
+        corrections: [],
+        slots: { query: '报价', status: 'done' },
+      }],
+      searchCandidates,
+      runPlanHints: vi.fn(),
+    })
+
+    const step = result.steps[0]
+    expect(step.action).toBe('update_todo')
+    expect(step.target).toBe('todos')
+    expect(step.selector).toBeDefined()
+    expect(step.selector?.subject).toBe('报价')
+    expect(step.patch).toBeDefined()
+    expect(step.patch?.status).toBe('done')
+    expect(step.toolInput?.patch).toMatchObject({ status: 'done' })
+  })
+
+  it('查十分钟内记的笔记 → query, notes, relative_window time constraint', async () => {
+    const result = await planWorkspaceRun({
+      userId: 'user_123',
+      draftTasks: [{
+        id: 'task_1',
+        intent: 'query',
+        target: 'notes',
+        title: '笔记',
+        confidence: 0.85,
+        ambiguities: [],
+        corrections: [],
+        slots: { timeText: '十分钟内' },
+      }],
+      searchCandidates: vi.fn(),
+      runPlanHints: vi.fn(),
+    })
+
+    const step = result.steps[0]
+    expect(step.action).toBe('query_assets')
+    expect(step.target).toBe('notes')
+    expect(step.selector).toBeDefined()
+    expect(step.selector?.target).toBe('notes')
+    expect(step.selector?.timeConstraint).toMatchObject({
+      kind: 'relative_window',
+      anchor: 'now',
+      direction: 'past',
+      unit: 'minute',
+      value: 10,
+      strength: 'hard',
+    })
+  })
+
+  it('create_note does NOT get a selector (only read paths)', async () => {
+    const result = await planWorkspaceRun({
+      userId: 'user_123',
+      draftTasks: [{
+        id: 'task_1',
+        intent: 'create',
+        target: 'notes',
+        title: '测试笔记',
+        confidence: 0.95,
+        ambiguities: [],
+        corrections: [],
+        slots: { content: '测试笔记' },
+      }],
+      searchCandidates: vi.fn(),
+      runPlanHints: vi.fn(),
+    })
+
+    const step = result.steps[0]
+    expect(step.action).toBe('create_note')
+    expect(step.selector).toBeUndefined()
+    expect(step.createPayload).toBeDefined()
   })
 })

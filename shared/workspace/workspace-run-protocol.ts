@@ -2,6 +2,51 @@ import { z } from 'zod'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
 
+// ── Shared Selector Semantics ──────────────────────────────────────────
+// Used by query, summarize, and update to resolve targets through one path.
+
+export type WorkspaceTimeConstraint =
+  | {
+      kind: 'recent'
+      strength: 'soft' | 'strong'
+    }
+  | {
+      kind: 'relative_window'
+      anchor: 'now'
+      direction: 'past'
+      unit: 'minute' | 'hour' | 'day' | 'week' | 'month'
+      value: number
+      strength: 'hard'
+    }
+  | {
+      kind: 'named_range'
+      name: 'today' | 'yesterday' | 'this_week' | 'this_month'
+      strength: 'hard'
+    }
+  | {
+      kind: 'exact_range'
+      startAt?: string
+      endAt?: string
+      strength: 'hard'
+    }
+
+export type WorkspaceSelector = {
+  target: 'notes' | 'todos' | 'bookmarks' | 'mixed'
+  subject?: string
+  keywords?: string[]
+  timeConstraint?: WorkspaceTimeConstraint | null
+  statusConstraint?: 'open' | 'done' | 'all' | null
+  sort?: 'relevance' | 'recent_first'
+  limit?: number
+}
+
+export type WorkspacePatch = {
+  title?: string
+  details?: string
+  dueAt?: string | null
+  status?: 'open' | 'done'
+}
+
 export const workspaceRunPhaseSchema = z.enum([
   'normalize',
   'understand',
@@ -66,6 +111,11 @@ export type WorkspaceRunPreview = z.infer<typeof workspacePreviewSchema>
 const workspaceCandidateSchema = z.object({
   id: z.string(),
   label: z.string(),
+  type: z.enum(['todo', 'note', 'bookmark']).optional(),
+  status: z.enum(['open', 'done']).optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+  preview: z.string().optional(),
   reason: z.string().optional(),
 })
 

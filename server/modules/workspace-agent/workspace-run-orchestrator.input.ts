@@ -1,12 +1,17 @@
 import { buildWorkspaceSystemPrompt } from '@/server/lib/ai/ai.prompts'
 
-import { composeWorkspaceAnswer } from './workspace-compose'
-import { buildFallbackAnswer } from './workspace-compose'
+import { buildFallbackAnswer, composeWorkspaceAnswer } from './workspace-compose'
 import { buildBatchAnswer, buildCompletedRunResult } from './workspace-run-completed'
 import { findWorkspaceRunDuplicateCandidates } from './workspace-run-duplicates'
 import { executeWorkspaceRunSteps } from './workspace-run-executor'
 import { normalizeWorkspaceRunInput } from './workspace-run-normalizer'
-import { emitEvent, createRunId, getToolResultError, getToolNameFromAction } from './workspace-run-orchestrator.shared'
+import {
+  createRunId,
+  emitEvent,
+  getToolNameFromAction,
+  getToolResultError,
+  recordPhaseTiming,
+} from './workspace-run-orchestrator.shared'
 import { planWorkspaceRun } from './workspace-run-planner'
 import { buildWorkspaceRunPreview } from './workspace-run-preview'
 import { reviewWorkspaceRunPlan } from './workspace-run-review'
@@ -19,10 +24,15 @@ import type {
   OrchestrateWorkspaceRunOptions,
   WorkspaceRunOrchestratorResult,
 } from './workspace-run-orchestrator'
-import type { PhaseContext, PhaseTimingEntry } from './workspace-run-orchestrator.shared'
-import { recordPhaseTiming } from './workspace-run-orchestrator.shared'
-import type { WorkspaceRunPlannerResult, WorkspaceRunPlanHint } from './workspace-run-planner'
-import type { WorkspaceInteraction, DraftWorkspaceTask } from '@/shared/workspace/workspace-run-protocol'
+import type { PhaseContext } from './workspace-run-orchestrator.shared'
+import type {
+  WorkspaceRunPlanHint,
+  WorkspaceRunPlannerResult,
+  WorkspaceRunPlannerStep,
+} from './workspace-run-planner'
+import type { DraftWorkspaceTask, WorkspaceInteraction } from '@/shared/workspace/workspace-run-protocol'
+
+const WS_LOG_PREFIX = '[workspace]'
 
 async function runNormalize(ctx: PhaseContext, rawText: string) {
   const startTs = Date.now()
@@ -268,7 +278,27 @@ export async function handleNewInput(
 
   try {
     const normalized = await runNormalize(ctx, request.text)
+
+    console.log(`${WS_LOG_PREFIX} normalize`, {
+      runId,
+      rawInput: request.text,
+      normalizedInput: normalized.normalizedText,
+    })
+
     const understanding = await runUnderstand(ctx, normalized, runModel)
+
+    console.log(`${WS_LOG_PREFIX} understanding`, {
+      runId,
+      draftTasks: understanding.draftTasks.map((t) => ({
+        id: t.id,
+        intent: t.intent,
+        target: t.target,
+        title: t.title,
+        confidence: t.confidence,
+        slots: t.slots,
+      })),
+    })
+
     const normalizedDraftTasks = await runResolveTodoTimes(
       ctx,
       understanding.draftTasks,
@@ -283,6 +313,20 @@ export async function handleNewInput(
     const draftTasks = normalizedUnderstanding.draftTasks as Parameters<typeof reviewWorkspaceRunPlan>[0]['draftTasks']
 
     const plannerResult = await runPlan(ctx, normalizedUnderstanding.draftTasks, searchCandidates, runModel)
+
+    console.log(`${WS_LOG_PREFIX} plan`, {
+      runId,
+      steps: plannerResult.steps.map((s: WorkspaceRunPlannerStep) => ({
+        id: s.id,
+        action: s.action,
+        target: s.target,
+        title: s.title,
+        selector: s.selector,
+        patch: s.patch,
+        candidateCount: s.candidates?.length ?? 0,
+      })),
+    })
+
     const duplicateCandidates = await findWorkspaceRunDuplicateCandidates({
       userId,
       plannerResult,
@@ -297,6 +341,12 @@ export async function handleNewInput(
       updatedAt,
       duplicateCandidates
     )
+
+    console.log(`${WS_LOG_PREFIX} review`, {
+      runId,
+      status: reviewResult.status,
+      reason: reviewResult.status === 'reject' || reviewResult.status === 'await_user' ? reviewResult.reason : undefined,
+    })
 
     if (reviewResult.status === 'reject') {
       emitEvent(ctx, {
@@ -319,6 +369,18 @@ export async function handleNewInput(
     if (reviewResult.status === 'auto_execute') {
       const preview = await runPreview(ctx, normalizedUnderstanding, plannerResult)
       const executeResult = await runExecute(ctx, plannerResult.steps, userId)
+
+      console.log(`${WS_LOG_PREFIX} execute`, {
+        runId,
+        stepResults: executeResult.stepResults.map((r) => ({
+          stepId: r.stepId,
+          toolName: r.toolName,
+          ok: r.result.ok,
+          ...(r.result.ok
+            ? { target: r.result.target, total: r.result.total, action: r.result.action }
+            : { error: r.result.message }),
+        })),
+      })
 
       const failedStep = executeResult.stepResults.find((r) => !r.result.ok)
       if (failedStep) {

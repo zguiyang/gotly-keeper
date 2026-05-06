@@ -139,6 +139,66 @@ describe('workspace-run-executor', () => {
       expect(result.stepResults[0].toolName).toBe('search_all')
     })
 
+    it('preserves non-status update patches when a candidate is already selected', async () => {
+      vi.mocked(executeWorkspaceTool).mockResolvedValue({
+        ok: true,
+        target: 'todos',
+        action: 'update',
+        item: createAssetItem({ id: 'todo_1', title: '新的报价标题' }),
+      })
+
+      const steps = [
+        {
+          id: 'step_1',
+          action: 'update_todo' as const,
+          target: 'todos' as const,
+          title: '报价',
+          risk: 'high' as const,
+          requiresUserApproval: false,
+          candidates: [
+            {
+              id: 'todo_1',
+              type: 'todo' as const,
+              title: '报价',
+              confidence: 0.91,
+              matchReason: '标题匹配',
+            },
+          ],
+          patch: {
+            title: '新的报价标题',
+          },
+          toolInput: {
+            selector: {
+              query: '报价',
+              subjectHint: '报价',
+            },
+            patch: {
+              title: '新的报价标题',
+            },
+          },
+        },
+      ]
+
+      await executeWorkspaceRunSteps(steps, createMockContext())
+
+      expect(executeWorkspaceTool).toHaveBeenCalledWith(
+        {
+          toolName: 'update_todo',
+          toolInput: {
+            selector: {
+              id: 'todo_1',
+              query: '报价',
+              subjectHint: '报价',
+            },
+            patch: {
+              title: '新的报价标题',
+            },
+          },
+        },
+        { userId: 'user_123' }
+      )
+    })
+
     it('handles unsupported action with UNSUPPORTED_ACTION error', async () => {
       const steps = [
         {
