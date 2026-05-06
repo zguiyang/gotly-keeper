@@ -203,6 +203,31 @@ describe('workspace-run-planner', () => {
     })
   })
 
+  it('preserves recency words in query_assets tool input', async () => {
+    const result = await planWorkspaceRun({
+      userId: 'user_123',
+      draftTasks: [
+        {
+          id: 'draft_1',
+          intent: 'query',
+          target: 'todos',
+          title: '帮我找一下刚刚记的报价待办',
+          confidence: 0.92,
+          ambiguities: [],
+          corrections: [],
+          slots: {
+            query: '刚刚记的报价待办',
+          },
+        },
+      ],
+      searchCandidates: vi.fn(),
+      runPlanHints: vi.fn(),
+    })
+
+    expect(result.steps[0].toolInput?.query).toContain('刚刚')
+    expect(result.steps[0].toolInput?.subjectHint).toContain('刚刚')
+  })
+
   it('maps query intent to a low-risk query_assets step without hints', async () => {
     const runPlanHints = vi.fn()
 

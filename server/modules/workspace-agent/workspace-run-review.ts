@@ -114,8 +114,6 @@ export type ReviewableDuplicateCandidate = {
   duplicates: WorkspaceCandidate[]
 }
 
-const MIN_AUTO_EXECUTE_CONFIDENCE = 0.78
-
 function createInteractionId(runId: string, suffix: string) {
   return `${runId}_${suffix}`
 }
@@ -200,9 +198,28 @@ function serializeDraftTask(task: ReviewableDraftTask): DraftWorkspaceTask {
   }
 }
 
-function buildClarifyFields(task: ReviewableDraftTask) {
+function buildClarifyFields(task: ReviewableDraftTask, step?: ReviewablePlanStep) {
   const url = typeof task.slots.url === 'string' ? task.slots.url.trim() : ''
   const slotTitle = typeof task.slots.title === 'string' ? task.slots.title.trim() : null
+  const target = task.target !== 'mixed' ? task.target : step?.target
+
+  if (task.target === 'mixed') {
+    return [
+      {
+        key: 'targetHint',
+        label: '记录类型',
+        required: true,
+        placeholder: '例如：待办、笔记、书签',
+      },
+      {
+        key: 'details',
+        label: '具体内容',
+        required: true,
+        placeholder: '例如：下周要整理客户报价相关事项',
+      },
+    ]
+  }
+
   if (task.target === 'bookmarks') {
     const hasTitle = (task.title?.trim() ?? '').length > 0 || (slotTitle ?? '').length > 0
 
@@ -237,9 +254,41 @@ function buildClarifyFields(task: ReviewableDraftTask) {
     return [
       {
         key: 'title',
-        label: '标题',
+        label:
+          step?.action === 'create_todo' || target === 'todos'
+            ? '待办内容'
+            : step?.action === 'create_note' || target === 'notes'
+              ? '笔记内容'
+              : '标题',
         required: true,
-        placeholder: '请输入标题',
+        placeholder:
+          step?.action === 'create_todo' || target === 'todos'
+            ? '例如：给客户发报价'
+            : step?.action === 'create_note' || target === 'notes'
+              ? '例如：客户更喜欢极简风首页'
+              : '请输入标题',
+      },
+    ]
+  }
+
+  if (task.intent === 'query') {
+    return [
+      {
+        key: 'query',
+        label: '查询关键词',
+        required: true,
+        placeholder: '例如：报价待办',
+      },
+    ]
+  }
+
+  if (task.intent === 'summarize') {
+    return [
+      {
+        key: 'details',
+        label: '整理范围',
+        required: true,
+        placeholder: '例如：下周要跟进的客户报价相关内容',
       },
     ]
   }
@@ -247,9 +296,9 @@ function buildClarifyFields(task: ReviewableDraftTask) {
   return [
     {
       key: 'details',
-      label: '请补充任务信息',
+      label: '具体内容',
       required: true,
-      placeholder: '告诉我你想更新或创建什么',
+      placeholder: '例如：下周要整理客户报价相关事项',
     },
   ]
 }
@@ -327,32 +376,6 @@ function hasWriteTitleDrift(task: ReviewableDraftTask, step: ReviewablePlanStep)
 function getTimeResolutionKind(task: ReviewableDraftTask) {
   const value = task.slots.timeResolutionKind
   return value === 'clear' || value === 'vague' || value === 'unresolved' ? value : null
-}
-
-function hasExplicitButUnresolvedTime(task: ReviewableDraftTask, step: ReviewablePlanStep): boolean {
-  if (task.target !== 'todos' || step.action !== 'create_todo') {
-    return false
-  }
-
-  const timeText = task.slots.timeText
-  const hasTimeText = typeof timeText === 'string' && timeText.trim().length > 0
-  if (!hasTimeText) {
-    return false
-  }
-
-  const dueAt = task.slots.dueAt
-  const hasDueAt = dueAt != null && (typeof dueAt === 'string' ? dueAt.trim().length > 0 : true)
-
-  if (hasDueAt) {
-    return false
-  }
-
-  const resolutionKind = task.slots.timeResolutionKind
-  if (resolutionKind === 'vague') {
-    return false
-  }
-
-  return true
 }
 
 function hasOnlyIgnorableTodoTimeAmbiguities(task: ReviewableDraftTask, step: ReviewablePlanStep) {
@@ -510,10 +533,6 @@ function canAutoExecuteConfirmedMultiTask(input: ReviewWorkspaceRunPlanInput) {
     return false
   }
 
-  if ((input.duplicateReview?.decisions ?? []).length === 0) {
-    return false
-  }
-
   return input.plan.steps.length > 0 && input.plan.steps.every(
     (step, i) => {
       if (step.risk !== 'low' || step.requiresUserApproval) {
@@ -528,6 +547,23 @@ function canAutoExecuteConfirmedMultiTask(input: ReviewWorkspaceRunPlanInput) {
       return true
     }
   )
+}
+
+function canSkipEditDraftTasks(input: ReviewWorkspaceRunPlanInput): boolean {
+  if (input.draftTasks.length <= 1) return false
+  if (input.draftTasks.length !== input.plan.steps.length) return false
+  return input.plan.steps.every((step, i) => {
+    const task = input.draftTasks[i]
+    if (!task) return false
+    if (task.target === 'mixed') return false
+    if (task.ambiguities.length > 0 && !hasOnlyIgnorableTodoTimeAmbiguities(task, step)) return false
+    if (hasMissingRequiredWriteFields(task, step)) return false
+    if (!isStepConsistentWithTask(task, step)) return false
+    if (hasBlockingTimeClarity(task, step)) return false
+    if (hasWriteTitleDrift(task, step)) return false
+    if (step.risk !== 'low' || step.requiresUserApproval) return false
+    return true
+  })
 }
 
 function buildConfirmDuplicateDecision(input: {
@@ -666,14 +702,16 @@ export function reviewWorkspaceRunPlan(
   }
 
   if (input.draftTasks.length > 1 && !input.draftTasksConfirmed) {
-    return buildEditDraftTasksDecision({
-      runId: input.runId,
-      draftTasks: input.draftTasks,
-      plan: input.plan,
-      understandingPreview: input.understandingPreview,
-      updatedAt: input.updatedAt,
-      referenceTime: input.referenceTime,
-    })
+    if (!canSkipEditDraftTasks(input)) {
+      return buildEditDraftTasksDecision({
+        runId: input.runId,
+        draftTasks: input.draftTasks,
+        plan: input.plan,
+        understandingPreview: input.understandingPreview,
+        updatedAt: input.updatedAt,
+        referenceTime: input.referenceTime,
+      })
+    }
   }
 
   if (input.draftTasks.length > 1) {
@@ -690,7 +728,7 @@ export function reviewWorkspaceRunPlan(
       })
     }
 
-    if (canAutoExecuteConfirmedMultiTask(input)) {
+    if (canAutoExecuteConfirmedMultiTask(input) || canSkipEditDraftTasks(input)) {
       return {
         status: 'auto_execute',
         reason: 'single_low_risk_clear_task',
@@ -731,19 +769,32 @@ export function reviewWorkspaceRunPlan(
   }
 
   if (task.confidence < 0.4) {
-    return buildClarifyDecision({
-      runId: input.runId,
-      plan: input.plan,
-      understandingPreview: input.understandingPreview,
-      updatedAt: input.updatedAt,
-      referenceTime: input.referenceTime,
-      interactionIdSuffix: 'clarify_confidence',
-      message: '无法理解你的意图。当前支持：创建笔记、待办、书签，以及查询与更新待办。请换一种说法试试。',
-      fields: buildClarifyFields(task),
-    })
-  }
+    if (task.intent === 'query') {
+      return buildClarifyDecision({
+        runId: input.runId,
+        plan: input.plan,
+        understandingPreview: input.understandingPreview,
+        updatedAt: input.updatedAt,
+        referenceTime: input.referenceTime,
+        interactionIdSuffix: 'clarify_confidence',
+        message: '我知道你想查询，但还缺更具体的关键词。',
+        fields: buildClarifyFields(task, step),
+      })
+    }
 
-  if (task.confidence < MIN_AUTO_EXECUTE_CONFIDENCE) {
+    if (task.intent === 'summarize') {
+      return buildClarifyDecision({
+        runId: input.runId,
+        plan: input.plan,
+        understandingPreview: input.understandingPreview,
+        updatedAt: input.updatedAt,
+        referenceTime: input.referenceTime,
+        interactionIdSuffix: 'clarify_confidence',
+        message: '我知道你想整理内容，但还缺更具体的范围或对象。',
+        fields: buildClarifyFields(task, step),
+      })
+    }
+
     return buildClarifyDecision({
       runId: input.runId,
       plan: input.plan,
@@ -751,12 +802,22 @@ export function reviewWorkspaceRunPlan(
       updatedAt: input.updatedAt,
       referenceTime: input.referenceTime,
       interactionIdSuffix: 'clarify_confidence',
-      message: '这条任务的意图还不够确定，请补充说明。',
-      fields: buildClarifyFields(task),
+      message:
+        task.target === 'mixed'
+          ? '我还不确定你是想记待办、笔记还是书签，也不确定具体要记录什么。'
+          : '无法理解你的意图。当前支持：创建笔记、待办、书签，以及查询与更新待办。请换一种说法试试。',
+      fields: buildClarifyFields(task, step),
     })
   }
 
   if (task.ambiguities.length > 0 && !hasOnlyIgnorableTodoTimeAmbiguities(task, step)) {
+    const ambiguityMessage =
+      task.intent === 'query'
+        ? '我知道你想查询，但还缺更具体的关键词。'
+        : task.intent === 'summarize'
+          ? '我知道你想整理内容，但还缺更具体的范围或对象。'
+        : '还有未消除的歧义，请先澄清。'
+
     return buildClarifyDecision({
       runId: input.runId,
       plan: input.plan,
@@ -764,8 +825,23 @@ export function reviewWorkspaceRunPlan(
       updatedAt: input.updatedAt,
       referenceTime: input.referenceTime,
       interactionIdSuffix: 'clarify_ambiguity',
-      message: '还有未消除的歧义，请先澄清。',
-      fields: buildClarifyFields(task),
+      message: ambiguityMessage,
+      fields: buildClarifyFields(task, step),
+    })
+  }
+
+  if (task.target === 'mixed' && step && (
+    step.action === 'create_note' || step.action === 'create_todo' || step.action === 'create_bookmark'
+  )) {
+    return buildClarifyDecision({
+      runId: input.runId,
+      plan: input.plan,
+      understandingPreview: input.understandingPreview,
+      updatedAt: input.updatedAt,
+      referenceTime: input.referenceTime,
+      interactionIdSuffix: 'clarify_mixed_target',
+      message: '我还不确定你是想记待办、笔记还是书签。',
+      fields: buildClarifyFields(task, step),
     })
   }
 
@@ -777,8 +853,13 @@ export function reviewWorkspaceRunPlan(
       updatedAt: input.updatedAt,
       referenceTime: input.referenceTime,
       interactionIdSuffix: 'clarify_required_fields',
-      message: '执行前还缺少必要字段，请补充。',
-      fields: buildClarifyFields(task),
+      message:
+        step.action === 'create_todo'
+          ? '我知道你想记待办，但还缺具体内容。'
+          : step.action === 'create_note'
+            ? '我知道你想记笔记，但还缺具体内容。'
+            : '执行前还缺少必要字段，请补充。',
+      fields: buildClarifyFields(task, step),
     })
   }
 
@@ -804,19 +885,6 @@ export function reviewWorkspaceRunPlan(
 
   const correctionNotes = getCorrectionNotes(input, task)
 
-  if (correctionNotes.length > 0) {
-    return buildConfirmPlanDecision({
-      runId: input.runId,
-      plan: input.plan,
-      understandingPreview: input.understandingPreview,
-      updatedAt: input.updatedAt,
-      referenceTime: input.referenceTime,
-      message: '检测到纠正内容，请确认再执行。',
-      correctionNotes,
-      duplicateReview: input.duplicateReview,
-    })
-  }
-
   if (hasWriteTitleDrift(task, step)) {
     return buildConfirmPlanDecision({
       runId: input.runId,
@@ -825,6 +893,7 @@ export function reviewWorkspaceRunPlan(
       updatedAt: input.updatedAt,
       referenceTime: input.referenceTime,
       message: '计划标题与原始写入标题存在差异，请确认后执行。',
+      correctionNotes,
       duplicateReview: input.duplicateReview,
     })
   }
@@ -898,6 +967,7 @@ export function reviewWorkspaceRunPlan(
     updatedAt: input.updatedAt,
     referenceTime: input.referenceTime,
     message: '请确认执行计划。',
+    correctionNotes,
     duplicateReview: input.duplicateReview,
   })
 }

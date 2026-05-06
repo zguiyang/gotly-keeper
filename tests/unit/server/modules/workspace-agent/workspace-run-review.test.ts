@@ -139,7 +139,7 @@ describe('workspace-run-review', () => {
     }
   })
 
-  it('requests plan confirmation after multi-task drafts are already confirmed', () => {
+  it('auto-executes clear multi-task drafts after review confirmation', () => {
     const draftTasks = [
       createDraftTask({
         id: 'task_1',
@@ -185,11 +185,10 @@ describe('workspace-run-review', () => {
       draftTasksConfirmed: true,
     })
 
-    const awaitUser = expectAwaitUser(result)
-    expect(awaitUser.reason).toBe('confirm_plan')
-    expect(awaitUser.snapshot.interaction).toMatchObject({
-      type: 'confirm_plan',
-      actions: ['confirm', 'edit', 'cancel'],
+    expect(result).toEqual({
+      status: 'auto_execute',
+      reason: 'single_low_risk_clear_task',
+      snapshot: null,
     })
   })
 
@@ -299,7 +298,7 @@ describe('workspace-run-review', () => {
     })
   })
 
-  it('prioritizes multi-task draft editing before duplicate confirmation', () => {
+  it('skips draft editing and goes directly to duplicate confirmation for clear multi-task', () => {
     const draftTasks = [
       createDraftTask({
         id: 'task_1',
@@ -357,7 +356,7 @@ describe('workspace-run-review', () => {
     })
 
     const awaitUser = expectAwaitUser(result)
-    expect(awaitUser.reason).toBe('edit_draft_tasks')
+    expect(awaitUser.reason).toBe('confirm_duplicate')
   })
 
   it('does not ask candidate selection when update has only one candidate', () => {
@@ -517,7 +516,7 @@ describe('workspace-run-review', () => {
     })
   })
 
-  it('awaits user clarification when confidence is below threshold', () => {
+  it('auto-executes single task even when confidence is moderate but structure is clear', () => {
     const draftTask = createDraftTask({ confidence: 0.77 })
 
     const result = reviewWorkspaceRunPlan({
@@ -528,8 +527,11 @@ describe('workspace-run-review', () => {
       updatedAt,
     })
 
-    expect(result.status).toBe('await_user')
-    expect(result.reason).toBe('clarify_slots')
+    expect(result).toEqual({
+      status: 'auto_execute',
+      reason: 'single_low_risk_clear_task',
+      snapshot: null,
+    })
   })
 
   it('still auto-executes a single clear task after draft confirmation', () => {
@@ -583,7 +585,7 @@ describe('workspace-run-review', () => {
     expect(result.reason).toBe('clarify_slots')
   })
 
-  it('requests plan confirmation when corrections exist', () => {
+  it('auto-executes clear writes when the only issue is a benign correction', () => {
     const draftTask = createDraftTask({ corrections: ['prcing -> pricing'] })
 
     const result = reviewWorkspaceRunPlan({
@@ -597,16 +599,14 @@ describe('workspace-run-review', () => {
       updatedAt,
     })
 
-    const awaitUser = expectAwaitUser(result)
-    expect(awaitUser.reason).toBe('confirm_plan')
-    expect(awaitUser.snapshot.interaction).toMatchObject({
-      type: 'confirm_plan',
-      actions: ['confirm', 'edit', 'cancel'],
+    expect(result).toEqual({
+      status: 'auto_execute',
+      reason: 'single_low_risk_clear_task',
+      snapshot: null,
     })
-    expect(awaitUser.snapshot.correctionNotes).toEqual(['prcing -> pricing'])
   })
 
-  it('requests plan confirmation when only understandingPreview corrections exist', () => {
+  it('auto-executes clear writes when only understanding-level corrections exist', () => {
     const result = reviewWorkspaceRunPlan({
       runId: 'run_1',
       draftTasks: [createDraftTask()],
@@ -617,8 +617,11 @@ describe('workspace-run-review', () => {
       updatedAt,
     })
 
-    expect(result.status).toBe('await_user')
-    expect(result.reason).toBe('confirm_plan')
+    expect(result).toEqual({
+      status: 'auto_execute',
+      reason: 'single_low_risk_clear_task',
+      snapshot: null,
+    })
   })
 
   it('awaits user when a write step is missing title', () => {
@@ -632,8 +635,65 @@ describe('workspace-run-review', () => {
       updatedAt,
     })
 
-    expect(result.status).toBe('await_user')
-    expect(result.reason).toBe('clarify_slots')
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('clarify_slots')
+    expect(awaitUser.snapshot.interaction).toMatchObject({
+      type: 'clarify_slots',
+      fields: [
+        expect.objectContaining({
+          key: 'title',
+          label: '待办内容',
+          placeholder: '例如：给客户发报价',
+        }),
+      ],
+    })
+  })
+
+  it('asks for record type and content when the request is still too ambiguous', () => {
+    const draftTask = createDraftTask({
+      target: 'mixed',
+      title: '',
+      confidence: 0.35,
+      slots: {},
+    })
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [draftTask],
+      plan: createPlan({
+        steps: [
+          {
+            id: 'step_1',
+            action: 'create_note',
+            target: 'notes',
+            title: '',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+      updatedAt,
+    })
+
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('clarify_slots')
+    expect(awaitUser.snapshot.interaction).toMatchObject({
+      type: 'clarify_slots',
+      message: '我还不确定你是想记待办、笔记还是书签，也不确定具体要记录什么。',
+      fields: [
+        expect.objectContaining({
+          key: 'targetHint',
+          label: '记录类型',
+          placeholder: '例如：待办、笔记、书签',
+        }),
+        expect.objectContaining({
+          key: 'details',
+          label: '具体内容',
+          placeholder: '例如：下周要整理客户报价相关事项',
+        }),
+      ],
+    })
   })
 
   it('returns all missing bookmark required fields in one clarification', () => {
@@ -887,7 +947,7 @@ describe('workspace-run-review', () => {
     expect(result.reason).toBe('confirm_plan')
   })
 
-  it('does not auto-execute when original task target is mixed even if the step is a low-risk bookmark create', () => {
+  it('clarifies record type when original task target is mixed even if the step is a low-risk bookmark create', () => {
     const result = reviewWorkspaceRunPlan({
       runId: 'run_1',
       draftTasks: [
@@ -916,8 +976,11 @@ describe('workspace-run-review', () => {
       updatedAt,
     })
 
-    expect(result.status).toBe('await_user')
-    expect(result.reason).toBe('confirm_plan')
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('clarify_slots')
+    const interaction = awaitUser.snapshot.interaction
+    expect(interaction.type).toBe('clarify_slots')
+    expect(interaction.message).toContain('记待办、笔记还是书签')
   })
 
   it('supports mixed target in local review step contract', () => {
@@ -980,7 +1043,7 @@ describe('workspace-run-review', () => {
   })
 
   it('returns a serializable pending snapshot payload for paused review recovery', () => {
-    const draftTask = createDraftTask({ confidence: 0.77 })
+    const draftTask = createDraftTask({ ambiguities: ['due_at'] })
     const understandingPreview = createUnderstandingPreview({ draftTasks: [draftTask] })
 
     const result = reviewWorkspaceRunPlan({
@@ -1111,13 +1174,194 @@ describe('workspace-run-review', () => {
     expect(result.reason).toBe('clarify_slots')
   })
 
+  it('skips edit_draft_tasks and auto-executes for clear low-risk multi-task without draftTasksConfirmed', () => {
+    const draftTasks = [
+      createDraftTask({
+        id: 'task_1',
+        title: '发周报',
+        confidence: 0.92,
+        slots: { title: '发周报', timeText: '明天下午3点', dueAt: '2026-04-28T07:00:00.000Z', timeResolutionKind: 'clear' },
+      }),
+      createDraftTask({
+        id: 'task_2',
+        target: 'notes',
+        title: '记录会议纪要',
+        confidence: 0.9,
+        slots: { content: '记录会议纪要' },
+      }),
+    ]
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks,
+      plan: createPlan({
+        summary: '准备执行 2 个任务。',
+        steps: [
+          {
+            id: 'step_1',
+            action: 'create_todo',
+            target: 'todos',
+            title: '发周报',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+          {
+            id: 'step_2',
+            action: 'create_note',
+            target: 'notes',
+            title: '记录会议纪要',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks }),
+      updatedAt,
+    })
+
+    expect(result.status).not.toBe('await_user')
+    expect(result.reason).toBe('single_low_risk_clear_task')
+  })
+
+  it('does not skip to auto-execute when a multi-task todo still has vague time', () => {
+    const draftTasks = [
+      createDraftTask({
+        id: 'task_1',
+        title: '尽快处理报销',
+        confidence: 0.92,
+        slots: { title: '尽快处理报销', timeText: '尽快', timeResolutionKind: 'vague' },
+      }),
+      createDraftTask({
+        id: 'task_2',
+        target: 'notes',
+        title: '记录会议纪要',
+        confidence: 0.9,
+        slots: { content: '记录会议纪要' },
+      }),
+    ]
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks,
+      plan: createPlan({
+        summary: '准备执行 2 个任务。',
+        steps: [
+          {
+            id: 'step_1',
+            action: 'create_todo',
+            target: 'todos',
+            title: '尽快处理报销',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+          {
+            id: 'step_2',
+            action: 'create_note',
+            target: 'notes',
+            title: '记录会议纪要',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks }),
+      updatedAt,
+    })
+
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('edit_draft_tasks')
+  })
+
+  it('does not skip to auto-execute when a multi-task write title drifts from the draft', () => {
+    const draftTasks = [
+      createDraftTask({
+        id: 'task_1',
+        title: '发周报',
+        confidence: 0.92,
+        slots: { title: '发周报', timeText: '明天下午3点', dueAt: '2026-04-28T07:00:00.000Z', timeResolutionKind: 'clear' },
+      }),
+      createDraftTask({
+        id: 'task_2',
+        target: 'notes',
+        title: '记录会议纪要',
+        confidence: 0.9,
+        slots: { title: '记录会议纪要', content: '记录会议纪要' },
+      }),
+    ]
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks,
+      plan: createPlan({
+        summary: '准备执行 2 个任务。',
+        steps: [
+          {
+            id: 'step_1',
+            action: 'create_todo',
+            target: 'todos',
+            title: '发周报',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+          {
+            id: 'step_2',
+            action: 'create_note',
+            target: 'notes',
+            title: '整理会议纪要',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks }),
+      updatedAt,
+    })
+
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('edit_draft_tasks')
+  })
+
+  it('auto-executes single low-confidence but structurally clear write without triggering clarify', () => {
+    const draftTask = createDraftTask({
+      title: '买咖啡豆',
+      confidence: 0.7,
+      corrections: ['待半->待办'],
+      slots: { title: '买咖啡豆', timeText: '5月10日早上', dueAt: '2026-05-10T00:00:00.000Z', timeResolutionKind: 'clear' },
+    })
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [draftTask],
+      plan: createPlan({
+        steps: [
+          {
+            id: 'step_1',
+            action: 'create_todo',
+            target: 'todos',
+            title: '买咖啡豆',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask], corrections: ['待半->待办'] }),
+      updatedAt,
+    })
+
+    expect(result).toEqual({
+      status: 'auto_execute',
+      reason: 'single_low_risk_clear_task',
+      snapshot: null,
+    })
+  })
+
   it('does not block todo creation when the only ambiguity is a vague time phrase', () => {
     const result = reviewWorkspaceRunPlan({
       runId: 'run_1',
       draftTasks: [
         createDraftTask({
           title: '尽快处理报销',
-          ambiguities: ['时间表述“尽快”不明确'],
+          ambiguities: ['时间表述"尽快"不明确'],
           slots: {},
         }),
       ],
@@ -1141,6 +1385,242 @@ describe('workspace-run-review', () => {
       status: 'auto_execute',
       reason: 'single_low_risk_clear_task',
       snapshot: null,
+    })
+  })
+
+  describe('Phase C: Gap-Specific Clarification', () => {
+    it('clarifies missing record type when target is mixed and step is create', () => {
+      const draftTask = createDraftTask({
+        target: 'mixed',
+        title: '记一下这个',
+        confidence: 0.65,
+        slots: {},
+      })
+
+      const result = reviewWorkspaceRunPlan({
+        runId: 'run_1',
+        draftTasks: [draftTask],
+        plan: createPlan({
+          steps: [{
+            id: 'step_1',
+            action: 'create_note',
+            target: 'notes',
+            title: '记一下这个',
+            risk: 'low',
+            requiresUserApproval: false,
+          }],
+        }),
+        understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+        updatedAt,
+      })
+
+      const awaitUser = expectAwaitUser(result)
+      expect(awaitUser.reason).toBe('clarify_slots')
+      const interaction = awaitUser.snapshot.interaction
+      expect(interaction.type).toBe('clarify_slots')
+      expect(interaction.message).toContain('记待办、笔记还是书签')
+      expect(interaction.fields).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ key: 'targetHint', label: '记录类型' }),
+          expect.objectContaining({ key: 'details', label: '具体内容' }),
+        ])
+      )
+    })
+
+    it('clarifies missing query keywords when query intent is ambiguous', () => {
+      const draftTask = createDraftTask({
+        intent: 'query',
+        target: 'notes',
+        title: '帮我查一下上次那个',
+        confidence: 0.55,
+        ambiguities: ['对象"上次那个"指代不明'],
+        slots: {},
+      })
+
+      const result = reviewWorkspaceRunPlan({
+        runId: 'run_1',
+        draftTasks: [draftTask],
+        plan: createPlan({
+          steps: [{
+            id: 'step_1',
+            action: 'query_assets',
+            target: 'notes',
+            title: '帮我查一下上次那个',
+            risk: 'low',
+            requiresUserApproval: false,
+          }],
+        }),
+        understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+        updatedAt,
+      })
+
+      const awaitUser = expectAwaitUser(result)
+      expect(awaitUser.reason).toBe('clarify_slots')
+      const interaction = awaitUser.snapshot.interaction
+      expect(interaction.type).toBe('clarify_slots')
+      expect(interaction.message).toContain('关键词')
+      expect(interaction.fields).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ key: 'query' }),
+        ])
+      )
+    })
+
+    it('clarifies missing query keywords when query confidence is low', () => {
+      const draftTask = createDraftTask({
+        intent: 'query',
+        target: 'notes',
+        title: '查东西',
+        confidence: 0.3,
+        ambiguities: [],
+        slots: {},
+      })
+
+      const result = reviewWorkspaceRunPlan({
+        runId: 'run_1',
+        draftTasks: [draftTask],
+        plan: createPlan({
+          steps: [{
+            id: 'step_1',
+            action: 'query_assets',
+            target: 'notes',
+            title: '查东西',
+            risk: 'low',
+            requiresUserApproval: false,
+          }],
+        }),
+        understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+        updatedAt,
+      })
+
+      const awaitUser = expectAwaitUser(result)
+      expect(awaitUser.reason).toBe('clarify_slots')
+      const interaction = awaitUser.snapshot.interaction
+      expect(interaction.type).toBe('clarify_slots')
+      expect(interaction.message).toContain('关键词')
+    })
+
+    it('clarifies vague time for todo with timeResolutionKind=vague', () => {
+      const draftTask = createDraftTask({
+        title: '尽快提醒我发周报',
+        slots: {
+          title: '尽快提醒我发周报',
+          timeText: '尽快',
+          timeResolutionKind: 'vague',
+        },
+      })
+
+      const result = reviewWorkspaceRunPlan({
+        runId: 'run_1',
+        draftTasks: [draftTask],
+        plan: createPlan({
+          steps: [{
+            id: 'step_1',
+            action: 'create_todo',
+            target: 'todos',
+            title: '尽快提醒我发周报',
+            risk: 'low',
+            requiresUserApproval: false,
+          }],
+        }),
+        understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+        updatedAt,
+      })
+
+      const awaitUser = expectAwaitUser(result)
+      expect(awaitUser.reason).toBe('clarify_slots')
+      const interaction = awaitUser.snapshot.interaction
+      expect(interaction.type).toBe('clarify_slots')
+      expect(interaction.message).toContain('时间')
+      expect(interaction.fields).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ key: 'timeText' }),
+        ])
+      )
+    })
+
+    it('clarifies summarize ambiguity with scope-specific message and field', () => {
+      const draftTask = createDraftTask({
+        intent: 'summarize',
+        target: 'notes',
+        title: '下周的东西你帮我整理一下',
+        confidence: 0.62,
+        ambiguities: ['范围"下周的东西"不够具体'],
+        slots: {},
+      })
+
+      const result = reviewWorkspaceRunPlan({
+        runId: 'run_1',
+        draftTasks: [draftTask],
+        plan: createPlan({
+          steps: [{
+            id: 'step_1',
+            action: 'summarize_assets',
+            target: 'notes',
+            title: '下周的东西你帮我整理一下',
+            risk: 'low',
+            requiresUserApproval: false,
+          }],
+        }),
+        understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+        updatedAt,
+      })
+
+      const awaitUser = expectAwaitUser(result)
+      expect(awaitUser.reason).toBe('clarify_slots')
+      const interaction = awaitUser.snapshot.interaction
+      expect(interaction.type).toBe('clarify_slots')
+      expect(interaction.message).toContain('范围')
+      expect(interaction.fields).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            key: 'details',
+            label: '整理范围',
+          }),
+        ])
+      )
+    })
+
+    it('clarifies low-confidence summarize with scope-specific message and field', () => {
+      const draftTask = createDraftTask({
+        intent: 'summarize',
+        target: 'notes',
+        title: '整理一下',
+        confidence: 0.3,
+        ambiguities: [],
+        slots: {},
+      })
+
+      const result = reviewWorkspaceRunPlan({
+        runId: 'run_1',
+        draftTasks: [draftTask],
+        plan: createPlan({
+          steps: [{
+            id: 'step_1',
+            action: 'summarize_assets',
+            target: 'notes',
+            title: '整理一下',
+            risk: 'low',
+            requiresUserApproval: false,
+          }],
+        }),
+        understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+        updatedAt,
+      })
+
+      const awaitUser = expectAwaitUser(result)
+      expect(awaitUser.reason).toBe('clarify_slots')
+      const interaction = awaitUser.snapshot.interaction
+      expect(interaction.type).toBe('clarify_slots')
+      expect(interaction.message).toContain('范围')
+      expect(interaction.fields).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            key: 'details',
+            label: '整理范围',
+          }),
+        ])
+      )
     })
   })
 })
