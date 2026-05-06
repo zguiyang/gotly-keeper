@@ -158,6 +158,40 @@ export async function resolveTodoTimeWithAi(
     }
   }
 
+  if (!preservedSource.timeText) {
+    return {
+      timeText: null,
+      dueAt: null,
+      resolutionKind: 'unresolved',
+    }
+  }
+
+  try {
+    const dtResult = resolveDatetime({
+      phrase: preservedSource.timeText,
+      referenceTime: input.referenceTime,
+      timezone,
+    })
+
+    if (dtResult.granularity === 'vague') {
+      return {
+        timeText: preservedSource.timeText,
+        dueAt: null,
+        resolutionKind: 'vague',
+      }
+    }
+
+    if (dtResult.granularity !== 'unresolved' && dtResult.dueAt) {
+      return {
+        timeText: preservedSource.timeText,
+        dueAt: dtResult.dueAt,
+        resolutionKind: 'clear',
+      }
+    }
+  } catch {
+    // Fall through to the model path for phrases the local parser cannot handle.
+  }
+
   const model = getAiProvider()
   if (!model) {
     return {

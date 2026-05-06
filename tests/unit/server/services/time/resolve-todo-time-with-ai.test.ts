@@ -35,6 +35,10 @@ describe('resolve-todo-time-with-ai', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.generateText.mockReset()
+    mocks.getAiProvider.mockReset()
+    mocks.buildWorkspaceSystemPrompt.mockReset()
+    mocks.renderPrompt.mockReset()
     mocks.getAiProvider.mockReturnValue({ provider: 'mock-model' })
     mocks.buildWorkspaceSystemPrompt.mockResolvedValue('system prompt')
     mocks.renderPrompt.mockResolvedValue('user prompt')
@@ -66,9 +70,7 @@ describe('resolve-todo-time-with-ai', () => {
     })
   })
 
-  it('returns no due date and preserves extracted time text when the ai call fails', async () => {
-    mocks.generateText.mockRejectedValueOnce(new Error('provider timeout'))
-
+  it('resolves locally parseable time text without calling the model', async () => {
     await expect(
       resolveTodoTimeWithAi({
         title: '处理邮件',
@@ -79,9 +81,25 @@ describe('resolve-todo-time-with-ai', () => {
       })
     ).resolves.toEqual({
       timeText: '今晚',
+      dueAt: '2026-04-30T12:00:00.000Z',
+      resolutionKind: 'clear',
+    })
+    expect(mocks.generateText).not.toHaveBeenCalled()
+  })
+
+  it('returns unresolved without calling the model when no time information exists', async () => {
+    const result = await resolveTodoTimeWithAi({
+      title: '整理报价',
+      slots: {},
+      referenceTime: '2026-04-30T02:10:00.000Z',
+    })
+
+    expect(result).toEqual({
+      timeText: null,
       dueAt: null,
       resolutionKind: 'unresolved',
     })
+    expect(mocks.generateText).not.toHaveBeenCalled()
   })
 
   describe('exact time phrases', () => {
@@ -155,14 +173,6 @@ describe('resolve-todo-time-with-ai', () => {
   })
 
   it('returns clear resolution for exact time phrases', async () => {
-    mocks.generateText.mockResolvedValueOnce({
-      output: {
-        timeText: '5月7日下午3点',
-        dueAt: '2026-05-07T07:00:00.000Z',
-        resolutionKind: 'clear',
-      },
-    })
-
     await expect(resolveTodoTimeWithAi({
       title: '给客户发报价',
       slots: { timeText: '5月7日下午3点' },
@@ -172,6 +182,7 @@ describe('resolve-todo-time-with-ai', () => {
       dueAt: '2026-05-07T07:00:00.000Z',
       resolutionKind: 'clear',
     })
+    expect(mocks.generateText).not.toHaveBeenCalled()
   })
 
   it('returns vague resolution for broad time phrases', async () => {
