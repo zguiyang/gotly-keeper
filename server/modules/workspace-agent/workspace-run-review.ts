@@ -324,6 +324,11 @@ function hasWriteTitleDrift(task: ReviewableDraftTask, step: ReviewablePlanStep)
   return baselineTitle !== stepTitle
 }
 
+function getTimeResolutionKind(task: ReviewableDraftTask) {
+  const value = task.slots.timeResolutionKind
+  return value === 'clear' || value === 'vague' || value === 'unresolved' ? value : null
+}
+
 function hasExplicitButUnresolvedTime(task: ReviewableDraftTask, step: ReviewablePlanStep): boolean {
   if (task.target !== 'todos' || step.action !== 'create_todo') {
     return false
@@ -483,6 +488,23 @@ function getUnresolvedDuplicateCandidate(input: ReviewWorkspaceRunPlanInput) {
   return (input.duplicateCandidates ?? []).find((candidate) => !decisions.has(candidate.stepId))
 }
 
+function hasBlockingTimeClarity(task: ReviewableDraftTask, step: ReviewablePlanStep): boolean {
+  if (task.target !== 'todos' || step.action !== 'create_todo') {
+    return false
+  }
+
+  const resolutionKind = getTimeResolutionKind(task)
+  if (resolutionKind === 'unresolved') {
+    return true
+  }
+
+  if (resolutionKind === 'vague') {
+    return true
+  }
+
+  return false
+}
+
 function canAutoExecuteConfirmedMultiTask(input: ReviewWorkspaceRunPlanInput) {
   if (input.draftTasks.length <= 1 || !input.draftTasksConfirmed) {
     return false
@@ -499,7 +521,7 @@ function canAutoExecuteConfirmedMultiTask(input: ReviewWorkspaceRunPlanInput) {
       }
 
       const task = input.draftTasks[i]
-      if (task && hasExplicitButUnresolvedTime(task, step)) {
+      if (task && hasBlockingTimeClarity(task, step)) {
         return false
       }
 
@@ -807,16 +829,50 @@ export function reviewWorkspaceRunPlan(
     })
   }
 
-  if (task && step && hasExplicitButUnresolvedTime(task, step)) {
-    return buildConfirmPlanDecision({
-      runId: input.runId,
-      plan: input.plan,
-      understandingPreview: input.understandingPreview,
-      updatedAt: input.updatedAt,
-      referenceTime: input.referenceTime,
-      message: `你提到了时间「${String(task.slots.timeText)}」，但无法确定具体日期时间，是否仍然按未排期保存？`,
-      duplicateReview: input.duplicateReview,
-    })
+  if (task && step && task.target === 'todos' && step.action === 'create_todo') {
+    const timeText = task.slots.timeText
+    const hasTimeText = typeof timeText === 'string' && timeText.trim().length > 0
+
+    if (hasTimeText) {
+      const clarityKind = getTimeResolutionKind(task)
+      const hasDueAt = task.slots.dueAt != null && (typeof task.slots.dueAt === 'string' ? task.slots.dueAt.trim().length > 0 : true)
+
+      if (clarityKind === 'vague') {
+        return buildClarifyDecision({
+          runId: input.runId,
+          plan: input.plan,
+          understandingPreview: input.understandingPreview,
+          updatedAt: input.updatedAt,
+          referenceTime: input.referenceTime,
+          interactionIdSuffix: 'clarify_time',
+          message: '我知道你提到了时间，但还缺足够信息来确定具体提醒时间。',
+          fields: [{
+            key: 'timeText',
+            label: '具体时间',
+            required: true,
+            placeholder: '例如：下周三下午 3 点',
+          }],
+        })
+      }
+
+      if (clarityKind === 'unresolved' || (!clarityKind && !hasDueAt)) {
+        return buildClarifyDecision({
+          runId: input.runId,
+          plan: input.plan,
+          understandingPreview: input.understandingPreview,
+          updatedAt: input.updatedAt,
+          referenceTime: input.referenceTime,
+          interactionIdSuffix: 'clarify_time',
+          message: '我知道你提到了时间，但还缺足够信息来确定具体提醒时间。',
+          fields: [{
+            key: 'timeText',
+            label: '具体时间',
+            required: true,
+            placeholder: '例如：下周三下午 3 点',
+          }],
+        })
+      }
+    }
   }
 
   if (

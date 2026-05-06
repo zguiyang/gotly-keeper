@@ -58,7 +58,7 @@ describe('workspace-run-time-normalization', () => {
           time: '五分钟后',
           timeText: '五分钟后',
           dueAt: '2026-04-29T02:15:00.000Z',
-          timeResolutionKind: 'resolved',
+          timeResolutionKind: 'clear',
         },
       },
     ])
@@ -101,7 +101,7 @@ describe('workspace-run-time-normalization', () => {
         slots: {
           timeText: '两小时后',
           dueAt: '2026-04-29T04:10:00.000Z',
-          timeResolutionKind: 'resolved',
+          timeResolutionKind: 'clear',
         },
       },
     ])
@@ -144,7 +144,7 @@ describe('workspace-run-time-normalization', () => {
           dueTime: '本周五下班前',
           timeText: '本周五下班前',
           dueAt: '2026-05-01T10:00:00.000Z',
-          timeResolutionKind: 'resolved',
+          timeResolutionKind: 'clear',
         },
       },
     ])
@@ -177,6 +177,35 @@ describe('workspace-run-time-normalization', () => {
     expect(result[0].slots.timeText).toBe('后天下午三点')
     expect(result[0].slots.dueAt).toBeDefined()
     expect(result[0].slots.dueAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+  })
+
+  it('stores clear time resolution metadata without exposing a confirm-only path', async () => {
+    mocks.resolveTodoTimeWithAi.mockResolvedValueOnce({
+      timeText: '5月7日下午3点',
+      dueAt: '2026-05-07T07:00:00.000Z',
+      resolutionKind: 'clear',
+    })
+
+    const result = await normalizeTodoDraftTaskTimes([
+      {
+        id: 'draft_1',
+        intent: 'create',
+        target: 'todos',
+        title: '给客户发报价',
+        confidence: 0.94,
+        ambiguities: [],
+        corrections: [],
+        slots: {
+          timeText: '5月7日下午3点',
+        },
+      },
+    ], {
+      fallbackTimeHints: [],
+      referenceTime: '2026-05-06T08:00:00.000Z',
+    })
+
+    expect(result[0].slots.timeResolutionKind).toBe('clear')
+    expect(result[0].slots.dueAt).toBe('2026-05-07T07:00:00.000Z')
   })
 
   it('keeps timeText and clears dueAt when ai time resolution fails', async () => {

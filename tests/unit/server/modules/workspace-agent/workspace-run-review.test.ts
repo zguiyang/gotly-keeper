@@ -1054,7 +1054,31 @@ describe('workspace-run-review', () => {
     expect(result.status).toBe('await_user')
   })
 
-  it('does not block auto-execute when vague phrase timeText exists without dueAt', () => {
+  it('auto executes a clear todo time instead of asking for unscheduled confirmation', () => {
+    const draftTask = createDraftTask({
+      slots: {
+        title: '给客户发报价',
+        timeText: '5月7日下午3点',
+        dueAt: '2026-05-07T07:00:00.000Z',
+        timeResolutionKind: 'clear',
+      },
+    })
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [draftTask],
+      plan: createPlan(),
+      understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+      updatedAt,
+    })
+
+    expect(result).toMatchObject({
+      status: 'auto_execute',
+      reason: 'single_low_risk_clear_task',
+    })
+  })
+
+  it('clarifies when vague phrase timeText exists without a specific dueAt', () => {
     const draftTask = createDraftTask({
       title: '尽快处理报销',
       slots: {
@@ -1083,11 +1107,8 @@ describe('workspace-run-review', () => {
       updatedAt,
     })
 
-    expect(result).toEqual({
-      status: 'auto_execute',
-      reason: 'single_low_risk_clear_task',
-      snapshot: null,
-    })
+    expect(result.status).toBe('await_user')
+    expect(result.reason).toBe('clarify_slots')
   })
 
   it('does not block todo creation when the only ambiguity is a vague time phrase', () => {
