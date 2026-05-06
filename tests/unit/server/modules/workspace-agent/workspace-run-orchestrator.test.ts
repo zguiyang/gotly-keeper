@@ -488,7 +488,7 @@ describe('workspace-run-orchestrator', () => {
       expect(store.failAwaitingRuns).toHaveBeenCalledWith('user_123')
     })
 
-    it('advances to confirm_plan after saving multi-task draft edits', async () => {
+    it('auto-executes after saving clear multi-task draft edits', async () => {
       const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
 
       const store = createMockStore()
@@ -571,18 +571,22 @@ describe('workspace-run-orchestrator', () => {
       })
 
       expect(result.ok).toBe(true)
-      expect(result.phase).toBe('review')
+      expect(result.phase).toBe('completed')
       expect(events).toContainEqual(
         expect.objectContaining({
-          type: 'awaiting_user',
-          interaction: expect.objectContaining({ type: 'confirm_plan' }),
+          type: 'run_completed',
         })
       )
-      expect(store.failAwaitingRuns).toHaveBeenCalledWith('user_123', { excludeRunId: 'run_123' })
       expect(events).not.toContainEqual(
         expect.objectContaining({
           type: 'awaiting_user',
           interaction: expect.objectContaining({ type: 'edit_draft_tasks' }),
+        })
+      )
+      expect(events).not.toContainEqual(
+        expect.objectContaining({
+          type: 'awaiting_user',
+          interaction: expect.objectContaining({ type: 'confirm_plan' }),
         })
       )
     })
@@ -1110,6 +1114,212 @@ describe('workspace-run-orchestrator', () => {
       }
     })
 
+    it('returns phaseTimings when resume stays in review after duplicate skip', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const store = createMockStore()
+      duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates.mockResolvedValueOnce([
+        {
+          stepId: 'step_1',
+          target: 'todo',
+          duplicates: [
+            { id: 'todo_1', label: '给客户发报价', reason: '标题和时间完全一致' },
+          ],
+        },
+        {
+          stepId: 'step_2',
+          target: 'bookmark',
+          duplicates: [
+            { id: 'bookmark_1', label: 'OpenAI', reason: 'URL 完全一致' },
+          ],
+        },
+      ])
+
+      const draftTasks: DraftWorkspaceTask[] = [
+        {
+          id: 'task_1',
+          intent: 'create',
+          target: 'todos',
+          title: '给客户发报价',
+          confidence: 0.95,
+          ambiguities: [],
+          corrections: [],
+          slots: { title: '给客户发报价', timeText: '明天下午' },
+        },
+        {
+          id: 'task_2',
+          intent: 'create',
+          target: 'bookmarks',
+          title: 'OpenAI',
+          confidence: 0.93,
+          ambiguities: [],
+          corrections: [],
+          slots: { url: 'https://openai.com' },
+        },
+      ]
+
+      store.loadLatestAwaiting = vi.fn().mockResolvedValue({
+        runId: 'run_123',
+        phase: 'review',
+        status: 'awaiting_user',
+        interactionId: 'run_123_confirm_duplicate_step_1',
+        interaction: {
+          runId: 'run_123',
+          id: 'run_123_confirm_duplicate_step_1',
+          type: 'confirm_duplicate',
+          target: 'todo',
+          message: '发现可能重复的待办。',
+          actions: ['create', 'skip', 'cancel'] as const,
+          current: {
+            stepId: 'step_1',
+            title: '给客户发报价',
+            preview: '创建待办：给客户发报价',
+          },
+          duplicates: [
+            { id: 'todo_1', label: '给客户发报价', reason: '标题和时间完全一致' },
+          ],
+        },
+        timeline: [],
+        preview: null,
+        understandingPreview: {
+          rawInput: '明天下午给客户发报价，并收藏 https://openai.com',
+          normalizedInput: '明天下午给客户发报价，并收藏 https://openai.com',
+          draftTasks,
+          corrections: [],
+        },
+        correctionNotes: [],
+        duplicateReview: {
+          draftTasksConfirmed: true,
+          decisions: [],
+        },
+        updatedAt: new Date().toISOString(),
+      })
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'resume',
+          runId: 'run_123',
+          interactionId: 'run_123_confirm_duplicate_step_1',
+          response: { type: 'confirm_duplicate', action: 'skip' },
+        },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('review')
+      expect(result.phaseTimings).toBeDefined()
+      expect(result.phaseTimings).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            phase: 'review',
+            kind: 'orchestration',
+          }),
+        ])
+      )
+    })
+
+    it('returns phaseTimings when resume completes execution', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const store = createMockStore()
+      const draftTasks: DraftWorkspaceTask[] = [
+        {
+          id: 'task_1',
+          intent: 'create',
+          target: 'todos',
+          title: '熬药',
+          confidence: 0.95,
+          ambiguities: [],
+          corrections: [],
+          slots: { time: '五分钟后' },
+        },
+        {
+          id: 'task_2',
+          intent: 'create',
+          target: 'notes',
+          title: '不要吃生冷食物',
+          confidence: 0.9,
+          ambiguities: [],
+          corrections: [],
+          slots: {},
+        },
+        {
+          id: 'task_3',
+          intent: 'create',
+          target: 'bookmarks',
+          title: 'https://github.com/zguiyang',
+          confidence: 0.95,
+          ambiguities: [],
+          corrections: [],
+          slots: { url: 'https://github.com/zguiyang' },
+        },
+      ]
+
+      store.loadLatestAwaiting = vi.fn().mockResolvedValue({
+        runId: 'run_123',
+        phase: 'review',
+        status: 'awaiting_user',
+        interactionId: 'run_123_edit_draft_tasks',
+        interaction: {
+          runId: 'run_123',
+          id: 'run_123_edit_draft_tasks',
+          type: 'edit_draft_tasks',
+          message: '这次请求包含多个草稿任务，请先确认或编辑。',
+          actions: ['save', 'cancel'] as const,
+          tasks: draftTasks,
+        },
+        timeline: [],
+        preview: null,
+        understandingPreview: {
+          rawInput: '五分钟后提醒我熬药，帮我几个笔记，不要吃生冷食物，最后收藏一下：https://github.com/zguiyang',
+          normalizedInput: '五分钟后提醒我熬药，帮我几个笔记，不要吃生冷食物，最后收藏一下：https://github.com/zguiyang',
+          draftTasks,
+          corrections: [],
+        },
+        correctionNotes: [],
+        updatedAt: new Date().toISOString(),
+      })
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'resume',
+          runId: 'run_123',
+          interactionId: 'run_123_edit_draft_tasks',
+          response: {
+            type: 'edit_draft_tasks',
+            action: 'save',
+            tasks: draftTasks,
+          },
+        },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('completed')
+      expect(result.phaseTimings).toBeDefined()
+      expect(result.phaseTimings).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            phase: 'review',
+            kind: 'orchestration',
+          }),
+          expect.objectContaining({
+            phase: 'execute',
+            kind: 'tool',
+          }),
+          expect.objectContaining({
+            phase: 'compose',
+          }),
+        ])
+      )
+    })
+
     it('returns not_found when no pending run exists on resume', async () => {
       const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
 
@@ -1166,6 +1376,102 @@ describe('workspace-run-orchestrator', () => {
       expect(result.phase).toBe('review')
       expect(store.failAwaitingRuns).toHaveBeenCalledWith('user_123')
       expect(store.saveSnapshot).toHaveBeenCalled()
+    })
+  })
+
+  describe('phase timings', () => {
+    it('includes phaseTimings with non-negative duration in completed run', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '给客户发报价' },
+        store: createMockStore(),
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.phaseTimings).toBeDefined()
+      expect(result.phaseTimings!.length).toBeGreaterThanOrEqual(5)
+      for (const timing of result.phaseTimings!) {
+        expect(timing.durationMs).toBeGreaterThanOrEqual(0)
+        expect(timing.startTs).toBeGreaterThan(0)
+        expect(timing.endTs).toBeGreaterThanOrEqual(timing.startTs)
+        expect(['model', 'tool', 'orchestration']).toContain(timing.kind)
+      }
+    })
+
+    it('records phase timings in correct sequential order', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '给客户发报价' },
+        store: createMockStore(),
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      const timings = result.phaseTimings!
+      for (let i = 1; i < timings.length; i++) {
+        expect(timings[i].startTs).toBeGreaterThanOrEqual(timings[i - 1].startTs)
+      }
+    })
+
+    it('includes phaseTimings when run awaits user clarification', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const ambiguousRunModel: WorkspaceRunModel = async () => ({
+        draftTasks: [
+          {
+            id: 'draft_1',
+            intent: 'create',
+            target: 'mixed',
+            title: '',
+            confidence: 0.35,
+            ambiguities: [],
+            corrections: [],
+            slots: {},
+          },
+        ],
+      })
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '帮我整理一下' },
+        store: createMockStore(),
+        runModel: ambiguousRunModel,
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.phaseTimings).toBeDefined()
+      expect(result.phaseTimings!.length).toBeGreaterThanOrEqual(3)
+      for (const timing of result.phaseTimings!) {
+        expect(timing.durationMs).toBeGreaterThanOrEqual(0)
+      }
+    })
+
+    it('captures ts field on phase stream events', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const events: unknown[] = []
+
+      await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: { kind: 'input', text: '给客户发报价' },
+        store: createMockStore(),
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      const phaseEvents = events.filter(
+        (e): e is { ts: number; phase: string } => typeof e === 'object' && e !== null && 'ts' in e && 'phase' in e
+      )
+      expect(phaseEvents.length).toBeGreaterThanOrEqual(10)
+      for (const event of phaseEvents) {
+        expect((event as { ts: number }).ts).toBeGreaterThan(0)
+      }
     })
   })
 })

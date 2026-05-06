@@ -1,15 +1,45 @@
 import type { WorkspaceToolContext, WorkspaceToolResult, WorkspaceIntent, WorkspaceTarget } from './types'
-import type { WorkspaceRunStreamEvent } from '@/shared/workspace/workspace-run-protocol'
+import type { WorkspaceRunPhase, WorkspaceRunStreamEvent } from '@/shared/workspace/workspace-run-protocol'
 
 export type PhaseContext = {
   runId: string
   userId: string
   onEvent?: (event: WorkspaceRunStreamEvent) => void
   signal?: AbortSignal
+  phaseTimings: PhaseTimings
 }
 
+export type PhaseTimingEntry = {
+  phase: WorkspaceRunPhase
+  startTs: number
+  endTs: number
+  durationMs: number
+  kind: 'model' | 'tool' | 'orchestration'
+}
+
+export type PhaseTimings = PhaseTimingEntry[]
+
 export function emitEvent(ctx: PhaseContext, event: WorkspaceRunStreamEvent) {
-  ctx.onEvent?.(event)
+  const eventWithTs = event.type === 'phase_started' || event.type === 'phase_completed'
+    ? { ...event, ts: Date.now() }
+    : event
+  ctx.onEvent?.(eventWithTs as WorkspaceRunStreamEvent)
+}
+
+export function recordPhaseTiming(
+  timings: PhaseTimings,
+  phase: WorkspaceRunPhase,
+  startTs: number,
+  endTs: number,
+  kind: PhaseTimingEntry['kind']
+) {
+  timings.push({
+    phase,
+    startTs,
+    endTs,
+    durationMs: endTs - startTs,
+    kind,
+  })
 }
 
 export function createRunId(): string {

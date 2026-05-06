@@ -18,14 +18,17 @@ import type {
   OrchestrateWorkspaceRunOptions,
   WorkspaceRunOrchestratorResult,
 } from './workspace-run-orchestrator'
-import type { PhaseContext } from './workspace-run-orchestrator.shared'
+import type { PhaseContext, PhaseTimingEntry } from './workspace-run-orchestrator.shared'
+import { recordPhaseTiming } from './workspace-run-orchestrator.shared'
 import type { WorkspaceRunPlannerResult, WorkspaceRunPlanHint } from './workspace-run-planner'
 import type { WorkspaceInteraction, DraftWorkspaceTask } from '@/shared/workspace/workspace-run-protocol'
 
 async function runNormalize(ctx: PhaseContext, rawText: string) {
+  const startTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'normalize' })
   const normalized = normalizeWorkspaceRunInput(rawText)
   emitEvent(ctx, { type: 'phase_completed', phase: 'normalize', output: normalized })
+  recordPhaseTiming(ctx.phaseTimings, 'normalize', startTs, Date.now(), 'orchestration')
   return normalized
 }
 
@@ -34,6 +37,7 @@ async function runUnderstand(
   normalized: ReturnType<typeof normalizeWorkspaceRunInput>,
   runModel: OrchestrateWorkspaceRunOptions['runModel']
 ) {
+  const startTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'understand' })
   const understanding = await understandWorkspaceRunInput({
     normalized,
@@ -41,6 +45,7 @@ async function runUnderstand(
     signal: ctx.signal,
   })
   emitEvent(ctx, { type: 'phase_completed', phase: 'understand', output: understanding })
+  recordPhaseTiming(ctx.phaseTimings, 'understand', startTs, Date.now(), 'model')
   return understanding
 }
 
@@ -50,11 +55,16 @@ async function runResolveTodoTimes(
   fallbackTimeHints: string[],
   referenceTime: string
 ) {
-  return normalizeTodoDraftTaskTimes(draftTasks, {
+  const startTs = Date.now()
+  emitEvent(ctx, { type: 'phase_started', phase: 'time_normalize' })
+  const result = await normalizeTodoDraftTaskTimes(draftTasks, {
     fallbackTimeHints,
     referenceTime,
     signal: ctx.signal,
   })
+  emitEvent(ctx, { type: 'phase_completed', phase: 'time_normalize', output: result })
+  recordPhaseTiming(ctx.phaseTimings, 'time_normalize', startTs, Date.now(), 'model')
+  return result
 }
 
 async function runPlan(
@@ -63,11 +73,10 @@ async function runPlan(
   searchCandidates: OrchestrateWorkspaceRunOptions['searchCandidates'],
   runModel: OrchestrateWorkspaceRunOptions['runModel']
 ): Promise<WorkspaceRunPlannerResult> {
+  const startTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'plan' })
 
-  const [planSystemPrompt] = await Promise.all([
-    buildWorkspaceSystemPrompt('workspace-run/system', {}),
-  ])
+  const planSystemPrompt = await buildWorkspaceSystemPrompt('workspace-run/system', {})
 
   const runPlanHints: (input: { draftTask: DraftWorkspaceTask; userPrompt: string }) => Promise<WorkspaceRunPlanHint | null | undefined> = async ({ userPrompt }) => {
     try {
@@ -90,6 +99,7 @@ async function runPlan(
   })
 
   emitEvent(ctx, { type: 'phase_completed', phase: 'plan', output: result })
+  recordPhaseTiming(ctx.phaseTimings, 'plan', startTs, Date.now(), 'orchestration')
   return result
 }
 
@@ -102,6 +112,7 @@ async function runReview(
   referenceTime: string,
   duplicateCandidates: Parameters<typeof reviewWorkspaceRunPlan>[0]['duplicateCandidates']
 ) {
+  const startTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'review' })
 
   const reviewResult = reviewWorkspaceRunPlan({
@@ -111,10 +122,10 @@ async function runReview(
       summary: plan.summary,
       steps: plan.steps.map((step) => ({
         id: step.id,
-        action: step.action as 'create_note' | 'create_todo' | 'create_bookmark' | 'query_assets' | 'summarize_assets' | 'update_todo',
-        target: step.target as 'notes' | 'todos' | 'bookmarks' | 'mixed',
+        action: step.action,
+        target: step.target,
         title: step.title,
-        risk: step.risk as 'low' | 'medium' | 'high',
+        risk: step.risk,
         requiresUserApproval: step.requiresUserApproval,
         candidates: step.candidates,
       })),
@@ -126,6 +137,7 @@ async function runReview(
   })
 
   emitEvent(ctx, { type: 'phase_completed', phase: 'review', output: reviewResult })
+  recordPhaseTiming(ctx.phaseTimings, 'review', startTs, Date.now(), 'orchestration')
   return reviewResult
 }
 
@@ -134,6 +146,7 @@ async function runPreview(
   understandingPreview: Parameters<typeof buildWorkspaceRunPreview>[0]['understandingPreview'],
   plannerResult: WorkspaceRunPlannerResult
 ) {
+  const startTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'preview' })
 
   const preview = buildWorkspaceRunPreview({
@@ -143,6 +156,7 @@ async function runPreview(
   })
 
   emitEvent(ctx, { type: 'phase_completed', phase: 'preview', output: preview })
+  recordPhaseTiming(ctx.phaseTimings, 'preview', startTs, Date.now(), 'orchestration')
   return preview
 }
 
@@ -151,6 +165,7 @@ async function runExecute(
   steps: WorkspaceRunPlannerResult['steps'],
   userId: string
 ) {
+  const startTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'execute' })
 
   const toolContext: WorkspaceToolContext = { userId }
@@ -167,6 +182,7 @@ async function runExecute(
   const result = await executeWorkspaceRunSteps(steps, toolContext, executeEvents)
 
   emitEvent(ctx, { type: 'phase_completed', phase: 'execute', output: result })
+  recordPhaseTiming(ctx.phaseTimings, 'execute', startTs, Date.now(), 'tool')
   return result
 }
 
@@ -176,6 +192,7 @@ async function runCompose(
   plan: Parameters<typeof composeWorkspaceAnswer>[0]['plan'],
   data: Parameters<typeof composeWorkspaceAnswer>[0]['data']
 ) {
+  const startTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'compose' })
 
   const result = await composeWorkspaceAnswer({
@@ -185,6 +202,7 @@ async function runCompose(
   })
 
   emitEvent(ctx, { type: 'phase_completed', phase: 'compose', output: result })
+  recordPhaseTiming(ctx.phaseTimings, 'compose', startTs, Date.now(), 'model')
   return result
 }
 
@@ -195,6 +213,7 @@ async function runBatchCompose(
     executeResult: Awaited<ReturnType<typeof runExecute>>
   }
 ) {
+  const startTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'compose' })
 
   const result = {
@@ -206,6 +225,7 @@ async function runBatchCompose(
   }
 
   emitEvent(ctx, { type: 'phase_completed', phase: 'compose', output: result })
+  recordPhaseTiming(ctx.phaseTimings, 'compose', startTs, Date.now(), 'orchestration')
   return result
 }
 
@@ -221,7 +241,7 @@ export async function handleNewInput(
   const runId = createRunId()
   const updatedAt = new Date().toISOString()
 
-  const ctx: PhaseContext = { runId, userId, onEvent, signal: options.signal }
+  const ctx: PhaseContext = { runId, userId, onEvent, signal: options.signal, phaseTimings: [] }
 
   try {
     const normalized = await runNormalize(ctx, request.text)
@@ -269,6 +289,7 @@ export async function handleNewInput(
         ok: false,
         phase: 'review',
         message: `Run rejected: ${reviewResult.reason}`,
+        phaseTimings: ctx.phaseTimings,
       }
     }
 
@@ -294,6 +315,7 @@ export async function handleNewInput(
           ok: false,
           phase: 'execute',
           message: errorInfo?.message ?? 'Step execution failed',
+          phaseTimings: ctx.phaseTimings,
         }
       }
 
@@ -341,6 +363,7 @@ export async function handleNewInput(
             preview,
             data: executeResult.stepResults.length > 1 ? null : firstOkResult,
           }),
+          phaseTimings: ctx.phaseTimings,
         }
       }
 
@@ -348,6 +371,7 @@ export async function handleNewInput(
         ok: false,
         phase: 'execute',
         message: 'No successful step results',
+        phaseTimings: ctx.phaseTimings,
       }
     }
 
@@ -364,6 +388,7 @@ export async function handleNewInput(
         ok: true,
         phase: 'review',
         snapshot: reviewResult.snapshot,
+        phaseTimings: ctx.phaseTimings,
       }
     }
 
@@ -371,6 +396,7 @@ export async function handleNewInput(
       ok: false,
       phase: 'review',
       message: 'Unknown review decision',
+      phaseTimings: ctx.phaseTimings,
     }
   } catch (error) {
     const errorCode = isWorkspaceRunModelError(error) ? error.code : 'INTERNAL_ERROR'
@@ -389,6 +415,7 @@ export async function handleNewInput(
       ok: false,
       phase: 'error',
       message: error instanceof Error ? error.message : 'Internal error',
+      phaseTimings: ctx.phaseTimings,
     }
   }
 }

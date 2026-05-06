@@ -6,6 +6,7 @@ import {
   emitEvent,
   getToolResultError,
   getToolNameFromAction,
+  recordPhaseTiming,
 } from './workspace-run-orchestrator.shared'
 import { planWorkspaceRun, type WorkspaceRunPlannerResult } from './workspace-run-planner'
 import { buildWorkspaceRunPreview } from './workspace-run-preview'
@@ -39,6 +40,7 @@ async function runExecute(
   steps: WorkspaceRunPlannerResult['steps'],
   userId: string
 ) {
+  const startTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'execute' })
 
   const toolContext: WorkspaceToolContext = { userId }
@@ -60,6 +62,7 @@ async function runExecute(
   })
 
   emitEvent(ctx, { type: 'phase_completed', phase: 'execute', output: result })
+  recordPhaseTiming(ctx.phaseTimings, 'execute', startTs, Date.now(), 'tool')
   return result
 }
 
@@ -69,6 +72,7 @@ async function runCompose(
   plan: Parameters<typeof composeWorkspaceAnswer>[0]['plan'],
   data: Parameters<typeof composeWorkspaceAnswer>[0]['data']
 ) {
+  const startTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'compose' })
 
   const result = await composeWorkspaceAnswer({
@@ -78,6 +82,7 @@ async function runCompose(
   })
 
   emitEvent(ctx, { type: 'phase_completed', phase: 'compose', output: result })
+  recordPhaseTiming(ctx.phaseTimings, 'compose', startTs, Date.now(), 'model')
   return result
 }
 function toDraftWorkspaceTasks(
@@ -178,19 +183,32 @@ function toReviewablePlan(result: WorkspaceRunPlannerResult): ReviewablePlan {
 }
 
 async function replanDraftTasks(
+  ctx: PhaseContext,
   tasks: DraftWorkspaceTask[],
   options: OrchestrateWorkspaceRunOptions,
   referenceTime: string
 ) {
-  return planWorkspaceRun({
+  const timeNormalizeStartTs = Date.now()
+  emitEvent(ctx, { type: 'phase_started', phase: 'time_normalize' })
+  const normalizedDraftTasks = await normalizeTodoDraftTaskTimes(tasks, {
+    referenceTime,
+    signal: options.signal,
+  })
+  emitEvent(ctx, { type: 'phase_completed', phase: 'time_normalize', output: normalizedDraftTasks })
+  recordPhaseTiming(ctx.phaseTimings, 'time_normalize', timeNormalizeStartTs, Date.now(), 'model')
+
+  const planStartTs = Date.now()
+  emitEvent(ctx, { type: 'phase_started', phase: 'plan' })
+  const plannerResult = await planWorkspaceRun({
     userId: options.userId,
-    draftTasks: await normalizeTodoDraftTaskTimes(tasks, {
-      referenceTime,
-      signal: options.signal,
-    }),
+    draftTasks: normalizedDraftTasks,
     searchCandidates: options.searchCandidates,
     runPlanHints: async () => null,
   })
+  emitEvent(ctx, { type: 'phase_completed', phase: 'plan', output: plannerResult })
+  recordPhaseTiming(ctx.phaseTimings, 'plan', planStartTs, Date.now(), 'orchestration')
+
+  return plannerResult
 }
 
 function applySelectedCandidate(
@@ -310,6 +328,7 @@ async function runBatchCompose(
     executeResult: Awaited<ReturnType<typeof runExecute>>
   }
 ) {
+  const startTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'compose' })
 
   const result = {
@@ -321,6 +340,7 @@ async function runBatchCompose(
   }
 
   emitEvent(ctx, { type: 'phase_completed', phase: 'compose', output: result })
+  recordPhaseTiming(ctx.phaseTimings, 'compose', startTs, Date.now(), 'orchestration')
   return result
 }
 
@@ -361,6 +381,7 @@ async function completeSkippedDuplicateRun(input: {
     ok: true,
     phase: 'completed',
     result,
+    phaseTimings: input.ctx.phaseTimings,
   } as const
 }
 
@@ -392,6 +413,7 @@ async function executePlannedRun(input: {
       ok: false,
       phase: 'execute',
       message: errorInfo?.message ?? 'Step execution failed',
+      phaseTimings: input.ctx.phaseTimings,
     } as const
   }
 
@@ -403,6 +425,7 @@ async function executePlannedRun(input: {
       ok: false,
       phase: 'execute',
       message: 'No successful step results',
+      phaseTimings: input.ctx.phaseTimings,
     } as const
   }
 
@@ -452,6 +475,7 @@ async function executePlannedRun(input: {
     ok: true,
     phase: 'completed',
     result: completedResult,
+    phaseTimings: input.ctx.phaseTimings,
   } as const
 }
 
@@ -482,6 +506,7 @@ async function failRun(
     ok: false,
     phase: 'cancelled',
     message,
+    phaseTimings: ctx.phaseTimings,
   } as const
 }
 
@@ -532,6 +557,7 @@ export async function handleResume(
     userId,
     onEvent,
     signal: options.signal,
+    phaseTimings: [],
   }
 
   if (request.response.action === 'cancel') {
@@ -559,7 +585,12 @@ export async function handleResume(
 
   const referenceTime = snapshot.referenceTime ?? snapshot.updatedAt
 
-  let plannerResult = await replanDraftTasks(draftTasks, options, referenceTime)
+  let plannerResult = await replanDraftTasks(
+    ctx,
+    draftTasks,
+    options,
+    referenceTime
+  )
   let duplicateReview = snapshot.duplicateReview
 
   if (request.response.type === 'select_candidate' && request.response.action === 'select') {
@@ -590,6 +621,8 @@ export async function handleResume(
       })
     }
 
+    const reviewStartTs = Date.now()
+    emitEvent(ctx, { type: 'phase_started', phase: 'review' })
     const reviewDecision = reviewWorkspaceRunPlan({
       runId: request.runId,
       draftTasks: toReviewableDraftTasks(draftTasks),
@@ -607,8 +640,8 @@ export async function handleResume(
       duplicateReview,
     })
 
-    emitEvent(ctx, { type: 'phase_started', phase: 'review' })
     emitEvent(ctx, { type: 'phase_completed', phase: 'review', output: reviewDecision })
+    recordPhaseTiming(ctx.phaseTimings, 'review', reviewStartTs, Date.now(), 'orchestration')
 
     if (reviewDecision.status === 'await_user') {
       await store.failAwaitingRuns(userId, { excludeRunId: request.runId })
@@ -622,6 +655,7 @@ export async function handleResume(
         ok: true,
         phase: 'review',
         snapshot: reviewDecision.snapshot,
+        phaseTimings: ctx.phaseTimings,
       }
     }
 
@@ -640,6 +674,7 @@ export async function handleResume(
         ok: false,
         phase: 'review',
         message: `Run rejected: ${reviewDecision.reason}`,
+        phaseTimings: ctx.phaseTimings,
       }
     }
 
@@ -671,6 +706,8 @@ export async function handleResume(
     })
   }
 
+  const reviewStartTs = Date.now()
+  emitEvent(ctx, { type: 'phase_started', phase: 'review' })
   const reviewDecision = reviewWorkspaceRunPlan({
     runId: request.runId,
     draftTasks: toReviewableDraftTasks(draftTasks),
@@ -699,8 +736,8 @@ export async function handleResume(
         : duplicateReview,
   })
 
-  emitEvent(ctx, { type: 'phase_started', phase: 'review' })
   emitEvent(ctx, { type: 'phase_completed', phase: 'review', output: reviewDecision })
+  recordPhaseTiming(ctx.phaseTimings, 'review', reviewStartTs, Date.now(), 'orchestration')
 
   if (reviewDecision.status === 'reject') {
     await store.updateRunStatus(request.runId, userId, 'failed')
@@ -717,6 +754,7 @@ export async function handleResume(
       ok: false,
       phase: 'review',
       message: `Run rejected: ${reviewDecision.reason}`,
+      phaseTimings: ctx.phaseTimings,
     }
   }
 
@@ -732,6 +770,7 @@ export async function handleResume(
       ok: true,
       phase: 'review',
       snapshot: reviewDecision.snapshot,
+      phaseTimings: ctx.phaseTimings,
     }
   }
 

@@ -7,6 +7,7 @@ import { handleResume } from './workspace-run-orchestrator.resume'
 import { createWorkspaceRunStore } from './workspace-run-store.drizzle'
 
 import type { SearchWorkspaceRunCandidates } from './workspace-run-planner'
+import type { PhaseTimings } from './workspace-run-orchestrator.shared'
 import type { WorkspaceRunStore } from './workspace-run-store'
 import type { WorkspaceRunModel } from './workspace-run-understanding'
 import type {
@@ -39,6 +40,7 @@ export type WorkspaceRunOrchestratorResult = {
   message?: string
   result?: WorkspaceRunResult
   snapshot?: WorkspacePendingRunSnapshot
+  phaseTimings?: PhaseTimings
 }
 
 export async function orchestrateWorkspaceRun(

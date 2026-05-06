@@ -5,6 +5,7 @@ import type { AssetListItem } from '@/shared/assets/assets.types'
 export const workspaceRunPhaseSchema = z.enum([
   'normalize',
   'understand',
+  'time_normalize',
   'plan',
   'review',
   'preview',
@@ -329,10 +330,12 @@ export const workspaceRunStreamEventSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('phase_started'),
     phase: workspaceRunPhaseSchema,
+    ts: z.number().optional(),
   }),
   z.object({
     type: z.literal('phase_completed'),
     phase: workspaceRunPhaseSchema,
+    ts: z.number().optional(),
     output: z.unknown().optional(),
   }),
   z.object({
