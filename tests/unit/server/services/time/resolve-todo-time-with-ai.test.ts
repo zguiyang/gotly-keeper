@@ -49,6 +49,7 @@ describe('resolve-todo-time-with-ai', () => {
       output: {
         timeText: '明天上午',
         dueAt: '2026-05-01T01:00:00.000Z',
+        resolutionKind: 'clear',
       },
     })
 
@@ -61,6 +62,7 @@ describe('resolve-todo-time-with-ai', () => {
     ).resolves.toEqual({
       timeText: '明天上午',
       dueAt: '2026-05-01T01:00:00.000Z',
+      resolutionKind: 'clear',
     })
   })
 
@@ -78,6 +80,7 @@ describe('resolve-todo-time-with-ai', () => {
     ).resolves.toEqual({
       timeText: '今晚',
       dueAt: null,
+      resolutionKind: 'unresolved',
     })
   })
 
@@ -91,6 +94,7 @@ describe('resolve-todo-time-with-ai', () => {
         output: {
           timeText,
           dueAt: null,
+          resolutionKind: 'unresolved',
         },
       })
 
@@ -116,6 +120,7 @@ describe('resolve-todo-time-with-ai', () => {
         output: {
           timeText,
           dueAt: '2026-05-01T00:00:00.000Z',
+          resolutionKind: 'clear',
         },
       })
 
@@ -135,6 +140,7 @@ describe('resolve-todo-time-with-ai', () => {
       output: {
         timeText: '国庆放假后',
         dueAt: '2026-10-08T10:00:00.000Z',
+        resolutionKind: 'clear',
       },
     })
 
@@ -148,11 +154,52 @@ describe('resolve-todo-time-with-ai', () => {
     expect(result.dueAt).toBeNull()
   })
 
+  it('returns clear resolution for exact time phrases', async () => {
+    mocks.generateText.mockResolvedValueOnce({
+      output: {
+        timeText: '5月7日下午3点',
+        dueAt: '2026-05-07T07:00:00.000Z',
+        resolutionKind: 'clear',
+      },
+    })
+
+    await expect(resolveTodoTimeWithAi({
+      title: '给客户发报价',
+      slots: { timeText: '5月7日下午3点' },
+      referenceTime: '2026-05-06T08:00:00.000Z',
+    })).resolves.toEqual({
+      timeText: '5月7日下午3点',
+      dueAt: '2026-05-07T07:00:00.000Z',
+      resolutionKind: 'clear',
+    })
+  })
+
+  it('returns vague resolution for broad time phrases', async () => {
+    mocks.generateText.mockResolvedValueOnce({
+      output: {
+        timeText: '下周',
+        dueAt: null,
+        resolutionKind: 'vague',
+      },
+    })
+
+    await expect(resolveTodoTimeWithAi({
+      title: '整理报价',
+      slots: { timeText: '下周' },
+      referenceTime: '2026-05-06T08:00:00.000Z',
+    })).resolves.toEqual({
+      timeText: '下周',
+      dueAt: null,
+      resolutionKind: 'vague',
+    })
+  })
+
   it('preserves AI-produced dueAt when local parser cannot parse the phrase', async () => {
     mocks.generateText.mockResolvedValueOnce({
       output: {
         timeText: 'tomorrow at 3pm',
         dueAt: '2026-05-07T07:00:00.000Z',
+        resolutionKind: 'clear',
       },
     })
 

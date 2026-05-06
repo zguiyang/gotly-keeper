@@ -20,6 +20,7 @@ import { todoTimeTools } from './todo-time-tools'
 const todoTimeResolutionSchema = z.object({
   timeText: z.string().nullable(),
   dueAt: z.string().nullable(),
+  resolutionKind: z.enum(['clear', 'vague', 'unresolved']),
 })
 
 type TodoTimeSourceSlot =
@@ -89,24 +90,35 @@ function applyPostGenerationValidation(
   parsed: ResolvedTodoTimeWithAi,
   input: ResolveTodoTimeWithAiInput
 ): ResolvedTodoTimeWithAi {
-  const { timeText, dueAt: aiDueAt } = parsed
+  const { timeText, dueAt: aiDueAt, resolutionKind } = parsed
   const timezone = input.timezone ?? ASIA_SHANGHAI_TIME_ZONE
 
   if (!timeText) {
-    return { timeText: null, dueAt: null }
+    return { timeText: null, dueAt: null, resolutionKind: 'unresolved' }
   }
 
   const validAiDueAt = aiDueAt && !Number.isNaN(new Date(aiDueAt).getTime())
     ? new Date(aiDueAt).toISOString()
     : null
 
+  if (resolutionKind === 'clear' && !validAiDueAt) {
+    const dtResult = resolveDatetime({ phrase: timeText, referenceTime: input.referenceTime, timezone })
+    if (dtResult.granularity !== 'vague' && dtResult.granularity !== 'unresolved' && dtResult.dueAt) {
+      return { timeText, dueAt: dtResult.dueAt, resolutionKind: 'clear' }
+    }
+  }
+
+  if (resolutionKind === 'vague') {
+    return { timeText, dueAt: null, resolutionKind: 'vague' }
+  }
+
   if (validAiDueAt) {
     const normalizedTimeText = timeText.trim()
     if (isVagueTimePhrase(normalizedTimeText) || isHolidayTimePhrase(normalizedTimeText)) {
-      return { timeText, dueAt: null }
+      return { timeText, dueAt: null, resolutionKind: 'vague' }
     }
 
-    return { timeText, dueAt: validAiDueAt }
+    return { timeText, dueAt: validAiDueAt, resolutionKind: 'clear' }
   }
 
   let dtResult: ReturnType<typeof resolveDatetime>
@@ -117,18 +129,18 @@ function applyPostGenerationValidation(
       timezone,
     })
   } catch {
-    return { timeText, dueAt: null }
+    return { timeText, dueAt: null, resolutionKind: 'unresolved' }
   }
 
   if (dtResult.granularity === 'vague' || dtResult.granularity === 'unresolved') {
-    return { timeText, dueAt: null }
+    return { timeText, dueAt: null, resolutionKind: dtResult.granularity === 'vague' ? 'vague' : 'unresolved' }
   }
 
   if (!aiDueAt && dtResult.dueAt) {
-    return { timeText, dueAt: dtResult.dueAt }
+    return { timeText, dueAt: dtResult.dueAt, resolutionKind: 'clear' }
   }
 
-  return { timeText, dueAt: null }
+  return { timeText, dueAt: null, resolutionKind: validAiDueAt ? 'clear' : 'unresolved' }
 }
 
 export async function resolveTodoTimeWithAi(
@@ -142,6 +154,7 @@ export async function resolveTodoTimeWithAi(
     return {
       timeText: preservedSource.timeText,
       dueAt: normalizedDueAt,
+      resolutionKind: 'clear',
     }
   }
 
@@ -150,6 +163,7 @@ export async function resolveTodoTimeWithAi(
     return {
       timeText: preservedSource.timeText,
       dueAt: null,
+      resolutionKind: 'unresolved',
     }
   }
 
@@ -196,6 +210,7 @@ export async function resolveTodoTimeWithAi(
     return {
       timeText: preservedSource.timeText,
       dueAt: null,
+      resolutionKind: 'unresolved',
     }
   }
 }
