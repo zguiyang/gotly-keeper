@@ -10,6 +10,8 @@ const SLOT_LABELS: Record<string, string> = {
 
 const SLOT_ORDER = ['dueAt', 'timeText', 'url', 'details', 'content'] as const
 
+const USER_VISIBLE_SLOT_KEYS = new Set(Object.keys(SLOT_LABELS))
+
 export type WorkspaceDraftSlotField = {
   key: string
   label: string
@@ -40,11 +42,11 @@ export function getWorkspaceDraftSlotFields(
   slots: Record<string, string>
 ): WorkspaceDraftSlotField[] {
   return Object.entries(slots)
-    .filter(([key, value]) => key === 'dueAt' || value.trim().length > 0)
+    .filter(([key, value]) => USER_VISIBLE_SLOT_KEYS.has(key) && (key === 'dueAt' || value.trim().length > 0))
     .sort(([left], [right]) => compareSlotKeys(left, right))
     .map(([key, value]) => ({
       key,
-      label: SLOT_LABELS[key] ?? key,
+      label: SLOT_LABELS[key],
       value,
       type: key === 'dueAt' ? 'datetime' : key === 'url' ? 'url' : 'text',
     }))

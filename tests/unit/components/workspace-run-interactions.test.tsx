@@ -167,6 +167,35 @@ describe('DraftTaskEditor', () => {
     expect(screen.queryByRole('button', { name: '保存并继续' })).toBeNull()
     expect(screen.queryByRole('button', { name: '取消' })).toBeNull()
   })
+
+  it('hides internal slot keys in draft task editor', () => {
+    render(<DraftTaskEditor interaction={{
+      runId: 'run_1',
+      id: 'interaction_1',
+      type: 'edit_draft_tasks',
+      message: '请编辑任务列表',
+      actions: ['save', 'cancel'],
+      tasks: [{
+        id: 'draft_1',
+        intent: 'create',
+        target: 'todos',
+        title: '给客户发报价',
+        hasRealContent: true,
+        confidence: 0.92,
+        ambiguities: [],
+        corrections: [],
+        slots: {
+          timeText: '5月9日上午11点',
+          dueAt: '2026-05-09T03:00:00.000Z',
+          timeResolutionKind: 'resolved',
+        },
+      }],
+    }} />)
+
+    expect(screen.getByText('截止日期')).toBeTruthy()
+    expect(screen.getByText('时间说明')).toBeTruthy()
+    expect(screen.queryByText('timeResolutionKind')).toBeNull()
+  })
 })
 
 describe('PlanPreviewCard', () => {
