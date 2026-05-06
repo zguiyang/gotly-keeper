@@ -12,6 +12,7 @@ export type SearchAssetsOptions = {
   completionHint?: 'complete' | 'incomplete' | null
   includeArchived?: boolean
   limit?: number
+  preferRecent?: boolean
 }
 
 export type SearchAssetsCommand = {

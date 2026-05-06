@@ -114,6 +114,67 @@ describe('search.ranker', () => {
       expect(ranked.length).toBe(2)
     })
 
+    it('prefers newer asset when preferRecent is true and recency boost applies', () => {
+      const now = new Date()
+      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
+      const oneDayAgo = new Date(now.getTime() - 25 * 60 * 60 * 1000)
+
+      const newerAsset = makeAsset({
+        id: 'new',
+        originalText: '报价待办',
+        title: '报价待办',
+        excerpt: '报价待办',
+        createdAt: oneHourAgo,
+      })
+
+      const olderAsset = makeAsset({
+        id: 'old',
+        originalText: '报价待办',
+        title: '报价待办',
+        excerpt: '报价待办',
+        createdAt: oneDayAgo,
+      })
+
+      const semanticResults: SemanticCandidate[] = [
+        { asset: olderAsset, distance: 0.2 },
+        { asset: newerAsset, distance: 0.2 },
+      ]
+
+      const rankedNoBoost = mergeSearchResults(semanticResults, [], 5, false)
+      const rankedWithBoost = mergeSearchResults(semanticResults, [], 5, true)
+
+      expect(rankedWithBoost[0].asset.id).toBe('new')
+    })
+
+    it('does not reorder when preferRecent is false', () => {
+      const now = new Date()
+      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
+
+      const highScore = makeAsset({
+        id: 'high-score',
+        originalText: '报价待办 紧急',
+        title: '报价待办 紧急',
+        excerpt: '报价待办',
+        createdAt: oneHourAgo,
+      })
+
+      const lowScore = makeAsset({
+        id: 'low-score',
+        originalText: '无关内容',
+        title: '无关内容',
+        excerpt: '无关内容',
+        createdAt: now,
+      })
+
+      const keywordCandidates: KeywordCandidate[] = [
+        { asset: highScore, score: 10 },
+        { asset: lowScore, score: 1 },
+      ]
+
+      const ranked = mergeSearchResults([], keywordCandidates, 5, false)
+      expect(ranked[0].asset.id).toBe('high-score')
+    })
+
     it('sorts by score descending', () => {
       const semanticResults: SemanticCandidate[] = [
         {

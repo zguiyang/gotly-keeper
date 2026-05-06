@@ -250,6 +250,57 @@ describe('assets-search.service', () => {
     expect(keywordCall.terms).toEqual(['木曜日咖啡', '竞品参考链接'])
   })
 
+  it('preserves 最近 as a recency signal in keyword search terms', async () => {
+    vi.mocked(semanticSearch.searchByEmbedding).mockResolvedValue([])
+    vi.mocked(keywordSearch.searchByKeyword).mockResolvedValue([])
+    vi.mocked(searchRanker.mergeSearchResults).mockReturnValue([])
+
+    await searchAssets({
+      userId: 'user1',
+      query: '最近记的报价待办',
+      typeHint: 'todo',
+    })
+
+    const keywordCall = vi.mocked(keywordSearch.searchByKeyword).mock.calls[0][0]
+    const hasRecencyTerm = keywordCall.terms.some((t) => t.includes('最近'))
+    expect(hasRecencyTerm).toBe(true)
+  })
+
+  it('preserves 刚刚 as a recency signal in keyword search terms', async () => {
+    vi.mocked(semanticSearch.searchByEmbedding).mockResolvedValue([])
+    vi.mocked(keywordSearch.searchByKeyword).mockResolvedValue([])
+    vi.mocked(searchRanker.mergeSearchResults).mockReturnValue([])
+
+    await searchAssets({
+      userId: 'user1',
+      query: '刚刚记的报价待办',
+      typeHint: 'todo',
+    })
+
+    const keywordCall = vi.mocked(keywordSearch.searchByKeyword).mock.calls[0][0]
+    const hasRecencyTerm = keywordCall.terms.some((t) => t.includes('刚刚'))
+    expect(hasRecencyTerm).toBe(true)
+  })
+
+  it('does not enable recent boost for broad historical queries using 之前', async () => {
+    vi.mocked(semanticSearch.searchByEmbedding).mockResolvedValue([])
+    vi.mocked(keywordSearch.searchByKeyword).mockResolvedValue([])
+    vi.mocked(searchRanker.mergeSearchResults).mockReturnValue([])
+
+    await searchAssets({
+      userId: 'user1',
+      query: '找一下之前保存的合同模板',
+      typeHint: 'note',
+    })
+
+    expect(searchRanker.mergeSearchResults).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.any(Array),
+      expect.any(Number),
+      false
+    )
+  })
+
   it('drops semantic-only results when no keyword terms match', async () => {
     const semanticOnlyAsset = makeAsset({
       id: 'note-irrelevant',
@@ -301,7 +352,8 @@ describe('assets-search.service', () => {
     expect(searchRanker.mergeSearchResults).toHaveBeenCalledWith(
       expect.any(Array),
       expect.any(Array),
-      expect.any(Number)
+      expect.any(Number),
+      expect.any(Boolean)
     )
   })
 

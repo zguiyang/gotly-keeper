@@ -10,7 +10,7 @@ import {
 
 import { searchByKeyword } from './keyword-search.service'
 import { logSearchPath } from './search.logging'
-import { getAssetSearchTerms, scoreAssetForQuery } from './search.query-parser'
+import { getAssetSearchTerms, hasRecencyIntent, scoreAssetForQuery } from './search.query-parser'
 import { mergeSearchResults } from './search.ranker'
 import { matchesSearchTimeHint } from './search.time-match'
 import { searchByEmbedding } from './semantic-search.service'
@@ -50,6 +50,7 @@ export async function searchAssets({
   completionHint,
   includeArchived = false,
   limit = ASSET_SEARCH_LIMIT_DEFAULT,
+  preferRecent,
 }: SearchAssetsOptions): Promise<AssetListItem[]> {
   const trimmed = query.trim()
   if (!trimmed) return []
@@ -100,10 +101,13 @@ export async function searchAssets({
       !timeRangeHint || matchesSearchTimeHint(candidate.asset, timeRangeHint, timeHint)
   )
 
+  const recencyIntent = preferRecent ?? hasRecencyIntent(trimmed)
+
   const ranked = mergeSearchResults(
     semanticResults,
     filteredKeywordCandidates,
-    clampAssetListLimit(limit)
+    clampAssetListLimit(limit),
+    recencyIntent
   )
 
   const results = ranked

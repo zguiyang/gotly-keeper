@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest'
 
-import { normalizeSearchText, getAssetSearchTerms, getTypeHintScore, scoreAssetForQuery } from '@/server/services/search/search.query-parser'
+import {
+  normalizeSearchText,
+  getAssetSearchTerms,
+  getTypeHintScore,
+  hasRecencyIntent,
+  scoreAssetForQuery,
+} from '@/server/services/search/search.query-parser'
 
 describe('search.query-parser', () => {
   describe('normalizeSearchText', () => {
@@ -50,6 +56,17 @@ describe('search.query-parser', () => {
     it('strips retrieval helper prefixes like 保存过 from search terms', () => {
       const terms = getAssetSearchTerms('我保存过木曜日咖啡 LIN-20260426-1630 的竞品参考链接吗')
       expect(terms).toEqual(['木曜日咖啡', 'lin-20260426-1630', '竞品参考链接'])
+    })
+  })
+
+  describe('hasRecencyIntent', () => {
+    it('detects explicit recency words like 最近 and 刚刚', () => {
+      expect(hasRecencyIntent('最近记的报价待办')).toBe(true)
+      expect(hasRecencyIntent('刚刚记的报价待办')).toBe(true)
+    })
+
+    it('does not treat 之前 as an explicit recent-intent signal', () => {
+      expect(hasRecencyIntent('找一下之前保存的合同模板')).toBe(false)
     })
   })
 

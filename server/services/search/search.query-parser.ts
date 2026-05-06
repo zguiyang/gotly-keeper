@@ -10,14 +10,13 @@ import {
 
 import type { AssetType } from './search.types'
 
+const RECENCY_TERMS = ['刚刚', '最近', '上一条', '上次']
+
 const QUERY_FILLERS = [
   '帮我',
   '找一下',
   '查一下',
   '我',
-  '最近',
-  '上次',
-  '之前',
   '保存过',
   '存过',
   '收藏过',
@@ -64,6 +63,11 @@ export function getAssetSearchTerms(query: string): string[] {
         .filter((term) => term.length >= KEYWORD_TERM_MIN_LENGTH)
     )
   ).slice(0, KEYWORD_TERM_MAX_COUNT)
+}
+
+export function hasRecencyIntent(query: string): boolean {
+  const normalized = normalizeSearchText(query)
+  return RECENCY_TERMS.some((term) => normalized.includes(term))
 }
 
 export function getTypeHintScore(query: string, type: AssetType): number {

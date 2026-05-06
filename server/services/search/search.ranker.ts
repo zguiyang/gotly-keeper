@@ -3,10 +3,14 @@ import { SEMANTIC_BASE_SCORE, SEMANTIC_DISTANCE_PENALTY } from '@/server/lib/con
 import type { KeywordCandidate, RankResult, SemanticCandidate } from './search.types'
 import type { AssetListItem } from '@/shared/assets/assets.types'
 
+const RECENCY_BOOST_FACTOR = 0.3
+const RECENCY_BOOST_WINDOW_MS = 24 * 60 * 60 * 1000
+
 export function mergeSearchResults(
   semanticResults: SemanticCandidate[],
   keywordCandidates: KeywordCandidate[],
-  limit: number
+  limit: number,
+  preferRecent = false
 ): RankResult[] {
   const semanticWeight = 1.0
   const keywordWeight = 1.0
@@ -35,7 +39,19 @@ export function mergeSearchResults(
     }
   }
 
-  return Array.from(ranked.values())
+  const results = Array.from(ranked.values())
+
+  if (preferRecent) {
+    const now = Date.now()
+    for (const entry of results) {
+      const age = now - entry.asset.createdAt.getTime()
+      if (age >= 0 && age <= RECENCY_BOOST_WINDOW_MS) {
+        entry.score += RECENCY_BOOST_FACTOR * (1 - age / RECENCY_BOOST_WINDOW_MS)
+      }
+    }
+  }
+
+  return results
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map(({ asset, score, source }) => ({ asset, score, source }))
