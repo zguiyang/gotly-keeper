@@ -234,6 +234,37 @@ describe('search.ranker', () => {
       expect(ranked[0].asset.id).toBe('high-score')
     })
 
+    it('uses recency-first ordering in focus mode for explicit recent-intent queries', () => {
+      const now = new Date()
+      const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000)
+      const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)
+
+      const recentMatch = makeAsset({
+        id: 'recent-match',
+        originalText: '报价待办',
+        title: '报价待办',
+        excerpt: '最新创建的报价待办',
+        createdAt: tenMinutesAgo,
+      })
+
+      const olderHigherScoreMatch = makeAsset({
+        id: 'older-higher-score',
+        originalText: '报价待办 重要客户',
+        title: '报价待办 重要客户',
+        excerpt: '更老但关键词更多',
+        createdAt: twoDaysAgo,
+      })
+
+      const keywordCandidates: KeywordCandidate[] = [
+        { asset: olderHigherScoreMatch, score: 10 },
+        { asset: recentMatch, score: 6 },
+      ]
+
+      const ranked = mergeSearchResults([], keywordCandidates, 1, 'focus')
+
+      expect(ranked[0].asset.id).toBe('recent-match')
+    })
+
     it('sorts by score descending', () => {
       const semanticResults: SemanticCandidate[] = [
         {

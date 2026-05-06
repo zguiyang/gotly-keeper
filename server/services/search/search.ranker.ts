@@ -11,6 +11,8 @@ type RankedEntry = {
   source: RankResult['source']
 }
 
+type RecencyMode = boolean | 'focus'
+
 function isWithinRecencyPriorityWindow(asset: AssetListItem, now: number) {
   const age = now - asset.createdAt.getTime()
   return age >= 0 && age <= RECENCY_PRIORITY_WINDOW_MS
@@ -28,7 +30,7 @@ export function mergeSearchResults(
   semanticResults: SemanticCandidate[],
   keywordCandidates: KeywordCandidate[],
   limit: number,
-  preferRecent = false
+  preferRecent: RecencyMode = false
 ): RankResult[] {
   const semanticWeight = 1.0
   const keywordWeight = 1.0
@@ -65,6 +67,10 @@ export function mergeSearchResults(
     .sort((a, b) => {
       if (now === null) {
         return compareByScoreThenCreatedAt(a, b)
+      }
+
+      if (preferRecent === 'focus') {
+        return b.asset.createdAt.getTime() - a.asset.createdAt.getTime() || compareByScoreThenCreatedAt(a, b)
       }
 
       const aIsRecent = isWithinRecencyPriorityWindow(a.asset, now)

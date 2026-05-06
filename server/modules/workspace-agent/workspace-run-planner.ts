@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { renderPrompt } from '@/server/lib/prompt-template'
+import { hasRecencyIntent } from '@/server/services/search/search.query-parser'
 
 import type { DraftWorkspaceTask } from '@/shared/workspace/workspace-run-protocol'
 
@@ -175,9 +176,12 @@ function buildToolInput(task: DraftWorkspaceTask, action: WorkspaceRunPlannerAct
   if (action === 'query_assets' || action === 'summarize_assets') {
     const timeRange = getStringSlot(task, 'timeRange')
     const todoStatus = getStringSlot(task, 'todoStatus')
+    const query = getStringSlot(task, 'query') ?? title
+    const recentFocus = action === 'query_assets' && Boolean(query && hasRecencyIntent(query))
     return {
-      query: getStringSlot(task, 'query') ?? title,
+      query,
       subjectHint: title,
+      ...(recentFocus && { limit: 1, recentFocus: true }),
       ...(timeRange && { timeRange: { type: timeRange as 'today' | 'recent' | 'this_week' | 'this_month' } }),
       ...(todoStatus && { status: todoStatus as 'open' | 'done' | 'all' }),
     }

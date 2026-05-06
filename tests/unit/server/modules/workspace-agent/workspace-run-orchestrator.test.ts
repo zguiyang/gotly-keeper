@@ -338,7 +338,7 @@ describe('workspace-run-orchestrator', () => {
   })
 
   describe('compose phase', () => {
-    it('emits compose phase events when execute succeeds', async () => {
+    it('skips compose phase for single-step auto-executed create runs', async () => {
       const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
 
       const events: unknown[] = []
@@ -355,15 +355,8 @@ describe('workspace-run-orchestrator', () => {
         onEvent: (e) => events.push(e),
       })
 
-      const executePhase = events.find(
-        (e) => isPhaseEvent(e) && e.type === 'phase_completed' && e.phase === 'execute'
-      ) as (PhaseEvent & { output?: { stepResults?: Array<{ result: { ok: boolean } }> } }) | undefined
-      if (executePhase?.output?.stepResults?.every((r) => r.result.ok)) {
-        expect(events).toContainEqual(expect.objectContaining({ type: 'phase_started', phase: 'compose' }))
-        expect(events).toContainEqual(expect.objectContaining({ type: 'phase_completed', phase: 'compose' }))
-      } else {
-        expect(events).not.toContainEqual(expect.objectContaining({ type: 'phase_started', phase: 'compose' }))
-      }
+      expect(events).not.toContainEqual(expect.objectContaining({ type: 'phase_started', phase: 'compose' }))
+      expect(events).not.toContainEqual(expect.objectContaining({ type: 'phase_completed', phase: 'compose' }))
     })
 
     it('emits run_completed with composed answer and full preview', async () => {

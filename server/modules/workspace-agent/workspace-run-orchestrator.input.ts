@@ -1,6 +1,7 @@
 import { buildWorkspaceSystemPrompt } from '@/server/lib/ai/ai.prompts'
 
 import { composeWorkspaceAnswer } from './workspace-compose'
+import { buildFallbackAnswer } from './workspace-compose'
 import { buildBatchAnswer, buildCompletedRunResult } from './workspace-run-completed'
 import { findWorkspaceRunDuplicateCandidates } from './workspace-run-duplicates'
 import { executeWorkspaceRunSteps } from './workspace-run-executor'
@@ -76,10 +77,14 @@ async function runPlan(
   const startTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'plan' })
 
-  const planSystemPrompt = await buildWorkspaceSystemPrompt('workspace-run/system', {})
+  let planSystemPrompt: string | null = null
 
   const runPlanHints: (input: { draftTask: DraftWorkspaceTask; userPrompt: string }) => Promise<WorkspaceRunPlanHint | null | undefined> = async ({ userPrompt }) => {
     try {
+      if (!planSystemPrompt) {
+        planSystemPrompt = await buildWorkspaceSystemPrompt('workspace-run/system', {})
+      }
+
       const result = await runModel({
         systemPrompt: planSystemPrompt,
         userPrompt,
@@ -229,6 +234,24 @@ async function runBatchCompose(
   return result
 }
 
+function shouldSkipComposeForSingleMutation(input: {
+  executeResult: Awaited<ReturnType<typeof runExecute>>
+  understanding: {
+    draftTasks: DraftWorkspaceTask[]
+  }
+}) {
+  if (input.executeResult.stepResults.length !== 1) {
+    return false
+  }
+
+  const task = input.understanding.draftTasks[0]
+  if (!task) {
+    return false
+  }
+
+  return task.intent === 'create' || task.intent === 'update'
+}
+
 export async function handleNewInput(
   options: OrchestrateWorkspaceRunOptions
 ): Promise<WorkspaceRunOrchestratorResult> {
@@ -322,25 +345,42 @@ export async function handleNewInput(
       const firstOkResult = executeResult.stepResults.find((r) => r.result.ok)?.result
 
       if (firstOkResult && firstOkResult.ok) {
+        const primaryTask = normalizedUnderstanding.draftTasks[0]
+        const primaryPlan = {
+          intent: primaryTask.intent as WorkspaceIntent,
+          target: primaryTask.target as WorkspaceTarget,
+          toolName: plannerResult.steps[0]
+            ? getToolNameFromAction(plannerResult.steps[0].action)
+            : 'create_todo',
+          toolInput: {},
+          needsCompose: true,
+        }
+
         const composeResult = executeResult.stepResults.length > 1
           ? await runBatchCompose(ctx, { preview, executeResult })
-          : await runCompose(
-              ctx,
-              {
-                intent: normalizedUnderstanding.draftTasks[0].intent as WorkspaceIntent,
-                target: normalizedUnderstanding.draftTasks[0].target as Exclude<WorkspaceTarget, 'mixed'>,
-              },
-              {
-                intent: normalizedUnderstanding.draftTasks[0].intent as WorkspaceIntent,
-                target: normalizedUnderstanding.draftTasks[0].target as WorkspaceTarget,
-                toolName: plannerResult.steps[0]
-                  ? getToolNameFromAction(plannerResult.steps[0].action)
-                  : 'create_todo',
-                toolInput: {},
-                needsCompose: true,
-              },
-              firstOkResult
-            )
+          : shouldSkipComposeForSingleMutation({
+              executeResult,
+              understanding: normalizedUnderstanding,
+            })
+            ? {
+                answer: buildFallbackAnswer(
+                  {
+                    intent: primaryTask.intent as WorkspaceIntent,
+                    target: primaryTask.target as Exclude<WorkspaceTarget, 'mixed'>,
+                  },
+                  firstOkResult
+                ),
+                usedFallback: true,
+              }
+            : await runCompose(
+                ctx,
+                {
+                  intent: primaryTask.intent as WorkspaceIntent,
+                  target: primaryTask.target as Exclude<WorkspaceTarget, 'mixed'>,
+                },
+                primaryPlan,
+                firstOkResult
+              )
 
         await store.updateRunStatus(runId, userId, 'completed')
 

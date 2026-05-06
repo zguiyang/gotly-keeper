@@ -301,6 +301,27 @@ describe('assets-search.service', () => {
     )
   })
 
+  it('uses recent focus mode when explicitly requested by the caller', async () => {
+    vi.mocked(semanticSearch.searchByEmbedding).mockResolvedValue([])
+    vi.mocked(keywordSearch.searchByKeyword).mockResolvedValue([])
+    vi.mocked(searchRanker.mergeSearchResults).mockReturnValue([])
+
+    await searchAssets({
+      userId: 'user1',
+      query: '报价待办',
+      typeHint: 'todo',
+      limit: 1,
+      preferRecent: 'focus',
+    })
+
+    expect(searchRanker.mergeSearchResults).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.any(Array),
+      1,
+      'focus'
+    )
+  })
+
   it('does not enable recent boost for broad historical queries using 之前', async () => {
     vi.mocked(semanticSearch.searchByEmbedding).mockResolvedValue([])
     vi.mocked(keywordSearch.searchByKeyword).mockResolvedValue([])

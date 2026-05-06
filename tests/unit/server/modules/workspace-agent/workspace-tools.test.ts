@@ -15,14 +15,14 @@ const mocks = vi.hoisted(() => ({
   updateWorkspaceTodo: vi.fn(),
 }))
 
-vi.mock('@/server/modules/workspace', () => ({
-  createWorkspaceLink: mocks.createWorkspaceLink,
-  createWorkspaceNote: mocks.createWorkspaceNote,
-  createWorkspaceTodo: mocks.createWorkspaceTodo,
+vi.mock('@/server/services/workspace/workspace-assets.service', () => ({
+  createWorkspaceLinkAsset: mocks.createWorkspaceLink,
+  createWorkspaceNoteAsset: mocks.createWorkspaceNote,
+  createWorkspaceTodoAsset: mocks.createWorkspaceTodo,
   listWorkspaceAssets: mocks.listWorkspaceAssets,
   searchWorkspaceAssets: mocks.searchWorkspaceAssets,
-  setWorkspaceTodoCompletion: mocks.setWorkspaceTodoCompletion,
-  updateWorkspaceTodo: mocks.updateWorkspaceTodo,
+  setWorkspaceTodoAssetCompletion: mocks.setWorkspaceTodoCompletion,
+  updateWorkspaceTodoAsset: mocks.updateWorkspaceTodo,
 }))
 
 describe('workspaceTools', () => {
@@ -50,6 +50,8 @@ describe('workspaceTools', () => {
       query: '项目复盘',
       timeFilter: null,
       typeHint: 'note',
+      limit: 10,
+      preferRecent: undefined,
     })
     expect(result).toEqual({
       ok: true,
@@ -162,12 +164,41 @@ describe('workspaceTools', () => {
       query: '木曜日咖啡不存在的冷门内部代号',
       timeFilter: null,
       typeHint: null,
+      limit: 10,
+      preferRecent: undefined,
     })
     expect(result).toEqual({
       ok: true,
       target: 'mixed',
       items: [{ id: 'bookmark_1', type: 'link', title: '竞品参考', createdAt: new Date('2026-04-22T09:00:00.000Z') }],
       total: 1,
+    })
+  })
+
+  it('search_todos forwards recentFocus queries as top-match searches', async () => {
+    mocks.searchWorkspaceAssets.mockResolvedValue([
+      { id: 'todo_1', type: 'todo', title: '报价待办', createdAt: new Date('2026-04-22T09:00:00.000Z') },
+    ])
+
+    await workspaceTools.search_todos.execute(
+      {
+        query: '刚刚记的报价待办',
+        subjectHint: '帮我找一下刚刚记的报价待办',
+        timeRange: null,
+        limit: 1,
+        status: 'all',
+        recentFocus: true,
+      },
+      { userId: 'user_1' }
+    )
+
+    expect(mocks.searchWorkspaceAssets).toHaveBeenCalledWith({
+      userId: 'user_1',
+      query: '刚刚记的报价待办 帮我找一下刚刚记的报价待办',
+      timeFilter: null,
+      typeHint: 'todo',
+      limit: 1,
+      preferRecent: 'focus',
     })
   })
 
@@ -206,8 +237,9 @@ describe('workspaceTools', () => {
 
   it('create_note returns a normalized mutation envelope', async () => {
     mocks.createWorkspaceNote.mockResolvedValue({
-      kind: 'created',
-      asset: { id: 'note_1', type: 'note', content: '# 会议纪要\n\n同步本周发布计划' },
+      id: 'note_1',
+      type: 'note',
+      content: '# 会议纪要\n\n同步本周发布计划',
     })
 
     const result = await executeWorkspaceTool(
@@ -235,8 +267,9 @@ describe('workspaceTools', () => {
 
   it('create_todo forwards the original time phrase with the normalized due date', async () => {
     mocks.createWorkspaceTodo.mockResolvedValue({
-      kind: 'created',
-      asset: { id: 'todo_1', type: 'todo', title: '交周报' },
+      id: 'todo_1',
+      type: 'todo',
+      title: '交周报',
     })
 
     const result = await executeWorkspaceTool(
@@ -270,8 +303,9 @@ describe('workspaceTools', () => {
 
   it('create_bookmark keeps note and summary text in raw input for later retrieval', async () => {
     mocks.createWorkspaceLink.mockResolvedValue({
-      kind: 'created',
-      asset: { id: 'bookmark_1', type: 'link', title: '星巴克中国' },
+      id: 'bookmark_1',
+      type: 'link',
+      title: '星巴克中国',
     })
 
     const result = await executeWorkspaceTool(

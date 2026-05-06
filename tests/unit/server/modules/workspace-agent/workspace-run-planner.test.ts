@@ -260,6 +260,8 @@ describe('workspace-run-planner', () => {
 
     expect(result.steps[0].toolInput?.query).toContain('刚刚')
     expect(result.steps[0].toolInput?.subjectHint).toContain('刚刚')
+    expect(result.steps[0].toolInput?.recentFocus).toBe(true)
+    expect(result.steps[0].toolInput?.limit).toBe(1)
   })
 
   it('maps query intent to a low-risk query_assets step without hints', async () => {

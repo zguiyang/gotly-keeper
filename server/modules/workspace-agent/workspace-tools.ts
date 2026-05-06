@@ -32,6 +32,7 @@ const searchInputSchema = z.object({
   subjectHint: z.string().nullable().optional(),
   timeRange: timeRangeSchema,
   limit: z.number().int().min(1).max(20).default(10),
+  recentFocus: z.boolean().default(false),
 })
 
 const searchTodosInputSchema = searchInputSchema.extend({
@@ -228,6 +229,7 @@ async function searchAssetsByType(input: {
   subjectHint?: string | null
   timeRange?: WorkspaceToolTimeRange
   limit?: number
+  recentFocus?: boolean
 }): Promise<AssetListItem[]> {
   const combinedQuery = buildLookupQuery(input.query, input.subjectHint)
   const timeFilter = buildTimeFilter(input.timeRange)
@@ -238,6 +240,8 @@ async function searchAssetsByType(input: {
       query: combinedQuery,
       timeFilter,
       typeHint: input.typeHint,
+      limit: input.limit,
+      preferRecent: input.recentFocus ? 'focus' : undefined,
     })
   }
 
@@ -293,6 +297,7 @@ export const workspaceTools = {
         subjectHint: input.subjectHint,
         timeRange: input.timeRange,
         limit: input.limit,
+        recentFocus: input.recentFocus,
       })
 
       return toQueryResult('notes', items)
@@ -310,6 +315,8 @@ export const workspaceTools = {
             query: combinedQuery,
             timeFilter: buildTimeFilter(input.timeRange),
             typeHint: null,
+            limit: input.limit,
+            preferRecent: input.recentFocus ? 'focus' : undefined,
           })
         : await listWorkspaceAssets({
             userId: context.userId,
@@ -333,6 +340,7 @@ export const workspaceTools = {
         subjectHint: input.subjectHint,
         timeRange: input.timeRange,
         limit: input.limit,
+        recentFocus: input.recentFocus,
       })
 
       const filteredItems =
@@ -358,6 +366,7 @@ export const workspaceTools = {
         subjectHint: input.subjectHint,
         timeRange: input.timeRange,
         limit: input.limit,
+        recentFocus: input.recentFocus,
       })
 
       return toQueryResult('bookmarks', items)
