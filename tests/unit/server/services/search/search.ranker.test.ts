@@ -114,7 +114,7 @@ describe('search.ranker', () => {
       expect(ranked.length).toBe(2)
     })
 
-    it('prefers newer asset when preferRecent is true and recency boost applies', () => {
+    it('prefers newer asset when preferRecent is true for equally scored matches', () => {
       const now = new Date()
       const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
       const oneDayAgo = new Date(now.getTime() - 25 * 60 * 60 * 1000)
@@ -140,10 +140,69 @@ describe('search.ranker', () => {
         { asset: newerAsset, distance: 0.2 },
       ]
 
-      const rankedNoBoost = mergeSearchResults(semanticResults, [], 5, false)
       const rankedWithBoost = mergeSearchResults(semanticResults, [], 5, true)
 
       expect(rankedWithBoost[0].asset.id).toBe('new')
+    })
+
+    it('promotes a recent match to top result even when an older match has a slightly higher score', () => {
+      const now = new Date()
+      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
+      const fiveDaysAgo = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)
+
+      const recentAsset = makeAsset({
+        id: 'recent',
+        originalText: '报价待办',
+        title: '报价待办',
+        excerpt: '报价待办',
+        createdAt: oneHourAgo,
+      })
+
+      const olderHigherScoreAsset = makeAsset({
+        id: 'older-higher-score',
+        originalText: '报价待办 重要',
+        title: '报价待办 重要',
+        excerpt: '报价待办',
+        createdAt: fiveDaysAgo,
+      })
+
+      const semanticResults: SemanticCandidate[] = [
+        { asset: olderHigherScoreAsset, distance: 0.1 },
+        { asset: recentAsset, distance: 0.2 },
+      ]
+
+      const ranked = mergeSearchResults(semanticResults, [], 5, true)
+      expect(ranked[0].asset.id).toBe('recent')
+    })
+
+    it('falls back to score ordering when no results are in the recent priority window', () => {
+      const now = new Date()
+      const fourDaysAgo = new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000)
+      const fiveDaysAgo = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)
+
+      const higherScoreOlderAsset = makeAsset({
+        id: 'older-high-score',
+        originalText: '报价待办 紧急',
+        title: '报价待办 紧急',
+        excerpt: '报价待办',
+        createdAt: fiveDaysAgo,
+      })
+
+      const lowerScoreNewerAsset = makeAsset({
+        id: 'newer-low-score',
+        originalText: '报价待办',
+        title: '报价待办',
+        excerpt: '报价待办',
+        createdAt: fourDaysAgo,
+      })
+
+      const semanticResults: SemanticCandidate[] = [
+        { asset: lowerScoreNewerAsset, distance: 0.2 },
+        { asset: higherScoreOlderAsset, distance: 0.1 },
+      ]
+
+      const ranked = mergeSearchResults(semanticResults, [], 5, true)
+      expect(ranked[0].asset.id).toBe('older-high-score')
     })
 
     it('does not reorder when preferRecent is false', () => {

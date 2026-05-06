@@ -282,6 +282,25 @@ describe('assets-search.service', () => {
     expect(hasRecencyTerm).toBe(true)
   })
 
+  it('enables recent prioritization for 上一条 queries', async () => {
+    vi.mocked(semanticSearch.searchByEmbedding).mockResolvedValue([])
+    vi.mocked(keywordSearch.searchByKeyword).mockResolvedValue([])
+    vi.mocked(searchRanker.mergeSearchResults).mockReturnValue([])
+
+    await searchAssets({
+      userId: 'user1',
+      query: '上一条报价待办',
+      typeHint: 'todo',
+    })
+
+    expect(searchRanker.mergeSearchResults).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.any(Array),
+      expect.any(Number),
+      true
+    )
+  })
+
   it('does not enable recent boost for broad historical queries using 之前', async () => {
     vi.mocked(semanticSearch.searchByEmbedding).mockResolvedValue([])
     vi.mocked(keywordSearch.searchByKeyword).mockResolvedValue([])
