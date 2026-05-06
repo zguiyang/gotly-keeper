@@ -324,6 +324,32 @@ function hasWriteTitleDrift(task: ReviewableDraftTask, step: ReviewablePlanStep)
   return baselineTitle !== stepTitle
 }
 
+function hasExplicitButUnresolvedTime(task: ReviewableDraftTask, step: ReviewablePlanStep): boolean {
+  if (task.target !== 'todos' || step.action !== 'create_todo') {
+    return false
+  }
+
+  const timeText = task.slots.timeText
+  const hasTimeText = typeof timeText === 'string' && timeText.trim().length > 0
+  if (!hasTimeText) {
+    return false
+  }
+
+  const dueAt = task.slots.dueAt
+  const hasDueAt = dueAt != null && (typeof dueAt === 'string' ? dueAt.trim().length > 0 : true)
+
+  if (hasDueAt) {
+    return false
+  }
+
+  const resolutionKind = task.slots.timeResolutionKind
+  if (resolutionKind === 'vague') {
+    return false
+  }
+
+  return true
+}
+
 function hasOnlyIgnorableTodoTimeAmbiguities(task: ReviewableDraftTask, step: ReviewablePlanStep) {
   if (task.target !== 'todos' || step.action !== 'create_todo') {
     return false
@@ -467,7 +493,18 @@ function canAutoExecuteConfirmedMultiTask(input: ReviewWorkspaceRunPlanInput) {
   }
 
   return input.plan.steps.length > 0 && input.plan.steps.every(
-    (step) => step.risk === 'low' && step.requiresUserApproval === false
+    (step, i) => {
+      if (step.risk !== 'low' || step.requiresUserApproval) {
+        return false
+      }
+
+      const task = input.draftTasks[i]
+      if (task && hasExplicitButUnresolvedTime(task, step)) {
+        return false
+      }
+
+      return true
+    }
   )
 }
 
@@ -766,6 +803,18 @@ export function reviewWorkspaceRunPlan(
       updatedAt: input.updatedAt,
       referenceTime: input.referenceTime,
       message: '计划标题与原始写入标题存在差异，请确认后执行。',
+      duplicateReview: input.duplicateReview,
+    })
+  }
+
+  if (task && step && hasExplicitButUnresolvedTime(task, step)) {
+    return buildConfirmPlanDecision({
+      runId: input.runId,
+      plan: input.plan,
+      understandingPreview: input.understandingPreview,
+      updatedAt: input.updatedAt,
+      referenceTime: input.referenceTime,
+      message: `你提到了时间「${String(task.slots.timeText)}」，但无法确定具体日期时间，是否仍然按未排期保存？`,
       duplicateReview: input.duplicateReview,
     })
   }

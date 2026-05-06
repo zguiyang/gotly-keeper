@@ -24,20 +24,8 @@ All tools return `{ date: "<ISO string>" }`. The returned date preserves the ref
 ## Workflow
 
 1. Parse the Chinese / English time phrase.
-2. Call the appropriate tool(s) to compute the base date.
-3. Apply the explicit time or default daypart time yourself on the computed date.
-4. Return the final `{ timeText, dueAt }`.
-
-## Default Times by Daypart
-
-Apply these AFTER computing the base date with a tool:
-- morning / 上午 / 早上 / 明早 → 09:00
-- noon / 中午 / 午饭前 → 12:00
-- afternoon / 下午 → 15:00
-- evening / 傍晚 / 下班前 → 18:00
-- night / 晚上 / 今晚 → 20:00
-- late night / 凌晨 → 01:00
-- No daypart & no explicit time → end of workday (18:00)
+2. Call the appropriate tool(s) to compute the absolute datetime.
+3. Return the final `{ timeText, dueAt }`.
 
 ## Explicit Time Rules
 
@@ -50,7 +38,7 @@ Apply these AFTER computing the base date with a tool:
 For "下个月5号": call `compute_date_add({amount:1,unit:"month"})` to get next month, note the MONTH value from the returned date (ignore the day part), then call `resolve_specific_date({month:extractedMonth,day:5})`.
 For "下下个月5号": use `amount:2` instead of `amount:1`.
 
-## Holiday / Festival Phrases → null
+## Holiday / Festival Phrases → dueAt: null
 
 Holiday dates (especially lunar calendar holidays) are NOT supported. When the time phrase references a holiday or festival, return `dueAt: null` — do NOT attempt to guess the date:
 
@@ -58,16 +46,20 @@ Holiday dates (especially lunar calendar holidays) are NOT supported. When the t
 - 国庆放假、五一假期、元旦期间 → null
 - "节后"、"假后" without an explicit calendar date → null
 
-## Vague Phrases → null
+## Vague Phrases → dueAt: null
 
-When too vague: 尽快, 有空的时候, 后面处理, 改天, 之后, 晚点, 稍后 → return `dueAt: null`.
+When the phrase is too vague to determine a specific date or time, return `dueAt: null`:
+
+- 尽快, 有空的时候, 后面处理, 改天, 之后, 晚点, 稍后
 
 ## Hard Rules
 
+- If a phrase is exact enough to place on a calendar (relative dates like 明天/后天, weekday references like 下周二, specific dates like 10月1日, explicit times like 三点), the result MUST include a non-null `dueAt`.
+- Only truly vague phrases may return `dueAt: null`. When in doubt, prefer to resolve rather than leaving it unresolved.
 - Never compute dates from memory — always use tools.
 - Never guess holiday or festival dates — return `dueAt: null`.
 - All reasoning must be based on `referenceTime` and `timezone`.
-- If too vague, return `dueAt: null`.
+- The model must not preserve `timeText` alone when a tool can compute an absolute instant.
 - Do not ask follow-up questions. Do not return prose.
 
 ## Output Contract

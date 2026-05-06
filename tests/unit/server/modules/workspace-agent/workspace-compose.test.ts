@@ -125,4 +125,109 @@ describe('workspace-compose', () => {
       )
     ).toBe('目前没有可整理的书签。')
   })
+
+  it('fallback answer for create does not mention scheduling', () => {
+    const answer = buildFallbackAnswer(
+      { intent: 'create', target: 'todos' },
+      {
+        ok: true,
+        target: 'todos',
+        action: 'create',
+        item: {
+          id: 'todo_1',
+          type: 'todo',
+          title: '买牛奶',
+          excerpt: '',
+          originalText: '买牛奶 明天上午',
+          url: null,
+          timeText: '明天上午',
+          dueAt: null,
+          completed: false,
+          createdAt: new Date('2026-05-06T08:00:00.000Z'),
+        },
+      }
+    )
+
+    expect(answer).toBe('已创建待办。')
+    expect(answer).not.toContain('排期')
+    expect(answer).not.toContain('时间')
+    expect(answer).not.toContain('scheduled')
+  })
+
+  it('fallback answer for update does not mention scheduling when only timeText exists', () => {
+    const answer = buildFallbackAnswer(
+      { intent: 'update', target: 'todos' },
+      {
+        ok: true,
+        target: 'todos',
+        action: 'update',
+        item: {
+          id: 'todo_1',
+          type: 'todo',
+          title: '买牛奶',
+          excerpt: '',
+          originalText: '买牛奶 明天上午',
+          url: null,
+          timeText: '明天上午',
+          dueAt: null,
+          completed: false,
+          createdAt: new Date('2026-05-06T08:00:00.000Z'),
+        },
+      }
+    )
+
+    expect(answer).toBe('已更新待办。')
+    expect(answer).not.toContain('排期')
+    expect(answer).not.toContain('时间')
+  })
+
+  it('includes timeText and dueAt in compose prompt payload', async () => {
+    mocks.runAiGeneration.mockResolvedValue({
+      success: true,
+      data: {
+        answer: '已创建待办"买牛奶"。',
+      },
+    })
+
+    let capturedPayload: string | null = null
+    mocks.renderPrompt.mockImplementation(
+      async (_template: string, vars: Record<string, string>) => {
+        capturedPayload = vars.payloadJson
+        return 'user prompt'
+      }
+    )
+
+    await composeWorkspaceAnswer({
+      task: { intent: 'create', target: 'todos' },
+      plan: {
+        intent: 'create',
+        target: 'todos',
+        toolName: 'create_todo',
+        toolInput: {},
+        needsCompose: true,
+      },
+      data: {
+        ok: true,
+        target: 'todos',
+        action: 'create',
+        item: {
+          id: 'todo_1',
+          type: 'todo',
+          title: '买牛奶',
+          excerpt: '',
+          originalText: '买牛奶 明天上午',
+          url: null,
+          timeText: '明天上午',
+          dueAt: null,
+          completed: false,
+          createdAt: new Date('2026-05-06T08:00:00.000Z'),
+        },
+      },
+    })
+
+    expect(capturedPayload).not.toBeNull()
+    const payload = JSON.parse(capturedPayload!)
+    expect(payload.data.item.timeText).toBe('明天上午')
+    expect(payload.data.item.dueAt).toBeNull()
+  })
 })

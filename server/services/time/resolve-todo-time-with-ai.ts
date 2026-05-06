@@ -10,6 +10,11 @@ import { ASSET_INPUT_MODEL_TIMEOUT_MS } from '@/server/lib/config/constants'
 import { renderPrompt } from '@/server/lib/prompt-template'
 import { ASIA_SHANGHAI_TIME_ZONE } from '@/shared/time/dayjs'
 
+import {
+  isHolidayTimePhrase,
+  isVagueTimePhrase,
+  resolveDatetime,
+} from './resolve-datetime-tool'
 import { todoTimeTools } from './todo-time-tools'
 
 const todoTimeResolutionSchema = z.object({
@@ -80,6 +85,52 @@ function normalizeDueAtValue(value: string | undefined) {
   return parsed.toISOString()
 }
 
+function applyPostGenerationValidation(
+  parsed: ResolvedTodoTimeWithAi,
+  input: ResolveTodoTimeWithAiInput
+): ResolvedTodoTimeWithAi {
+  const { timeText, dueAt: aiDueAt } = parsed
+  const timezone = input.timezone ?? ASIA_SHANGHAI_TIME_ZONE
+
+  if (!timeText) {
+    return { timeText: null, dueAt: null }
+  }
+
+  const validAiDueAt = aiDueAt && !Number.isNaN(new Date(aiDueAt).getTime())
+    ? new Date(aiDueAt).toISOString()
+    : null
+
+  if (validAiDueAt) {
+    const normalizedTimeText = timeText.trim()
+    if (isVagueTimePhrase(normalizedTimeText) || isHolidayTimePhrase(normalizedTimeText)) {
+      return { timeText, dueAt: null }
+    }
+
+    return { timeText, dueAt: validAiDueAt }
+  }
+
+  let dtResult: ReturnType<typeof resolveDatetime>
+  try {
+    dtResult = resolveDatetime({
+      phrase: timeText,
+      referenceTime: input.referenceTime,
+      timezone,
+    })
+  } catch {
+    return { timeText, dueAt: null }
+  }
+
+  if (dtResult.granularity === 'vague' || dtResult.granularity === 'unresolved') {
+    return { timeText, dueAt: null }
+  }
+
+  if (!aiDueAt && dtResult.dueAt) {
+    return { timeText, dueAt: dtResult.dueAt }
+  }
+
+  return { timeText, dueAt: null }
+}
+
 export async function resolveTodoTimeWithAi(
   input: ResolveTodoTimeWithAiInput
 ): Promise<ResolvedTodoTimeWithAi> {
@@ -136,10 +187,7 @@ export async function resolveTodoTimeWithAi(
     })
 
     const parsed = todoTimeResolutionSchema.parse(result.output)
-    return {
-      timeText: parsed.timeText,
-      dueAt: parsed.dueAt ? new Date(parsed.dueAt).toISOString() : null,
-    }
+    return applyPostGenerationValidation(parsed, input)
   } catch (error) {
     console.warn('[todo-time-ai] resolution failed, returning no due date', {
       error: parseAiError(error).message,

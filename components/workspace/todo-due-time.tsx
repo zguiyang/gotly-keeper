@@ -11,6 +11,7 @@ type TodoDueTimeProps = {
 
 const icons = {
   scheduled: CalendarClock,
+  time_recorded: Clock,
   unscheduled: Clock,
 } as const
 

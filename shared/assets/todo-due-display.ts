@@ -1,9 +1,9 @@
 import { ASIA_SHANGHAI_TIME_ZONE, dayjs } from '@/shared/time/dayjs'
 
-export type TodoDueDisplayKind = 'scheduled' | 'uncertain' | 'unscheduled'
+export type TodoDueDisplayKind = 'scheduled' | 'time_recorded' | 'unscheduled'
 
 export type TodoDueDisplay = {
-  kind: Exclude<TodoDueDisplayKind, 'uncertain'>
+  kind: TodoDueDisplayKind
   label: string
 }
 
@@ -40,6 +40,13 @@ export function getTodoDueDisplay(input: TodoDueInput, now: Date = new Date()): 
     return {
       kind: 'scheduled',
       label: formatDueLabel(dueAt, now),
+    }
+  }
+
+  if (input.timeText) {
+    return {
+      kind: 'time_recorded',
+      label: `已记录时间描述：${input.timeText}`,
     }
   }
 

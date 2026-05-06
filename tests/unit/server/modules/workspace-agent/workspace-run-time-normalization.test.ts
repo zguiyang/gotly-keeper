@@ -58,6 +58,7 @@ describe('workspace-run-time-normalization', () => {
           time: '五分钟后',
           timeText: '五分钟后',
           dueAt: '2026-04-29T02:15:00.000Z',
+          timeResolutionKind: 'resolved',
         },
       },
     ])
@@ -100,6 +101,7 @@ describe('workspace-run-time-normalization', () => {
         slots: {
           timeText: '两小时后',
           dueAt: '2026-04-29T04:10:00.000Z',
+          timeResolutionKind: 'resolved',
         },
       },
     ])
@@ -142,9 +144,39 @@ describe('workspace-run-time-normalization', () => {
           dueTime: '本周五下班前',
           timeText: '本周五下班前',
           dueAt: '2026-05-01T10:00:00.000Z',
+          timeResolutionKind: 'resolved',
         },
       },
     ])
+  })
+
+  it('preserves timeText and adds dueAt for explicit time phrases after normalization', async () => {
+    mocks.resolveTodoTimeWithAi.mockResolvedValueOnce({
+      timeText: '后天下午三点',
+      dueAt: '2026-05-01T07:00:00.000Z',
+    })
+
+    const result = await normalizeTodoDraftTaskTimes([
+      {
+        id: 'draft_1',
+        intent: 'create',
+        target: 'todos',
+        title: '发周报',
+        confidence: 0.94,
+        ambiguities: [],
+        corrections: [],
+        slots: {
+          timeText: '后天下午三点',
+        },
+      },
+    ], {
+      fallbackTimeHints: [],
+      referenceTime: '2026-04-29T02:10:00.000Z',
+    })
+
+    expect(result[0].slots.timeText).toBe('后天下午三点')
+    expect(result[0].slots.dueAt).toBeDefined()
+    expect(result[0].slots.dueAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
   })
 
   it('keeps timeText and clears dueAt when ai time resolution fails', async () => {
@@ -183,6 +215,7 @@ describe('workspace-run-time-normalization', () => {
         corrections: [],
         slots: {
           timeText: '这周末',
+          timeResolutionKind: 'unresolved',
         },
       },
     ])

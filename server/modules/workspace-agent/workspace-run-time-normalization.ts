@@ -1,8 +1,11 @@
 import 'server-only'
 
+import { resolveDatetime } from '@/server/services/time/resolve-datetime-tool'
 import { resolveTodoTimeWithAi } from '@/server/services/time/resolve-todo-time-with-ai'
 
 import type { DraftWorkspaceTask } from '@/shared/workspace/workspace-run-protocol'
+
+export type TimeResolutionKind = 'resolved' | 'vague' | 'unresolved'
 
 function hasTodoTimeSlot(task: DraftWorkspaceTask) {
   return Boolean(
@@ -14,6 +17,22 @@ function hasTodoTimeSlot(task: DraftWorkspaceTask) {
       task.slots.dueText ||
       task.slots.dueDate
   )
+}
+
+function classifyTimeResolution(timeText: string, dueAt: string | null | undefined, referenceTime: string): TimeResolutionKind {
+  if (dueAt) {
+    return 'resolved'
+  }
+
+  try {
+    const dtResult = resolveDatetime({ phrase: timeText, referenceTime })
+    if (dtResult.granularity === 'vague') {
+      return 'vague'
+    }
+    return 'unresolved'
+  } catch {
+    return 'unresolved'
+  }
 }
 
 export async function normalizeTodoDraftTaskTimes(
@@ -51,13 +70,19 @@ export async function normalizeTodoDraftTaskTimes(
       signal: options.signal,
     })
 
+    const newSlots: Record<string, string> = {
+      ...task.slots,
+      ...(parsed.timeText ? { timeText: parsed.timeText } : {}),
+      ...(parsed.dueAt ? { dueAt: parsed.dueAt } : {}),
+    }
+
+    if (parsed.timeText) {
+      newSlots.timeResolutionKind = classifyTimeResolution(parsed.timeText, parsed.dueAt, options.referenceTime)
+    }
+
     return {
       ...task,
-      slots: {
-        ...task.slots,
-        ...(parsed.timeText ? { timeText: parsed.timeText } : {}),
-        ...(parsed.dueAt ? { dueAt: parsed.dueAt } : {}),
-      },
+      slots: newSlots,
     }
   }))
 }

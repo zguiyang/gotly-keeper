@@ -80,4 +80,89 @@ describe('resolve-todo-time-with-ai', () => {
       dueAt: null,
     })
   })
+
+  describe('exact time phrases', () => {
+    it.each([
+      ['后天下午三点'],
+      ['周五上午十点'],
+      ['五分钟后'],
+    ])('returns dueAt for exact time phrase: %s', async (timeText) => {
+      mocks.generateText.mockResolvedValueOnce({
+        output: {
+          timeText,
+          dueAt: null,
+        },
+      })
+
+      const result = await resolveTodoTimeWithAi({
+        title: '测试任务',
+        slots: { timeText },
+        referenceTime: '2026-04-30T02:10:00.000Z',
+      })
+
+      expect(result.timeText).toBe(timeText)
+      expect(result.dueAt).not.toBeNull()
+      expect(result.dueAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    })
+  })
+
+  describe('vague time phrases', () => {
+    it.each([
+      ['尽快'],
+      ['晚点'],
+      ['有空的时候'],
+    ])('clears AI-produced dueAt for vague phrase: %s', async (timeText) => {
+      mocks.generateText.mockResolvedValueOnce({
+        output: {
+          timeText,
+          dueAt: '2026-05-01T00:00:00.000Z',
+        },
+      })
+
+      const result = await resolveTodoTimeWithAi({
+        title: '测试任务',
+        slots: { timeText },
+        referenceTime: '2026-04-30T02:10:00.000Z',
+      })
+
+      expect(result.timeText).toBe(timeText)
+      expect(result.dueAt).toBeNull()
+    })
+  })
+
+  it('clears AI-produced dueAt for unsupported holiday phrases', async () => {
+    mocks.generateText.mockResolvedValueOnce({
+      output: {
+        timeText: '国庆放假后',
+        dueAt: '2026-10-08T10:00:00.000Z',
+      },
+    })
+
+    const result = await resolveTodoTimeWithAi({
+      title: '测试任务',
+      slots: { timeText: '国庆放假后' },
+      referenceTime: '2026-04-30T02:10:00.000Z',
+    })
+
+    expect(result.timeText).toBe('国庆放假后')
+    expect(result.dueAt).toBeNull()
+  })
+
+  it('preserves AI-produced dueAt when local parser cannot parse the phrase', async () => {
+    mocks.generateText.mockResolvedValueOnce({
+      output: {
+        timeText: 'tomorrow at 3pm',
+        dueAt: '2026-05-07T07:00:00.000Z',
+      },
+    })
+
+    const result = await resolveTodoTimeWithAi({
+      title: '测试任务',
+      slots: { timeText: 'tomorrow at 3pm' },
+      referenceTime: '2026-04-30T02:10:00.000Z',
+    })
+
+    expect(result.timeText).toBe('tomorrow at 3pm')
+    expect(result.dueAt).toBe('2026-05-07T07:00:00.000Z')
+  })
 })

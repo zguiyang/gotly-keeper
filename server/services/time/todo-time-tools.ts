@@ -14,15 +14,15 @@ export type DateOutput = z.infer<typeof dateOutputSchema>
 
 // ---- 内部工具函数 ----
 
-function toReference(referenceTime: string, timezone: string) {
+export function toReference(referenceTime: string, timezone: string) {
   return dayjs(referenceTime).tz(timezone)
 }
 
-function toEndOfDay(d: dayjs.Dayjs) {
+export function toEndOfDay(d: dayjs.Dayjs) {
   return d.hour(23).minute(59).second(59).millisecond(0).toISOString()
 }
 
-function toIsoWeekday(d: dayjs.Dayjs): number {
+export function toIsoWeekday(d: dayjs.Dayjs): number {
   return ((d.day() + 6) % 7) + 1
 }
 

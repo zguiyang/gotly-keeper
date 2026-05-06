@@ -42,18 +42,18 @@ describe('getTodoDueDisplay', () => {
     ).toBe('4月25日 09:00')
   })
 
-  it('does not show natural-language source text when no due date exists', () => {
+  it('shows a time_recorded hint when timeText exists but no dueAt', () => {
     expect(
       getTodoDueDisplay(
         {
           dueAt: null,
-          timeText: '客户会前',
+          timeText: '后天下午三点',
         },
         now
       )
     ).toEqual({
-      kind: 'unscheduled',
-      label: '暂无截止日期',
+      kind: 'time_recorded',
+      label: '已记录时间描述：后天下午三点',
     })
   })
 
@@ -70,5 +70,18 @@ describe('getTodoDueDisplay', () => {
       kind: 'unscheduled',
       label: '暂无截止日期',
     })
+  })
+
+  it('does not masquerade time_recorded as scheduled', () => {
+    const result = getTodoDueDisplay(
+      {
+        dueAt: null,
+        timeText: '客户会前',
+      },
+      now
+    )
+    expect(result.kind).toBe('time_recorded')
+    expect(result.kind).not.toBe('scheduled')
+    expect(result.label).not.toBe('暂无截止日期')
   })
 })

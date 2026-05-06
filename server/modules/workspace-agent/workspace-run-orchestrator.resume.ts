@@ -123,15 +123,28 @@ function mergeClarification(
       return task
     }
 
+    const mergedSlots = { ...task.slots, ...response.values }
     const nextTitle = response.values.title?.trim()
+    const nextUrl = response.values.url?.trim()
+    const details = response.values.details?.trim()
+
+    let resolvedTitle = task.title
+
+    if (nextTitle && nextTitle.length > 0) {
+      resolvedTitle = nextTitle
+    } else if (task.target === 'todos' && (!resolvedTitle || resolvedTitle.length === 0) && details && details.length > 0) {
+      resolvedTitle = details
+    } else if (task.target === 'bookmarks' && (!resolvedTitle || resolvedTitle.length === 0) && nextUrl && nextUrl.length > 0) {
+      resolvedTitle = nextUrl
+    } else if (task.target === 'notes' && (!resolvedTitle || resolvedTitle.length === 0) && details && details.length > 0) {
+      resolvedTitle = details
+      mergedSlots.content = details
+    }
 
     return {
       ...task,
-      title: nextTitle && nextTitle.length > 0 ? nextTitle : task.title,
-      slots: {
-        ...task.slots,
-        ...response.values,
-      },
+      title: resolvedTitle,
+      slots: mergedSlots,
     }
   })
 }

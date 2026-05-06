@@ -1023,6 +1023,73 @@ describe('workspace-run-review', () => {
     expect(JSON.parse(JSON.stringify(awaitUser.snapshot))).toEqual(awaitUser.snapshot)
   })
 
+  it('does not auto-execute a create todo with timeText but no resolved dueAt', () => {
+    const draftTask = createDraftTask({
+      title: '给财务回电话',
+      slots: {
+        title: '给财务回电话',
+        timeText: '明天下午两点',
+      },
+    })
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [draftTask],
+      plan: createPlan({
+        steps: [
+          {
+            id: 'step_1',
+            action: 'create_todo',
+            target: 'todos',
+            title: '给财务回电话',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+      updatedAt,
+    })
+
+    expect(result.status).toBe('await_user')
+  })
+
+  it('does not block auto-execute when vague phrase timeText exists without dueAt', () => {
+    const draftTask = createDraftTask({
+      title: '尽快处理报销',
+      slots: {
+        title: '尽快处理报销',
+        timeText: '尽快',
+        timeResolutionKind: 'vague',
+      },
+    })
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [draftTask],
+      plan: createPlan({
+        steps: [
+          {
+            action: 'create_todo',
+            target: 'todos',
+            title: '尽快处理报销',
+            requiresUserApproval: false,
+            risk: 'low',
+            id: 'step_1',
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+      updatedAt,
+    })
+
+    expect(result).toEqual({
+      status: 'auto_execute',
+      reason: 'single_low_risk_clear_task',
+      snapshot: null,
+    })
+  })
+
   it('does not block todo creation when the only ambiguity is a vague time phrase', () => {
     const result = reviewWorkspaceRunPlan({
       runId: 'run_1',

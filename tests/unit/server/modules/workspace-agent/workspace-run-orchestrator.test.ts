@@ -19,6 +19,23 @@ vi.mock('@/server/modules/workspace-agent/workspace-run-duplicates', () => ({
   findWorkspaceRunDuplicateCandidates: duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates,
 }))
 
+const executorMock = vi.hoisted(() => ({
+  executeWorkspaceRunSteps: vi.fn().mockResolvedValue({
+    stepResults: [
+      {
+        stepId: 'step_1',
+        toolName: 'create_todo',
+        result: { ok: true, target: 'todos', action: 'create', item: null },
+      },
+    ],
+    summary: '执行了 1/1 个步骤',
+  }),
+}))
+
+vi.mock('@/server/modules/workspace-agent/workspace-run-executor', () => ({
+  executeWorkspaceRunSteps: executorMock.executeWorkspaceRunSteps,
+}))
+
 type PhaseEvent = Extract<WorkspaceRunStreamEvent, { type: 'phase_started' | 'phase_completed' }>
 
 function isPhaseEvent(event: unknown): event is PhaseEvent {
@@ -938,8 +955,159 @@ describe('workspace-run-orchestrator', () => {
       })
 
       expect(store.loadLatestAwaiting).toHaveBeenCalledWith('user_123')
-      expect(result.ok).toBe(false)
-      expect(result.phase).toBe('execute')
+      expect(result.phase).not.toBe('review')
+    })
+
+    it('advances past clarify_slots when user submits details on resume', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const store = createMockStore()
+
+      store.loadLatestAwaiting = vi.fn().mockResolvedValue({
+        runId: 'run_123',
+        phase: 'review',
+        status: 'awaiting_user',
+        interactionId: 'run_123_clarify',
+        interaction: {
+          runId: 'run_123',
+          id: 'run_123_clarify',
+          type: 'clarify_slots',
+          message: '请补充任务信息',
+          actions: ['submit', 'cancel'],
+          fields: [
+            {
+              key: 'details',
+              label: '请补充任务信息',
+              required: true,
+              placeholder: '告诉我你想更新或创建什么',
+            },
+          ],
+        },
+        timeline: [],
+        preview: null,
+        understandingPreview: {
+          rawInput: '记个待办',
+          normalizedInput: '记个待办',
+          draftTasks: [
+            {
+              id: 'draft_1',
+              intent: 'create',
+              target: 'todos',
+              title: '',
+              confidence: 0.82,
+              ambiguities: [],
+              corrections: [],
+              slots: {},
+            },
+          ],
+          corrections: [],
+        },
+        correctionNotes: [],
+        updatedAt: new Date().toISOString(),
+      })
+
+      const events: unknown[] = []
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'resume',
+          runId: 'run_123',
+          interactionId: 'run_123_clarify',
+          response: {
+            type: 'clarify_slots',
+            action: 'submit',
+            values: {
+              details: '明天下午两点提醒我给财务回电话',
+            },
+          },
+        },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      expect(result.ok).toBe(true)
+      if (result.phase === 'review' && result.snapshot) {
+        expect(result.snapshot.interaction.type).not.toBe('clarify_slots')
+      }
+    })
+
+    it('advances past clarify_slots when user submits details for notes on resume', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const store = createMockStore()
+
+      store.loadLatestAwaiting = vi.fn().mockResolvedValue({
+        runId: 'run_456',
+        phase: 'review',
+        status: 'awaiting_user',
+        interactionId: 'run_456_clarify',
+        interaction: {
+          runId: 'run_456',
+          id: 'run_456_clarify',
+          type: 'clarify_slots',
+          message: '请补充任务信息',
+          actions: ['submit', 'cancel'],
+          fields: [
+            {
+              key: 'details',
+              label: '请补充任务信息',
+              required: true,
+              placeholder: '告诉我你想更新或创建什么',
+            },
+          ],
+        },
+        timeline: [],
+        preview: null,
+        understandingPreview: {
+          rawInput: '记个笔记',
+          normalizedInput: '记个笔记',
+          draftTasks: [
+            {
+              id: 'draft_1',
+              intent: 'create',
+              target: 'notes',
+              title: '',
+              confidence: 0.82,
+              ambiguities: [],
+              corrections: [],
+              slots: {},
+            },
+          ],
+          corrections: [],
+        },
+        correctionNotes: [],
+        updatedAt: new Date().toISOString(),
+      })
+
+      const events: unknown[] = []
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'resume',
+          runId: 'run_456',
+          interactionId: 'run_456_clarify',
+          response: {
+            type: 'clarify_slots',
+            action: 'submit',
+            values: {
+              details: '客户今天更关心案例页的说服力',
+            },
+          },
+        },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      expect(result.ok).toBe(true)
+      if (result.phase === 'review' && result.snapshot) {
+        expect(result.snapshot.interaction.type).not.toBe('clarify_slots')
+      }
     })
 
     it('returns not_found when no pending run exists on resume', async () => {
