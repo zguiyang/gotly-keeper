@@ -62,6 +62,7 @@ const createTodoInputSchema = z.object({
 const createBookmarkInputSchema = z.object({
   url: z.url(),
   title: z.string().trim().min(1).max(200).nullable().optional(),
+  note: z.string().trim().nullable().optional(),
   summary: z.string().trim().nullable().optional(),
 })
 
@@ -89,13 +90,18 @@ function buildLookupQuery(query: string | null | undefined, subjectHint: string 
 
 function buildBookmarkRawInput(input: {
   title?: string | null
+  note?: string | null
   summary?: string | null
   url: string
 }) {
   const url = input.url.trim()
   const title = input.title?.trim()
   const dedupedTitle = title && title !== url ? title : null
-  return [dedupedTitle, input.summary?.trim(), url].filter(Boolean).join('\n\n')
+  const note = input.note?.trim()
+  const summary = input.summary?.trim()
+  const bookmarkContext = note && note !== summary ? [note, summary].filter(Boolean) : [note ?? summary].filter(Boolean)
+
+  return [dedupedTitle, ...bookmarkContext, url].filter(Boolean).join('\n\n')
 }
 
 function toExactRangeTimeFilter(input: {
@@ -434,7 +440,7 @@ export const workspaceTools = {
         rawInput: buildBookmarkRawInput(input),
         url: input.url,
         title: input.title ?? null,
-        note: null,
+        note: input.note ?? null,
         summary: input.summary ?? null,
       })
 

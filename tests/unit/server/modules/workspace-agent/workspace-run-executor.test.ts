@@ -92,6 +92,7 @@ describe('workspace-run-executor', () => {
           toolInput: {
             url: 'https://example.com/pricing',
             title: '官网定价页',
+            note: '回头发给客户',
             summary: '重点看首屏卖点',
           },
         },
@@ -105,6 +106,7 @@ describe('workspace-run-executor', () => {
           toolInput: {
             url: 'https://example.com/pricing',
             title: '官网定价页',
+            note: '回头发给客户',
             summary: '重点看首屏卖点',
           },
         },

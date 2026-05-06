@@ -374,11 +374,11 @@ describe('workspace-run-understanding', () => {
     ])
   })
 
-  it('accepts AI-friendly slotEntries and converts them to slots', async () => {
+  it('accepts AI-friendly bookmark slotEntries and converts them to slots', async () => {
     const result = await understandWorkspaceRunInput({
       normalized: {
-        rawText: '记一下：https://example.com 定价页',
-        normalizedText: '记一下：https://example.com 定价页',
+        rawText: '记一下：https://example.com 定价页，回头发给客户',
+        normalizedText: '记一下：https://example.com 定价页，回头发给客户',
         urls: ['https://example.com'],
         separators: ['：'],
       },
@@ -394,9 +394,10 @@ describe('workspace-run-understanding', () => {
             ambiguities: [],
             corrections: [],
             slotEntries: [
-            { key: 'url', value: 'https://example.com' },
-            { key: 'summary', value: '产品定价说明' },
-          ],
+              { key: 'url', value: 'https://example.com' },
+              { key: 'note', value: '回头发给客户' },
+              { key: 'summary', value: '产品定价说明' },
+            ],
           },
         ],
       }),
@@ -414,6 +415,7 @@ describe('workspace-run-understanding', () => {
         corrections: [],
         slots: {
           url: 'https://example.com',
+          note: '回头发给客户',
           summary: '产品定价说明',
         },
       },

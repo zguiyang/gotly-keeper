@@ -83,6 +83,12 @@ When the user clearly requests an unsupported action:
 3. **URL -> slotEntries**.
    Extracted URLs go into `slotEntries` with key `url`.
 
+3a. **Bookmark context -> slotEntries**.
+   When a bookmark create request includes why the link matters, who it is for,
+   or how the user plans to use it, keep that context in `slotEntries` with key `note`.
+   Keep the title concise, but do NOT discard usage context such as
+   "回头发给客户", "重点看首屏卖点", or "竞品参考".
+
 4. **Corrections are semantic fixes**.
    Fix obvious typos and homophone errors while preserving the user's original intent.
    Record corrections in the `corrections` array.
@@ -108,6 +114,7 @@ When the user clearly requests an unsupported action:
 | `query` | search keywords | query/summarize search terms |
 | `timeText` | natural language time phrase | create operations with time intent |
 | `url` | full URL | bookmark create with a link |
+| `note` | user-provided bookmark context | why the bookmark matters / how it will be used |
 
 Omit slot if the value does not fit an exact option — never guess. The query slot still carries raw keywords for text search.
 

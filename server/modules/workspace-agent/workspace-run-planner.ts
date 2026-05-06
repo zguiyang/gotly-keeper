@@ -164,11 +164,11 @@ function buildToolInput(task: DraftWorkspaceTask, action: WorkspaceRunPlannerAct
     return {
       url: getStringSlot(task, 'url'),
       title: title ?? task.title.trim(),
-      summary:
-        getStringSlot(task, 'summary') ??
+      note:
         getStringSlot(task, 'note') ??
         getStringSlot(task, 'details') ??
         getStringSlot(task, 'content'),
+      summary: getStringSlot(task, 'summary'),
     }
   }
 

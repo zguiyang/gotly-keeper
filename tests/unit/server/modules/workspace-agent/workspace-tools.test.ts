@@ -268,7 +268,7 @@ describe('workspaceTools', () => {
     })
   })
 
-  it('create_bookmark keeps summary text in raw input for later retrieval', async () => {
+  it('create_bookmark keeps note and summary text in raw input for later retrieval', async () => {
     mocks.createWorkspaceLink.mockResolvedValue({
       kind: 'created',
       asset: { id: 'bookmark_1', type: 'link', title: '星巴克中国' },
@@ -280,6 +280,7 @@ describe('workspaceTools', () => {
         toolInput: {
           url: 'https://www.starbucks.com.cn/',
           title: '星巴克中国',
+          note: '回头发给客户',
           summary: '木曜日咖啡竞品参考链接，重点看首屏卖点和价格露出。',
         },
       },
@@ -288,10 +289,11 @@ describe('workspaceTools', () => {
 
     expect(mocks.createWorkspaceLink).toHaveBeenCalledWith({
       userId: 'user_1',
-      rawInput: '星巴克中国\n\n木曜日咖啡竞品参考链接，重点看首屏卖点和价格露出。\n\nhttps://www.starbucks.com.cn/',
+      rawInput:
+        '星巴克中国\n\n回头发给客户\n\n木曜日咖啡竞品参考链接，重点看首屏卖点和价格露出。\n\nhttps://www.starbucks.com.cn/',
       url: 'https://www.starbucks.com.cn/',
       title: '星巴克中国',
-      note: null,
+      note: '回头发给客户',
       summary: '木曜日咖啡竞品参考链接，重点看首屏卖点和价格露出。',
     })
     expect(result).toEqual({

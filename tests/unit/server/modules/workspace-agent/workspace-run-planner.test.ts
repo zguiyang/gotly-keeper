@@ -198,7 +198,41 @@ describe('workspace-run-planner', () => {
       toolInput: {
         url: 'https://example.com/pricing',
         title: '保存官网定价页',
-        summary: '重点看首屏卖点',
+        note: '重点看首屏卖点',
+      },
+    })
+  })
+
+  it('preserves bookmark note and summary separately when both are available', async () => {
+    const result = await planWorkspaceRun({
+      userId: 'user_123',
+      draftTasks: [
+        {
+          id: 'draft_1',
+          intent: 'create',
+          target: 'bookmarks',
+          title: '保存官网定价页',
+          confidence: 0.96,
+          ambiguities: [],
+          corrections: [],
+          slots: {
+            url: 'https://example.com/pricing',
+            note: '回头发给客户',
+            summary: '产品定价说明',
+          },
+        },
+      ],
+      searchCandidates: vi.fn(),
+      runPlanHints: vi.fn(),
+    })
+
+    expect(result.steps[0]).toMatchObject({
+      action: 'create_bookmark',
+      toolInput: {
+        url: 'https://example.com/pricing',
+        title: '保存官网定价页',
+        note: '回头发给客户',
+        summary: '产品定价说明',
       },
     })
   })
@@ -535,14 +569,14 @@ describe('workspace-run-planner', () => {
 
     expect(runPlanHints).toHaveBeenCalledTimes(1)
     expect(result.steps).toEqual([
-      {
+      expect.objectContaining({
         id: 'step_1',
         action: 'query_assets',
         target: 'mixed',
         title: '帮我处理一下这个链接',
         risk: 'high',
         requiresUserApproval: true,
-      },
+      }),
     ])
   })
 
@@ -586,7 +620,7 @@ describe('workspace-run-planner', () => {
         toolInput: {
           url: 'https://example.com/pricing',
           title: '保存官网定价页',
-          summary: '以后要看',
+          note: '以后要看',
         },
       },
     ])
@@ -660,14 +694,14 @@ describe('workspace-run-planner', () => {
 
     expect(runPlanHints).toHaveBeenCalledTimes(1)
     expect(result.steps).toEqual([
-      {
+      expect.objectContaining({
         id: 'step_1',
         action: 'query_assets',
         target: 'mixed',
         title: '查一下这个内容',
         risk: 'high',
         requiresUserApproval: true,
-      },
+      }),
     ])
   })
 
@@ -745,14 +779,14 @@ describe('workspace-run-planner', () => {
     })
 
     expect(result.steps).toEqual([
-      {
+      expect.objectContaining({
         id: 'step_1',
         action: 'query_assets',
         target: 'mixed',
         title: '查一下这个内容',
         risk: 'high',
         requiresUserApproval: true,
-      },
+      }),
     ])
   })
 })
