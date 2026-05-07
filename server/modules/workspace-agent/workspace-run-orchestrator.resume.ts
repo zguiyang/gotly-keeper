@@ -1,6 +1,10 @@
 import { composeWorkspaceAnswer } from './workspace-compose'
 import { buildBatchAnswer, buildCompletedRunResult } from './workspace-run-completed'
-import { findWorkspaceRunDuplicateCandidates } from './workspace-run-duplicates'
+import {
+  findWorkspaceRunDuplicateCandidates,
+  inferModelDuplicateCandidates,
+  mergeDuplicateCandidates,
+} from './workspace-run-duplicates'
 import { executeWorkspaceRunSteps } from './workspace-run-executor'
 import {
   emitEvent,
@@ -699,10 +703,17 @@ export async function handleResume(
 
   if (request.response.type === 'confirm_duplicate') {
     duplicateReview = applyDuplicateDecision(duplicateReview, snapshot.interaction, request.response)
-    const duplicateCandidates = await findWorkspaceRunDuplicateCandidates({
+    const scannedDuplicateCandidates = await findWorkspaceRunDuplicateCandidates({
       userId,
       plannerResult,
     })
+    const duplicateCandidates = mergeDuplicateCandidates(
+      scannedDuplicateCandidates,
+      inferModelDuplicateCandidates({
+        draftTasks,
+        plannerResult,
+      })
+    )
     plannerResult = applySkippedDuplicateSteps(plannerResult, duplicateReview)
 
     if (plannerResult.steps.length === 0) {
@@ -822,7 +833,15 @@ export async function handleResume(
     duplicateCandidates: await findWorkspaceRunDuplicateCandidates({
       userId,
       plannerResult,
-    }),
+    }).then((scannedDuplicateCandidates) =>
+      mergeDuplicateCandidates(
+        scannedDuplicateCandidates,
+        inferModelDuplicateCandidates({
+          draftTasks,
+          plannerResult,
+        })
+      )
+    ),
     duplicateReview:
       request.response.type === 'edit_draft_tasks' && request.response.action === 'save'
         ? {

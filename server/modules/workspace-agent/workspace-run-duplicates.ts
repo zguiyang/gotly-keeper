@@ -25,6 +25,74 @@ function toDate(value: unknown): Date | null {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
+function mapDraftTargetToDuplicateTarget(target: DraftWorkspaceTask['target']) {
+  if (target === 'todos') return 'todo' as const
+  if (target === 'notes') return 'note' as const
+  if (target === 'bookmarks') return 'bookmark' as const
+  return null
+}
+
+export function inferModelDuplicateCandidates(input: {
+  draftTasks: DraftWorkspaceTask[]
+  plannerResult: WorkspaceRunPlannerResult
+}): ReviewableDuplicateCandidate[] {
+  const candidates: ReviewableDuplicateCandidate[] = []
+
+  for (const [index, draftTask] of input.draftTasks.entries()) {
+    if (draftTask.intent !== 'create' || draftTask.repeatRelation !== 'duplicate_of_previous') {
+      continue
+    }
+
+    const previousDraftTask = input.draftTasks[index - 1]
+    const step = input.plannerResult.steps[index]
+    const previousStep = input.plannerResult.steps[index - 1]
+    const target = mapDraftTargetToDuplicateTarget(draftTask.target)
+
+    if (!previousDraftTask || !step || !previousStep || !target) {
+      continue
+    }
+
+    const previousLabel =
+      previousDraftTask.cleanTitle?.trim() ||
+      previousStep.title?.trim() ||
+      previousDraftTask.title.trim()
+
+    if (!previousLabel) {
+      continue
+    }
+
+    candidates.push({
+      stepId: step.id,
+      target,
+      duplicates: [
+        {
+          id: `draft:${previousStep.id}`,
+          label: previousLabel,
+          preview: previousStep.title?.trim() || previousLabel,
+          reason: '与上一条记录内容重复',
+        },
+      ],
+    })
+  }
+
+  return candidates
+}
+
+export function mergeDuplicateCandidates(
+  primary: ReviewableDuplicateCandidate[],
+  secondary: ReviewableDuplicateCandidate[]
+) {
+  const byStepId = new Map<string, ReviewableDuplicateCandidate>()
+
+  for (const candidate of [...primary, ...secondary]) {
+    if (!byStepId.has(candidate.stepId)) {
+      byStepId.set(candidate.stepId, candidate)
+    }
+  }
+
+  return [...byStepId.values()]
+}
+
 export async function findWorkspaceRunDuplicateCandidates(input: {
   userId: string
   plannerResult: WorkspaceRunPlannerResult

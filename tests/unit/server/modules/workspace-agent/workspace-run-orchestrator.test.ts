@@ -17,11 +17,16 @@ const duplicateCandidatesMock = vi.hoisted(() => ({
   findWorkspaceBookmarkDuplicateCandidates: vi.fn<() => Promise<ReviewableDuplicateCandidate[]>>(async () => []),
 }))
 
-vi.mock('@/server/modules/workspace-agent/workspace-run-duplicates', () => ({
-  findWorkspaceRunDuplicateCandidates: duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates,
-  findWorkspaceBookmarkDuplicateCandidate: duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidate,
-  findWorkspaceBookmarkDuplicateCandidates: duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidates,
-}))
+vi.mock('@/server/modules/workspace-agent/workspace-run-duplicates', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/modules/workspace-agent/workspace-run-duplicates')>()
+
+  return {
+    ...actual,
+    findWorkspaceRunDuplicateCandidates: duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates,
+    findWorkspaceBookmarkDuplicateCandidate: duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidate,
+    findWorkspaceBookmarkDuplicateCandidates: duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidates,
+  }
+})
 
 const executorMock = vi.hoisted(() => ({
   executeWorkspaceRunSteps: vi.fn().mockResolvedValue({
@@ -808,6 +813,218 @@ describe('workspace-run-orchestrator', () => {
         'create_note',
         'create_note',
       ])
+    })
+
+    it('keeps repeat capture segments separate even when semantic split marks the second segment as continuation', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const runModel = vi
+        .fn<WorkspaceRunModel>()
+        .mockResolvedValueOnce({
+          rawText: '记一下：RQA0507H 这个结论要同步一下；再记一下：RQA0507H 这个结论要同步一下',
+          normalizedText: '记一下：RQA0507H 这个结论要同步一下；再记一下：RQA0507H 这个结论要同步一下',
+          urls: [],
+          separators: ['；'],
+          typoCandidates: [],
+          timeHints: [],
+        })
+        .mockResolvedValueOnce({
+          isMultiTask: true,
+          corrections: [],
+          segments: [
+            {
+              id: 'segment_1',
+              text: '记一下：RQA0507H 这个结论要同步一下',
+              relation: 'independent',
+              operationCue: 'new_capture',
+              confidence: 0.96,
+            },
+            {
+              id: 'segment_2',
+              text: '再记一下：RQA0507H 这个结论要同步一下',
+              relation: 'continuation',
+              operationCue: 'repeat_capture',
+              confidence: 0.95,
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          draftTasks: [
+            {
+              id: 'task_1',
+              intent: 'create',
+              target: 'notes',
+              title: '记一下：RQA0507H 这个结论要同步一下',
+              cleanTitle: 'RQA0507H 这个结论要同步一下',
+              cleanContent: 'RQA0507H 这个结论要同步一下',
+              captureMode: 'note_capture',
+              clarifyReason: 'none',
+              repeatRelation: 'independent',
+              targetConfidence: 0.95,
+              hasRealContent: true,
+              confidence: 0.8,
+              ambiguities: [],
+              corrections: [],
+              slotEntries: [{ key: 'content', value: 'RQA0507H 这个结论要同步一下' }],
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          draftTasks: [
+            {
+              id: 'task_2',
+              intent: 'create',
+              target: 'notes',
+              title: '再记一下：RQA0507H 这个结论要同步一下',
+              cleanTitle: 'RQA0507H 这个结论要同步一下',
+              cleanContent: 'RQA0507H 这个结论要同步一下',
+              captureMode: 'note_capture',
+              clarifyReason: 'none',
+              repeatRelation: 'duplicate_of_previous',
+              targetConfidence: 0.95,
+              hasRealContent: true,
+              confidence: 0.8,
+              ambiguities: [],
+              corrections: [],
+              slotEntries: [{ key: 'content', value: 'RQA0507H 这个结论要同步一下' }],
+            },
+          ],
+        })
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'input',
+          text: '记一下：RQA0507H 这个结论要同步一下；再记一下：RQA0507H 这个结论要同步一下',
+        },
+        store: createMockStore(),
+        runModel,
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(runModel).toHaveBeenCalledTimes(4)
+      if (!result.ok || result.phase !== 'review') {
+        throw new Error(`Expected review result, received ${result.ok ? result.phase : 'failed'}`)
+      }
+      expect(result.snapshot?.understandingPreview?.draftTasks).toHaveLength(2)
+      expect(result.snapshot?.understandingPreview?.draftTasks.map((task) => task.cleanTitle)).toEqual([
+        'RQA0507H 这个结论要同步一下',
+        'RQA0507H 这个结论要同步一下',
+      ])
+      expect(result.snapshot?.interaction).toMatchObject({
+        type: 'confirm_duplicate',
+        target: 'note',
+      })
+    })
+
+    it('routes repeated note capture marked as duplicate_of_previous into duplicate confirmation', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const runModel = vi
+        .fn<WorkspaceRunModel>()
+        .mockResolvedValueOnce({
+          rawText: '记一下：RQA0507H 这个结论要同步一下；再记一下：RQA0507H 这个结论要同步一下',
+          normalizedText: '记一下：RQA0507H 这个结论要同步一下；再记一下：RQA0507H 这个结论要同步一下',
+          urls: [],
+          separators: ['；'],
+          typoCandidates: [],
+          timeHints: [],
+        })
+        .mockResolvedValueOnce({
+          isMultiTask: true,
+          corrections: [],
+          segments: [
+            {
+              id: 'segment_1',
+              text: '记一下：RQA0507H 这个结论要同步一下',
+              relation: 'independent',
+              operationCue: 'new_capture',
+              confidence: 0.96,
+            },
+            {
+              id: 'segment_2',
+              text: '再记一下：RQA0507H 这个结论要同步一下',
+              relation: 'continuation',
+              operationCue: 'repeat_capture',
+              confidence: 0.95,
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          draftTasks: [
+            {
+              id: 'task_1',
+              intent: 'create',
+              target: 'notes',
+              title: '记一下：RQA0507H 这个结论要同步一下',
+              cleanTitle: 'RQA0507H 这个结论要同步一下',
+              cleanContent: 'RQA0507H 这个结论要同步一下',
+              captureMode: 'note_capture',
+              clarifyReason: 'none',
+              repeatRelation: 'independent',
+              targetConfidence: 0.95,
+              hasRealContent: true,
+              confidence: 0.8,
+              ambiguities: [],
+              corrections: [],
+              slotEntries: [{ key: 'content', value: 'RQA0507H 这个结论要同步一下' }],
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          draftTasks: [
+            {
+              id: 'task_2',
+              intent: 'create',
+              target: 'notes',
+              title: '再记一下：RQA0507H 这个结论要同步一下',
+              cleanTitle: 'RQA0507H 这个结论要同步一下',
+              cleanContent: 'RQA0507H 这个结论要同步一下',
+              captureMode: 'note_capture',
+              clarifyReason: 'none',
+              repeatRelation: 'duplicate_of_previous',
+              targetConfidence: 0.95,
+              hasRealContent: true,
+              confidence: 0.8,
+              ambiguities: [],
+              corrections: [],
+              slotEntries: [{ key: 'content', value: 'RQA0507H 这个结论要同步一下' }],
+            },
+          ],
+        })
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'input',
+          text: '记一下：RQA0507H 这个结论要同步一下；再记一下：RQA0507H 这个结论要同步一下',
+        },
+        store: createMockStore(),
+        runModel,
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('review')
+      expect(result.snapshot?.interaction).toMatchObject({
+        type: 'confirm_duplicate',
+        target: 'note',
+        current: {
+          stepId: 'step_2',
+          title: 'RQA0507H 这个结论要同步一下',
+        },
+      })
+      if (result.snapshot?.interaction.type !== 'confirm_duplicate') {
+        throw new Error('Expected confirm_duplicate interaction')
+      }
+      expect(result.snapshot.interaction.duplicates).toEqual([
+        expect.objectContaining({
+          id: 'draft:step_1',
+          label: 'RQA0507H 这个结论要同步一下',
+        }),
+      ])
+      expect(executorMock.executeWorkspaceRunSteps).not.toHaveBeenCalled()
     })
 
     it('prechecks duplicate bookmarks in multi-task inputs before generic duplicate scanning', async () => {

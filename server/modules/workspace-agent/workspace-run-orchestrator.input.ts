@@ -8,6 +8,8 @@ import {
   findWorkspaceBookmarkDuplicateCandidate,
   findWorkspaceBookmarkDuplicateCandidates,
   findWorkspaceRunDuplicateCandidates,
+  inferModelDuplicateCandidates,
+  mergeDuplicateCandidates,
 } from './workspace-run-duplicates'
 import { executeWorkspaceRunSteps } from './workspace-run-executor'
 import {
@@ -173,7 +175,12 @@ function buildUnderstandingInputs(
     )
     const previousGroup = groups.at(-1)
 
-    if (!previousGroup || segment.relation === 'independent') {
+    const startsNewCaptureGroup =
+      segment.relation === 'independent' ||
+      segment.operationCue === 'new_capture' ||
+      segment.operationCue === 'repeat_capture'
+
+    if (!previousGroup || startsNewCaptureGroup) {
       groups.push(normalizedSegment)
       continue
     }
@@ -503,10 +510,14 @@ export async function handleNewInput(
           },
         })
       : []
-    const duplicateCandidates = [
-      ...bookmarkDuplicateCandidates,
-      ...additionalDuplicateCandidates,
-    ]
+    const inferredDuplicateCandidates = inferModelDuplicateCandidates({
+      draftTasks: normalizedUnderstanding.draftTasks,
+      plannerResult,
+    })
+    const duplicateCandidates = mergeDuplicateCandidates(
+      [...bookmarkDuplicateCandidates, ...additionalDuplicateCandidates],
+      inferredDuplicateCandidates
+    )
 
     const reviewResult = await runReview(
       ctx,

@@ -20,6 +20,12 @@ export type ReviewableDraftTask = {
   intent: 'create' | 'query' | 'summarize' | 'update'
   target: 'notes' | 'todos' | 'bookmarks' | 'mixed'
   title?: string
+  cleanTitle?: string
+  cleanContent?: string
+  captureMode?: 'todo_capture' | 'note_capture' | 'bookmark_capture' | 'none'
+  clarifyReason?: 'unknown_target' | 'missing_content' | 'missing_time_precision' | 'ambiguous_reference' | 'none'
+  repeatRelation?: 'independent' | 'continuation' | 'modifier' | 'duplicate_of_previous'
+  targetConfidence?: number
   confidence: number
   ambiguities: string[]
   corrections: string[]
@@ -207,6 +213,12 @@ function serializeDraftTask(task: ReviewableDraftTask): DraftWorkspaceTask {
   return {
     ...task,
     title: task.title ?? '',
+    cleanTitle: task.cleanTitle,
+    cleanContent: task.cleanContent,
+    captureMode: task.captureMode,
+    clarifyReason: task.clarifyReason,
+    repeatRelation: task.repeatRelation,
+    targetConfidence: task.targetConfidence,
     slots,
     hasRealContent: true,
   }
@@ -383,8 +395,9 @@ function hasWriteTitleDrift(task: ReviewableDraftTask, step: ReviewablePlanStep)
   }
 
   const slotTitle = typeof task.slots.title === 'string' ? task.slots.title.trim() : ''
+  const cleanTitle = task.cleanTitle?.trim() ?? ''
   const taskTitle = task.title?.trim() ?? ''
-  const baselineTitle = slotTitle || taskTitle
+  const baselineTitle = cleanTitle || slotTitle || taskTitle
 
   if (!baselineTitle) {
     return false
@@ -398,6 +411,54 @@ function getTimeResolutionKind(task: ReviewableDraftTask) {
   return value === 'clear' || value === 'vague' || value === 'unresolved' || value === 'no_due_date'
     ? value
     : null
+}
+
+function shouldClarifyTargetFirst(task: ReviewableDraftTask, step?: ReviewablePlanStep) {
+  if (!step) {
+    return false
+  }
+
+  const isCreateStep =
+    step.action === 'create_note' || step.action === 'create_todo' || step.action === 'create_bookmark'
+
+  return isCreateStep && (task.clarifyReason === 'unknown_target' || task.target === 'mixed')
+}
+
+function shouldClarifyMissingContent(task: ReviewableDraftTask, step?: ReviewablePlanStep) {
+  if (!step) {
+    return false
+  }
+
+  return (
+    task.clarifyReason === 'missing_content' ||
+    hasMissingRequiredWriteFields(task, step)
+  )
+}
+
+function shouldClarifyTodoTime(task: ReviewableDraftTask, step?: ReviewablePlanStep) {
+  if (!step || task.target !== 'todos' || step.action !== 'create_todo') {
+    return false
+  }
+
+  if (task.clarifyReason === 'missing_time_precision' && task.captureMode === 'todo_capture') {
+    return true
+  }
+
+  const timeText = task.slots.timeText
+  const hasTimeText = typeof timeText === 'string' && timeText.trim().length > 0
+  if (!hasTimeText) {
+    return false
+  }
+
+  const clarityKind = getTimeResolutionKind(task)
+  const hasDueAt =
+    task.slots.dueAt != null && (typeof task.slots.dueAt === 'string' ? task.slots.dueAt.trim().length > 0 : true)
+
+  if (clarityKind === 'vague') {
+    return true
+  }
+
+  return clarityKind === 'unresolved' || (!clarityKind && !hasDueAt)
 }
 
 function hasNonBlockingTodoTimeDecision(task: ReviewableDraftTask, step: ReviewablePlanStep) {
@@ -859,9 +920,7 @@ export function reviewWorkspaceRunPlan(
     })
   }
 
-  if (task.target === 'mixed' && step && (
-    step.action === 'create_note' || step.action === 'create_todo' || step.action === 'create_bookmark'
-  )) {
+  if (shouldClarifyTargetFirst(task, step)) {
     return buildClarifyDecision({
       runId: input.runId,
       plan: input.plan,
@@ -874,7 +933,7 @@ export function reviewWorkspaceRunPlan(
     })
   }
 
-  if (task && step && hasMissingRequiredWriteFields(task, step)) {
+  if (task && shouldClarifyMissingContent(task, step)) {
     return buildClarifyDecision({
       runId: input.runId,
       plan: input.plan,
@@ -928,56 +987,32 @@ export function reviewWorkspaceRunPlan(
   }
 
   if (task && step && task.target === 'todos' && step.action === 'create_todo') {
-    const timeText = task.slots.timeText
-    const hasTimeText = typeof timeText === 'string' && timeText.trim().length > 0
+    const clarityKind = getTimeResolutionKind(task)
 
-    if (hasTimeText) {
-      const clarityKind = getTimeResolutionKind(task)
-      const hasDueAt = task.slots.dueAt != null && (typeof task.slots.dueAt === 'string' ? task.slots.dueAt.trim().length > 0 : true)
-
-      if (clarityKind === 'vague') {
-        return buildClarifyDecision({
-          runId: input.runId,
-          plan: input.plan,
-          understandingPreview: input.understandingPreview,
-          updatedAt: input.updatedAt,
-          referenceTime: input.referenceTime,
-          interactionIdSuffix: 'clarify_time',
-          message: '我知道你提到了时间，但还缺足够信息来确定具体提醒时间。',
-          fields: [{
-            key: 'timeText',
-            label: '具体时间',
-            required: true,
-            placeholder: '例如：下周三下午 3 点',
-          }],
-        })
+    if (clarityKind === 'no_due_date') {
+      return {
+        status: 'auto_execute',
+        reason: 'single_low_risk_clear_task',
+        snapshot: null,
       }
+    }
 
-      if (clarityKind === 'no_due_date') {
-        return {
-          status: 'auto_execute',
-          reason: 'single_low_risk_clear_task',
-          snapshot: null,
-        }
-      }
-
-      if (clarityKind === 'unresolved' || (!clarityKind && !hasDueAt)) {
-        return buildClarifyDecision({
-          runId: input.runId,
-          plan: input.plan,
-          understandingPreview: input.understandingPreview,
-          updatedAt: input.updatedAt,
-          referenceTime: input.referenceTime,
-          interactionIdSuffix: 'clarify_time',
-          message: '我知道你提到了时间，但还缺足够信息来确定具体提醒时间。',
-          fields: [{
-            key: 'timeText',
-            label: '具体时间',
-            required: true,
-            placeholder: '例如：下周三下午 3 点',
-          }],
-        })
-      }
+    if (shouldClarifyTodoTime(task, step)) {
+      return buildClarifyDecision({
+        runId: input.runId,
+        plan: input.plan,
+        understandingPreview: input.understandingPreview,
+        updatedAt: input.updatedAt,
+        referenceTime: input.referenceTime,
+        interactionIdSuffix: 'clarify_time',
+        message: '我知道你提到了时间，但还缺足够信息来确定具体提醒时间。',
+        fields: [{
+          key: 'timeText',
+          label: '具体时间',
+          required: true,
+          placeholder: '例如：下周三下午 3 点',
+        }],
+      })
     }
   }
 

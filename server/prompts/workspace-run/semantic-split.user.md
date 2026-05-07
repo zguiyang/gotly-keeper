@@ -13,4 +13,5 @@ Requirements:
 - Split only when the user expresses meaningfully separate task units.
 - Keep each `segments.text` concise but faithful to the user intent.
 - Record obvious typo or wording corrections in `corrections`.
+- Add `operationCue` so downstream code can tell a fresh capture apart from a continuation.
 - Return only the JSON object. Do not include prose.

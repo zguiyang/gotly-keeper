@@ -213,6 +213,52 @@ describe('workspace-run-understanding', () => {
     expect(second.draftTasks[0]?.title).toBe('')
   })
 
+  it('preserves structured clean fields from the model for downstream execution', async () => {
+    const result = await understandWorkspaceRunInput({
+      normalized: makeNormalizedInput({
+        rawText: '再记一下：RQA0507H 这个结论要同步一下',
+        normalizedText: '再记一下：RQA0507H 这个结论要同步一下',
+        urls: [],
+        separators: [],
+      }),
+      runModel: vi.fn().mockResolvedValue({
+        draftTasks: [
+          {
+            id: 'task_1',
+            intent: 'create',
+            target: 'notes',
+            title: '再记一下：RQA0507H 这个结论要同步一下',
+            cleanTitle: 'RQA0507H 这个结论要同步一下',
+            cleanContent: 'RQA0507H 这个结论要同步一下',
+            captureMode: 'note_capture',
+            clarifyReason: 'none',
+            repeatRelation: 'independent',
+            targetConfidence: 0.96,
+            hasRealContent: true,
+            confidence: 0.9,
+            ambiguities: [],
+            corrections: [],
+            slotEntries: [
+              { key: 'content', value: 'RQA0507H 这个结论要同步一下' },
+            ],
+          },
+        ],
+      }),
+    })
+
+    expect(result.draftTasks).toEqual([
+      expect.objectContaining({
+        title: '再记一下：RQA0507H 这个结论要同步一下',
+        cleanTitle: 'RQA0507H 这个结论要同步一下',
+        cleanContent: 'RQA0507H 这个结论要同步一下',
+        captureMode: 'note_capture',
+        clarifyReason: 'none',
+        repeatRelation: 'independent',
+        targetConfidence: 0.96,
+      }),
+    ])
+  })
+
   it('normalizes whitespace-only create titles after trimming', async () => {
     const result = await understandWorkspaceRunInput({
       normalized: makeNormalizedInput({

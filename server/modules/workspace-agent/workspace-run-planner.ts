@@ -356,8 +356,17 @@ function resolveTitle(task: DraftWorkspaceTask, hints: WorkspaceRunPlanHint | nu
   if (hintedTitle) {
     return hintedTitle
   }
+  const cleanTitle = task.cleanTitle?.trim()
+  if (cleanTitle) {
+    return cleanTitle
+  }
   const taskTitle = task.title.trim()
   return taskTitle.length > 0 ? taskTitle : undefined
+}
+
+function resolveCleanContent(task: DraftWorkspaceTask) {
+  const cleanContent = task.cleanContent?.trim()
+  return cleanContent && cleanContent.length > 0 ? cleanContent : undefined
 }
 
 function getStringSlot(task: DraftWorkspaceTask, key: string) {
@@ -378,8 +387,9 @@ function isIsoDateTime(value: string | undefined) {
 
 function buildCreateToolInput(task: DraftWorkspaceTask, action: WorkspaceRunPlannerAction, title?: string): Record<string, unknown> {
   if (action === 'create_note') {
+    const cleanContent = resolveCleanContent(task)
     return {
-      content: getStringSlot(task, 'content') ?? title ?? task.title.trim(),
+      content: cleanContent ?? title ?? getStringSlot(task, 'content') ?? task.title.trim(),
     }
   }
 
@@ -394,10 +404,11 @@ function buildCreateToolInput(task: DraftWorkspaceTask, action: WorkspaceRunPlan
   }
 
   if (action === 'create_bookmark') {
+    const cleanContent = resolveCleanContent(task)
     return {
       url: getStringSlot(task, 'url'),
       title: title ?? task.title.trim(),
-      note: getStringSlot(task, 'note') ?? getStringSlot(task, 'details') ?? getStringSlot(task, 'content'),
+      note: cleanContent ?? getStringSlot(task, 'note') ?? getStringSlot(task, 'details') ?? getStringSlot(task, 'content'),
       summary: getStringSlot(task, 'summary'),
     }
   }

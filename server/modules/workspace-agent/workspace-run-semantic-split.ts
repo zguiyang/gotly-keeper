@@ -18,6 +18,7 @@ const semanticSplitSegmentSchema = z.object({
   id: z.string().trim().min(1),
   text: z.string().trim().min(1),
   relation: z.enum(['independent', 'continuation', 'modifier']),
+  operationCue: z.enum(['new_capture', 'repeat_capture', 'supplement', 'context']).optional(),
   confidence: z.number().min(0).max(1),
 })
 
@@ -47,6 +48,7 @@ function buildFallbackSplitResult(normalized: NormalizedWorkspaceRunInput): Sema
         id: 'segment_1',
         text: normalized.normalizedText,
         relation: 'independent',
+        operationCue: 'new_capture',
         confidence: 0.5,
       },
     ],

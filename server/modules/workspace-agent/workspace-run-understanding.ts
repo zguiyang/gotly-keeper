@@ -37,6 +37,18 @@ const understandingTaskSchema = workspaceDraftTaskSchema
     intent: allowedIntentSchema,
     target: allowedTargetSchema,
     title: z.string().transform((title) => title.trim()),
+    cleanTitle: z.string().transform((title) => title.trim()).optional(),
+    cleanContent: z.string().transform((content) => content.trim()).optional(),
+    captureMode: z.enum(['todo_capture', 'note_capture', 'bookmark_capture', 'none']).optional(),
+    clarifyReason: z.enum([
+      'unknown_target',
+      'missing_content',
+      'missing_time_precision',
+      'ambiguous_reference',
+      'none',
+    ]).optional(),
+    repeatRelation: z.enum(['independent', 'continuation', 'modifier', 'duplicate_of_previous']).optional(),
+    targetConfidence: z.number().min(0).max(1).optional(),
     hasRealContent: z.boolean().default(true),
   })
   .superRefine((task, ctx) => {
@@ -72,6 +84,18 @@ const understandingModelTaskSchema = workspaceDraftTaskSchema
     intent: allowedIntentSchema,
     target: allowedTargetSchema,
     title: z.string().transform((title) => title.trim()),
+    cleanTitle: z.string().transform((title) => title.trim()).optional(),
+    cleanContent: z.string().transform((content) => content.trim()).optional(),
+    captureMode: z.enum(['todo_capture', 'note_capture', 'bookmark_capture', 'none']).optional(),
+    clarifyReason: z.enum([
+      'unknown_target',
+      'missing_content',
+      'missing_time_precision',
+      'ambiguous_reference',
+      'none',
+    ]).optional(),
+    repeatRelation: z.enum(['independent', 'continuation', 'modifier', 'duplicate_of_previous']).optional(),
+    targetConfidence: z.number().min(0).max(1).optional(),
     hasRealContent: z.boolean().default(true),
     slotEntries: z.array(understandingSlotEntrySchema),
   })
@@ -186,6 +210,7 @@ function normalizeCommandOnlyCreateTitle(task: DraftWorkspaceTask) {
   return {
     ...task,
     title: '',
+    cleanTitle: '',
   }
 }
 
@@ -216,11 +241,31 @@ function normalizeTodoCreateTitle(task: DraftWorkspaceTask) {
   return {
     ...task,
     title: normalizedTitle,
+    cleanTitle: normalizedTitle,
+  }
+}
+
+function normalizeStructuredFields(task: DraftWorkspaceTask) {
+  const title = task.title.trim()
+  const cleanTitle = task.cleanTitle?.trim()
+  const cleanContent = task.cleanContent?.trim()
+
+  return {
+    ...task,
+    title,
+    ...(cleanTitle && cleanTitle.length > 0 ? { cleanTitle } : {}),
+    ...(cleanContent && cleanContent.length > 0 ? { cleanContent } : {}),
+    ...(task.clarifyReason ? { clarifyReason: task.clarifyReason } : {}),
+    ...(task.repeatRelation ? { repeatRelation: task.repeatRelation } : {}),
+    ...(task.captureMode ? { captureMode: task.captureMode } : {}),
+    ...(typeof task.targetConfidence === 'number' ? { targetConfidence: task.targetConfidence } : {}),
   }
 }
 
 function normalizeDraftTasks(tasks: DraftWorkspaceTask[]) {
-  return tasks.map((task) => normalizeTodoCreateTitle(normalizeCommandOnlyCreateTitle(task)))
+  return tasks.map((task) =>
+    normalizeStructuredFields(normalizeTodoCreateTitle(normalizeCommandOnlyCreateTitle(task)))
+  )
 }
 
 function toDraftTasks(tasks: z.infer<typeof understandingTaskSchema>[]): DraftWorkspaceTask[] {

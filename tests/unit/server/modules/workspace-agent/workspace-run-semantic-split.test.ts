@@ -118,4 +118,50 @@ describe('workspace-run-semantic-split', () => {
       })
     )
   })
+
+  it('accepts repeat capture cues so orchestrator can keep repeated save requests separate', async () => {
+    const runModel = vi.fn().mockResolvedValue({
+      isMultiTask: true,
+      corrections: [],
+      segments: [
+        {
+          id: 'segment_1',
+          text: '记一下：RQA0507H 这个结论要同步一下',
+          relation: 'independent',
+          operationCue: 'new_capture',
+          confidence: 0.96,
+        },
+        {
+          id: 'segment_2',
+          text: '再记一下：RQA0507H 这个结论要同步一下',
+          relation: 'continuation',
+          operationCue: 'repeat_capture',
+          confidence: 0.94,
+        },
+      ],
+    })
+
+    const result = await splitWorkspaceRunInputSemantically({
+      normalized: makeNormalizedInput({
+        rawText: '记一下：RQA0507H 这个结论要同步一下；再记一下：RQA0507H 这个结论要同步一下',
+        normalizedText: '记一下：RQA0507H 这个结论要同步一下；再记一下：RQA0507H 这个结论要同步一下',
+        urls: [],
+        separators: ['；'],
+      }),
+      runModel,
+    })
+
+    expect(result.segments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'segment_1',
+          operationCue: 'new_capture',
+        }),
+        expect.objectContaining({
+          id: 'segment_2',
+          operationCue: 'repeat_capture',
+        }),
+      ])
+    )
+  })
 })

@@ -23,6 +23,11 @@ You do NOT answer the user.
 8. Record every semantic repair in `corrections`.
 9. Preserve the user's language in `segments.text`. Only normalize the minimum text needed for clear downstream understanding.
 10. Return only JSON.
+11. In addition to `relation`, label each segment with `operationCue`:
+   - `new_capture` for a fresh save/capture request
+   - `repeat_capture` for another save/capture request that repeats the previous one
+   - `supplement` for more task content on the same unit
+   - `context` for supporting metadata or constraints
 
 ## Relation Guidance
 
@@ -58,6 +63,7 @@ Return JSON with this exact shape:
       "id": "segment_1",
       "text": "segment text",
       "relation": "independent",
+      "operationCue": "new_capture",
       "confidence": 0.95
     }
   ]
@@ -70,6 +76,7 @@ Constraints:
 - If `isMultiTask` is `false`, prefer a single `segments` item unless the later pipeline clearly benefits from a continuation or modifier split.
 - `id` values should be sequential: `segment_1`, `segment_2`, ...
 - `relation` must be exactly one of `independent`, `continuation`, `modifier`.
+- `operationCue` should be present whenever the segment is a save/capture style unit.
 - `confidence` must be between `0` and `1`.
 
 Return only the JSON object. No prose.

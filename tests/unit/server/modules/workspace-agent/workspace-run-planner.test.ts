@@ -53,6 +53,45 @@ describe('workspace-run-planner', () => {
     expect(runPlanHints).not.toHaveBeenCalled()
   })
 
+  it('prefers clean note content over raw command-prefixed text when building create payloads', async () => {
+    const result = await planWorkspaceRun({
+      userId: 'user_123',
+      draftTasks: [
+        {
+          id: 'draft_1',
+          intent: 'create',
+          target: 'notes',
+          title: '再记一下：RQA0507H 这个结论要同步一下',
+          cleanTitle: 'RQA0507H 这个结论要同步一下',
+          cleanContent: 'RQA0507H 这个结论要同步一下',
+          captureMode: 'note_capture',
+          clarifyReason: 'none',
+          repeatRelation: 'independent',
+          targetConfidence: 0.95,
+          confidence: 0.93,
+          ambiguities: [],
+          corrections: [],
+          slots: {
+            content: '再记一下：RQA0507H 这个结论要同步一下',
+          },
+        },
+      ],
+      searchCandidates: vi.fn(),
+      runPlanHints: vi.fn(),
+    })
+
+    expect(result.steps[0]).toMatchObject({
+      action: 'create_note',
+      title: 'RQA0507H 这个结论要同步一下',
+      createPayload: {
+        content: 'RQA0507H 这个结论要同步一下',
+      },
+      toolInput: {
+        content: 'RQA0507H 这个结论要同步一下',
+      },
+    })
+  })
+
   it('maps clear create todo input to a low-risk create_todo step without hints', async () => {
     const runPlanHints = vi.fn()
 

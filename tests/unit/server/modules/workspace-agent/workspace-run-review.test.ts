@@ -361,6 +361,93 @@ describe('workspace-run-review', () => {
     expect(awaitUser.reason).toBe('confirm_duplicate')
   })
 
+  it('requests duplicate confirmation when the model marks the current create task as duplicate_of_previous', () => {
+    const draftTasks = [
+      createDraftTask({
+        id: 'task_1',
+        target: 'notes',
+        title: 'RQA0507H 这个结论要同步一下',
+        cleanTitle: 'RQA0507H 这个结论要同步一下',
+        cleanContent: 'RQA0507H 这个结论要同步一下',
+        repeatRelation: 'independent',
+        slots: {
+          content: 'RQA0507H 这个结论要同步一下',
+        },
+      }),
+      createDraftTask({
+        id: 'task_2',
+        target: 'notes',
+        title: '再记一下：RQA0507H 这个结论要同步一下',
+        cleanTitle: 'RQA0507H 这个结论要同步一下',
+        cleanContent: 'RQA0507H 这个结论要同步一下',
+        repeatRelation: 'duplicate_of_previous',
+        slots: {
+          content: 'RQA0507H 这个结论要同步一下',
+        },
+      }),
+    ]
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks,
+      plan: createPlan({
+        summary: '准备执行 2 个任务。',
+        steps: [
+          {
+            id: 'step_1',
+            action: 'create_note',
+            target: 'notes',
+            title: 'RQA0507H 这个结论要同步一下',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+          {
+            id: 'step_2',
+            action: 'create_note',
+            target: 'notes',
+            title: 'RQA0507H 这个结论要同步一下',
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks }),
+      updatedAt,
+      draftTasksConfirmed: true,
+      duplicateCandidates: [
+        {
+          stepId: 'step_2',
+          target: 'note',
+          duplicates: [
+            {
+              id: 'draft:step_1',
+              label: 'RQA0507H 这个结论要同步一下',
+              preview: '记笔记：RQA0507H 这个结论要同步一下',
+              reason: '与上一条记录内容重复',
+            },
+          ],
+        },
+      ],
+    })
+
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('confirm_duplicate')
+    expect(awaitUser.snapshot.interaction).toMatchObject({
+      type: 'confirm_duplicate',
+      target: 'note',
+      current: {
+        stepId: 'step_2',
+        title: 'RQA0507H 这个结论要同步一下',
+      },
+      duplicates: [
+        expect.objectContaining({
+          id: 'draft:step_1',
+          label: 'RQA0507H 这个结论要同步一下',
+        }),
+      ],
+    })
+  })
+
   it('does not ask candidate selection when update has only one candidate', () => {
     const draftTask = createDraftTask({
       intent: 'update',
@@ -1547,6 +1634,84 @@ describe('workspace-run-review', () => {
         }),
       ])
     )
+  })
+
+  it('uses clarifyReason to ask for record type before time when target recovery is still incomplete', () => {
+    const draftTask = createDraftTask({
+      target: 'mixed',
+      title: '5月10日早上买燕麦奶',
+      captureMode: 'none',
+      clarifyReason: 'unknown_target',
+      repeatRelation: 'independent',
+      targetConfidence: 0.49,
+      slots: {
+        timeText: '5月10日早上',
+      },
+    })
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [draftTask],
+      plan: createPlan({
+        steps: [{
+          id: 'step_1',
+          action: 'create_note',
+          target: 'notes',
+          title: '5月10日早上买燕麦奶',
+          risk: 'low',
+          requiresUserApproval: false,
+        }],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+      updatedAt,
+    })
+
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('clarify_slots')
+    expect(awaitUser.snapshot.interaction.type).toBe('clarify_slots')
+    if (awaitUser.snapshot.interaction.type !== 'clarify_slots') {
+      throw new Error('Expected clarify_slots interaction')
+    }
+    expect(awaitUser.snapshot.interaction.fields[0]).toMatchObject({
+      key: 'target',
+      label: '记录类型',
+    })
+  })
+
+  it('uses clarifyReason to ask for missing todo time only after target is stable', () => {
+    const draftTask = createDraftTask({
+      target: 'todos',
+      title: '买燕麦奶',
+      captureMode: 'todo_capture',
+      clarifyReason: 'missing_time_precision',
+      repeatRelation: 'independent',
+      targetConfidence: 0.95,
+      slots: {
+        timeText: '5月10日早上',
+      },
+    })
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [draftTask],
+      plan: createPlan({
+        steps: [{
+          id: 'step_1',
+          action: 'create_todo',
+          target: 'todos',
+          title: '买燕麦奶',
+          risk: 'low',
+          requiresUserApproval: false,
+        }],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+      updatedAt,
+    })
+
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('clarify_slots')
+    expect(awaitUser.snapshot.interaction.type).toBe('clarify_slots')
+    expect(awaitUser.snapshot.interaction.message).toContain('具体提醒时间')
   })
 
   describe('Phase C: Gap-Specific Clarification', () => {
