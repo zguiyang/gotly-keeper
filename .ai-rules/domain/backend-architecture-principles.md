@@ -108,6 +108,14 @@ Branching constraint:
 - orchestration may branch on process policy (retry/timeout/idempotency/compensation) and explicit business outcomes
 - domain-state decisions must be delegated to business-rule code
 
+Control-signal stability constraint:
+
+- do not drive control flow, risk classification, ambiguity cleanup, routing, or protocol-state transitions from natural-language text
+- do not branch on display labels, localized strings, model-written explanation text, or free-form user-facing copy when a stable typed field can exist
+- ambiguous or model-produced text may be shown to users, logged, or passed to dedicated language-parsing modules, but it must not become the protocol signal for workflow decisions
+- use explicit enums, booleans, structured slots, status codes, or other stable machine-owned fields for orchestration decisions
+- if a workflow currently depends on text matching over messages or labels, replace that dependency with a structured field before extending the flow
+
 ### 3.3 Technical-Capability Code
 
 Responsibilities:
