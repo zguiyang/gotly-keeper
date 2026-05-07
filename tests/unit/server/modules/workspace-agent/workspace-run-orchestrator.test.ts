@@ -4,25 +4,17 @@ import type { ReviewableDuplicateCandidate } from '@/server/modules/workspace-ag
 import type { SearchWorkspaceRunCandidates } from '@/server/modules/workspace-agent/workspace-run-planner'
 import type { WorkspaceRunStore } from '@/server/modules/workspace-agent/workspace-run-store'
 import type { WorkspaceRunModel } from '@/server/modules/workspace-agent/workspace-run-understanding'
-import type {
-  WorkspacePendingRunSnapshot,
-  WorkspaceRunStreamEvent,
-} from '@/shared/workspace/workspace-run-protocol'
+import type { WorkspacePendingRunSnapshot } from '@/shared/workspace/workspace-run-protocol'
 
 const duplicateCandidatesMock = vi.hoisted(() => ({
   findWorkspaceBookmarkDuplicateCandidate: vi.fn<() => Promise<ReviewableDuplicateCandidate | null>>(async () => null),
   findWorkspaceBookmarkDuplicateCandidates: vi.fn<() => Promise<ReviewableDuplicateCandidate[]>>(async () => []),
 }))
 
-vi.mock('@/server/modules/workspace-agent/workspace-run-duplicates', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/modules/workspace-agent/workspace-run-duplicates')>()
-
-  return {
-    ...actual,
-    findWorkspaceBookmarkDuplicateCandidate: duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidate,
-    findWorkspaceBookmarkDuplicateCandidates: duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidates,
-  }
-})
+vi.mock('@/server/modules/workspace-agent/workspace-run-duplicates', () => ({
+  findWorkspaceBookmarkDuplicateCandidate: duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidate,
+  findWorkspaceBookmarkDuplicateCandidates: duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidates,
+}))
 
 const executorMock = vi.hoisted(() => ({
   executeWorkspaceRunSteps: vi.fn().mockResolvedValue({
@@ -307,5 +299,83 @@ describe('workspace-run-orchestrator', () => {
 
     expect(result.ok).toBe(true)
     expect(executorMock.executeWorkspaceRunSteps).toHaveBeenCalled()
+  })
+
+  it('resumes a read clarification into execution once the query is provided', async () => {
+    const { handleResume } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator.resume')
+
+    const pendingRun: WorkspacePendingRunSnapshot = {
+      runId: 'run_1',
+      interactionId: 'run_1_clarify_slots',
+      phase: 'review',
+      status: 'awaiting_user',
+      interaction: {
+        runId: 'run_1',
+        id: 'run_1_clarify_slots',
+        type: 'clarify_slots',
+        message: '我知道你想查找内容，但还缺更具体的关键词。',
+        actions: ['submit', 'cancel'],
+        fields: [
+          {
+            key: 'query',
+            label: '查询关键词',
+            required: true,
+            input: 'text',
+            placeholder: '例如：RQA0507R5A',
+          },
+        ],
+      },
+      timeline: [{ type: 'phase_started', phase: 'review' }],
+      preview: null,
+      understandingPreview: {
+        rawInput: '帮我找一下刚刚那条验收结论',
+        normalizedInput: '帮我找一下刚刚那条验收结论',
+        draftTasks: [
+          {
+            id: 'draft_1',
+            intent: 'query',
+            target: 'mixed',
+            title: '帮我找一下刚刚那条验收结论',
+            cleanTitle: '帮我找一下刚刚那条验收结论',
+            clarifyReason: 'none',
+            confidence: 0.86,
+            ambiguities: [],
+            corrections: [],
+            slots: {},
+          },
+        ],
+        corrections: [],
+      },
+      correctionNotes: [],
+      updatedAt: '2026-05-07T12:00:00.000Z',
+    }
+
+    const store = createMockStore({
+      loadLatestAwaiting: vi.fn().mockResolvedValue(pendingRun),
+    })
+
+    const result = await handleResume({
+      userId: 'user_123',
+      request: {
+        kind: 'resume',
+        runId: 'run_1',
+        interactionId: 'run_1_clarify_slots',
+        response: {
+          type: 'clarify_slots',
+          action: 'submit',
+          values: {
+            query: 'RQA0507R5A',
+          },
+        },
+      },
+      store,
+      runModel: createRunModel([]),
+      searchCandidates: createMockSearchCandidates(),
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.phase).toBe('completed')
+    expect(executorMock.executeWorkspaceRunSteps).toHaveBeenCalled()
+    expect(store.saveSnapshot).not.toHaveBeenCalled()
   })
 })

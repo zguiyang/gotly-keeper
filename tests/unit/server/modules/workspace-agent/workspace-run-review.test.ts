@@ -143,6 +143,124 @@ describe('workspace-run-review', () => {
     })
   })
 
+  it('uses read-specific clarification for mixed query intents instead of create fields', () => {
+    const task = createDraftTask({
+      intent: 'query',
+      target: 'mixed',
+      title: '帮我找一下刚刚记的 RQA0507R7 内容',
+      captureMode: 'none',
+      clarifyReason: 'none',
+      confidence: 0.88,
+      slots: {},
+    })
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [task],
+      plan: createPlan({
+        steps: [
+          {
+            id: 'step_1',
+            action: 'query_assets',
+            target: 'mixed',
+            title: task.title,
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview([task]),
+      updatedAt,
+    })
+
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('clarify_slots')
+    expect(awaitUser.snapshot.interaction).toMatchObject({
+      type: 'clarify_slots',
+      fields: [expect.objectContaining({ key: 'query' })],
+    })
+    expect(awaitUser.snapshot.interaction).not.toMatchObject({
+      fields: [expect.objectContaining({ key: 'target' })],
+    })
+    expect(awaitUser.snapshot.interaction.message).toBe('我知道你想查找内容，但还缺更具体的关键词。')
+  })
+
+  it('does not re-clarify mixed query intents once a concrete query is present', () => {
+    const task = createDraftTask({
+      intent: 'query',
+      target: 'mixed',
+      title: '帮我找一下 RQA0507R5A',
+      captureMode: 'none',
+      clarifyReason: 'none',
+      confidence: 0.88,
+      ambiguities: [],
+      slots: {
+        query: 'RQA0507R5A',
+      },
+    })
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [task],
+      plan: createPlan({
+        steps: [
+          {
+            id: 'step_1',
+            action: 'query_assets',
+            target: 'mixed',
+            title: task.title,
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview([task]),
+      updatedAt,
+    })
+
+    expect(result).toEqual({
+      status: 'auto_execute',
+      reason: 'single_low_risk_clear_task',
+      snapshot: null,
+    })
+  })
+
+  it('treats mixed create tasks routed to a create step as clarifiable instead of invalid_plan', () => {
+    const task = createDraftTask({
+      target: 'mixed',
+      clarifyReason: 'unknown_target',
+      title: '下周那个你帮我整理一下 RQA0507R7G',
+      captureMode: 'none',
+      confidence: 0.65,
+      slots: {},
+    })
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [task],
+      plan: createPlan({
+        steps: [
+          {
+            id: 'step_1',
+            action: 'create_note',
+            target: 'notes',
+            title: task.title,
+            risk: 'low',
+            requiresUserApproval: false,
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview([task]),
+      updatedAt,
+    })
+
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('clarify_slots')
+    expect(awaitUser.snapshot.interaction).toMatchObject({
+      type: 'clarify_slots',
+    })
+  })
+
   it('uses candidate selection when update_todo has multiple matches', () => {
     const task = createDraftTask({
       intent: 'update',
@@ -207,6 +325,46 @@ describe('workspace-run-review', () => {
     expect(awaitUser.snapshot.interaction).toMatchObject({
       type: 'clarify_slots',
       fields: [expect.objectContaining({ key: 'query' })],
+    })
+  })
+
+  it('auto-executes update_todo when exactly one high-confidence candidate is found', () => {
+    const task = createDraftTask({
+      intent: 'update',
+      title: '把 RQA0507R7A 那个待办标记为已完成',
+      captureMode: 'none',
+      slots: {
+        query: 'RQA0507R7A',
+        status: 'done',
+      },
+    })
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [task],
+      plan: createPlan({
+        steps: [
+          {
+            id: 'step_1',
+            action: 'update_todo',
+            target: 'todos',
+            title: task.title,
+            risk: 'high',
+            requiresUserApproval: true,
+            candidates: [
+              { id: 'todo_1', type: 'todo', title: '整理第7轮真实用户验收结论 RQA0507R7A', confidence: 0.96, matchReason: '唯一高置信候选' },
+            ],
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview([task]),
+      updatedAt,
+    })
+
+    expect(result).toEqual({
+      status: 'auto_execute',
+      reason: 'single_low_risk_clear_task',
+      snapshot: null,
     })
   })
 

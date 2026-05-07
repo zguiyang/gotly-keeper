@@ -89,7 +89,7 @@ describe('useWorkspaceStream', () => {
         preview: null,
         understandingPreview: null,
         correctionNotes: [],
-        updatedAt: '2026-04-27T01:00:00.000Z',
+        updatedAt: new Date().toISOString(),
       },
     })
 

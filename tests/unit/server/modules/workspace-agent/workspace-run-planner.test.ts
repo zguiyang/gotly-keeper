@@ -446,6 +446,8 @@ describe('workspace-run-planner', () => {
       target: 'todos',
       query: '给客户发报价',
       status: 'open',
+      keywords: ['把给客户发报价标记完成', '给客户发报价'],
+      timeConstraint: null,
     })
     expect(result.steps[0]).toMatchObject({
       id: 'step_1',
@@ -512,6 +514,8 @@ describe('workspace-run-planner', () => {
       target: 'todos',
       query: '给客户发报价',
       status: 'open',
+      keywords: ['把给客户发报价标记完成', '给客户发报价'],
+      timeConstraint: null,
     })
     expect(result.steps[0]).toMatchObject({
       id: 'step_1',

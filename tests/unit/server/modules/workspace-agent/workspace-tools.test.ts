@@ -219,6 +219,62 @@ describe('workspaceTools', () => {
     })
   })
 
+  it('search_all narrows to exact identifier matches when the selector query contains a unique token', async () => {
+    mocks.searchWorkspaceAssets.mockResolvedValue([
+      {
+        id: 'note_1',
+        type: 'note',
+        title: 'RQA0507R5A 第 5 轮真实用户验收结论',
+        originalText: 'RQA0507R5A 第 5 轮真实用户验收结论',
+        excerpt: '命中了唯一编号。',
+        url: null,
+        timeText: null,
+        dueAt: null,
+        completed: false,
+        createdAt: new Date('2026-05-07T09:00:00.000Z'),
+      },
+      {
+        id: 'note_2',
+        type: 'note',
+        title: '第 5 轮真实用户验收结论',
+        originalText: '第 5 轮真实用户验收结论',
+        excerpt: '内容很像，但是没有唯一编号。',
+        url: null,
+        timeText: null,
+        dueAt: null,
+        completed: false,
+        createdAt: new Date('2026-05-07T09:01:00.000Z'),
+      },
+    ])
+
+    const result = await executeWorkspaceTool(
+      {
+        toolName: 'search_all',
+        toolInput: {
+          selector: {
+            target: 'mixed',
+            subject: 'RQA0507R5A 第 5 轮真实用户验收结论',
+            keywords: ['RQA0507R5A'],
+            sort: 'relevance',
+            limit: 10,
+          },
+        },
+      },
+      { userId: 'user_1' }
+    )
+
+    expect(result).toMatchObject({
+      ok: true,
+      target: 'mixed',
+      total: 1,
+    })
+    if (!result.ok) {
+      return
+    }
+
+    expect(result.items?.map((item) => item.id)).toEqual(['note_1'])
+  })
+
   it('search_todos forwards recentFocus queries as top-match searches', async () => {
     mocks.searchWorkspaceAssets.mockResolvedValue([
       { id: 'todo_1', type: 'todo', title: '报价待办', createdAt: new Date('2026-04-22T09:00:00.000Z') },
