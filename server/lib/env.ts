@@ -33,4 +33,8 @@ export const serverEnv = {
   resend: {
     key: env.RESEND_KEY,
   },
+  github: {
+    clientId: env.GITHUB_CLIENT_ID,
+    clientSecret: env.GITHUB_CLIENT_SECRET,
+  },
 } as const

@@ -1,6 +1,7 @@
 'use client'
 
 import { ArrowRight } from 'lucide-react'
+
 import { AuthField } from '@/components/auth/auth-field'
 import { Button } from '@/components/ui/button'
 import { useAuthSubmit } from '@/hooks/auth/use-auth-submit'

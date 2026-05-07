@@ -34,6 +34,9 @@ export const serverOnlyEnvSchema = z.object({
   AI_EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().optional(),
 
   RESEND_KEY: optionalNonEmptyString,
+
+  GITHUB_CLIENT_ID: optionalNonEmptyString,
+  GITHUB_CLIENT_SECRET: optionalNonEmptyString,
 })
 
 export const serverEnvSchema = publicEnvSchema.merge(serverOnlyEnvSchema)

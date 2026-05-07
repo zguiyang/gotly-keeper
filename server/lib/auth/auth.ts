@@ -29,6 +29,16 @@ export const auth = betterAuth({
     schema,
     usePlural: true,
   }),
+  socialProviders: {
+    ...(serverEnv.github.clientId && serverEnv.github.clientSecret
+      ? {
+          github: {
+            clientId: serverEnv.github.clientId,
+            clientSecret: serverEnv.github.clientSecret,
+          },
+        }
+      : {}),
+  },
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({ user, url }) => {
