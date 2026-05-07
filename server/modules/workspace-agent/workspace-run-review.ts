@@ -215,10 +215,39 @@ function isStepConsistentWithTask(task: ReviewableDraftTask, step: ReviewablePla
   if (task.target === 'notes') return step.action === 'create_note'
   if (task.target === 'todos') return step.action === 'create_todo'
   if (task.target === 'bookmarks') return step.action === 'create_bookmark'
-  return step.target === 'mixed'
+  return (
+    step.target === 'mixed' ||
+    step.action === 'create_note' ||
+    step.action === 'create_todo' ||
+    step.action === 'create_bookmark'
+  )
 }
 
 function buildClarifyFields(task: ReviewableDraftTask, step?: ReviewablePlanStep) {
+  if (task.intent === 'query') {
+    return [
+      {
+        key: 'query',
+        label: '查询关键词',
+        required: true,
+        input: 'text' as const,
+        placeholder: '例如：RQA0507R7 或 刚刚记的验收结论',
+      },
+    ]
+  }
+
+  if (task.intent === 'summarize') {
+    return [
+      {
+        key: 'query',
+        label: '整理范围',
+        required: true,
+        input: 'text' as const,
+        placeholder: '例如：最近的 RQA0507R7 相关内容',
+      },
+    ]
+  }
+
   if (task.target === 'mixed') {
     return [
       {
@@ -438,6 +467,26 @@ function buildSelectCandidateDecision(input: {
 
 function shouldClarify(task: ReviewableDraftTask, step?: ReviewablePlanStep) {
   if (task.confidence < 0.4) return true
+  const queryText = typeof task.slots.query === 'string' ? task.slots.query.trim() : ''
+
+  if (task.intent === 'query' || task.intent === 'summarize') {
+    if (task.ambiguities.length > 0) return true
+    if (
+      task.clarifyReason &&
+      task.clarifyReason !== 'none' &&
+      task.clarifyReason !== 'unknown_target'
+    ) {
+      return true
+    }
+
+    if (task.target === 'mixed') {
+      return queryText.length === 0
+    }
+
+    const title = task.title?.trim() ?? ''
+    return title.length === 0 && queryText.length === 0
+  }
+
   if (task.target === 'mixed') return true
   if (task.clarifyReason && task.clarifyReason !== 'none') return true
   if (task.ambiguities.length > 0) return true
@@ -456,6 +505,9 @@ function shouldClarify(task: ReviewableDraftTask, step?: ReviewablePlanStep) {
 }
 
 function buildClarifyMessage(task: ReviewableDraftTask, step?: ReviewablePlanStep) {
+  if (task.intent === 'query') return '我知道你想查找内容，但还缺更具体的关键词。'
+  if (task.intent === 'summarize') return '我知道你想整理内容，但还缺更具体的范围或对象。'
+
   if (task.target === 'mixed' || task.clarifyReason === 'unknown_target') {
     return '我还不确定你是想记待办、笔记还是书签。'
   }
@@ -467,8 +519,6 @@ function buildClarifyMessage(task: ReviewableDraftTask, step?: ReviewablePlanSte
   if (step?.action === 'create_todo') return '我知道你想记待办，但还缺具体内容。'
   if (step?.action === 'create_note') return '我知道你想记笔记，但还缺具体内容。'
   if (step?.action === 'create_bookmark') return '我知道你想存书签，但还缺链接。'
-  if (task.intent === 'query') return '我知道你想查找内容，但还缺更具体的关键词。'
-  if (task.intent === 'summarize') return '我知道你想整理内容，但还缺更具体的范围或对象。'
 
   return '执行前还缺少必要信息，请补充。'
 }
@@ -587,6 +637,12 @@ export function reviewWorkspaceRunPlan(
         message: `找到一个待更新候选：${candidates[0].title}，请确认后执行。`,
         correctionNotes: getCorrectionNotes(input, task),
       })
+    }
+
+    return {
+      status: 'auto_execute',
+      reason: 'single_low_risk_clear_task',
+      snapshot: null,
     }
   }
 

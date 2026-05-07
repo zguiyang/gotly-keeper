@@ -160,14 +160,21 @@ function mergeClarification(
     const nextTitle = response.values.title?.trim()
     const nextUrl = response.values.url?.trim()
     const details = response.values.details?.trim()
+    const clarifiedQuery = response.values.query?.trim()
     const clarifiedTarget = task.target === 'mixed'
       ? parseClarifiedTarget(response.values.target) ?? task.target
       : task.target
+    const resolvedReadClarification =
+      (task.intent === 'query' || task.intent === 'summarize') &&
+      typeof clarifiedQuery === 'string' &&
+      clarifiedQuery.length > 0
 
     let resolvedTitle = task.title
 
     if (nextTitle && nextTitle.length > 0) {
       resolvedTitle = nextTitle
+    } else if (resolvedReadClarification) {
+      resolvedTitle = clarifiedQuery
     } else if (
       task.target === 'mixed' &&
       (clarifiedTarget === 'todos' || clarifiedTarget === 'notes') &&
@@ -203,6 +210,8 @@ function mergeClarification(
       title: resolvedTitle,
       confidence: clarifiedTarget !== 'mixed' ? Math.max(task.confidence, 0.8) : task.confidence,
       ambiguities,
+      clarifyReason:
+        resolvedClarification || resolvedReadClarification ? 'none' : task.clarifyReason,
       slots: mergedSlots,
     }
   })
@@ -214,6 +223,12 @@ function toReviewableDraftTasks(tasks: DraftWorkspaceTask[]): ReviewableDraftTas
     intent: task.intent as ReviewableDraftTask['intent'],
     target: task.target,
     title: task.title,
+    cleanTitle: task.cleanTitle,
+    cleanContent: task.cleanContent,
+    captureMode: task.captureMode,
+    clarifyReason: task.clarifyReason,
+    repeatRelation: task.repeatRelation,
+    targetConfidence: task.targetConfidence,
     confidence: task.confidence,
     ambiguities: task.ambiguities,
     corrections: task.corrections,
