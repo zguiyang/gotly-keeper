@@ -4,13 +4,13 @@ import { runAiGeneration } from '@/server/lib/ai/ai-runner'
 import { isAiProviderError, isAiSchemaError, isAiTimeoutError } from '@/server/lib/ai/ai.errors'
 import { WORKSPACE_TASK_PARSE_TIMEOUT_MS } from '@/server/lib/config/constants'
 
-
 import { createWorkspaceRunStore } from './workspace-run-store.drizzle'
-import { understandingModelResultSchema, type WorkspaceRunModel } from './workspace-run-understanding'
+import { type WorkspaceRunModel } from './workspace-run-understanding'
 import { executeWorkspaceTool } from './workspace-tools'
 
 import type { SearchWorkspaceRunCandidates } from './workspace-run-planner'
 import type { AssetListItem } from '@/shared/assets/assets.types'
+import type { ZodType } from 'zod'
 
 export class WorkspaceRunModelError extends Error {
   readonly code: string
@@ -74,7 +74,7 @@ function toWorkspaceRunModelError(error: unknown): WorkspaceRunModelError {
 function createRunModel(): WorkspaceRunModel {
   return async (input) => {
     const result = await runAiGeneration({
-      schema: understandingModelResultSchema,
+      schema: input.schema as ZodType<unknown>,
       systemPrompt: input.systemPrompt,
       userPrompt: input.userPrompt,
       timeoutMs: WORKSPACE_TASK_PARSE_TIMEOUT_MS,

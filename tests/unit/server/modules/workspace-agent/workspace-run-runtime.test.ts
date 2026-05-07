@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { z } from 'zod'
 
 import { AiProviderError, AiSchemaError, AiTimeoutError } from '@/server/lib/ai/ai.types'
 import { WORKSPACE_TASK_PARSE_TIMEOUT_MS } from '@/server/lib/config/constants'
@@ -27,6 +28,7 @@ describe('workspace-run-runtime', () => {
 
     await expect(
       runModel({
+        schema: z.object({ ok: z.boolean() }),
         systemPrompt: 'system prompt',
         userPrompt: 'user prompt',
       })
@@ -47,6 +49,7 @@ describe('workspace-run-runtime', () => {
 
     await expect(
       runModel({
+        schema: z.object({ ok: z.boolean() }),
         systemPrompt: 'system prompt',
         userPrompt: 'user prompt',
       })
@@ -67,6 +70,7 @@ describe('workspace-run-runtime', () => {
 
     await expect(
       runModel({
+        schema: z.object({ ok: z.boolean() }),
         systemPrompt: 'system prompt',
         userPrompt: 'user prompt',
       })
@@ -101,6 +105,20 @@ describe('workspace-run-runtime', () => {
     const { runModel } = createWorkspaceRunRuntime()
 
     await runModel({
+      schema: z.object({
+        draftTasks: z.array(
+          z.object({
+            id: z.string(),
+            intent: z.string(),
+            target: z.string(),
+            title: z.string(),
+            confidence: z.number(),
+            ambiguities: z.array(z.string()),
+            corrections: z.array(z.string()),
+            slotEntries: z.array(z.unknown()),
+          })
+        ),
+      }),
       systemPrompt: 'system prompt',
       userPrompt: 'user prompt',
       signal: controller.signal,
@@ -108,6 +126,7 @@ describe('workspace-run-runtime', () => {
 
     expect(mocks.runAiGeneration).toHaveBeenCalledWith(
       expect.objectContaining({
+        schema: expect.any(Object),
         timeoutMs: WORKSPACE_TASK_PARSE_TIMEOUT_MS,
         abortSignal: controller.signal,
       })

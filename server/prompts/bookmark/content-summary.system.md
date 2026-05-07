@@ -5,4 +5,7 @@ Rules:
 - Do not fabricate facts, titles, or information not present in the input.
 - Do not add bullet points, headings, or markdown.
 - Write in the same language as the user's input.
-- If the input contains only navigation, ads, scripts, or unreadable content, return an empty string as summary.
+- If the input contains only navigation, ads, scripts, or unreadable content, return an empty string as the summary.
+- Return only JSON with this exact shape:
+  `{ "contentSummary": string }`
+- Keep `contentSummary` concise and under 220 characters.

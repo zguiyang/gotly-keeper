@@ -55,7 +55,33 @@ const createMockStore = (): WorkspaceRunStore => ({
 })
 
 const createMockRunModel = (): WorkspaceRunModel => {
-  return async () => {
+  return async ({ userPrompt }) => {
+    if (userPrompt.includes('<raw_text>')) {
+      return {
+        rawText: '给客户发报价',
+        normalizedText: '给客户发报价',
+        urls: [],
+        separators: [],
+        typoCandidates: [],
+        timeHints: [],
+      }
+    }
+
+    if (userPrompt.includes('<normalized_input>') && !userPrompt.includes('<inherited_corrections>')) {
+      return {
+        isMultiTask: false,
+        corrections: [],
+        segments: [
+          {
+            id: 'segment_1',
+            text: '给客户发报价',
+            relation: 'independent',
+            confidence: 0.95,
+          },
+        ],
+      }
+    }
+
     return {
       draftTasks: [
         {
@@ -161,6 +187,14 @@ describe('workspace-run-orchestrator', () => {
       const runModel = vi
         .fn<WorkspaceRunModel>()
         .mockResolvedValueOnce({
+          rawText: '记个待办：明天下午三点给产品经理发报价；再记一下：首页 slogan 想走轻管家感',
+          normalizedText: '记个待办：明天下午三点给产品经理发报价；再记一下：首页 slogan 想走轻管家感',
+          urls: [],
+          separators: ['；'],
+          typoCandidates: [],
+          timeHints: ['明天下午三点'],
+        })
+        .mockResolvedValueOnce({
           isMultiTask: true,
           corrections: [],
           segments: [
@@ -233,13 +267,13 @@ describe('workspace-run-orchestrator', () => {
 
       expect(splitIndex).toBeGreaterThan(normalizeIndex)
       expect(understandIndex).toBeGreaterThan(splitIndex)
-      expect(runModel).toHaveBeenCalledTimes(3)
-      expect(runModel.mock.calls[1]?.[0]).toEqual(
+      expect(runModel).toHaveBeenCalledTimes(4)
+      expect(runModel.mock.calls[2]?.[0]).toEqual(
         expect.objectContaining({
           userPrompt: expect.stringContaining('记个待办：明天下午三点给产品经理发报价'),
         })
       )
-      expect(runModel.mock.calls[2]?.[0]).toEqual(
+      expect(runModel.mock.calls[3]?.[0]).toEqual(
         expect.objectContaining({
           userPrompt: expect.stringContaining('再记一下：首页 slogan 想走轻管家感'),
         })
@@ -274,6 +308,14 @@ describe('workspace-run-orchestrator', () => {
         store: createMockStore(),
         runModel: vi
           .fn<WorkspaceRunModel>()
+          .mockResolvedValueOnce({
+            rawText: '记个待办：5月9日上午11点和设计过一下 RQA0506D 验收；再记一下：RQA0506E 小白用户更希望查询别总确认',
+            normalizedText: '记个待办：5月9日上午11点和设计过一下 RQA0506D 验收；再记一下：RQA0506E 小白用户更希望查询别总确认',
+            urls: [],
+            separators: ['；'],
+            typoCandidates: [],
+            timeHints: ['5月9日上午11点'],
+          })
           .mockResolvedValueOnce({
             isMultiTask: true,
             corrections: [],
@@ -354,6 +396,14 @@ describe('workspace-run-orchestrator', () => {
         runModel: vi
           .fn<WorkspaceRunModel>()
           .mockResolvedValueOnce({
+            rawText: '记个待半：5月10日早上买燕麦奶 RQA0507F',
+            normalizedText: '记个待半：5月10日早上买燕麦奶 RQA0507F',
+            urls: [],
+            separators: [],
+            typoCandidates: [{ text: '待半', suggestion: '待办' }],
+            timeHints: ['5月10日早上'],
+          })
+          .mockResolvedValueOnce({
             isMultiTask: false,
             corrections: [
               {
@@ -433,6 +483,14 @@ describe('workspace-run-orchestrator', () => {
         runModel: vi
           .fn<WorkspaceRunModel>()
           .mockResolvedValueOnce({
+            rawText: '把这个链接存一下，真实验收回看用：https://example.com/rqa0506c',
+            normalizedText: '把这个链接存一下，真实验收回看用：https://example.com/rqa0506c',
+            urls: ['https://example.com/rqa0506c'],
+            separators: ['，'],
+            typoCandidates: [],
+            timeHints: [],
+          })
+          .mockResolvedValueOnce({
             isMultiTask: false,
             corrections: [],
             segments: [
@@ -481,6 +539,14 @@ describe('workspace-run-orchestrator', () => {
 
       const runModel = vi
         .fn<WorkspaceRunModel>()
+        .mockResolvedValueOnce({
+          rawText: '记一下：RQA0507H 这个结论要同步一下；再记一下：RQA0507H 这个结论要同步一下',
+          normalizedText: '记一下：RQA0507H 这个结论要同步一下；再记一下：RQA0507H 这个结论要同步一下',
+          urls: [],
+          separators: ['；'],
+          typoCandidates: [],
+          timeHints: [],
+        })
         .mockResolvedValueOnce({
           isMultiTask: true,
           corrections: [],
@@ -583,6 +649,14 @@ describe('workspace-run-orchestrator', () => {
         store: createMockStore(),
         runModel: vi
           .fn<WorkspaceRunModel>()
+          .mockResolvedValueOnce({
+            rawText: '记个待办：明天下午给客户发报价；把这个链接存一下，真实验收回看用：https://example.com/rqa0506c',
+            normalizedText: '记个待办：明天下午给客户发报价；把这个链接存一下，真实验收回看用：https://example.com/rqa0506c',
+            urls: ['https://example.com/rqa0506c'],
+            separators: ['；', '，'],
+            typoCandidates: [],
+            timeHints: ['明天下午'],
+          })
           .mockResolvedValueOnce({
             isMultiTask: true,
             corrections: [],
@@ -694,21 +768,49 @@ describe('workspace-run-orchestrator', () => {
 
       const events: unknown[] = []
       const store = createMockStore()
-      const runModel: WorkspaceRunModel = async () => ({
-        draftTasks: [
-          {
-            id: 'draft_1',
-            intent: 'create',
-            target: 'todos',
-            title: '记个待办',
-            hasRealContent: false,
-            confidence: 0.82,
-            ambiguities: [],
+      const runModel: WorkspaceRunModel = async ({ userPrompt }) => {
+        if (userPrompt.includes('<raw_text>')) {
+          return {
+            rawText: '记个待办',
+            normalizedText: '记个待办',
+            urls: [],
+            separators: [],
+            typoCandidates: [],
+            timeHints: [],
+          }
+        }
+
+        if (userPrompt.includes('<normalized_input>') && !userPrompt.includes('<inherited_corrections>')) {
+          return {
+            isMultiTask: false,
             corrections: [],
-            slots: {},
-          },
-        ],
-      })
+            segments: [
+              {
+                id: 'segment_1',
+                text: '记个待办',
+                relation: 'independent',
+                confidence: 0.95,
+              },
+            ],
+          }
+        }
+
+        return {
+          draftTasks: [
+            {
+              id: 'draft_1',
+              intent: 'create',
+              target: 'todos',
+              title: '记个待办',
+              hasRealContent: false,
+              confidence: 0.82,
+              ambiguities: [],
+              corrections: [],
+              slots: {},
+            },
+          ],
+        }
+      }
 
       const result = await orchestrateWorkspaceRun({
         userId: 'user_123',
@@ -2098,20 +2200,48 @@ describe('workspace-run-orchestrator', () => {
       const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
 
       const store = createMockStore()
-      const ambiguousModel: WorkspaceRunModel = async () => ({
-        draftTasks: [
-          {
-            id: 'draft_1',
-            intent: 'create',
-            target: 'todos',
-            title: '尽快处理报销',
-            confidence: 0.95,
-            ambiguities: ['时间表述模糊'],
+      const ambiguousModel: WorkspaceRunModel = async ({ userPrompt }) => {
+        if (userPrompt.includes('<raw_text>')) {
+          return {
+            rawText: '记个待办：尽快处理报销',
+            normalizedText: '记个待办：尽快处理报销',
+            urls: [],
+            separators: ['：'],
+            typoCandidates: [],
+            timeHints: [],
+          }
+        }
+
+        if (userPrompt.includes('<normalized_input>') && !userPrompt.includes('<inherited_corrections>')) {
+          return {
+            isMultiTask: false,
             corrections: [],
-            slots: {},
-          },
-        ],
-      })
+            segments: [
+              {
+                id: 'segment_1',
+                text: '记个待办：尽快处理报销',
+                relation: 'independent',
+                confidence: 0.95,
+              },
+            ],
+          }
+        }
+
+        return {
+          draftTasks: [
+            {
+              id: 'draft_1',
+              intent: 'create',
+              target: 'todos',
+              title: '尽快处理报销',
+              confidence: 0.95,
+              ambiguities: ['时间表述模糊'],
+              corrections: [],
+              slots: {},
+            },
+          ],
+        }
+      }
 
       const result = await orchestrateWorkspaceRun({
         userId: 'user_123',
@@ -2170,20 +2300,48 @@ describe('workspace-run-orchestrator', () => {
     it('includes phaseTimings when run awaits user clarification', async () => {
       const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
 
-      const ambiguousRunModel: WorkspaceRunModel = async () => ({
-        draftTasks: [
-          {
-            id: 'draft_1',
-            intent: 'create',
-            target: 'mixed',
-            title: '',
-            confidence: 0.35,
-            ambiguities: [],
+      const ambiguousRunModel: WorkspaceRunModel = async ({ userPrompt }) => {
+        if (userPrompt.includes('<raw_text>')) {
+          return {
+            rawText: '记一下这个',
+            normalizedText: '记一下这个',
+            urls: [],
+            separators: [],
+            typoCandidates: [],
+            timeHints: [],
+          }
+        }
+
+        if (userPrompt.includes('<normalized_input>') && !userPrompt.includes('<inherited_corrections>')) {
+          return {
+            isMultiTask: false,
             corrections: [],
-            slots: {},
-          },
-        ],
-      })
+            segments: [
+              {
+                id: 'segment_1',
+                text: '记一下这个',
+                relation: 'independent',
+                confidence: 0.95,
+              },
+            ],
+          }
+        }
+
+        return {
+          draftTasks: [
+            {
+              id: 'draft_1',
+              intent: 'create',
+              target: 'mixed',
+              title: '',
+              confidence: 0.35,
+              ambiguities: [],
+              corrections: [],
+              slots: {},
+            },
+          ],
+        }
+      }
 
       const result = await orchestrateWorkspaceRun({
         userId: 'user_123',

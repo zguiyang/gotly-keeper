@@ -161,6 +161,7 @@ function prefersModelSchema(value: unknown) {
 }
 
 export type WorkspaceRunModel = (input: {
+  schema: z.ZodType<unknown>
   systemPrompt: string
   userPrompt: string
   signal?: AbortSignal
@@ -243,6 +244,7 @@ export async function understandWorkspaceRunInput(input: {
   ])
 
   const modelOutput = await input.runModel({
+    schema: understandingModelResultSchema,
     systemPrompt,
     userPrompt,
     signal: input.signal,

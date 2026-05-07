@@ -51,7 +51,7 @@ Each asset type represents a different user intent:
 
 When the input is a capture-like phrase (non-query, non-summarize) with vague target indicators:
 
-1. **Keep `mixed` when unsure.** If the input uses generic pronouns such as "那个" or "这个", weak action verbs such as "整理一下", "处理一下", or "搞一下", and lacks a clear object or command prefix, do NOT force it into `todos`. Keep `target: "mixed"` and record the uncertainty in `ambiguities`.
+1. **Keep `mixed` when unsure.** If the input uses generic pronouns such as `那个` or `这个`, weak action verbs such as `整理一下`, `处理一下`, or `搞一下`, and lacks a clear object or command prefix, do NOT force it into `todos`. Keep `target: "mixed"` and record the uncertainty in `ambiguities`.
 
 2. **Subject clarity check.** Before deciding the target type for a create/capture-like intent, verify that:
    - There is a strong command prefix ("remind me", "save this", "bookmark") OR
@@ -59,7 +59,7 @@ When the input is a capture-like phrase (non-query, non-summarize) with vague ta
    - A recognizable URL is present
    If none of these apply, keep `target: "mixed"` and add ambiguity: "record type and concrete content are unclear".
 
-3. **Time phrase alone is not a target signal.** A time expression such as "下周" or "明天" without clear action content does NOT mean the input is a todo. It only means there is a time reference. Target determination should depend on the action and substance, not the time phrase alone.
+3. **Time phrase alone is not a target signal.** A time expression such as `下周` or `明天` without clear action content does NOT mean the input is a todo. It only means there is a time reference. Target determination should depend on the action and substance, not the time phrase alone.
 
 ## Operation Semantics
 
@@ -89,17 +89,17 @@ When the user clearly requests an unsupported action:
 ## Understanding Principles
 
 0. **Command prefixes are STRONG signals for target classification**.
-   "save this" -> notes, "remind me" / "todo" -> todos, "bookmark" -> bookmarks.
+   `save this` -> notes, `remind me` / `todo` -> todos, `bookmark` -> bookmarks.
    When content characteristics conflict with the command prefix, prefer the prefix.
 
 0a. **Capture-style note prefixes stay note-like unless the user explicitly asks for a todo**.
-   Phrases such as "记一下", "记一条", or "save this" should stay in the note/capture lane even when the content sounds action-oriented
-   (for example "这个结论要同步一下") or when the same content appears twice.
+   Phrases such as `记一下`, `记一条`, or `save this` should stay in the note/capture lane even when the content sounds action-oriented
+   (for example `这个结论要同步一下`) or when the same content appears twice.
    Do NOT reinterpret repeated capture content as a todo unless the user explicitly uses a todo/reminder prefix.
 
 0b. **Minor noise around record-type words should preserve the likely type first**.
    If a capture prefix strongly suggests a record type, and the nearby type word contains a minor typo, homophone, or ASR-like noise
-   (for example "待半" near a todo-style prefix), preserve the likely type when the overall intent is still clear.
+   (for example `待半` near a todo-style prefix), preserve the likely type when the overall intent is still clear.
    If you are still uncertain, clarify the record type before asking for more details.
 
 1. **Title = pure subject/topic description**.
@@ -138,7 +138,7 @@ When the user clearly requests an unsupported action:
    When a command prefix is present (remind me, save, bookmark),
    the content after the prefix belongs ENTIRELY to that single asset type.
    Do NOT split the same input into different asset types.
-   Example: "remind me to discuss requirements at 9am tomorrow" → single todo task, NOT note + todo.
+   Example: `remind me to discuss requirements at 9am tomorrow` -> a single todo task, not note + todo.
    Exception: only split when explicit conjunction markers exist (also, and, meanwhile, in addition) between truly independent operations.
 
 7. **query, summarize, and update share selector semantics.**

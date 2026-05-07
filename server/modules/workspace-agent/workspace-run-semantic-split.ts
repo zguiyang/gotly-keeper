@@ -69,6 +69,7 @@ export async function splitWorkspaceRunInputSemantically(input: {
   ])
 
   const modelOutput = await input.runModel({
+    schema: semanticSplitResultSchema,
     systemPrompt,
     userPrompt,
     signal: input.signal,

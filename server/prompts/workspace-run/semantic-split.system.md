@@ -45,7 +45,7 @@ Return JSON with this exact shape:
 
 ```json
 {
-  "isMultiTask": true,
+  "isMultiTask": false,
   "corrections": [
     {
       "from": "orig",
@@ -65,7 +65,9 @@ Return JSON with this exact shape:
 ```
 
 Constraints:
+- `isMultiTask` must be `true` only when the input truly contains multiple independent task units. Use `false` for a single coherent task.
 - `segments` must contain at least one item.
+- If `isMultiTask` is `false`, prefer a single `segments` item unless the later pipeline clearly benefits from a continuation or modifier split.
 - `id` values should be sequential: `segment_1`, `segment_2`, ...
 - `relation` must be exactly one of `independent`, `continuation`, `modifier`.
 - `confidence` must be between `0` and `1`.

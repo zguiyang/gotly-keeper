@@ -8,7 +8,10 @@ import {
   findWorkspaceRunDuplicateCandidates,
 } from './workspace-run-duplicates'
 import { executeWorkspaceRunSteps } from './workspace-run-executor'
-import { normalizeWorkspaceRunInput } from './workspace-run-normalizer'
+import {
+  normalizeWorkspaceRunInput,
+  normalizeWorkspaceRunInputWithModel,
+} from './workspace-run-normalizer'
 import {
   createRunId,
   emitEvent,
@@ -39,12 +42,20 @@ import type { DraftWorkspaceTask, WorkspaceInteraction } from '@/shared/workspac
 
 const WS_LOG_PREFIX = '[workspace]'
 
-async function runNormalize(ctx: PhaseContext, rawText: string) {
+async function runNormalize(
+  ctx: PhaseContext,
+  rawText: string,
+  runModel: OrchestrateWorkspaceRunOptions['runModel']
+) {
   const startTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'normalize' })
-  const normalized = normalizeWorkspaceRunInput(rawText)
+  const normalized = await normalizeWorkspaceRunInputWithModel({
+    rawText,
+    runModel,
+    signal: ctx.signal,
+  })
   emitEvent(ctx, { type: 'phase_completed', phase: 'normalize', output: normalized })
-  recordPhaseTiming(ctx.phaseTimings, 'normalize', startTs, Date.now(), 'orchestration')
+  recordPhaseTiming(ctx.phaseTimings, 'normalize', startTs, Date.now(), 'model')
   return normalized
 }
 
@@ -103,6 +114,8 @@ function buildUnderstandingInputs(
     normalizedText: string
     urls: string[]
     separators: string[]
+    typoCandidates: ReturnType<typeof normalizeWorkspaceRunInput>['typoCandidates']
+    timeHints: string[]
   }> = []
 
   for (const segment of semanticSplit.segments) {
@@ -118,6 +131,11 @@ function buildUnderstandingInputs(
     previousGroup.normalizedText = `${previousGroup.normalizedText}\n${normalizedSegment.normalizedText}`
     previousGroup.urls = [...previousGroup.urls, ...normalizedSegment.urls]
     previousGroup.separators = [...previousGroup.separators, ...normalizedSegment.separators]
+    previousGroup.typoCandidates = [
+      ...previousGroup.typoCandidates,
+      ...normalizedSegment.typoCandidates,
+    ]
+    previousGroup.timeHints = [...previousGroup.timeHints, ...normalizedSegment.timeHints]
   }
 
   return groups.length > 0 ? groups : [normalized]
@@ -338,9 +356,8 @@ export async function handleNewInput(
   const updatedAt = new Date().toISOString()
 
   const ctx: PhaseContext = { runId, userId, onEvent, signal: options.signal, phaseTimings: [] }
-
   try {
-    const normalized = await runNormalize(ctx, request.text)
+    const normalized = await runNormalize(ctx, request.text, runModel)
 
     console.log(`${WS_LOG_PREFIX} normalize`, {
       runId,
@@ -379,7 +396,7 @@ export async function handleNewInput(
     const normalizedDraftTasks = await runResolveTodoTimes(
       ctx,
       understanding.draftTasks,
-      [],
+      normalized.timeHints,
       updatedAt
     )
     const normalizedUnderstanding = {
