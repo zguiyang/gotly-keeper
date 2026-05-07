@@ -13,7 +13,7 @@ function createSnapshot(overrides: Partial<WorkspaceReviewPendingRunSnapshot> = 
       id: 'run_1_confirm_plan',
       type: 'confirm_plan',
       message: '请确认执行计划。',
-      actions: ['confirm', 'edit', 'cancel'] as const,
+      actions: ['confirm', 'cancel'] as const,
       plan: {
         summary: '准备执行 1 个任务。',
         steps: [
@@ -35,7 +35,7 @@ function createSnapshot(overrides: Partial<WorkspaceReviewPendingRunSnapshot> = 
           id: 'run_1_confirm_plan',
           type: 'confirm_plan',
           message: '请确认执行计划。',
-          actions: ['confirm', 'edit', 'cancel'] as const,
+          actions: ['confirm', 'cancel'] as const,
           plan: {
             summary: '准备执行 1 个任务。',
             steps: [
@@ -139,38 +139,13 @@ describe('workspace-run-store.drizzle', () => {
           message: '这条任务的意图还不够确定，请补充说明。',
           actions: ['submit', 'cancel'] as const,
           fields: [
-            { key: 'title', label: '标题', required: true, placeholder: '请输入标题' },
+            { key: 'title', label: '标题', required: true, input: 'text', placeholder: '请输入标题' },
           ],
         },
       })
       expect(snapshot.interaction.type).toBe('clarify_slots')
     })
 
-    it('accepts snapshot with edit_draft_tasks interaction', () => {
-      const snapshot = createSnapshot({
-        interactionId: 'run_1_edit_draft_tasks',
-        interaction: {
-          runId: 'run_1',
-          id: 'run_1_edit_draft_tasks',
-          type: 'edit_draft_tasks',
-          message: '这次请求包含多个草稿任务，请先确认或编辑。',
-          actions: ['save', 'cancel'] as const,
-          tasks: [
-            {
-              id: 'draft_1',
-              intent: 'create',
-              target: 'todos',
-              title: '给客户发报价',
-              confidence: 0.92,
-              ambiguities: [],
-              corrections: [],
-              slots: { title: '给客户发报价' },
-            },
-          ],
-        },
-      })
-      expect(snapshot.interaction.type).toBe('edit_draft_tasks')
-    })
   })
 
   describe('status transitions', () => {

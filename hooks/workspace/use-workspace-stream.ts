@@ -305,15 +305,6 @@ export function useWorkspaceStream(options: {
     [runRequest]
   )
 
-  const triggerQuickAction = useCallback(
-    async (
-      action: Extract<WorkspaceRunRequest, { kind: 'quick-action' }>['action']
-    ) => {
-      await runRequest({ kind: 'quick-action', action })
-    },
-    [runRequest]
-  )
-
   const resumeInteraction = useCallback(
     async (response: WorkspaceInteractionResponse) => {
       if (!state.runId || !state.interaction) {
@@ -382,7 +373,6 @@ export function useWorkspaceStream(options: {
     pendingRunLoading,
     pendingRunDismissing,
     submitInput,
-    triggerQuickAction,
     resumeInteraction,
     resetRun,
     restorePendingRun,

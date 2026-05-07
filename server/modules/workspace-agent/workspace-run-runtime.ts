@@ -96,7 +96,7 @@ function createSearchCandidates(): SearchWorkspaceRunCandidates {
       const result = await executeWorkspaceTool(
         {
           toolName: 'search_todos',
-          toolInput: { query: input.query, status: 'all' },
+          toolInput: { query: input.query, status: input.status },
         },
         { userId: input.userId }
       )

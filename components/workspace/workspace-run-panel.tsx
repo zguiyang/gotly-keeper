@@ -2,7 +2,7 @@
 
 import { Check } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -13,7 +13,6 @@ import {
 } from '@/shared/workspace/workspace-run-protocol'
 
 import { CandidatePicker } from './candidate-picker'
-import { DraftTaskEditor, type DraftTaskEditorHandle } from './draft-task-editor'
 import { PlanPreviewCard } from './plan-preview-card'
 import { SlotClarificationForm } from './slot-clarification-form'
 import { WorkspaceQueryResultsContent } from './workspace-result-panels'
@@ -795,14 +794,12 @@ function InteractionPanel({
   onCandidateSelect,
   slotFormId,
   onResume,
-  draftEditorRef,
 }: {
   interaction: WorkspaceInteraction
   candidateSelection: string | null
   onCandidateSelect: (candidateId: string) => void
   slotFormId: string
   onResume: (response: WorkspaceInteractionResponse) => void
-  draftEditorRef?: React.Ref<DraftTaskEditorHandle>
 }) {
   switch (interaction.type) {
     case 'select_candidate':
@@ -825,8 +822,6 @@ function InteractionPanel({
       )
     case 'confirm_duplicate':
       return <DuplicateConfirmationCard key={interaction.id} interaction={interaction} />
-    case 'edit_draft_tasks':
-      return <DraftTaskEditor key={interaction.id} ref={draftEditorRef} interaction={interaction} />
     case 'confirm_plan':
       return <PlanPreviewCard key={interaction.id} interaction={interaction} />
     default:
@@ -839,10 +834,6 @@ function InteractionActionIntro({
 }: {
   interaction: WorkspaceInteraction
 }) {
-  if (interaction.type === 'edit_draft_tasks') {
-    return '确认标题和附加信息后，保存这些任务并继续执行。'
-  }
-
   if (interaction.type === 'confirm_plan') {
     return '执行前最后确认一遍步骤；确认后会按顺序处理这些动作。'
   }
@@ -892,7 +883,6 @@ export function WorkspaceRunPanel({
   const derivedPreviewState = derivePreviewStateFromTimeline(timeline)
   const resolvedUnderstandingPreview = understandingPreview ?? derivedPreviewState.understandingPreview
   const resolvedPlanPreview = planPreview ?? derivedPreviewState.planPreview
-  const draftEditorRef = useRef<DraftTaskEditorHandle>(null)
   const [detailsExpanded, setDetailsExpanded] = useState(false)
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null)
   const slotFormId = useId()
@@ -912,35 +902,6 @@ export function WorkspaceRunPanel({
 
   function renderActions(interaction: WorkspaceInteraction) {
     if (!onResume) return null
-
-    if (interaction.type === 'edit_draft_tasks') {
-      return (
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="default"
-            onClick={() => {
-              const tasks = draftEditorRef.current?.getTasks()
-              onResume({
-                type: 'edit_draft_tasks',
-                action: 'save',
-                tasks: tasks ?? [],
-              })
-            }}
-            className={workspacePrimaryActionButtonClassName}
-          >
-            <Check data-icon="inline-start" />
-            保存任务并继续
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => onResume({ type: 'edit_draft_tasks', action: 'cancel' })}
-            className={workspaceSecondaryActionButtonClassName}
-          >
-            取消
-          </Button>
-        </div>
-      )
-    }
 
     if (interaction.type === 'select_candidate') {
       return (
@@ -1007,6 +968,13 @@ export function WorkspaceRunPanel({
           >
             <Check data-icon="inline-start" />
             确认并执行
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => onResume({ type: 'confirm_plan', action: 'cancel' })}
+            className={workspaceSecondaryActionButtonClassName}
+          >
+            取消
           </Button>
         </div>
       )
@@ -1080,12 +1048,11 @@ export function WorkspaceRunPanel({
             >
               <InteractionPanel
                 interaction={interaction}
-                candidateSelection={selectedCandidateId}
-                onCandidateSelect={setSelectedCandidateId}
-                slotFormId={slotFormId}
-                onResume={onResume}
-                draftEditorRef={draftEditorRef}
-              />
+              candidateSelection={selectedCandidateId}
+              onCandidateSelect={setSelectedCandidateId}
+              slotFormId={slotFormId}
+              onResume={onResume}
+            />
             </motion.div>
           ) : status === 'streaming' ? (
             <motion.div

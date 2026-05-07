@@ -7,14 +7,10 @@ import { buildBatchAnswer, buildCompletedRunResult } from './workspace-run-compl
 import {
   findWorkspaceBookmarkDuplicateCandidate,
   findWorkspaceBookmarkDuplicateCandidates,
-  findWorkspaceRunDuplicateCandidates,
-  inferModelDuplicateCandidates,
-  mergeDuplicateCandidates,
 } from './workspace-run-duplicates'
 import { executeWorkspaceRunSteps } from './workspace-run-executor'
 import {
   normalizeWorkspaceRunInput,
-  normalizeWorkspaceRunInputWithModel,
 } from './workspace-run-normalizer'
 import {
   createRunId,
@@ -61,18 +57,13 @@ const workspaceRunPlanHintSchema = z.object({
 
 async function runNormalize(
   ctx: PhaseContext,
-  rawText: string,
-  runModel: OrchestrateWorkspaceRunOptions['runModel']
+  rawText: string
 ) {
   const startTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'normalize' })
-  const normalized = await normalizeWorkspaceRunInputWithModel({
-    rawText,
-    runModel,
-    signal: ctx.signal,
-  })
+  const normalized = normalizeWorkspaceRunInput(rawText)
   emitEvent(ctx, { type: 'phase_completed', phase: 'normalize', output: normalized })
-  recordPhaseTiming(ctx.phaseTimings, 'normalize', startTs, Date.now(), 'model')
+  recordPhaseTiming(ctx.phaseTimings, 'normalize', startTs, Date.now(), 'orchestration')
   return normalized
 }
 
@@ -402,6 +393,13 @@ function shouldSkipComposeForSingleMutation(input: {
   return task.intent === 'create' || task.intent === 'update'
 }
 
+function assignDraftTaskIds(tasks: DraftWorkspaceTask[]) {
+  return tasks.map((task, index) => ({
+    ...task,
+    id: `draft_${index + 1}`,
+  }))
+}
+
 export async function handleNewInput(
   options: OrchestrateWorkspaceRunOptions
 ): Promise<WorkspaceRunOrchestratorResult> {
@@ -416,7 +414,7 @@ export async function handleNewInput(
 
   const ctx: PhaseContext = { runId, userId, onEvent, signal: options.signal, phaseTimings: [] }
   try {
-    const normalized = await runNormalize(ctx, request.text, runModel)
+    const normalized = await runNormalize(ctx, request.text)
     const normalizedForUnderstanding = applyTypoCorrections(normalized)
 
     console.log(`${WS_LOG_PREFIX} normalize`, {
@@ -441,7 +439,9 @@ export async function handleNewInput(
       rawInput: normalized.rawText,
       normalizedInput: normalizedForUnderstanding.normalizedText,
       corrections: inheritedCorrections,
-      draftTasks: understandingResults.flatMap((result) => result.draftTasks),
+      draftTasks: assignDraftTaskIds(
+        understandingResults.flatMap((result) => result.draftTasks)
+      ),
     }
 
     console.log(`${WS_LOG_PREFIX} understanding`, {
@@ -498,27 +498,6 @@ export async function handleNewInput(
       })),
     })
 
-    const remainingDuplicateCheckSteps = plannerResult.steps.filter(
-      (step) => !bookmarkDuplicateCandidates.some((candidate) => candidate.stepId === step.id)
-    )
-    const additionalDuplicateCandidates = remainingDuplicateCheckSteps.length > 0
-      ? await findWorkspaceRunDuplicateCandidates({
-          userId,
-          plannerResult: {
-            ...plannerResult,
-            steps: remainingDuplicateCheckSteps,
-          },
-        })
-      : []
-    const inferredDuplicateCandidates = inferModelDuplicateCandidates({
-      draftTasks: normalizedUnderstanding.draftTasks,
-      plannerResult,
-    })
-    const duplicateCandidates = mergeDuplicateCandidates(
-      [...bookmarkDuplicateCandidates, ...additionalDuplicateCandidates],
-      inferredDuplicateCandidates
-    )
-
     const reviewResult = await runReview(
       ctx,
       draftTasks,
@@ -526,7 +505,7 @@ export async function handleNewInput(
       normalizedUnderstanding,
       updatedAt,
       updatedAt,
-      duplicateCandidates
+      bookmarkDuplicateCandidates
     )
 
     console.log(`${WS_LOG_PREFIX} review`, {

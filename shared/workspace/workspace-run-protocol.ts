@@ -166,11 +166,7 @@ const workspaceInteractionSchema = z.discriminatedUnion('type', [
     id: z.string(),
     type: z.literal('confirm_plan'),
     message: z.string(),
-    actions: z.tuple([
-      z.literal('confirm'),
-      z.literal('edit'),
-      z.literal('cancel'),
-    ]),
+    actions: z.tuple([z.literal('confirm'), z.literal('cancel')]),
     plan: workspacePlanPreviewSchema,
   }),
   z.object({
@@ -190,7 +186,7 @@ const workspaceInteractionSchema = z.discriminatedUnion('type', [
     runId: z.string(),
     id: z.string(),
     type: z.literal('confirm_duplicate'),
-    source: z.enum(['bookmark_precheck', 'plan_duplicate_scan']).optional(),
+    source: z.literal('bookmark_precheck').optional(),
     target: z.enum(['todo', 'note', 'bookmark']),
     message: z.string(),
     actions: z.tuple([
@@ -208,14 +204,6 @@ const workspaceInteractionSchema = z.discriminatedUnion('type', [
     message: z.string(),
     actions: z.tuple([z.literal('submit'), z.literal('cancel')]),
     fields: z.array(workspaceClarificationFieldSchema),
-  }),
-  z.object({
-    runId: z.string(),
-    id: z.string(),
-    type: z.literal('edit_draft_tasks'),
-    message: z.string(),
-    actions: z.tuple([z.literal('save'), z.literal('cancel')]),
-    tasks: z.array(workspaceDraftTaskSchema),
   }),
 ])
 
@@ -241,21 +229,11 @@ export type ClarifySlotsInteraction = Extract<
   { type: 'clarify_slots' }
 >
 
-export type EditDraftTasksInteraction = Extract<
-  WorkspaceInteraction,
-  { type: 'edit_draft_tasks' }
->
-
 export const workspaceInteractionResponseSchema = z.discriminatedUnion('type', [
   z.discriminatedUnion('action', [
     z.object({
       type: z.literal('confirm_plan'),
       action: z.literal('confirm'),
-    }),
-    z.object({
-      type: z.literal('confirm_plan'),
-      action: z.literal('edit'),
-      editedPlan: workspacePlanPreviewSchema,
     }),
     z.object({
       type: z.literal('confirm_plan'),
@@ -302,17 +280,6 @@ export const workspaceInteractionResponseSchema = z.discriminatedUnion('type', [
       action: z.literal('cancel'),
     }),
   ]),
-  z.discriminatedUnion('action', [
-    z.object({
-      type: z.literal('edit_draft_tasks'),
-      action: z.literal('save'),
-      tasks: z.array(workspaceDraftTaskSchema),
-    }),
-    z.object({
-      type: z.literal('edit_draft_tasks'),
-      action: z.literal('cancel'),
-    }),
-  ]),
 ])
 
 export type WorkspaceInteractionResponse = z.infer<
@@ -323,14 +290,6 @@ export const workspaceRunRequestSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('input'),
     text: z.string(),
-  }),
-  z.object({
-    kind: z.literal('quick-action'),
-    action: z.enum([
-      'review-todos',
-      'summarize-notes',
-      'summarize-bookmarks',
-    ]),
   }),
   z.object({
     kind: z.literal('resume'),

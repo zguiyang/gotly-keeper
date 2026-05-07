@@ -1,8 +1,6 @@
 import 'server-only'
 
-
 import { handleNewInput } from './workspace-run-orchestrator.input'
-import { handleQuickAction } from './workspace-run-orchestrator.quickaction'
 import { handleResume } from './workspace-run-orchestrator.resume'
 import { createWorkspaceRunStore } from './workspace-run-store.drizzle'
 
@@ -62,10 +60,6 @@ export async function orchestrateWorkspaceRun(
 
   if (request.kind === 'input') {
     return handleNewInput(options)
-  }
-
-  if (request.kind === 'quick-action') {
-    return handleQuickAction(options)
   }
 
   return {

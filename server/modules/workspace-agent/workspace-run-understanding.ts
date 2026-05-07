@@ -245,7 +245,7 @@ function normalizeTodoCreateTitle(task: DraftWorkspaceTask) {
   }
 }
 
-function normalizeStructuredFields(task: DraftWorkspaceTask) {
+function normalizeStructuredFields(task: DraftWorkspaceTask): DraftWorkspaceTask {
   const title = task.title.trim()
   const cleanTitle = task.cleanTitle?.trim()
   const cleanContent = task.cleanContent?.trim()
@@ -262,9 +262,101 @@ function normalizeStructuredFields(task: DraftWorkspaceTask) {
   }
 }
 
-function normalizeDraftTasks(tasks: DraftWorkspaceTask[]) {
+function inferReadTargetFromText(text: string): DraftWorkspaceTask['target'] {
+  if (text.includes('书签') || text.includes('链接')) {
+    return 'bookmarks'
+  }
+
+  if (text.includes('待办')) {
+    return 'todos'
+  }
+
+  if (text.includes('笔记')) {
+    return 'notes'
+  }
+
+  return 'mixed'
+}
+
+function applyMvpTaskContract(task: DraftWorkspaceTask, rawInput: string): DraftWorkspaceTask {
+  const normalizedInput = rawInput.replace(/\s+/g, '')
+  const notePrefix = /^(帮我)?记一下[:：]?$/.test(normalizedInput.slice(0, 6)) || normalizedInput.startsWith('记一下')
+  const todoPrefix = normalizedInput.startsWith('记个待办') || normalizedInput.startsWith('帮我记个待办')
+  const queryPrefix = /^(帮我)?(找一下|找找|找回|搜一下|搜索|查一下|查找|看看)/.test(normalizedInput)
+  const todoUpdateSignal =
+    normalizedInput.includes('待办') &&
+    /(标记完成|标记为完成|改成完成|改成已完成|更新)/.test(normalizedInput)
+  const bookmarkSignal = /^https?:\/\//i.test(task.title.trim()) || typeof task.slots.url === 'string'
+
+  if (queryPrefix) {
+    return {
+      ...task,
+      intent: 'query' as const,
+      target: inferReadTargetFromText(normalizedInput),
+      captureMode: 'none' as const,
+      clarifyReason: 'none' as const,
+      ambiguities: [],
+      confidence: Math.max(task.confidence, 0.85),
+    }
+  }
+
+  if (todoUpdateSignal) {
+    return {
+      ...task,
+      intent: 'update' as const,
+      target: 'todos' as const,
+      captureMode: 'none' as const,
+      clarifyReason: task.clarifyReason ?? 'none',
+      confidence: Math.max(task.confidence, 0.85),
+    }
+  }
+
+  if (todoPrefix) {
+    return {
+      ...task,
+      intent: 'create' as const,
+      target: 'todos' as const,
+      captureMode: 'todo_capture' as const,
+      clarifyReason:
+        task.clarifyReason === 'missing_time_precision' ? task.clarifyReason : 'none',
+      ambiguities:
+        task.clarifyReason === 'missing_time_precision' ? task.ambiguities : [],
+      confidence: Math.max(task.confidence, 0.85),
+    }
+  }
+
+  if (notePrefix && !bookmarkSignal) {
+    return {
+      ...task,
+      intent: 'create' as const,
+      target: 'notes' as const,
+      captureMode: 'note_capture' as const,
+      clarifyReason: 'none' as const,
+      ambiguities: [],
+      confidence: Math.max(task.confidence, 0.85),
+    }
+  }
+
+  if (bookmarkSignal && task.intent === 'create') {
+    return {
+      ...task,
+      target: 'bookmarks' as const,
+      captureMode: 'bookmark_capture' as const,
+      confidence: Math.max(task.confidence, 0.85),
+    }
+  }
+
+  return task
+}
+
+function normalizeDraftTasks(tasks: DraftWorkspaceTask[], rawInput: string) {
   return tasks.map((task) =>
-    normalizeStructuredFields(normalizeTodoCreateTitle(normalizeCommandOnlyCreateTitle(task)))
+    normalizeStructuredFields(
+      applyMvpTaskContract(
+        normalizeTodoCreateTitle(normalizeCommandOnlyCreateTitle(task)),
+        rawInput
+      )
+    )
   )
 }
 
@@ -307,6 +399,7 @@ export async function understandWorkspaceRunInput(input: {
       normalizedInput: input.normalized.normalizedText,
       draftTasks: normalizeDraftTasks(
         toDraftTasks(normalizeModelDraftTasks(modelParsed.data.draftTasks)),
+        input.normalized.normalizedText,
       ),
       corrections: input.inheritedCorrections ?? [],
     }
@@ -330,6 +423,7 @@ export async function understandWorkspaceRunInput(input: {
       normalizedInput: input.normalized.normalizedText,
       draftTasks: normalizeDraftTasks(
         toDraftTasks(normalizeModelDraftTasks(modelParsed.data.draftTasks)),
+        input.normalized.normalizedText,
       ),
       corrections: input.inheritedCorrections ?? [],
     }
@@ -344,7 +438,10 @@ export async function understandWorkspaceRunInput(input: {
   return {
     rawInput: input.normalized.rawText,
     normalizedInput: input.normalized.normalizedText,
-    draftTasks: normalizeDraftTasks(toDraftTasks(validated.data.draftTasks)),
+    draftTasks: normalizeDraftTasks(
+      toDraftTasks(validated.data.draftTasks),
+      input.normalized.normalizedText
+    ),
     corrections: input.inheritedCorrections ?? [],
   }
 }

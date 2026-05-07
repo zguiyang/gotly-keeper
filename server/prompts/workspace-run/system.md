@@ -158,7 +158,7 @@ When the user clearly requests an unsupported action:
    the content after the prefix belongs ENTIRELY to that single asset type.
    Do NOT split the same input into different asset types.
    Example: `remind me to discuss requirements at 9am tomorrow` -> a single todo task, not note + todo.
-   Exception: only split when explicit conjunction markers exist (also, and, meanwhile, in addition) between truly independent operations.
+   Exception: only split when the user clearly expresses multiple truly independent operations that can stand alone semantically.
 
 7. **query, summarize, and update share selector semantics.**
    All three resolve their target the same way. The difference is what happens after resolution:

@@ -3,7 +3,6 @@ import 'server-only'
 import { ACTION_LABELS } from './workspace-run-action-labels'
 
 import type {
-  DraftWorkspaceTask,
   WorkspaceCandidate,
   WorkspaceDuplicateReviewState,
   WorkspaceInteraction,
@@ -11,7 +10,6 @@ import type {
   WorkspaceRunStreamEvent,
   WorkspaceUnderstandingPreview,
 } from '@/shared/workspace/workspace-run-protocol'
-
 
 export type WorkspaceCorrectionNote = string
 
@@ -112,7 +110,6 @@ export type ReviewWorkspaceRunPlanDecision =
   | {
       status: 'await_user'
       reason:
-        | 'edit_draft_tasks'
         | 'confirm_duplicate'
         | 'select_candidate'
         | 'clarify_slots'
@@ -123,7 +120,7 @@ export type ReviewWorkspaceRunPlanDecision =
 export type ReviewableDuplicateCandidate = {
   stepId: string
   target: 'todo' | 'note' | 'bookmark'
-  source?: 'bookmark_precheck' | 'plan_duplicate_scan'
+  source?: 'bookmark_precheck'
   duplicates: WorkspaceCandidate[]
 }
 
@@ -131,34 +128,28 @@ function createInteractionId(runId: string, suffix: string) {
   return `${runId}_${suffix}`
 }
 
-function mapPlanStepToPreviewStep(step: ReviewablePlanStep) {
-  return {
-    id: step.id,
-    toolName: step.action,
-    title: ACTION_LABELS[step.action],
-    preview: `${ACTION_LABELS[step.action]}：${step.title ?? ''}`.trimEnd(),
-  }
-}
-
 function toPlanPreview(plan: ReviewablePlan): WorkspacePlanPreview {
   return {
     summary: plan.summary,
-    steps: plan.steps.map(mapPlanStepToPreviewStep),
+    steps: plan.steps.map((step) => ({
+      id: step.id,
+      toolName: step.action,
+      title: ACTION_LABELS[step.action],
+      preview: `${ACTION_LABELS[step.action]}：${step.title ?? ''}`.trimEnd(),
+    })),
   }
 }
 
 function buildSnapshot(input: {
   runId: string
   referenceTime?: string
-  interaction: WorkspaceReviewPendingRunSnapshot['interaction']
+  interaction: WorkspaceInteraction
   understandingPreview: WorkspaceUnderstandingPreview | null
   plan: ReviewablePlan
   updatedAt: string
   correctionNotes?: WorkspaceCorrectionNote[]
   duplicateReview?: WorkspaceDuplicateReviewState
 }): WorkspaceReviewPendingRunSnapshot {
-  const planPreview = toPlanPreview(input.plan)
-
   return {
     runId: input.runId,
     referenceTime: input.referenceTime ?? input.updatedAt,
@@ -167,18 +158,12 @@ function buildSnapshot(input: {
     interactionId: input.interaction.id,
     interaction: input.interaction,
     timeline: [
-      {
-        type: 'phase_started',
-        phase: 'review',
-      },
-      {
-        type: 'awaiting_user',
-        interaction: input.interaction,
-      },
+      { type: 'phase_started', phase: 'review' },
+      { type: 'awaiting_user', interaction: input.interaction },
     ],
     preview: {
       ...(input.understandingPreview ? { understanding: input.understandingPreview } : {}),
-      plan: planPreview,
+      plan: toPlanPreview(input.plan),
     },
     understandingPreview: input.understandingPreview,
     correctionNotes: input.correctionNotes ?? input.understandingPreview?.corrections ?? [],
@@ -202,33 +187,38 @@ function toInteractionCandidates(candidates: ReviewableCandidate[]): WorkspaceCa
   }))
 }
 
-function serializeDraftTask(task: ReviewableDraftTask): DraftWorkspaceTask {
-  const slots: Record<string, string> = {}
-  for (const [key, value] of Object.entries(task.slots)) {
-    if (typeof value === 'string') {
-      slots[key] = value
-    }
+function getCorrectionNotes(input: ReviewWorkspaceRunPlanInput, task: ReviewableDraftTask) {
+  return input.understandingPreview?.corrections ?? task.corrections ?? []
+}
+
+function getUnresolvedDuplicateCandidate(input: ReviewWorkspaceRunPlanInput) {
+  return (input.duplicateCandidates ?? [])[0] ?? null
+}
+
+function isStepConsistentWithTask(task: ReviewableDraftTask, step: ReviewablePlanStep) {
+  if (task.intent === 'update') {
+    return step.action === 'update_todo' && task.target === 'todos'
   }
 
-  return {
-    ...task,
-    title: task.title ?? '',
-    cleanTitle: task.cleanTitle,
-    cleanContent: task.cleanContent,
-    captureMode: task.captureMode,
-    clarifyReason: task.clarifyReason,
-    repeatRelation: task.repeatRelation,
-    targetConfidence: task.targetConfidence,
-    slots,
-    hasRealContent: true,
+  if (task.intent === 'query') {
+    return step.action === 'query_assets'
   }
+
+  if (task.intent === 'summarize') {
+    return step.action === 'summarize_assets'
+  }
+
+  if (task.intent !== 'create') {
+    return false
+  }
+
+  if (task.target === 'notes') return step.action === 'create_note'
+  if (task.target === 'todos') return step.action === 'create_todo'
+  if (task.target === 'bookmarks') return step.action === 'create_bookmark'
+  return step.target === 'mixed'
 }
 
 function buildClarifyFields(task: ReviewableDraftTask, step?: ReviewablePlanStep) {
-  const url = typeof task.slots.url === 'string' ? task.slots.url.trim() : ''
-  const slotTitle = typeof task.slots.title === 'string' ? task.slots.title.trim() : null
-  const target = task.target !== 'mixed' ? task.target : step?.target
-
   if (task.target === 'mixed') {
     return [
       {
@@ -247,80 +237,39 @@ function buildClarifyFields(task: ReviewableDraftTask, step?: ReviewablePlanStep
         key: 'details',
         label: '具体内容',
         required: true,
-        placeholder: '例如：下周要整理客户报价相关事项',
+        input: 'text' as const,
+        placeholder: '例如：普通用户希望一句话直接保存',
       },
     ]
   }
 
-  if (task.target === 'bookmarks') {
-    const hasTitle = (task.title?.trim() ?? '').length > 0 || (slotTitle ?? '').length > 0
-
+  if (task.target === 'bookmarks' || step?.action === 'create_bookmark') {
     return [
       {
         key: 'url',
-        label: '书签链接',
+        label: '链接',
         required: true,
+        input: 'text' as const,
         placeholder: 'https://example.com',
       },
       {
-        key: 'title',
-        label: '标题',
-        required: true,
-        placeholder: '请输入标题',
-      },
-    ].filter((field) => {
-      if (field.key === 'url') {
-        return !url
-      }
-
-      return !hasTitle
-    })
-  }
-
-  if (Object.prototype.hasOwnProperty.call(task.slots, 'title') && slotTitle !== null && slotTitle.length === 0) {
-    const hasTitle = (task.title?.trim() ?? '').length > 0
-    if (hasTitle) {
-      return []
-    }
-
-    return [
-      {
-        key: 'title',
-        label:
-          step?.action === 'create_todo' || target === 'todos'
-            ? '待办内容'
-            : step?.action === 'create_note' || target === 'notes'
-              ? '笔记内容'
-              : '标题',
-        required: true,
-        placeholder:
-          step?.action === 'create_todo' || target === 'todos'
-            ? '例如：给客户发报价'
-            : step?.action === 'create_note' || target === 'notes'
-              ? '例如：客户更喜欢极简风首页'
-              : '请输入标题',
-      },
-    ]
-  }
-
-  if (task.intent === 'query') {
-    return [
-      {
-        key: 'query',
-        label: '查询关键词',
-        required: true,
-        placeholder: '例如：报价待办',
-      },
-    ]
-  }
-
-  if (task.intent === 'summarize') {
-    return [
-      {
         key: 'details',
-        label: '整理范围',
+        label: '补充说明',
+        required: false,
+        input: 'text' as const,
+        placeholder: '可选备注',
+      },
+    ]
+  }
+
+  if (task.target === 'todos' && task.clarifyReason === 'missing_time_precision') {
+    return [
+      {
+        key: 'timeText',
+        label: '具体时间',
         required: true,
-        placeholder: '例如：下周要跟进的客户报价相关内容',
+        input: 'text' as const,
+        placeholder: '例如：下周三下午 3 点',
       },
     ]
   }
@@ -330,186 +279,10 @@ function buildClarifyFields(task: ReviewableDraftTask, step?: ReviewablePlanStep
       key: 'details',
       label: '具体内容',
       required: true,
-      placeholder: '例如：下周要整理客户报价相关事项',
+      input: 'text' as const,
+      placeholder: task.target === 'todos' ? '例如：明天早上买燕麦奶' : '请补充要保存的内容',
     },
   ]
-}
-
-function hasMissingRequiredWriteFields(task: ReviewableDraftTask, step: ReviewablePlanStep) {
-  if (
-    step.action === 'create_note' ||
-    step.action === 'create_todo' ||
-    step.action === 'create_bookmark'
-  ) {
-    if (Object.prototype.hasOwnProperty.call(task.slots, 'title')) {
-      const slotTitle = typeof task.slots.title === 'string' ? task.slots.title.trim() : ''
-      return slotTitle.length === 0
-    }
-
-    if ((task.title?.trim() ?? '').length === 0) {
-      return true
-    }
-  }
-
-  if (step.action === 'create_bookmark') {
-    const url = typeof task.slots.url === 'string' ? task.slots.url.trim() : ''
-    return !url
-  }
-
-  return false
-}
-
-function isStepConsistentWithTask(task: ReviewableDraftTask, step: ReviewablePlanStep) {
-  const isActionAllowed =
-    (task.intent === 'create' &&
-      (step.action === 'create_note' ||
-        step.action === 'create_todo' ||
-        step.action === 'create_bookmark')) ||
-    (task.intent === 'query' && step.action === 'query_assets') ||
-    (task.intent === 'summarize' && step.action === 'summarize_assets') ||
-    (task.intent === 'update' && step.action === 'update_todo')
-
-  if (!isActionAllowed) {
-    return false
-  }
-
-  if (task.target !== 'mixed' && step.target !== task.target) {
-    return false
-  }
-
-  return true
-}
-
-function hasWriteTitleDrift(task: ReviewableDraftTask, step: ReviewablePlanStep) {
-  if (
-    step.action !== 'create_note' &&
-    step.action !== 'create_todo' &&
-    step.action !== 'create_bookmark'
-  ) {
-    return false
-  }
-
-  const stepTitle = step.title?.trim()
-  if (!stepTitle) {
-    return false
-  }
-
-  const slotTitle = typeof task.slots.title === 'string' ? task.slots.title.trim() : ''
-  const cleanTitle = task.cleanTitle?.trim() ?? ''
-  const taskTitle = task.title?.trim() ?? ''
-  const baselineTitle = cleanTitle || slotTitle || taskTitle
-
-  if (!baselineTitle) {
-    return false
-  }
-
-  return baselineTitle !== stepTitle
-}
-
-function getTimeResolutionKind(task: ReviewableDraftTask) {
-  const value = task.slots.timeResolutionKind
-  return value === 'clear' || value === 'vague' || value === 'unresolved' || value === 'no_due_date'
-    ? value
-    : null
-}
-
-function shouldClarifyTargetFirst(task: ReviewableDraftTask, step?: ReviewablePlanStep) {
-  if (!step) {
-    return false
-  }
-
-  const isCreateStep =
-    step.action === 'create_note' || step.action === 'create_todo' || step.action === 'create_bookmark'
-
-  return isCreateStep && (task.clarifyReason === 'unknown_target' || task.target === 'mixed')
-}
-
-function shouldClarifyMissingContent(task: ReviewableDraftTask, step?: ReviewablePlanStep) {
-  if (!step) {
-    return false
-  }
-
-  return (
-    task.clarifyReason === 'missing_content' ||
-    hasMissingRequiredWriteFields(task, step)
-  )
-}
-
-function shouldClarifyTodoTime(task: ReviewableDraftTask, step?: ReviewablePlanStep) {
-  if (!step || task.target !== 'todos' || step.action !== 'create_todo') {
-    return false
-  }
-
-  if (task.clarifyReason === 'missing_time_precision' && task.captureMode === 'todo_capture') {
-    return true
-  }
-
-  const timeText = task.slots.timeText
-  const hasTimeText = typeof timeText === 'string' && timeText.trim().length > 0
-  if (!hasTimeText) {
-    return false
-  }
-
-  const clarityKind = getTimeResolutionKind(task)
-  const hasDueAt =
-    task.slots.dueAt != null && (typeof task.slots.dueAt === 'string' ? task.slots.dueAt.trim().length > 0 : true)
-
-  if (clarityKind === 'vague') {
-    return true
-  }
-
-  return clarityKind === 'unresolved' || (!clarityKind && !hasDueAt)
-}
-
-function hasNonBlockingTodoTimeDecision(task: ReviewableDraftTask, step: ReviewablePlanStep) {
-  if (task.target !== 'todos' || step.action !== 'create_todo') {
-    return false
-  }
-
-  return getTimeResolutionKind(task) === 'no_due_date'
-}
-
-function getCorrectionNotes(input: ReviewWorkspaceRunPlanInput, task: ReviewableDraftTask) {
-  return [...new Set([...task.corrections, ...(input.understandingPreview?.corrections ?? [])])]
-}
-
-function buildConfirmPlanDecision(input: {
-  runId: string
-  plan: ReviewablePlan
-  understandingPreview: WorkspaceUnderstandingPreview | null
-  updatedAt: string
-  referenceTime?: string
-  message: string
-  correctionNotes?: WorkspaceCorrectionNote[]
-  duplicateReview?: WorkspaceDuplicateReviewState
-}): {
-  status: 'await_user'
-  reason: 'confirm_plan'
-  snapshot: WorkspaceReviewPendingRunSnapshot
-} {
-  const interactionId = createInteractionId(input.runId, 'confirm_plan')
-
-  return {
-    status: 'await_user',
-    reason: 'confirm_plan',
-    snapshot: buildSnapshot({
-      runId: input.runId,
-      referenceTime: input.referenceTime,
-      interaction: {
-        runId: input.runId,
-        id: interactionId,
-        type: 'confirm_plan',
-        message: input.message,
-        actions: ['confirm', 'edit', 'cancel'],
-        plan: toPlanPreview(input.plan),
-      },
-      understandingPreview: input.understandingPreview,
-      plan: input.plan,
-      updatedAt: input.updatedAt,
-      correctionNotes: input.correctionNotes,
-      duplicateReview: input.duplicateReview,
-    }),
-  }
 }
 
 function buildClarifyDecision(input: {
@@ -518,16 +291,11 @@ function buildClarifyDecision(input: {
   understandingPreview: WorkspaceUnderstandingPreview | null
   updatedAt: string
   referenceTime?: string
-  interactionIdSuffix: string
   message: string
   fields: Extract<WorkspaceInteraction, { type: 'clarify_slots' }>['fields']
-}): {
-  status: 'await_user'
-  reason: 'clarify_slots'
-  snapshot: WorkspaceReviewPendingRunSnapshot
-} {
-  const interactionId = createInteractionId(input.runId, input.interactionIdSuffix)
-
+  correctionNotes?: WorkspaceCorrectionNote[]
+}): Extract<ReviewWorkspaceRunPlanDecision, { status: 'await_user' }> {
+  const interactionId = createInteractionId(input.runId, 'clarify_slots')
   return {
     status: 'await_user',
     reason: 'clarify_slots',
@@ -545,108 +313,43 @@ function buildClarifyDecision(input: {
       understandingPreview: input.understandingPreview,
       plan: input.plan,
       updatedAt: input.updatedAt,
+      correctionNotes: input.correctionNotes,
     }),
   }
 }
 
-function buildEditDraftTasksDecision(input: {
+function buildConfirmPlanDecision(input: {
   runId: string
-  draftTasks: ReviewableDraftTask[]
   plan: ReviewablePlan
   understandingPreview: WorkspaceUnderstandingPreview | null
   updatedAt: string
   referenceTime?: string
-}): {
-  status: 'await_user'
-  reason: 'edit_draft_tasks'
-  snapshot: WorkspaceReviewPendingRunSnapshot
-} {
-  const interactionId = createInteractionId(input.runId, 'edit_draft_tasks')
-
+  message: string
+  correctionNotes?: WorkspaceCorrectionNote[]
+  duplicateReview?: WorkspaceDuplicateReviewState
+}): Extract<ReviewWorkspaceRunPlanDecision, { status: 'await_user' }> {
+  const interactionId = createInteractionId(input.runId, 'confirm_plan')
   return {
     status: 'await_user',
-    reason: 'edit_draft_tasks',
+    reason: 'confirm_plan',
     snapshot: buildSnapshot({
       runId: input.runId,
       referenceTime: input.referenceTime,
       interaction: {
         runId: input.runId,
         id: interactionId,
-        type: 'edit_draft_tasks',
-        message: '这次请求包含多个草稿任务，请先确认或编辑。',
-        actions: ['save', 'cancel'],
-        tasks: input.draftTasks.map(serializeDraftTask),
+        type: 'confirm_plan',
+        message: input.message,
+        actions: ['confirm', 'cancel'],
+        plan: toPlanPreview(input.plan),
       },
       understandingPreview: input.understandingPreview,
       plan: input.plan,
       updatedAt: input.updatedAt,
+      correctionNotes: input.correctionNotes,
+      duplicateReview: input.duplicateReview,
     }),
   }
-}
-
-function getUnresolvedDuplicateCandidate(input: ReviewWorkspaceRunPlanInput) {
-  const decisions = new Set((input.duplicateReview?.decisions ?? []).map((decision) => decision.stepId))
-
-  return (input.duplicateCandidates ?? []).find((candidate) => !decisions.has(candidate.stepId))
-}
-
-function hasBlockingTimeClarity(task: ReviewableDraftTask, step: ReviewablePlanStep): boolean {
-  if (task.target !== 'todos' || step.action !== 'create_todo') {
-    return false
-  }
-
-  const resolutionKind = getTimeResolutionKind(task)
-  if (resolutionKind === 'unresolved') {
-    return true
-  }
-
-  if (resolutionKind === 'vague') {
-    return true
-  }
-
-  if (resolutionKind === 'no_due_date') {
-    return false
-  }
-
-  return false
-}
-
-function canAutoExecuteConfirmedMultiTask(input: ReviewWorkspaceRunPlanInput) {
-  if (input.draftTasks.length <= 1 || !input.draftTasksConfirmed) {
-    return false
-  }
-
-  return input.plan.steps.length > 0 && input.plan.steps.every(
-    (step, i) => {
-      if (step.risk !== 'low' || step.requiresUserApproval) {
-        return false
-      }
-
-      const task = input.draftTasks[i]
-      if (task && hasBlockingTimeClarity(task, step)) {
-        return false
-      }
-
-      return true
-    }
-  )
-}
-
-function canSkipEditDraftTasks(input: ReviewWorkspaceRunPlanInput): boolean {
-  if (input.draftTasks.length <= 1) return false
-  if (input.draftTasks.length !== input.plan.steps.length) return false
-  return input.plan.steps.every((step, i) => {
-    const task = input.draftTasks[i]
-    if (!task) return false
-    if (task.target === 'mixed') return false
-    if (task.ambiguities.length > 0 && !hasNonBlockingTodoTimeDecision(task, step)) return false
-    if (hasMissingRequiredWriteFields(task, step)) return false
-    if (!isStepConsistentWithTask(task, step)) return false
-    if (hasBlockingTimeClarity(task, step)) return false
-    if (hasWriteTitleDrift(task, step)) return false
-    if (step.risk !== 'low' || step.requiresUserApproval) return false
-    return true
-  })
 }
 
 function buildConfirmDuplicateDecision(input: {
@@ -657,19 +360,21 @@ function buildConfirmDuplicateDecision(input: {
   referenceTime?: string
   candidate: ReviewableDuplicateCandidate
   duplicateReview?: WorkspaceDuplicateReviewState
-}): {
-  status: 'await_user'
-  reason: 'confirm_duplicate'
-  snapshot: WorkspaceReviewPendingRunSnapshot
-} {
-  const interactionId = createInteractionId(input.runId, `confirm_duplicate_${input.candidate.stepId}`)
-  const step = input.plan.steps.find((planStep) => planStep.id === input.candidate.stepId)
-  const previewStep = step ? mapPlanStepToPreviewStep(step) : null
-  const targetLabelMap = {
-    todo: '待办',
-    note: '笔记',
-    bookmark: '书签',
-  } as const
+}): Extract<ReviewWorkspaceRunPlanDecision, { status: 'await_user' }> {
+  const step = input.plan.steps.find((item) => item.id === input.candidate.stepId)
+  if (!step) {
+    return buildConfirmPlanDecision({
+      runId: input.runId,
+      plan: input.plan,
+      understandingPreview: input.understandingPreview,
+      updatedAt: input.updatedAt,
+      referenceTime: input.referenceTime,
+      message: '发现了需要确认的重复内容，请确认执行计划。',
+      duplicateReview: input.duplicateReview,
+    })
+  }
+
+  const interactionId = createInteractionId(input.runId, `confirm_duplicate_${step.id}`)
 
   return {
     status: 'await_user',
@@ -683,12 +388,12 @@ function buildConfirmDuplicateDecision(input: {
         type: 'confirm_duplicate',
         source: input.candidate.source,
         target: input.candidate.target,
-        message: `发现可能重复的${targetLabelMap[input.candidate.target]}，请确认是否仍然创建。`,
+        message: '发现可能重复的内容，请确认。',
         actions: ['create', 'skip', 'cancel'],
         current: {
-          stepId: input.candidate.stepId,
-          title: step?.title ?? previewStep?.title ?? '创建内容',
-          preview: previewStep?.preview ?? '创建内容',
+          stepId: step.id,
+          title: step.title ?? '',
+          preview: `${ACTION_LABELS[step.action]}：${step.title ?? ''}`.trimEnd(),
         },
         duplicates: input.candidate.duplicates,
       },
@@ -700,118 +405,83 @@ function buildConfirmDuplicateDecision(input: {
   }
 }
 
-function buildUpdateDecision(input: {
+function buildSelectCandidateDecision(input: {
   runId: string
   plan: ReviewablePlan
   understandingPreview: WorkspaceUnderstandingPreview | null
   updatedAt: string
   referenceTime?: string
   candidates: ReviewableCandidate[]
-}):
-  | {
-      status: 'await_user'
-      reason: 'select_candidate' | 'clarify_slots' | 'confirm_plan'
-      snapshot: WorkspaceReviewPendingRunSnapshot
-    }
-  | {
-      status: 'auto_execute'
-      reason: 'single_low_risk_clear_task'
-      snapshot: null
-    } {
-  if (input.candidates.length > 1) {
-    const interactionId = createInteractionId(input.runId, 'select_candidate')
-
-    return {
-      status: 'await_user',
-      reason: 'select_candidate',
-      snapshot: buildSnapshot({
-        runId: input.runId,
-        referenceTime: input.referenceTime,
-        interaction: {
-          runId: input.runId,
-          id: interactionId,
-          type: 'select_candidate',
-          target: 'todo',
-          message: '找到多个可更新待办，请选择。',
-          actions: ['select', 'skip', 'cancel'],
-          candidates: toInteractionCandidates(input.candidates),
-        },
-        understandingPreview: input.understandingPreview,
-        plan: input.plan,
-        updatedAt: input.updatedAt,
-      }),
-    }
-  }
-
-  if (input.candidates.length === 1) {
-    const candidate = input.candidates[0]
-    const isHighConfidence = candidate.confidence >= 0.7
-
-    if (isHighConfidence) {
-      return {
-        status: 'auto_execute',
-        reason: 'single_low_risk_clear_task',
-        snapshot: null,
-      }
-    }
-
-    return buildConfirmPlanDecision({
+}): Extract<ReviewWorkspaceRunPlanDecision, { status: 'await_user' }> {
+  const interactionId = createInteractionId(input.runId, 'select_candidate')
+  return {
+    status: 'await_user',
+    reason: 'select_candidate',
+    snapshot: buildSnapshot({
       runId: input.runId,
-      plan: input.plan,
-      understandingPreview: input.understandingPreview,
-      updatedAt: input.updatedAt,
       referenceTime: input.referenceTime,
-      message: `找到一个待更新候选：${candidate.title}，请确认后执行。`,
-    })
+      interaction: {
+        runId: input.runId,
+        id: interactionId,
+        type: 'select_candidate',
+        target: 'todo',
+        message: '找到多个可更新待办，请选择。',
+        actions: ['select', 'skip', 'cancel'],
+        candidates: toInteractionCandidates(input.candidates),
+      },
+      understandingPreview: input.understandingPreview,
+      plan: input.plan,
+      updatedAt: input.updatedAt,
+    }),
+  }
+}
+
+function shouldClarify(task: ReviewableDraftTask, step?: ReviewablePlanStep) {
+  if (task.confidence < 0.4) return true
+  if (task.target === 'mixed') return true
+  if (task.clarifyReason && task.clarifyReason !== 'none') return true
+  if (task.ambiguities.length > 0) return true
+
+  if (task.intent === 'create') {
+    const title = task.title?.trim() ?? ''
+    if (title.length === 0 && step?.action !== 'create_bookmark') {
+      return true
+    }
+    if ((task.target === 'bookmarks' || step?.action === 'create_bookmark') && typeof task.slots.url !== 'string') {
+      return true
+    }
   }
 
-  return buildClarifyDecision({
-    runId: input.runId,
-    plan: input.plan,
-    understandingPreview: input.understandingPreview,
-    updatedAt: input.updatedAt,
-    referenceTime: input.referenceTime,
-    interactionIdSuffix: 'clarify_update',
-    message: '没有找到明确的待办，请补充识别信息。',
-    fields: [
-      {
-        key: 'query',
-        label: '待办关键词',
-        required: true,
-        placeholder: '例如：给客户发报价',
-      },
-    ],
-  })
+  return false
+}
+
+function buildClarifyMessage(task: ReviewableDraftTask, step?: ReviewablePlanStep) {
+  if (task.target === 'mixed' || task.clarifyReason === 'unknown_target') {
+    return '我还不确定你是想记待办、笔记还是书签。'
+  }
+
+  if (task.target === 'todos' && task.clarifyReason === 'missing_time_precision') {
+    return '我知道你想记待办，但时间还不够具体。'
+  }
+
+  if (step?.action === 'create_todo') return '我知道你想记待办，但还缺具体内容。'
+  if (step?.action === 'create_note') return '我知道你想记笔记，但还缺具体内容。'
+  if (step?.action === 'create_bookmark') return '我知道你想存书签，但还缺链接。'
+  if (task.intent === 'query') return '我知道你想查找内容，但还缺更具体的关键词。'
+  if (task.intent === 'summarize') return '我知道你想整理内容，但还缺更具体的范围或对象。'
+
+  return '执行前还缺少必要信息，请补充。'
 }
 
 export function reviewWorkspaceRunPlan(
   input: ReviewWorkspaceRunPlanInput
 ): ReviewWorkspaceRunPlanDecision {
   if (input.draftTasks.length === 0 || input.plan.steps.length === 0) {
-    return {
-      status: 'reject',
-      reason: 'invalid_plan',
-    }
+    return { status: 'reject', reason: 'invalid_plan' }
   }
 
-  if (input.draftTasks.length === 1 && input.plan.steps.length !== 1) {
-    return {
-      status: 'reject',
-      reason: 'invalid_plan',
-    }
-  }
-
-  if (input.draftTasks.length > 1 && !input.draftTasksConfirmed) {
-    if (!canSkipEditDraftTasks(input)) {
-      return buildEditDraftTasksDecision({
-        runId: input.runId,
-        draftTasks: input.draftTasks,
-        plan: input.plan,
-        understandingPreview: input.understandingPreview,
-        updatedAt: input.updatedAt,
-        referenceTime: input.referenceTime,
-      })
-    }
+  if (input.draftTasks.length !== input.plan.steps.length) {
+    return { status: 'reject', reason: 'invalid_plan' }
   }
 
   if (input.draftTasks.length > 1) {
@@ -828,21 +498,14 @@ export function reviewWorkspaceRunPlan(
       })
     }
 
-    if (canAutoExecuteConfirmedMultiTask(input) || canSkipEditDraftTasks(input)) {
-      return {
-        status: 'auto_execute',
-        reason: 'single_low_risk_clear_task',
-        snapshot: null,
-      }
-    }
-
     return buildConfirmPlanDecision({
       runId: input.runId,
       plan: input.plan,
       understandingPreview: input.understandingPreview,
       updatedAt: input.updatedAt,
       referenceTime: input.referenceTime,
-      message: '草稿任务已确认，请确认执行计划。',
+      message: `我识别到 ${input.draftTasks.length} 条内容，确认后会分别处理。`,
+      correctionNotes: input.understandingPreview?.corrections ?? [],
       duplicateReview: input.duplicateReview,
     })
   }
@@ -850,112 +513,21 @@ export function reviewWorkspaceRunPlan(
   const task = input.draftTasks[0]
   const step = input.plan.steps[0]
 
-  if (step?.action === 'update_todo') {
-    if (!isStepConsistentWithTask(task, step)) {
-      return {
-        status: 'reject',
-        reason: 'invalid_plan',
-      }
-    }
-
-    const decision = buildUpdateDecision({
-      runId: input.runId,
-      plan: input.plan,
-      understandingPreview: input.understandingPreview,
-      updatedAt: input.updatedAt,
-      referenceTime: input.referenceTime,
-      candidates: step.candidates ?? [],
-    })
-
-    if (decision.status === 'auto_execute') {
-      return {
-        status: 'auto_execute',
-        reason: 'single_low_risk_clear_task',
-        snapshot: null,
-      }
-    }
-
-    return decision
+  if (!task || !step || !isStepConsistentWithTask(task, step)) {
+    return { status: 'reject', reason: 'invalid_plan' }
   }
 
-  if (task.confidence < 0.4) {
-    if (task.intent === 'query') {
-      return buildClarifyDecision({
-        runId: input.runId,
-        plan: input.plan,
-        understandingPreview: input.understandingPreview,
-        updatedAt: input.updatedAt,
-        referenceTime: input.referenceTime,
-        interactionIdSuffix: 'clarify_confidence',
-        message: '我知道你想查询，但还缺更具体的关键词。',
-        fields: buildClarifyFields(task, step),
-      })
-    }
-
-    if (task.intent === 'summarize') {
-      return buildClarifyDecision({
-        runId: input.runId,
-        plan: input.plan,
-        understandingPreview: input.understandingPreview,
-        updatedAt: input.updatedAt,
-        referenceTime: input.referenceTime,
-        interactionIdSuffix: 'clarify_confidence',
-        message: '我知道你想整理内容，但还缺更具体的范围或对象。',
-        fields: buildClarifyFields(task, step),
-      })
-    }
-
+  if (shouldClarify(task, step)) {
     return buildClarifyDecision({
       runId: input.runId,
       plan: input.plan,
       understandingPreview: input.understandingPreview,
       updatedAt: input.updatedAt,
       referenceTime: input.referenceTime,
-      interactionIdSuffix: 'clarify_confidence',
-      message:
-        task.target === 'mixed'
-          ? '我还不确定你是想记待办、笔记还是书签，也不确定具体要记录什么。'
-          : '无法理解你的意图。当前支持：创建笔记、待办、书签，以及查询与更新待办。请换一种说法试试。',
+      message: buildClarifyMessage(task, step),
       fields: buildClarifyFields(task, step),
+      correctionNotes: getCorrectionNotes(input, task),
     })
-  }
-
-  if (shouldClarifyTargetFirst(task, step)) {
-    return buildClarifyDecision({
-      runId: input.runId,
-      plan: input.plan,
-      understandingPreview: input.understandingPreview,
-      updatedAt: input.updatedAt,
-      referenceTime: input.referenceTime,
-      interactionIdSuffix: 'clarify_mixed_target',
-      message: '我还不确定你是想记待办、笔记还是书签。',
-      fields: buildClarifyFields(task, step),
-    })
-  }
-
-  if (task && shouldClarifyMissingContent(task, step)) {
-    return buildClarifyDecision({
-      runId: input.runId,
-      plan: input.plan,
-      understandingPreview: input.understandingPreview,
-      updatedAt: input.updatedAt,
-      referenceTime: input.referenceTime,
-      interactionIdSuffix: 'clarify_required_fields',
-      message:
-        step.action === 'create_todo'
-          ? '我知道你想记待办，但还缺具体内容。'
-          : step.action === 'create_note'
-            ? '我知道你想记笔记，但还缺具体内容。'
-            : '执行前还缺少必要字段，请补充。',
-      fields: buildClarifyFields(task, step),
-    })
-  }
-
-  if (!isStepConsistentWithTask(task, step)) {
-    return {
-      status: 'reject',
-      reason: 'invalid_plan',
-    }
   }
 
   const duplicateCandidate = getUnresolvedDuplicateCandidate(input)
@@ -971,79 +543,54 @@ export function reviewWorkspaceRunPlan(
     })
   }
 
-  const correctionNotes = getCorrectionNotes(input, task)
+  if (step.action === 'update_todo') {
+    const candidates = step.candidates ?? []
 
-  if (hasWriteTitleDrift(task, step)) {
-    return buildConfirmPlanDecision({
-      runId: input.runId,
-      plan: input.plan,
-      understandingPreview: input.understandingPreview,
-      updatedAt: input.updatedAt,
-      referenceTime: input.referenceTime,
-      message: '计划标题与原始写入标题存在差异，请确认后执行。',
-      correctionNotes,
-      duplicateReview: input.duplicateReview,
-    })
-  }
-
-  if (task && step && task.target === 'todos' && step.action === 'create_todo') {
-    const clarityKind = getTimeResolutionKind(task)
-
-    if (clarityKind === 'no_due_date') {
-      return {
-        status: 'auto_execute',
-        reason: 'single_low_risk_clear_task',
-        snapshot: null,
-      }
+    if (candidates.length > 1) {
+      return buildSelectCandidateDecision({
+        runId: input.runId,
+        plan: input.plan,
+        understandingPreview: input.understandingPreview,
+        updatedAt: input.updatedAt,
+        referenceTime: input.referenceTime,
+        candidates,
+      })
     }
 
-    if (shouldClarifyTodoTime(task, step)) {
+    if (candidates.length === 0) {
       return buildClarifyDecision({
         runId: input.runId,
         plan: input.plan,
         understandingPreview: input.understandingPreview,
         updatedAt: input.updatedAt,
         referenceTime: input.referenceTime,
-        interactionIdSuffix: 'clarify_time',
-        message: '我知道你提到了时间，但还缺足够信息来确定具体提醒时间。',
-        fields: [{
-          key: 'timeText',
-          label: '具体时间',
-          required: true,
-          placeholder: '例如：下周三下午 3 点',
-        }],
+        message: '没有找到明确的待办，请补充识别信息。',
+        fields: [
+          {
+            key: 'query',
+            label: '待办关键词',
+            required: true,
+            input: 'text' as const,
+            placeholder: '例如：给客户发报价',
+          },
+        ],
+      })
+    }
+
+    if (candidates[0].confidence < 0.7) {
+      return buildConfirmPlanDecision({
+        runId: input.runId,
+        plan: input.plan,
+        understandingPreview: input.understandingPreview,
+        updatedAt: input.updatedAt,
+        referenceTime: input.referenceTime,
+        message: `找到一个待更新候选：${candidates[0].title}，请确认后执行。`,
+        correctionNotes: getCorrectionNotes(input, task),
       })
     }
   }
 
-  if (task.ambiguities.length > 0 && !hasNonBlockingTodoTimeDecision(task, step)) {
-    const ambiguityMessage =
-      task.intent === 'query'
-        ? '我知道你想查询，但还缺更具体的关键词。'
-        : task.intent === 'summarize'
-          ? '我知道你想整理内容，但还缺更具体的范围或对象。'
-        : '还有未消除的歧义，请先澄清。'
-
-    return buildClarifyDecision({
-      runId: input.runId,
-      plan: input.plan,
-      understandingPreview: input.understandingPreview,
-      updatedAt: input.updatedAt,
-      referenceTime: input.referenceTime,
-      interactionIdSuffix: 'clarify_ambiguity',
-      message: ambiguityMessage,
-      fields: buildClarifyFields(task, step),
-    })
-  }
-
-  if (
-    input.draftTasks.length === 1 &&
-    input.plan.steps.length === 1 &&
-    step &&
-    isStepConsistentWithTask(task, step) &&
-    step.risk === 'low' &&
-    step.requiresUserApproval === false
-  ) {
+  if (step.risk === 'low' && !step.requiresUserApproval) {
     return {
       status: 'auto_execute',
       reason: 'single_low_risk_clear_task',
@@ -1058,7 +605,7 @@ export function reviewWorkspaceRunPlan(
     updatedAt: input.updatedAt,
     referenceTime: input.referenceTime,
     message: '请确认执行计划。',
-    correctionNotes,
+    correctionNotes: getCorrectionNotes(input, task),
     duplicateReview: input.duplicateReview,
   })
 }

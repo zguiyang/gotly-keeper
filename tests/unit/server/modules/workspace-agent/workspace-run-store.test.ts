@@ -56,7 +56,7 @@ function createSnapshot(overrides: Partial<WorkspaceReviewPendingRunSnapshot> = 
       id: 'run_1_confirm_plan',
       type: 'confirm_plan',
       message: '请确认执行计划。',
-      actions: ['confirm', 'edit', 'cancel'] as const,
+      actions: ['confirm', 'cancel'] as const,
       plan: {
         summary: '准备执行 1 个任务。',
         steps: [
@@ -78,7 +78,7 @@ function createSnapshot(overrides: Partial<WorkspaceReviewPendingRunSnapshot> = 
           id: 'run_1_confirm_plan',
           type: 'confirm_plan',
           message: '请确认执行计划。',
-          actions: ['confirm', 'edit', 'cancel'] as const,
+          actions: ['confirm', 'cancel'] as const,
           plan: {
             summary: '准备执行 1 个任务。',
             steps: [

@@ -445,6 +445,7 @@ describe('workspace-run-planner', () => {
       userId: 'user_123',
       target: 'todos',
       query: '给客户发报价',
+      status: 'open',
     })
     expect(result.steps[0]).toMatchObject({
       id: 'step_1',
@@ -510,6 +511,7 @@ describe('workspace-run-planner', () => {
       userId: 'user_123',
       target: 'todos',
       query: '给客户发报价',
+      status: 'open',
     })
     expect(result.steps[0]).toMatchObject({
       id: 'step_1',

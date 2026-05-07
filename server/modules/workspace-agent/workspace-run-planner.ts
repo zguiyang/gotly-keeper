@@ -66,6 +66,7 @@ export type SearchWorkspaceRunCandidates = (input: {
   userId: string
   target: 'todos'
   query: string
+  status: 'open' | 'done' | 'all'
 }) => Promise<WorkspaceRunPlannerCandidate[]>
 
 // ── Shared Selector Builder ────────────────────────────────────────────
@@ -534,6 +535,12 @@ async function buildUpdateStep(input: {
 }): Promise<WorkspaceRunPlannerStep> {
   const selector = buildSelector(input.task)
   const query = input.query?.trim() || selector.subject?.trim() || ''
+  const requestedStatus = (() => {
+    const status = getStringSlot(input.task, 'status') ?? getStringSlot(input.task, 'todoStatus')
+    if (status === 'done') return 'open' as const
+    if (status === 'open') return 'done' as const
+    return 'all' as const
+  })()
 
   let candidates: WorkspaceRunPlannerCandidate[] = []
   if (query.length > 0) {
@@ -542,6 +549,7 @@ async function buildUpdateStep(input: {
         userId: input.userId,
         target: 'todos',
         query,
+        status: requestedStatus,
       })
     } catch {
       candidates = []

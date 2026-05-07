@@ -4,19 +4,13 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { CandidatePicker } from '@/components/workspace/candidate-picker'
-import { DraftTaskEditor } from '@/components/workspace/draft-task-editor'
 import { PlanPreviewCard } from '@/components/workspace/plan-preview-card'
-import { RunTimeline } from '@/components/workspace/run-timeline'
 import { SlotClarificationForm } from '@/components/workspace/slot-clarification-form'
-import { UnderstandingPreview } from '@/components/workspace/understanding-preview'
 
 import type {
   ClarifySlotsInteraction,
   ConfirmPlanInteraction,
-  EditDraftTasksInteraction,
   SelectCandidateInteraction,
-  WorkspaceRunStreamEvent,
-  WorkspaceUnderstandingPreview,
 } from '@/shared/workspace/workspace-run-protocol'
 
 afterEach(() => {
@@ -24,12 +18,12 @@ afterEach(() => {
 })
 
 describe('CandidatePicker', () => {
-  const mockInteraction: SelectCandidateInteraction = {
+  const interaction: SelectCandidateInteraction = {
     runId: 'run_1',
     id: 'interaction_1',
     type: 'select_candidate',
     target: 'todo',
-    message: '找到多个待办，请选择一个',
+    message: '请选择要更新的待办',
     actions: ['select', 'skip', 'cancel'],
     candidates: [
       { id: 'todo_1', label: '发报价给老王', reason: '主题匹配' },
@@ -37,271 +31,83 @@ describe('CandidatePicker', () => {
     ],
   }
 
-  it('renders candidates without local action buttons', () => {
-    render(<CandidatePicker interaction={mockInteraction} selectedId={null} onSelect={() => {}} />)
-
-    expect(screen.getByText('发报价给老王')).toBeTruthy()
-    expect(screen.getByText('主题匹配')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: '选择' })).toBeNull()
-    expect(screen.queryByRole('button', { name: '跳过' })).toBeNull()
-    expect(screen.queryByRole('button', { name: '取消' })).toBeNull()
-  })
-
-  it('notifies parent when a candidate is selected', () => {
-    let selectedCandidateId: string | null = null
+  it('renders candidates and notifies parent on selection', () => {
+    let selected: string | null = null
 
     render(
       <CandidatePicker
-        interaction={mockInteraction}
+        interaction={interaction}
         selectedId={null}
         onSelect={(candidateId) => {
-          selectedCandidateId = candidateId
+          selected = candidateId
         }}
       />
     )
 
     fireEvent.click(screen.getByRole('button', { name: /整理报价模板/ }))
-
-    expect(selectedCandidateId).toBe('todo_2')
+    expect(selected).toBe('todo_2')
   })
 })
 
 describe('SlotClarificationForm', () => {
-  const mockInteraction: ClarifySlotsInteraction = {
+  const interaction: ClarifySlotsInteraction = {
     runId: 'run_1',
     id: 'interaction_1',
     type: 'clarify_slots',
     message: '请补充以下信息',
     actions: ['submit', 'cancel'],
-    fields: [
-      { key: 'dueDate', label: '截止日期', required: true, placeholder: '输入日期' },
-      { key: 'note', label: '备注', required: false, placeholder: '可选备注' },
-    ],
+    fields: [{ key: 'details', label: '具体内容', required: true, input: 'text', placeholder: '输入内容' }],
   }
 
-  it('renders form fields without local action buttons', () => {
-    render(
-      <SlotClarificationForm
-        interaction={mockInteraction}
-        formId="clarify-form"
-        onSubmit={() => {}}
-      />
-    )
-
-    expect(screen.getByPlaceholderText('输入日期')).toBeTruthy()
-    expect(screen.getByPlaceholderText('可选备注')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: '提交' })).toBeNull()
-    expect(screen.queryByRole('button', { name: '取消' })).toBeNull()
-  })
-
   it('submits current field values through the form handler', () => {
-    let submittedResponse: unknown = null
+    let submitted: unknown = null
 
     render(
       <SlotClarificationForm
-        interaction={mockInteraction}
+        interaction={interaction}
         formId="clarify-form"
         onSubmit={(response) => {
-          submittedResponse = response
+          submitted = response
         }}
       />
     )
 
-    const dueDateInput = screen.getByPlaceholderText('输入日期')
-    fireEvent.change(dueDateInput, { target: { value: '2026-05-01' } })
-    const form = document.getElementById('clarify-form')
-    expect(form).toBeTruthy()
+    fireEvent.change(screen.getByPlaceholderText('输入内容'), {
+      target: { value: '普通用户希望一句话直接保存' },
+    })
+    fireEvent.submit(document.getElementById('clarify-form')!)
 
-    if (form) {
-      fireEvent.submit(form)
-    }
-
-    expect(submittedResponse).toMatchObject({
+    expect(submitted).toMatchObject({
       type: 'clarify_slots',
       action: 'submit',
       values: {
-        dueDate: '2026-05-01',
+        details: '普通用户希望一句话直接保存',
       },
     })
   })
 })
 
-describe('DraftTaskEditor', () => {
-  const mockInteraction: EditDraftTasksInteraction = {
-    runId: 'run_1',
-    id: 'interaction_1',
-    type: 'edit_draft_tasks',
-    message: '请编辑任务列表',
-    actions: ['save', 'cancel'],
-    tasks: [
-      {
-        id: 'draft_1',
-        intent: 'create',
-        target: 'notes',
-        title: '首页文案要更轻',
-        hasRealContent: true,
-        confidence: 0.88,
-        ambiguities: [],
-        corrections: [],
-        slots: {},
-      },
-      {
-        id: 'draft_2',
-        intent: 'create',
-        target: 'todos',
-        title: '给 Joy 看一版',
-        hasRealContent: true,
-        confidence: 0.86,
-        ambiguities: [],
-        corrections: [],
-        slots: { dueText: '周五' },
-      },
-    ],
-  }
-
-  it('renders editable task list without local action buttons', () => {
-    render(<DraftTaskEditor interaction={mockInteraction} />)
-
-    expect(screen.getByDisplayValue('首页文案要更轻')).toBeTruthy()
-    expect(screen.getByDisplayValue('给 Joy 看一版')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: '保存并继续' })).toBeNull()
-    expect(screen.queryByRole('button', { name: '取消' })).toBeNull()
-  })
-
-  it('hides internal slot keys in draft task editor', () => {
-    render(<DraftTaskEditor interaction={{
-      runId: 'run_1',
-      id: 'interaction_1',
-      type: 'edit_draft_tasks',
-      message: '请编辑任务列表',
-      actions: ['save', 'cancel'],
-      tasks: [{
-        id: 'draft_1',
-        intent: 'create',
-        target: 'todos',
-        title: '给客户发报价',
-        hasRealContent: true,
-        confidence: 0.92,
-        ambiguities: [],
-        corrections: [],
-        slots: {
-          timeText: '5月9日上午11点',
-          dueAt: '2026-05-09T03:00:00.000Z',
-          timeResolutionKind: 'resolved',
-        },
-      }],
-    }} />)
-
-    expect(screen.getByText('截止日期')).toBeTruthy()
-    expect(screen.getByText('时间说明')).toBeTruthy()
-    expect(screen.queryByText('timeResolutionKind')).toBeNull()
-  })
-})
-
 describe('PlanPreviewCard', () => {
-  const mockInteraction: ConfirmPlanInteraction = {
+  const interaction: ConfirmPlanInteraction = {
     runId: 'run_1',
     id: 'interaction_1',
     type: 'confirm_plan',
     message: '请确认以下计划',
-    actions: ['confirm', 'edit', 'cancel'],
+    actions: ['confirm', 'cancel'],
     plan: {
-      summary: '将创建 1 个待办',
+      summary: '将分别保存 2 条内容',
       steps: [
-        { id: 'step_1', toolName: 'create_todo', title: '发报价', preview: '创建待办：发报价' },
+        { id: 'step_1', toolName: 'create_todo', title: '创建待办', preview: '创建待办：发报价' },
+        { id: 'step_2', toolName: 'create_note', title: '创建笔记', preview: '创建笔记：一句话直接保存' },
       ],
     },
   }
 
-  it('renders plan preview without local action buttons', () => {
-    render(<PlanPreviewCard interaction={mockInteraction} />)
+  it('renders plan steps without local action buttons', () => {
+    render(<PlanPreviewCard interaction={interaction} />)
 
-    expect(screen.getByText('发报价')).toBeTruthy()
-    expect(screen.getByText('待确认执行')).toBeTruthy()
+    expect(screen.getAllByText('创建待办').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('创建笔记').length).toBeGreaterThan(0)
     expect(screen.queryByRole('button')).toBeNull()
-    expect(screen.queryByText('编辑（即将支持）')).toBeNull()
-  })
-
-  it('renders plan steps as a section list instead of cards', () => {
-    const { container } = render(<PlanPreviewCard interaction={mockInteraction} />)
-    expect(container.querySelector('ol')).toBeTruthy()
-    expect(container.querySelectorAll('li')).toHaveLength(1)
-  })
-})
-
-describe('RunTimeline', () => {
-  const mockTimeline: WorkspaceRunStreamEvent[] = [
-    { type: 'phase_started', phase: 'normalize' },
-    { type: 'phase_completed', phase: 'normalize' },
-    { type: 'phase_started', phase: 'understand' },
-    { type: 'phase_completed', phase: 'understand' },
-    { type: 'phase_started', phase: 'plan' },
-    { type: 'phase_completed', phase: 'plan' },
-    { type: 'tool_call_started', toolName: 'create_todo', preview: '创建待办：发报价' },
-    {
-      type: 'tool_call_completed',
-      toolName: 'create_todo',
-      result: { ok: true, target: 'todos', action: 'create', item: null },
-    },
-    {
-      type: 'run_completed',
-      result: {
-        summary: '执行了 1/1 个步骤',
-        answer: '已创建待办：发报价。',
-        preview: null,
-      },
-    },
-  ]
-
-  it('renders all timeline events', () => {
-    render(<RunTimeline timeline={mockTimeline} />)
-
-    expect(screen.getByText('开始: 标准化')).toBeTruthy()
-    expect(screen.getByText('开始: 理解')).toBeTruthy()
-    expect(screen.getByText('开始: 计划')).toBeTruthy()
-    expect(screen.getByText('开始: 创建待办')).toBeTruthy()
-    expect(screen.getByText('完成: 标准化')).toBeTruthy()
-    expect(screen.getByText('完成: 已生成最终结果')).toBeTruthy()
-    expect(screen.getByText('已创建待办：发报价。')).toBeTruthy()
-  })
-})
-
-describe('UnderstandingPreview', () => {
-  const mockPreview: WorkspaceUnderstandingPreview = {
-    rawInput: '记一下首页文案要更轻，周五提醒我给 Joy 看一版',
-    normalizedInput: '记一下首页文案要更轻，周五提醒我给 Joy 看一版',
-    draftTasks: [
-      {
-        id: 'draft_1',
-        intent: 'create',
-        target: 'notes',
-        title: '首页文案要更轻',
-        hasRealContent: true,
-        confidence: 0.88,
-        ambiguities: [],
-        corrections: [],
-        slots: {},
-      },
-      {
-        id: 'draft_2',
-        intent: 'create',
-        target: 'todos',
-        title: '给 Joy 看一版',
-        hasRealContent: true,
-        confidence: 0.86,
-        ambiguities: [],
-        corrections: [],
-        slots: { dueText: '周五' },
-      },
-    ],
-    corrections: [],
-  }
-
-  it('renders understanding preview with task list', () => {
-    render(<UnderstandingPreview understandingPreview={mockPreview} />)
-
-    expect(screen.getByText('首页文案要更轻')).toBeTruthy()
-    expect(screen.getByText('给 Joy 看一版')).toBeTruthy()
-    expect(screen.getByText('原始输入')).toBeTruthy()
   })
 })

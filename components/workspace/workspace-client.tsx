@@ -109,7 +109,11 @@ export function WorkspaceClient({
     : null
 
   async function handleSubmit() {
-    if (isSubmittingRef.current || state.status === 'streaming') {
+    if (
+      isSubmittingRef.current ||
+      state.status === 'streaming' ||
+      state.status === 'awaiting_user'
+    ) {
       return
     }
 
@@ -132,7 +136,13 @@ export function WorkspaceClient({
       return
     }
 
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !e.shiftKey && state.status !== 'streaming') {
+    if (
+      e.key === 'Enter' &&
+      (e.metaKey || e.ctrlKey) &&
+      !e.shiftKey &&
+      state.status !== 'streaming' &&
+      state.status !== 'awaiting_user'
+    ) {
       e.preventDefault()
       handleSubmit()
     }

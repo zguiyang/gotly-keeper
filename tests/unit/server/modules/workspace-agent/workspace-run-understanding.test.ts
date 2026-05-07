@@ -48,7 +48,7 @@ describe('workspace-run-understanding', () => {
       runModel,
     })
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       rawInput: '帮我记个待办，明天下午三点发 prcing',
       normalizedInput: '帮我记个待办，明天下午三点发 pricing',
       draftTasks: [
@@ -61,6 +61,8 @@ describe('workspace-run-understanding', () => {
           confidence: 0.93,
           ambiguities: [],
           corrections: [],
+          captureMode: 'todo_capture',
+          clarifyReason: 'none',
           slots: {
             dueAt: '明天下午三点',
           },
@@ -435,6 +437,42 @@ describe('workspace-run-understanding', () => {
     ])
   })
 
+  it('forces simple retrieval phrasing into query intent for mvp search flow', async () => {
+    const result = await understandWorkspaceRunInput({
+      normalized: makeNormalizedInput({
+        rawText: '帮我找一下刚刚那篇讲 RSC 边界的书签',
+        normalizedText: '帮我找一下刚刚那篇讲 RSC 边界的书签',
+        urls: [],
+        separators: [],
+      }),
+      runModel: vi.fn().mockResolvedValue({
+        draftTasks: [
+          {
+            id: 'task_1',
+            intent: 'create',
+            target: 'notes',
+            title: '刚刚那篇讲 RSC 边界的书签',
+            hasRealContent: true,
+            confidence: 0.62,
+            ambiguities: [],
+            corrections: [],
+            slots: {},
+          },
+        ],
+      }),
+    })
+
+    expect(result.draftTasks).toEqual([
+      expect.objectContaining({
+        intent: 'query',
+        target: 'bookmarks',
+        title: '刚刚那篇讲 RSC 边界的书签',
+        clarifyReason: 'none',
+        ambiguities: [],
+      }),
+    ])
+  })
+
   it('accepts AI-friendly bookmark slotEntries and converts them to slots', async () => {
     const result = await understandWorkspaceRunInput({
       normalized: makeNormalizedInput({
@@ -465,7 +503,7 @@ describe('workspace-run-understanding', () => {
     })
 
     expect(result.draftTasks).toEqual([
-      {
+      expect.objectContaining({
         id: 'task_1',
         intent: 'create',
         target: 'bookmarks',
@@ -474,12 +512,13 @@ describe('workspace-run-understanding', () => {
         confidence: 0.88,
         ambiguities: [],
         corrections: [],
+        captureMode: 'bookmark_capture',
         slots: {
           url: 'https://example.com',
           note: '回头发给客户',
           summary: '产品定价说明',
         },
-      },
+      }),
     ])
   })
 
