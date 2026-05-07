@@ -188,6 +188,8 @@ describe('workspace-run-planner', () => {
   })
 
   it('keeps bookmark summary-like slot data in toolInput for execution', async () => {
+    const runPlanHints = vi.fn()
+
     const result = await planWorkspaceRun({
       userId: 'user_123',
       draftTasks: [
@@ -206,7 +208,7 @@ describe('workspace-run-planner', () => {
         },
       ],
       searchCandidates: vi.fn(),
-      runPlanHints: vi.fn(),
+      runPlanHints,
     })
 
     expect(result.steps[0]).toMatchObject({
@@ -217,6 +219,7 @@ describe('workspace-run-planner', () => {
         note: '重点看首屏卖点',
       },
     })
+    expect(runPlanHints).not.toHaveBeenCalled()
   })
 
   it('preserves bookmark note and summary separately when both are available', async () => {

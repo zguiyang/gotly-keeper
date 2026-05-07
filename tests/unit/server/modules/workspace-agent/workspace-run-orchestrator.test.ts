@@ -14,11 +14,13 @@ import type {
 const duplicateCandidatesMock = vi.hoisted(() => ({
   findWorkspaceRunDuplicateCandidates: vi.fn<() => Promise<ReviewableDuplicateCandidate[]>>(async () => []),
   findWorkspaceBookmarkDuplicateCandidate: vi.fn<() => Promise<ReviewableDuplicateCandidate | null>>(async () => null),
+  findWorkspaceBookmarkDuplicateCandidates: vi.fn<() => Promise<ReviewableDuplicateCandidate[]>>(async () => []),
 }))
 
 vi.mock('@/server/modules/workspace-agent/workspace-run-duplicates', () => ({
   findWorkspaceRunDuplicateCandidates: duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates,
   findWorkspaceBookmarkDuplicateCandidate: duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidate,
+  findWorkspaceBookmarkDuplicateCandidates: duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidates,
 }))
 
 const executorMock = vi.hoisted(() => ({
@@ -80,6 +82,7 @@ describe('workspace-run-orchestrator', () => {
     vi.clearAllMocks()
     duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates.mockResolvedValue([])
     duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidate.mockResolvedValue(null)
+    duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidates.mockResolvedValue([])
   })
 
   describe('aborted signal', () => {
@@ -471,6 +474,98 @@ describe('workspace-run-orchestrator', () => {
       expect(duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidate).toHaveBeenCalledTimes(1)
       expect(duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates).not.toHaveBeenCalled()
       expect(executorMock.executeWorkspaceRunSteps).not.toHaveBeenCalled()
+    })
+
+    it('prechecks duplicate bookmarks in multi-task inputs before generic duplicate scanning', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidates.mockResolvedValueOnce([
+        {
+          stepId: 'step_2',
+          target: 'bookmark',
+          duplicates: [
+            {
+              id: 'bookmark_1',
+              label: 'https://example.com/rqa0506c',
+              reason: 'URL already exists',
+            },
+          ],
+        },
+      ])
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'input',
+          text: '记个待办：明天下午给客户发报价；把这个链接存一下，真实验收回看用：https://example.com/rqa0506c',
+        },
+        store: createMockStore(),
+        runModel: vi
+          .fn<WorkspaceRunModel>()
+          .mockResolvedValueOnce({
+            isMultiTask: true,
+            corrections: [],
+            segments: [
+              {
+                id: 'segment_1',
+                text: '记个待办：明天下午给客户发报价',
+                relation: 'independent',
+                confidence: 0.96,
+              },
+              {
+                id: 'segment_2',
+                text: '把这个链接存一下，真实验收回看用：https://example.com/rqa0506c',
+                relation: 'independent',
+                confidence: 0.97,
+              },
+            ],
+          })
+          .mockResolvedValueOnce({
+            draftTasks: [
+              {
+                id: 'task_1',
+                intent: 'create',
+                target: 'todos',
+                title: '给客户发报价',
+                hasRealContent: true,
+                confidence: 0.93,
+                ambiguities: [],
+                corrections: [],
+                slots: {
+                  dueAt: '2026-05-10T13:00:00.000Z',
+                  timeText: '明天下午',
+                },
+              },
+            ],
+          })
+          .mockResolvedValueOnce({
+            draftTasks: [
+              {
+                id: 'task_2',
+                intent: 'create',
+                target: 'bookmarks',
+                title: '真实验收回看用',
+                hasRealContent: true,
+                confidence: 0.95,
+                ambiguities: [],
+                corrections: [],
+                slots: {
+                  url: 'https://example.com/rqa0506c',
+                  note: '真实验收回看用',
+                },
+              },
+            ],
+          }),
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('review')
+      expect(result.snapshot?.interaction).toMatchObject({
+        type: 'confirm_duplicate',
+        target: 'bookmark',
+      })
+      expect(duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidates).toHaveBeenCalledTimes(1)
     })
   })
 

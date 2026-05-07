@@ -292,6 +292,10 @@ function buildSummary(taskCount: number) {
 
 function shouldUseHints(task: DraftWorkspaceTask) {
   const hasUrl = typeof task.slots.url === 'string' && task.slots.url.trim().length > 0
+  if (task.intent === 'create' && task.target === 'bookmarks' && hasUrl) {
+    return false
+  }
+
   const hasExtraText = Object.entries(task.slots).some(([key, value]) => {
     if (key === 'url') {
       return false

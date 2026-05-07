@@ -87,3 +87,20 @@ export async function findWorkspaceBookmarkDuplicateCandidate(input: {
 
   return result ?? null
 }
+
+export async function findWorkspaceBookmarkDuplicateCandidates(input: {
+  userId: string
+  draftTasks: DraftWorkspaceTask[]
+}): Promise<ReviewableDuplicateCandidate[]> {
+  const results = await Promise.all(
+    input.draftTasks.map((draftTask, index) =>
+      findWorkspaceBookmarkDuplicateCandidate({
+        userId: input.userId,
+        draftTask,
+        stepId: `step_${index + 1}`,
+      })
+    )
+  )
+
+  return results.filter((result): result is ReviewableDuplicateCandidate => result !== null)
+}

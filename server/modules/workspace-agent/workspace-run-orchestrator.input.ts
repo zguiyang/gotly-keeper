@@ -4,6 +4,7 @@ import { buildFallbackAnswer, composeWorkspaceAnswer } from './workspace-compose
 import { buildBatchAnswer, buildCompletedRunResult } from './workspace-run-completed'
 import {
   findWorkspaceBookmarkDuplicateCandidate,
+  findWorkspaceBookmarkDuplicateCandidates,
   findWorkspaceRunDuplicateCandidates,
 } from './workspace-run-duplicates'
 import { executeWorkspaceRunSteps } from './workspace-run-executor'
@@ -218,33 +219,6 @@ async function runReview(
   return reviewResult
 }
 
-function buildSingleBookmarkPlannerResult(task: DraftWorkspaceTask): WorkspaceRunPlannerResult {
-  const title = task.title.trim()
-  const url = typeof task.slots.url === 'string' ? task.slots.url.trim() : undefined
-  const note = typeof task.slots.note === 'string' ? task.slots.note.trim() : undefined
-  const summary = typeof task.slots.summary === 'string' ? task.slots.summary.trim() : undefined
-
-  const step: WorkspaceRunPlannerStep = {
-    id: 'step_1',
-    action: 'create_bookmark',
-    target: 'bookmarks',
-    title,
-    risk: 'low',
-    requiresUserApproval: false,
-    toolInput: {
-      url,
-      title,
-      note,
-      summary,
-    },
-  }
-
-  return {
-    summary: '准备执行 1 个任务。',
-    steps: [step],
-  }
-}
-
 async function runPreview(
   ctx: PhaseContext,
   understandingPreview: Parameters<typeof buildWorkspaceRunPreview>[0]['understandingPreview'],
@@ -415,52 +389,19 @@ export async function handleNewInput(
 
     const draftTasks = normalizedUnderstanding.draftTasks as Parameters<typeof reviewWorkspaceRunPlan>[0]['draftTasks']
 
-    if (normalizedUnderstanding.draftTasks.length === 1) {
-      const bookmarkDuplicateCandidate = await findWorkspaceBookmarkDuplicateCandidate({
-        userId,
-        draftTask: normalizedUnderstanding.draftTasks[0],
-        stepId: 'step_1',
-      })
-
-      if (bookmarkDuplicateCandidate) {
-        const bookmarkPlannerResult = buildSingleBookmarkPlannerResult(normalizedUnderstanding.draftTasks[0])
-        const reviewResult = await runReview(
-          ctx,
-          draftTasks,
-          bookmarkPlannerResult,
-          normalizedUnderstanding,
-          updatedAt,
-          updatedAt,
-          [bookmarkDuplicateCandidate]
-        )
-
-        console.log(`${WS_LOG_PREFIX} review`, {
-          runId,
-          status: reviewResult.status,
-          reason:
-            reviewResult.status === 'reject' || reviewResult.status === 'await_user'
-              ? reviewResult.reason
-              : undefined,
-        })
-
-        if (reviewResult.status === 'await_user') {
-          await store.failAwaitingRuns(userId)
-          await store.saveSnapshot(reviewResult.snapshot, userId)
-
-          emitEvent(ctx, {
-            type: 'awaiting_user',
-            interaction: reviewResult.snapshot.interaction as WorkspaceInteraction,
+    const bookmarkDuplicateCandidates = normalizedUnderstanding.draftTasks.length === 1
+      ? await (async () => {
+          const bookmarkDuplicateCandidate = await findWorkspaceBookmarkDuplicateCandidate({
+            userId,
+            draftTask: normalizedUnderstanding.draftTasks[0],
+            stepId: 'step_1',
           })
-
-          return {
-            ok: true,
-            phase: 'review',
-            snapshot: reviewResult.snapshot,
-            phaseTimings: ctx.phaseTimings,
-          }
-        }
-      }
-    }
+          return bookmarkDuplicateCandidate ? [bookmarkDuplicateCandidate] : []
+        })()
+      : await findWorkspaceBookmarkDuplicateCandidates({
+          userId,
+          draftTasks: normalizedUnderstanding.draftTasks,
+        })
 
     const plannerResult = await runPlan(ctx, normalizedUnderstanding.draftTasks, searchCandidates, runModel)
 
@@ -477,10 +418,22 @@ export async function handleNewInput(
       })),
     })
 
-    const duplicateCandidates = await findWorkspaceRunDuplicateCandidates({
-      userId,
-      plannerResult,
-    })
+    const remainingDuplicateCheckSteps = plannerResult.steps.filter(
+      (step) => !bookmarkDuplicateCandidates.some((candidate) => candidate.stepId === step.id)
+    )
+    const additionalDuplicateCandidates = remainingDuplicateCheckSteps.length > 0
+      ? await findWorkspaceRunDuplicateCandidates({
+          userId,
+          plannerResult: {
+            ...plannerResult,
+            steps: remainingDuplicateCheckSteps,
+          },
+        })
+      : []
+    const duplicateCandidates = [
+      ...bookmarkDuplicateCandidates,
+      ...additionalDuplicateCandidates,
+    ]
 
     const reviewResult = await runReview(
       ctx,
