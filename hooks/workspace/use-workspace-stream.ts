@@ -130,7 +130,19 @@ export function useWorkspaceStream(options: {
     setPendingRunLoading(true)
     try {
       const result = await fetchCurrentWorkspaceRun()
-      setPendingRun(result.ok ? result.run : null)
+
+      if (result.ok && result.run) {
+        const updatedAt = new Date(result.run.updatedAt).getTime()
+        const staleThreshold = Date.now() - 60 * 60 * 1000
+        if (updatedAt < staleThreshold) {
+          await dismissCurrentWorkspaceRun().catch(() => {})
+          setPendingRun(null)
+        } else {
+          setPendingRun(result.run)
+        }
+      } else {
+        setPendingRun(null)
+      }
     } catch {
       // silently ignore rehydration errors
       setPendingRun(null)
