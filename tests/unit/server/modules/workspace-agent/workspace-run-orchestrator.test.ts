@@ -340,7 +340,7 @@ describe('workspace-run-orchestrator', () => {
       ])
     })
 
-    it('keeps T07 typo tolerance input on the direct todo-create path', async () => {
+    it('keeps T07 typo tolerance acceptance input on the direct todo-create path', async () => {
       const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
 
       const events: unknown[] = []
@@ -348,7 +348,7 @@ describe('workspace-run-orchestrator', () => {
         userId: 'user_123',
         request: {
           kind: 'input',
-          text: '记个待半：5月10日早上买燕麦奶 RQA0506F',
+          text: '记个待半：5月10日早上买燕麦奶 RQA0507F',
         },
         store: createMockStore(),
         runModel: vi
@@ -365,7 +365,7 @@ describe('workspace-run-orchestrator', () => {
             segments: [
               {
                 id: 'segment_1',
-                text: '记个待办：5月10日早上买燕麦奶 RQA0506F',
+                text: '记个待办：5月10日早上买燕麦奶 RQA0507F',
                 relation: 'independent',
                 confidence: 0.96,
               },
@@ -377,7 +377,7 @@ describe('workspace-run-orchestrator', () => {
                 id: 'task_1',
                 intent: 'create',
                 target: 'todos',
-                title: '买燕麦奶 RQA0506F',
+                title: '买燕麦奶 RQA0507F',
                 hasRealContent: true,
                 confidence: 0.92,
                 ambiguities: [],
@@ -474,6 +474,87 @@ describe('workspace-run-orchestrator', () => {
       expect(duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidate).toHaveBeenCalledTimes(1)
       expect(duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates).not.toHaveBeenCalled()
       expect(executorMock.executeWorkspaceRunSteps).not.toHaveBeenCalled()
+    })
+
+    it('keeps T13 repeated explicit note capture acceptance input on create_note even if planning hints drift', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const runModel = vi
+        .fn<WorkspaceRunModel>()
+        .mockResolvedValueOnce({
+          isMultiTask: true,
+          corrections: [],
+          segments: [
+            {
+              id: 'segment_1',
+              text: '记一下：RQA0507H 这个结论要同步一下',
+              relation: 'independent',
+              confidence: 0.96,
+            },
+            {
+              id: 'segment_2',
+              text: '再记一下：RQA0507H 这个结论要同步一下',
+              relation: 'independent',
+              confidence: 0.95,
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          draftTasks: [
+            {
+              id: 'task_1',
+              intent: 'create',
+              target: 'notes',
+              title: 'RQA0507H 这个结论要同步一下',
+              hasRealContent: true,
+              confidence: 0.74,
+              ambiguities: ['capture_wording'],
+              corrections: [],
+              slots: {
+                content: 'RQA0507H 这个结论要同步一下',
+              },
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          draftTasks: [
+            {
+              id: 'task_2',
+              intent: 'create',
+              target: 'notes',
+              title: 'RQA0507H 这个结论要同步一下',
+              hasRealContent: true,
+              confidence: 0.74,
+              ambiguities: ['capture_wording'],
+              corrections: [],
+              slots: {
+                content: 'RQA0507H 这个结论要同步一下',
+              },
+            },
+          ],
+        })
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'input',
+          text: '记一下：RQA0507H 这个结论要同步一下；再记一下：RQA0507H 这个结论要同步一下',
+        },
+        store: createMockStore(),
+        runModel,
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('review')
+      expect(result.snapshot?.understandingPreview?.draftTasks.map((task) => task.target)).toEqual([
+        'notes',
+        'notes',
+      ])
+      expect(result.snapshot?.preview?.plan.steps.map((step) => step.toolName)).toEqual([
+        'create_note',
+        'create_note',
+      ])
     })
 
     it('prechecks duplicate bookmarks in multi-task inputs before generic duplicate scanning', async () => {

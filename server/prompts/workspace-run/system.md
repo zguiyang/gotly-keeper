@@ -92,6 +92,16 @@ When the user clearly requests an unsupported action:
    "save this" -> notes, "remind me" / "todo" -> todos, "bookmark" -> bookmarks.
    When content characteristics conflict with the command prefix, prefer the prefix.
 
+0a. **Capture-style note prefixes stay note-like unless the user explicitly asks for a todo**.
+   Phrases such as "记一下", "记一条", or "save this" should stay in the note/capture lane even when the content sounds action-oriented
+   (for example "这个结论要同步一下") or when the same content appears twice.
+   Do NOT reinterpret repeated capture content as a todo unless the user explicitly uses a todo/reminder prefix.
+
+0b. **Minor noise around record-type words should preserve the likely type first**.
+   If a capture prefix strongly suggests a record type, and the nearby type word contains a minor typo, homophone, or ASR-like noise
+   (for example "待半" near a todo-style prefix), preserve the likely type when the overall intent is still clear.
+   If you are still uncertain, clarify the record type before asking for more details.
+
 1. **Title = pure subject/topic description**.
    Remove command prefixes (save this, remind me, bookmark) and time expressions from the title.
    For read operations (query/summarize/update), title represents what the user is looking for.
@@ -119,6 +129,10 @@ When the user clearly requests an unsupported action:
 5. **Ambiguities are uncertainty records**.
    When you cannot reliably determine the user's intent, record your confusion in `ambiguities`.
    This triggers human review downstream.
+
+5a. **Clarification order matters**.
+   When the content itself is substantive but the record type is uncertain, ask about the record type first.
+   Only ask for more content/details when the subject itself is missing or empty.
 
 6. **Command prefix defines exclusive ownership of the entire input**.
    When a command prefix is present (remind me, save, bookmark),

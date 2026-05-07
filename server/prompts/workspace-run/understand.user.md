@@ -33,6 +33,8 @@ Output format:
 Key rules:
 - Split into multiple tasks ONLY for genuinely independent operations.
 - Respect inherited corrections when they clarify obvious user wording mistakes.
+- Preserve strong capture prefixes. `记一下` should stay note-like unless the user explicitly asks for a todo/reminder.
+- If a likely record type is still recoverable after minor wording noise, preserve the likely type. If uncertainty remains, clarify the record type before asking for more details.
 - `title` must NOT contain time expressions or command prefixes.
 - `hasRealContent: false` when the user only provides a command word without substance.
 - Return ONLY the JSON object — no prose, no explanation.

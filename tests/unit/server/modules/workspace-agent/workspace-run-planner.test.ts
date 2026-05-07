@@ -566,6 +566,52 @@ describe('workspace-run-planner', () => {
     })
   })
 
+  it('does not let hints rewrite explicit note capture tasks into todos', async () => {
+    const runPlanHints = vi.fn().mockResolvedValue({
+      action: 'create_todo',
+      title: 'RQA0507H 这个结论要同步一下',
+      reason: '内容带有动作色彩',
+    })
+
+    const result = await planWorkspaceRun({
+      userId: 'user_123',
+      draftTasks: [
+        {
+          id: 'draft_1',
+          intent: 'create',
+          target: 'notes',
+          title: 'RQA0507H 这个结论要同步一下',
+          confidence: 0.74,
+          ambiguities: ['capture_wording'],
+          corrections: [],
+          slots: {
+            content: 'RQA0507H 这个结论要同步一下',
+          },
+        },
+      ],
+      searchCandidates: vi.fn(),
+      runPlanHints,
+    })
+
+    expect(runPlanHints).not.toHaveBeenCalled()
+    expect(result.steps).toEqual([
+      {
+        id: 'step_1',
+        action: 'create_note',
+        target: 'notes',
+        title: 'RQA0507H 这个结论要同步一下',
+        risk: 'low',
+        requiresUserApproval: false,
+        createPayload: {
+          content: 'RQA0507H 这个结论要同步一下',
+        },
+        toolInput: {
+          content: 'RQA0507H 这个结论要同步一下',
+        },
+      },
+    ])
+  })
+
   it('falls back safely when hints return an empty object', async () => {
     const runPlanHints = vi.fn().mockResolvedValue({})
 

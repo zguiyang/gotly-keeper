@@ -296,6 +296,13 @@ function shouldUseHints(task: DraftWorkspaceTask) {
     return false
   }
 
+  if (
+    task.intent === 'create' &&
+    (task.target === 'notes' || task.target === 'todos')
+  ) {
+    return false
+  }
+
   const hasExtraText = Object.entries(task.slots).some(([key, value]) => {
     if (key === 'url') {
       return false
