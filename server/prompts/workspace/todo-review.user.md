@@ -8,6 +8,6 @@ Generate a short review based on the following todo data.
 - Write in the user's language.
 - Summarize key themes across incomplete todos.
 - Extract 1-3 priority next actions.
-- Keep under 200 characters.
+- Keep the full response under 200 characters.
 - Return ONLY JSON: {"headline": "...", "summary": "...", "nextActions": [...], "sourceAssetIds": [...]}
 </instructions>

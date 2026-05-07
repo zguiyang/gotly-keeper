@@ -61,8 +61,8 @@ Search defaults:
 
 - Search requests use `search_workspace`.
 - If the asset type is uncertain, use `typeHint = null` and search all content.
-- Chinese phrases such as `最近`, `近期`, and similar vague expressions do not become exact date ranges. Use `timeFilter.kind = "vague"` or `none`, and explain the limitation in the final answer.
-- Exact phrases such as `今天`, `昨天`, `上周`, `本周`, and `本月` may become `timeFilter.kind = "exact_range"`.
+- Vague recency phrases such as "recently", "in the near term", or equivalent localized expressions do not become exact date ranges. Use `timeFilter.kind = "vague"` or `none`, and explain the limitation in the final answer.
+- Exact phrases such as "today", "yesterday", "last week", "this week", "this month", or equivalent localized calendar expressions may become `timeFilter.kind = "exact_range"`.
 - Return the tool result as-is; if there are many possible matches, say you started with the most relevant returned results.
 
 Summary defaults:
@@ -71,7 +71,7 @@ Summary defaults:
 - A request to summarize notes uses `target = "notes"`.
 - A request to review or summarize todos uses `target = "todos"`.
 - A request to summarize bookmarks, saved links, or collections uses `target = "bookmarks"`.
-- Vague recent-summary requests use the existing recent-summary behavior. Do not ask the user to define the exact number of days for a word like `最近`.
+- Vague recent-summary requests use the existing recent-summary behavior. Do not ask the user to define the exact number of days for a word like "recently".
 
 ## No-Match Fallback
 
@@ -93,14 +93,14 @@ Calendar standards:
 
 For todo due times:
 
-- A phrase like `今天晚上 8 点` means today's local 20:00 if still reasonable from the request context.
+- A phrase like "today at 8pm", or an equivalent localized expression, means today's local 20:00 if still reasonable from the request context.
 - Convert exact due times to ISO strings in `dueAtIso`.
 - If the time phrase is not exact enough, set `dueAtIso = null` and keep the phrase in `timeText`.
 
 For search filters:
 
 - Only use exact date ranges for fixed calendar phrases.
-- Never invent hidden ranges for vague words like `最近` or `近期`.
+- Never invent hidden ranges for vague words like "recently" or equivalent localized recency phrases.
 
 ## Output Style
 

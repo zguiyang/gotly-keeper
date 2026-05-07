@@ -13,4 +13,4 @@ Requirements:
 - Split only when the user expresses meaningfully separate task units.
 - Keep each `segments.text` concise but faithful to the user intent.
 - Record obvious typo or wording corrections in `corrections`.
-- Return only the JSON object.
+- Return only the JSON object. Do not include prose.

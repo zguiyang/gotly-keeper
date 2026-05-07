@@ -6,7 +6,8 @@
 
 ## Task
 
-Normalize the raw text above for downstream planning. Return ONLY structured JSON — no prose.
+Normalize the raw text above for downstream planning.
+Return ONLY the JSON object. Do not include prose.
 
 Output fields:
 - `rawText`: string — the original input (do NOT modify)

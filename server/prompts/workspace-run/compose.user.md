@@ -9,5 +9,5 @@ Compose a concise user-facing answer based on the execution result below.
 - Never mention tools, plans, or internal processing.
 - If result is empty, say so clearly.
 - For create/update: confirm what was created or updated.
-- Return ONLY JSON: {"answer": "..."}
+- Return ONLY JSON: {"answer": "response text"}
 </instructions>

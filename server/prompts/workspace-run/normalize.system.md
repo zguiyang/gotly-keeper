@@ -32,11 +32,11 @@ Return JSON with this exact shape:
   "separators": [],
   "typoCandidates": [
     {
-      "text": "待半",
-      "suggestion": "待办"
+      "text": "todoo",
+      "suggestion": "todo"
     }
   ],
-  "timeHints": ["明天下午三点"]
+  "timeHints": ["tomorrow at 3pm"]
 }
 ```
 
