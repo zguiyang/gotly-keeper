@@ -25,7 +25,6 @@
     "test:integration": "vitest --run tests/integration",
     "test:watch": "vitest",
     "test:coverage": "vitest --run --coverage",
-    "eval:workspace-intent": "node --require ./scripts/register-server-only-alias.cjs --import tsx scripts/run-workspace-intent-eval.ts",
     "prepare": "husky"
   },
   "dependencies": {
