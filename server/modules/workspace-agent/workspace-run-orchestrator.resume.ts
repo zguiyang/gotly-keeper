@@ -128,6 +128,8 @@ function toDraftWorkspaceTasks(
   snapshot: WorkspaceReviewPendingRunSnapshot,
   _response: ResumeResponse
 ): DraftWorkspaceTask[] | null {
+  void _response
+
   if (!snapshot.understandingPreview) {
     return null
   }

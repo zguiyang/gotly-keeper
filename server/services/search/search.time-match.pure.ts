@@ -11,6 +11,8 @@ export function matchesSearchTimeHint(
   rangeHint: AssetTimeRangeHint,
   _timeHint: string | null | undefined
 ) {
+  void _timeHint
+
   if (asset.dueAt) {
     const dueTime = asset.dueAt.getTime()
     if (
