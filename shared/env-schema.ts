@@ -32,6 +32,8 @@ export const serverOnlyEnvSchema = z.object({
 
   AI_EMBEDDING_MODEL_NAME: optionalNonEmptyString,
   AI_EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().optional(),
+
+  RESEND_KEY: optionalNonEmptyString,
 })
 
 export const serverEnvSchema = publicEnvSchema.merge(serverOnlyEnvSchema)

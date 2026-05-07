@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { Resend } from 'resend'
 
 import { db } from '../db'
 import * as schema from '../db/schema'
@@ -17,6 +18,8 @@ function createDefaultAvatarUrl(seed = randomUUID()) {
   return url.toString()
 }
 
+const resend = serverEnv.resend.key ? new Resend(serverEnv.resend.key) : null
+
 export const auth = betterAuth({
   appName: 'Gotly Keeper',
   baseURL: serverEnv.auth.url,
@@ -28,6 +31,16 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    sendResetPassword: async ({ user, url }) => {
+      if (!resend) return
+
+      void resend.emails.send({
+        from: 'Gotly Keeper <noreply@mail.zhaoguiyang.com>',
+        to: user.email,
+        subject: '重置密码',
+        text: `点击以下链接重置你的密码：${url}`,
+      })
+    },
   },
   user: {
     additionalFields: {

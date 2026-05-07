@@ -30,4 +30,7 @@ export const serverEnv = {
     embeddingModelName: env.AI_EMBEDDING_MODEL_NAME,
     embeddingDimensions: env.AI_EMBEDDING_DIMENSIONS,
   },
+  resend: {
+    key: env.RESEND_KEY,
+  },
 } as const
