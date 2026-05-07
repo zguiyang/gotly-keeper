@@ -9,6 +9,13 @@ import {
   FieldLabel,
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 import {
   workspaceInteractionBodyTextClassName,
@@ -63,21 +70,23 @@ export function SlotClarificationForm({ interaction, formId, onSubmit }: SlotCla
                 </FieldLabel>
                 <FieldContent>
                   {field.input === 'select' && field.options && field.options.length > 0 ? (
-                    <select
-                      id={inputId}
+                    <Select
                       value={values[field.key] || ''}
-                      onChange={(e) => handleChange(field.key, e.target.value)}
-                      required={field.required}
-                      name={field.key}
-                      className={workspaceInteractionInsetFieldClassName}
+                      onValueChange={(value) => handleChange(field.key, value ?? '')}
                     >
-                      <option value="">{field.placeholder ?? '请选择'}</option>
-                      {field.options.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger id={inputId} className={`w-full ${workspaceInteractionInsetFieldClassName}`}>
+                        <SelectValue placeholder={field.placeholder ?? '请选择'}>
+                          {field.options?.find((o) => o.value === values[field.key])?.label}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {field.options.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   ) : (
                     <Input
                       id={inputId}
