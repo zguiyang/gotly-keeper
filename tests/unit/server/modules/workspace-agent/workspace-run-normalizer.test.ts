@@ -28,4 +28,15 @@ describe('workspace-run-normalizer', () => {
       'https://example.com/pricing',
     ])
   })
+
+  it('normalizes common todo command typos before understanding', () => {
+    const input = '记个待半：5月10日早上买燕麦奶'
+
+    expect(normalizeWorkspaceRunInput(input)).toEqual({
+      rawText: input,
+      normalizedText: '记个待办：5月10日早上买燕麦奶',
+      urls: [],
+      separators: [],
+    })
+  })
 })

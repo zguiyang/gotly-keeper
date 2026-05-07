@@ -35,6 +35,8 @@ export type ReviewableCandidate = {
   status?: 'open' | 'done'
   createdAt?: string
   updatedAt?: string
+  dueAt?: string
+  timeText?: string
   preview?: string
 }
 
@@ -186,6 +188,8 @@ function toInteractionCandidates(candidates: ReviewableCandidate[]): WorkspaceCa
     status: candidate.status,
     createdAt: candidate.createdAt,
     updatedAt: candidate.updatedAt,
+    dueAt: candidate.dueAt,
+    timeText: candidate.timeText,
     preview: candidate.preview ?? candidate.title,
     reason: `${candidate.matchReason} (${Math.round(candidate.confidence * 100)}%)`,
   }))
@@ -384,7 +388,9 @@ function hasWriteTitleDrift(task: ReviewableDraftTask, step: ReviewablePlanStep)
 
 function getTimeResolutionKind(task: ReviewableDraftTask) {
   const value = task.slots.timeResolutionKind
-  return value === 'clear' || value === 'vague' || value === 'unresolved' ? value : null
+  return value === 'clear' || value === 'vague' || value === 'unresolved' || value === 'no_due_date'
+    ? value
+    : null
 }
 
 function hasOnlyIgnorableTodoTimeAmbiguities(task: ReviewableDraftTask, step: ReviewablePlanStep) {
@@ -532,6 +538,10 @@ function hasBlockingTimeClarity(task: ReviewableDraftTask, step: ReviewablePlanS
 
   if (resolutionKind === 'vague') {
     return true
+  }
+
+  if (resolutionKind === 'no_due_date') {
+    return false
   }
 
   return false
@@ -959,6 +969,14 @@ export function reviewWorkspaceRunPlan(
         })
       }
 
+      if (clarityKind === 'no_due_date') {
+        return {
+          status: 'auto_execute',
+          reason: 'single_low_risk_clear_task',
+          snapshot: null,
+        }
+      }
+
       if (clarityKind === 'unresolved' || (!clarityKind && !hasDueAt)) {
         return buildClarifyDecision({
           runId: input.runId,
@@ -983,7 +1001,6 @@ export function reviewWorkspaceRunPlan(
     input.draftTasks.length === 1 &&
     input.plan.steps.length === 1 &&
     step &&
-    task.target !== 'mixed' &&
     isStepConsistentWithTask(task, step) &&
     step.risk === 'low' &&
     step.requiresUserApproval === false

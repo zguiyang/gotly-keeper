@@ -1243,6 +1243,41 @@ describe('workspace-run-review', () => {
     expect(result.reason).toBe('clarify_slots')
   })
 
+  it('auto executes a recent todo without dueAt when normalization marked it as no_due_date', () => {
+    const draftTask = createDraftTask({
+      title: '这周末整理资料',
+      slots: {
+        title: '这周末整理资料',
+        timeText: '这周末',
+        timeResolutionKind: 'no_due_date',
+      },
+    })
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [draftTask],
+      plan: createPlan({
+        steps: [
+          {
+            action: 'create_todo',
+            target: 'todos',
+            title: '这周末整理资料',
+            requiresUserApproval: false,
+            risk: 'low',
+            id: 'step_1',
+          },
+        ],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+      updatedAt,
+    })
+
+    expect(result).toMatchObject({
+      status: 'auto_execute',
+      reason: 'single_low_risk_clear_task',
+    })
+  })
+
   it('skips edit_draft_tasks and auto-executes for clear low-risk multi-task without draftTasksConfirmed', () => {
     const draftTasks = [
       createDraftTask({
@@ -1455,6 +1490,46 @@ describe('workspace-run-review', () => {
       reason: 'single_low_risk_clear_task',
       snapshot: null,
     })
+  })
+
+  it('clarifies record type before time when task target is mixed with time phrase', () => {
+    const draftTask = createDraftTask({
+      target: 'mixed',
+      title: '下周那个你帮我整理一下',
+      confidence: 0.65,
+      slots: {},
+    })
+
+    const result = reviewWorkspaceRunPlan({
+      runId: 'run_1',
+      draftTasks: [draftTask],
+      plan: createPlan({
+        steps: [{
+          id: 'step_1',
+          action: 'create_note',
+          target: 'notes',
+          title: '下周那个你帮我整理一下',
+          risk: 'low',
+          requiresUserApproval: false,
+        }],
+      }),
+      understandingPreview: createUnderstandingPreview({ draftTasks: [draftTask] }),
+      updatedAt,
+    })
+
+    const awaitUser = expectAwaitUser(result)
+    expect(awaitUser.reason).toBe('clarify_slots')
+    const interaction = awaitUser.snapshot.interaction
+    expect(interaction.type).toBe('clarify_slots')
+    expect(interaction.message).toContain('记待办、笔记还是书签')
+    if (interaction.type !== 'clarify_slots') {
+      throw new Error('Expected clarify_slots interaction')
+    }
+    expect(interaction.fields).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: 'targetHint', label: '记录类型' }),
+      ])
+    )
   })
 
   describe('Phase C: Gap-Specific Clarification', () => {

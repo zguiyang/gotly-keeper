@@ -20,7 +20,7 @@ import { todoTimeTools } from './todo-time-tools'
 const todoTimeResolutionSchema = z.object({
   timeText: z.string().nullable(),
   dueAt: z.string().nullable(),
-  resolutionKind: z.enum(['clear', 'vague', 'unresolved']),
+  resolutionKind: z.enum(['clear', 'vague', 'unresolved', 'no_due_date']),
 })
 
 type TodoTimeSourceSlot =
@@ -112,9 +112,13 @@ function applyPostGenerationValidation(
     return { timeText, dueAt: null, resolutionKind: 'vague' }
   }
 
+  if (resolutionKind === 'no_due_date') {
+    return { timeText, dueAt: null, resolutionKind: 'no_due_date' }
+  }
+
   if (validAiDueAt) {
     const normalizedTimeText = timeText.trim()
-    if (isVagueTimePhrase(normalizedTimeText) || isHolidayTimePhrase(normalizedTimeText)) {
+    if (isHolidayTimePhrase(normalizedTimeText)) {
       return { timeText, dueAt: null, resolutionKind: 'vague' }
     }
 
@@ -166,38 +170,44 @@ export async function resolveTodoTimeWithAi(
     }
   }
 
+  let localResolution: ReturnType<typeof resolveDatetime> | null = null
   try {
-    const dtResult = resolveDatetime({
+    localResolution = resolveDatetime({
       phrase: preservedSource.timeText,
       referenceTime: input.referenceTime,
       timezone,
     })
 
-    if (dtResult.granularity === 'vague') {
+    if (localResolution.granularity === 'exact' && localResolution.dueAt) {
       return {
         timeText: preservedSource.timeText,
-        dueAt: null,
-        resolutionKind: 'vague',
-      }
-    }
-
-    if (dtResult.granularity !== 'unresolved' && dtResult.dueAt) {
-      return {
-        timeText: preservedSource.timeText,
-        dueAt: dtResult.dueAt,
+        dueAt: localResolution.dueAt,
         resolutionKind: 'clear',
       }
     }
   } catch {
-    // Fall through to the model path for phrases the local parser cannot handle.
+    localResolution = null
   }
 
   const model = getAiProvider()
   if (!model) {
+    if (
+      localResolution &&
+      localResolution.granularity !== 'vague' &&
+      localResolution.granularity !== 'unresolved' &&
+      localResolution.dueAt
+    ) {
+      return {
+        timeText: preservedSource.timeText,
+        dueAt: localResolution.dueAt,
+        resolutionKind: 'clear',
+      }
+    }
+
     return {
       timeText: preservedSource.timeText,
       dueAt: null,
-      resolutionKind: 'unresolved',
+      resolutionKind: localResolution?.granularity === 'vague' ? 'vague' : 'unresolved',
     }
   }
 

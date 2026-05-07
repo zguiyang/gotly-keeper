@@ -212,6 +212,7 @@ describe('workspace-run-time-normalization', () => {
     mocks.resolveTodoTimeWithAi.mockResolvedValueOnce({
       timeText: '这周末',
       dueAt: null,
+      resolutionKind: 'no_due_date',
     })
 
     const result = await normalizeTodoDraftTaskTimes(
@@ -244,7 +245,7 @@ describe('workspace-run-time-normalization', () => {
         corrections: [],
         slots: {
           timeText: '这周末',
-          timeResolutionKind: 'unresolved',
+          timeResolutionKind: 'no_due_date',
         },
       },
     ])

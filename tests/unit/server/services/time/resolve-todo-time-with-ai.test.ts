@@ -70,7 +70,15 @@ describe('resolve-todo-time-with-ai', () => {
     })
   })
 
-  it('resolves locally parseable time text without calling the model', async () => {
+  it('accepts the prompt-produced default for 今晚 as 21:00', async () => {
+    mocks.generateText.mockResolvedValueOnce({
+      output: {
+        timeText: '今晚',
+        dueAt: '2026-04-30T13:00:00.000Z',
+        resolutionKind: 'clear',
+      },
+    })
+
     await expect(
       resolveTodoTimeWithAi({
         title: '处理邮件',
@@ -81,10 +89,10 @@ describe('resolve-todo-time-with-ai', () => {
       })
     ).resolves.toEqual({
       timeText: '今晚',
-      dueAt: '2026-04-30T12:00:00.000Z',
+      dueAt: '2026-04-30T13:00:00.000Z',
       resolutionKind: 'clear',
     })
-    expect(mocks.generateText).not.toHaveBeenCalled()
+    expect(mocks.generateText).toHaveBeenCalledOnce()
   })
 
   it('returns unresolved without calling the model when no time information exists', async () => {
@@ -131,14 +139,13 @@ describe('resolve-todo-time-with-ai', () => {
   describe('vague time phrases', () => {
     it.each([
       ['尽快'],
-      ['晚点'],
       ['有空的时候'],
-    ])('clears AI-produced dueAt for vague phrase: %s', async (timeText) => {
+    ])('preserves prompt-produced vague result for phrase: %s', async (timeText) => {
       mocks.generateText.mockResolvedValueOnce({
         output: {
           timeText,
-          dueAt: '2026-05-01T00:00:00.000Z',
-          resolutionKind: 'clear',
+          dueAt: null,
+          resolutionKind: 'vague',
         },
       })
 
@@ -151,6 +158,90 @@ describe('resolve-todo-time-with-ai', () => {
       expect(result.timeText).toBe(timeText)
       expect(result.dueAt).toBeNull()
     })
+  })
+
+  it('accepts the prompt-produced default for 晚点 as 30 minutes later', async () => {
+    mocks.generateText.mockResolvedValueOnce({
+      output: {
+        timeText: '晚点',
+        dueAt: '2026-05-06T14:40:00.000Z',
+        resolutionKind: 'clear',
+      },
+    })
+
+    await expect(resolveTodoTimeWithAi({
+      title: '晚点回消息',
+      slots: { timeText: '晚点' },
+      referenceTime: '2026-05-06T14:10:00.000Z',
+    })).resolves.toEqual({
+      timeText: '晚点',
+      dueAt: '2026-05-06T14:40:00.000Z',
+      resolutionKind: 'clear',
+    })
+    expect(mocks.generateText).toHaveBeenCalledOnce()
+  })
+
+  it('accepts the prompt-produced default for 明天 as 09:00', async () => {
+    mocks.generateText.mockResolvedValueOnce({
+      output: {
+        timeText: '明天',
+        dueAt: '2026-05-07T01:00:00.000Z',
+        resolutionKind: 'clear',
+      },
+    })
+
+    await expect(resolveTodoTimeWithAi({
+      title: '明天处理合同',
+      slots: { timeText: '明天' },
+      referenceTime: '2026-05-06T08:10:00.000Z',
+    })).resolves.toEqual({
+      timeText: '明天',
+      dueAt: '2026-05-07T01:00:00.000Z',
+      resolutionKind: 'clear',
+    })
+    expect(mocks.generateText).toHaveBeenCalledOnce()
+  })
+
+  it('accepts the prompt-produced default for 下周 as next monday 09:00', async () => {
+    mocks.generateText.mockResolvedValueOnce({
+      output: {
+        timeText: '下周',
+        dueAt: '2026-05-11T01:00:00.000Z',
+        resolutionKind: 'clear',
+      },
+    })
+
+    await expect(resolveTodoTimeWithAi({
+      title: '下周整理报价',
+      slots: { timeText: '下周' },
+      referenceTime: '2026-05-06T08:10:00.000Z',
+    })).resolves.toEqual({
+      timeText: '下周',
+      dueAt: '2026-05-11T01:00:00.000Z',
+      resolutionKind: 'clear',
+    })
+    expect(mocks.generateText).toHaveBeenCalledOnce()
+  })
+
+  it('keeps no due date for recent phrases outside the default rule set', async () => {
+    mocks.generateText.mockResolvedValueOnce({
+      output: {
+        timeText: '这周末',
+        dueAt: null,
+        resolutionKind: 'no_due_date',
+      },
+    })
+
+    await expect(resolveTodoTimeWithAi({
+      title: '这周末整理资料',
+      slots: { timeText: '这周末' },
+      referenceTime: '2026-05-06T08:10:00.000Z',
+    })).resolves.toEqual({
+      timeText: '这周末',
+      dueAt: null,
+      resolutionKind: 'no_due_date',
+    })
+    expect(mocks.generateText).toHaveBeenCalledOnce()
   })
 
   it('clears AI-produced dueAt for unsupported holiday phrases', async () => {
@@ -185,12 +276,12 @@ describe('resolve-todo-time-with-ai', () => {
     expect(mocks.generateText).not.toHaveBeenCalled()
   })
 
-  it('returns vague resolution for broad time phrases', async () => {
+  it('returns clear resolution for broad time phrases covered by todo defaults', async () => {
     mocks.generateText.mockResolvedValueOnce({
       output: {
         timeText: '下周',
-        dueAt: null,
-        resolutionKind: 'vague',
+        dueAt: '2026-05-11T01:00:00.000Z',
+        resolutionKind: 'clear',
       },
     })
 
@@ -200,9 +291,10 @@ describe('resolve-todo-time-with-ai', () => {
       referenceTime: '2026-05-06T08:00:00.000Z',
     })).resolves.toEqual({
       timeText: '下周',
-      dueAt: null,
-      resolutionKind: 'vague',
+      dueAt: '2026-05-11T01:00:00.000Z',
+      resolutionKind: 'clear',
     })
+    expect(mocks.generateText).toHaveBeenCalledOnce()
   })
 
   it('preserves AI-produced dueAt when local parser cannot parse the phrase', async () => {

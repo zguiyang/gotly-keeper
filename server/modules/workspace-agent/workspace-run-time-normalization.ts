@@ -5,7 +5,7 @@ import { resolveTodoTimeWithAi } from '@/server/services/time/resolve-todo-time-
 
 import type { DraftWorkspaceTask } from '@/shared/workspace/workspace-run-protocol'
 
-export type TimeResolutionKind = 'clear' | 'vague' | 'unresolved'
+export type TimeResolutionKind = 'clear' | 'vague' | 'unresolved' | 'no_due_date'
 
 function hasTodoTimeSlot(task: DraftWorkspaceTask) {
   return Boolean(
@@ -20,7 +20,7 @@ function hasTodoTimeSlot(task: DraftWorkspaceTask) {
 }
 
 function classifyTimeResolution(timeText: string, dueAt: string | null | undefined, referenceTime: string, aiClarity?: string | null | undefined): TimeResolutionKind {
-  if (aiClarity === 'clear' || aiClarity === 'vague' || aiClarity === 'unresolved') {
+  if (aiClarity === 'clear' || aiClarity === 'vague' || aiClarity === 'unresolved' || aiClarity === 'no_due_date') {
     return aiClarity
   }
 
