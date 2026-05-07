@@ -36,9 +36,9 @@ function QuickInputSuggestions({
   hidden: boolean
 }) {
   const suggestions = [
-    '记一下：首页 slogan 想走轻管家感',
-    '记个待办：明天下午发报价',
-    '帮我找一下最近的待办',
+    '记一下：以后工作中要使用番茄工作法',
+    '记个待办：下周发报告',
+    '把这个链接存一下',
   ]
 
   return (
