@@ -230,4 +230,191 @@ describe('workspace-compose', () => {
     expect(payload.data.item.timeText).toBe('明天上午')
     expect(payload.data.item.dueAt).toBeNull()
   })
+
+  it('includes mixed summary counts and per-type groups in compose prompt payload', async () => {
+    mocks.runAiGeneration.mockResolvedValue({
+      success: true,
+      data: {
+        answer: '最近有 1 条待办、1 条笔记和 1 条书签。',
+      },
+    })
+
+    let capturedPayload: string | null = null
+    mocks.renderPrompt.mockImplementation(
+      async (_template: string, vars: Record<string, string>) => {
+        capturedPayload = vars.payloadJson
+        return 'user prompt'
+      }
+    )
+
+    await composeWorkspaceAnswer({
+      task: { intent: 'summarize', target: 'mixed' },
+      plan: {
+        intent: 'summarize',
+        target: 'mixed',
+        toolName: 'search_mixed_assets',
+        toolInput: {},
+        needsCompose: true,
+      },
+      data: {
+        ok: true,
+        target: 'mixed',
+        items: [
+          {
+            id: 'todo_1',
+            type: 'todo',
+            title: '跟进验收结论',
+            excerpt: '今晚同步结果',
+            originalText: '今晚同步结果',
+            url: null,
+            timeText: '今晚',
+            dueAt: null,
+            completed: false,
+            createdAt: new Date('2026-05-07T08:00:00.000Z'),
+          },
+          {
+            id: 'note_1',
+            type: 'note',
+            title: 'RQA0507 用户反馈',
+            excerpt: '一句话保存更自然',
+            originalText: '一句话保存更自然',
+            url: null,
+            timeText: null,
+            dueAt: null,
+            completed: false,
+            createdAt: new Date('2026-05-07T08:05:00.000Z'),
+          },
+          {
+            id: 'bookmark_1',
+            type: 'link',
+            title: '复测链接',
+            excerpt: 'https://example.com/rqa0507',
+            originalText: 'https://example.com/rqa0507',
+            url: 'https://example.com/rqa0507',
+            timeText: null,
+            dueAt: null,
+            completed: false,
+            createdAt: new Date('2026-05-07T08:10:00.000Z'),
+          },
+        ],
+        total: 3,
+      },
+    })
+
+    expect(capturedPayload).not.toBeNull()
+    const payload = JSON.parse(capturedPayload!)
+    expect(payload.summaryContext).toEqual({
+      counts: {
+        todos: 1,
+        notes: 1,
+        bookmarks: 1,
+      },
+      groups: {
+        todos: [expect.objectContaining({ id: 'todo_1', type: 'todo' })],
+        notes: [expect.objectContaining({ id: 'note_1', type: 'note' })],
+        bookmarks: [expect.objectContaining({ id: 'bookmark_1', type: 'link' })],
+      },
+    })
+  })
+
+  it('builds T09 acceptance summary context with separate todo, note, and bookmark groups', async () => {
+    mocks.runAiGeneration.mockResolvedValue({
+      success: true,
+      data: {
+        answer: '最近有 1 条待办、2 条笔记和 1 条书签。',
+      },
+    })
+
+    let capturedPayload: string | null = null
+    mocks.renderPrompt.mockImplementation(
+      async (_template: string, vars: Record<string, string>) => {
+        capturedPayload = vars.payloadJson
+        return 'user prompt'
+      }
+    )
+
+    const result = await composeWorkspaceAnswer({
+      task: { intent: 'summarize', target: 'mixed' },
+      plan: {
+        intent: 'summarize',
+        target: 'mixed',
+        toolName: 'search_mixed_assets',
+        toolInput: {
+          query: 'RQA0507',
+        },
+        needsCompose: true,
+      },
+      data: {
+        ok: true,
+        target: 'mixed',
+        items: [
+          {
+            id: 'todo_1',
+            type: 'todo',
+            title: '给验收群发本轮测试结论 RQA0507A',
+            excerpt: '给验收群发本轮测试结论',
+            originalText: '给验收群发本轮测试结论 RQA0507A',
+            url: null,
+            timeText: '5月7日下午6点',
+            dueAt: null,
+            completed: false,
+            createdAt: new Date('2026-05-07T08:00:00.000Z'),
+          },
+          {
+            id: 'note_1',
+            type: 'note',
+            title: '真实用户验收笔记 RQA0507B',
+            excerpt: '小白会希望一句话就直接保存',
+            originalText: '真实用户验收笔记 RQA0507B 小白会希望一句话就直接保存',
+            url: null,
+            timeText: null,
+            dueAt: null,
+            completed: false,
+            createdAt: new Date('2026-05-07T08:01:00.000Z'),
+          },
+          {
+            id: 'note_2',
+            type: 'note',
+            title: 'RQA0507E 小白用户会连续说两件事，不会先想类型',
+            excerpt: '小白用户会连续说两件事，不会先想类型',
+            originalText: 'RQA0507E 小白用户会连续说两件事，不会先想类型',
+            url: null,
+            timeText: null,
+            dueAt: null,
+            completed: false,
+            createdAt: new Date('2026-05-07T08:02:00.000Z'),
+          },
+          {
+            id: 'bookmark_1',
+            type: 'link',
+            title: 'RQA0507C 复测回看链接',
+            excerpt: 'https://example.com/rqa0507c',
+            originalText: 'https://example.com/rqa0507c',
+            url: 'https://example.com/rqa0507c',
+            timeText: null,
+            dueAt: null,
+            completed: false,
+            createdAt: new Date('2026-05-07T08:03:00.000Z'),
+          },
+        ],
+        total: 4,
+      },
+    })
+
+    expect(result).toEqual({
+      answer: '最近有 1 条待办、2 条笔记和 1 条书签。',
+      usedFallback: false,
+    })
+
+    expect(capturedPayload).not.toBeNull()
+    const payload = JSON.parse(capturedPayload!)
+    expect(payload.summaryContext.counts).toEqual({
+      todos: 1,
+      notes: 2,
+      bookmarks: 1,
+    })
+    expect(payload.summaryContext.groups.todos.map((item: { id: string }) => item.id)).toEqual(['todo_1'])
+    expect(payload.summaryContext.groups.notes.map((item: { id: string }) => item.id)).toEqual(['note_1', 'note_2'])
+    expect(payload.summaryContext.groups.bookmarks.map((item: { id: string }) => item.id)).toEqual(['bookmark_1'])
+  })
 })

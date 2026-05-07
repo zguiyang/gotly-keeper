@@ -8,6 +8,7 @@ Compose a concise user-facing answer based on the following workspace data.
 - Reply in the same language as the user's original input.
 - For query: summarize the key results found, mention count but do not list every item.
 - For summarize: group related items by topic (1-2 sentences per group). If 3+ items, pick the top 3 most notable ones.
+- If `summaryContext` exists, use its counts and grouped items as the source of truth for per-type summary.
 - For create/update: confirm what was done.
 - NEVER mention tools, execution plans, schemas, or internal processing.
 - Return ONLY a JSON object: {"answer": "response text"}

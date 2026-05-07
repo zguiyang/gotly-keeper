@@ -14,6 +14,8 @@ Turn the provided structured task, execution plan, and tool result into one shor
 - Keep the answer concise, clear, and practical.
 - Prefer 1 short paragraph.
 - If the task is `summarize`, produce a concise summary that groups related items by topic (1-2 sentences per group). If there are 3+ items, pick the 3 most notable ones. Do not just report the count.
+- If `summaryContext` is present for a mixed or multi-type result, report the counts per asset type first, then summarize each type with the provided grouped items.
+- Keep bookmarks distinct from notes. Saved links / URLs are bookmarks even if they also include commentary.
 - If there are zero items for `query` or `summarize`, say that clearly.
 - If the task is `create` or `update`, confirm what was done in the SAME LANGUAGE as the user's original input (Chinese input → Chinese response, English input → English response).
 - NEVER mix languages in a single response.

@@ -40,6 +40,48 @@ function toPromptAssetItem(item: AssetListItem) {
   }
 }
 
+function getSummaryTypeKey(itemType: AssetListItem['type']): 'todos' | 'notes' | 'bookmarks' {
+  if (itemType === 'todo') {
+    return 'todos'
+  }
+
+  if (itemType === 'note') {
+    return 'notes'
+  }
+
+  return 'bookmarks'
+}
+
+function buildSummaryContext(items: ReturnType<typeof toPromptAssetItem>[]) {
+  const counts = {
+    todos: 0,
+    notes: 0,
+    bookmarks: 0,
+  }
+  const groups: {
+    todos: ReturnType<typeof toPromptAssetItem>[]
+    notes: ReturnType<typeof toPromptAssetItem>[]
+    bookmarks: ReturnType<typeof toPromptAssetItem>[]
+  } = {
+    todos: [],
+    notes: [],
+    bookmarks: [],
+  }
+
+  for (const item of items) {
+    const key = getSummaryTypeKey(item.type)
+    counts[key] += 1
+    if (groups[key].length < 3) {
+      groups[key].push(item)
+    }
+  }
+
+  return {
+    counts,
+    groups,
+  }
+}
+
 function buildPromptPayload(task: WorkspaceTask, plan: WorkspaceExecutionPlan, data: WorkspaceToolResult) {
   if (!data.ok) {
     return {
@@ -49,17 +91,20 @@ function buildPromptPayload(task: WorkspaceTask, plan: WorkspaceExecutionPlan, d
     }
   }
 
+  const promptItems = Array.isArray(data.items)
+    ? data.items.filter(isAssetListItem).slice(0, 8).map(toPromptAssetItem)
+    : []
+
   return {
     task,
     plan,
+    summaryContext: buildSummaryContext(promptItems),
     data: {
       ok: true,
       target: data.target,
       total: data.total ?? (Array.isArray(data.items) ? data.items.length : 0),
       action: data.action ?? null,
-      items: Array.isArray(data.items)
-        ? data.items.filter(isAssetListItem).slice(0, 8).map(toPromptAssetItem)
-        : [],
+      items: promptItems,
       item: isAssetListItem(data.item) ? toPromptAssetItem(data.item) : null,
     },
   }
