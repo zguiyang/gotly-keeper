@@ -36,11 +36,21 @@ export const workspaceIntentEvalExpectationSchema = z.object({
   actionClass: workspaceIntentEvalActionClassSchema.exclude(['other']),
 })
 
+export const workspaceIntentEvalExpectedTaskSchema = z.object({
+  target: z.enum(['notes', 'todos', 'bookmarks', 'mixed']),
+  actionClass: workspaceIntentEvalActionClassSchema.exclude(['other']),
+  titleIncludes: z.string().trim().min(1).optional(),
+  cleanTitleIncludes: z.string().trim().min(1).optional(),
+  cleanContentIncludes: z.string().trim().min(1).optional(),
+  cleanContentExcludes: z.array(z.string().trim().min(1)).optional(),
+})
+
 export const workspaceIntentEvalCaseSchema = z.object({
   id: z.string().trim().min(1),
   bucket: workspaceIntentEvalBucketSchema,
   input: z.string().trim().min(1),
   expected: workspaceIntentEvalExpectationSchema,
+  expectedTasks: z.array(workspaceIntentEvalExpectedTaskSchema).min(1).optional(),
 })
 
 export const workspaceIntentEvalDatasetSchema = z.object({
@@ -81,6 +91,10 @@ export type WorkspaceIntentEvalPrediction = {
     | 'execution_error'
   taskCount: number
 }
+
+export type WorkspaceIntentEvalExpectedTask = z.infer<
+  typeof workspaceIntentEvalExpectedTaskSchema
+>
 
 export type WorkspaceIntentEvalCaseResult = {
   caseId: string
@@ -153,6 +167,40 @@ function createEmptyConfusionRow(): Record<WorkspaceIntentEvalActionClass, numbe
   }
 }
 
+function deriveDraftTaskActionClass(
+  task: WorkspaceUnderstandingPreview['draftTasks'][number]
+): WorkspaceIntentEvalActionClass {
+  if (task.intent !== 'create') {
+    return 'other'
+  }
+
+  if (task.hasRealContent === false) {
+    return 'clarify'
+  }
+
+  if (task.ambiguities.length > 0 || task.target === 'mixed') {
+    return 'clarify'
+  }
+
+  if (typeof task.confidence === 'number' && task.confidence < 0.7) {
+    return 'clarify'
+  }
+
+  if (task.target === 'notes') {
+    return 'note'
+  }
+
+  if (task.target === 'todos') {
+    return 'todo'
+  }
+
+  if (task.target === 'bookmarks') {
+    return 'bookmark'
+  }
+
+  return 'other'
+}
+
 export async function loadWorkspaceIntentEvalDataset(
   filePath = DEFAULT_WORKSPACE_INTENT_EVAL_DATASET_PATH
 ): Promise<WorkspaceIntentEvalDataset> {
@@ -178,10 +226,11 @@ export function deriveWorkspaceIntentEvalPrediction(
   }
 
   if (taskCount > 1) {
+    const createTargets = understanding.draftTasks.every((task) => task.intent === 'create')
     return {
       actionClass: 'clarify',
-      intent: 'unknown',
-      target: 'unknown',
+      intent: createTargets ? 'create' : 'unknown',
+      target: 'mixed',
       confidence: null,
       reason: 'multiple_draft_tasks',
       taskCount,
@@ -208,67 +257,102 @@ export function deriveWorkspaceIntentEvalPrediction(
     taskCount,
   }
 
-  if (task.intent !== 'create') {
+  const actionClass = deriveDraftTaskActionClass(task)
+
+  if (actionClass === 'other') {
     return {
-      actionClass: 'other',
+      actionClass,
       reason: 'non_create_intent',
       ...base,
     }
   }
 
-  if (task.hasRealContent === false) {
+  if (actionClass === 'clarify') {
     return {
-      actionClass: 'clarify',
-      reason: 'missing_real_content',
-      ...base,
-    }
-  }
-
-  if (task.ambiguities.length > 0 || task.target === 'mixed') {
-    return {
-      actionClass: 'clarify',
-      reason: 'ambiguous_draft_task',
-      ...base,
-    }
-  }
-
-  if (typeof task.confidence === 'number' && task.confidence < 0.7) {
-    return {
-      actionClass: 'clarify',
-      reason: 'low_confidence',
-      ...base,
-    }
-  }
-
-  if (task.target === 'notes') {
-    return {
-      actionClass: 'note',
-      reason: 'resolved_target',
-      ...base,
-    }
-  }
-
-  if (task.target === 'todos') {
-    return {
-      actionClass: 'todo',
-      reason: 'resolved_target',
-      ...base,
-    }
-  }
-
-  if (task.target === 'bookmarks') {
-    return {
-      actionClass: 'bookmark',
-      reason: 'resolved_target',
+      actionClass,
+      reason:
+        task.hasRealContent === false
+          ? 'missing_real_content'
+          : task.ambiguities.length > 0 || task.target === 'mixed'
+            ? 'ambiguous_draft_task'
+            : 'low_confidence',
       ...base,
     }
   }
 
   return {
-    actionClass: 'other',
+    actionClass,
     reason: 'resolved_target',
     ...base,
   }
+}
+
+function matchesExpectedTask(
+  actualTask: WorkspaceUnderstandingPreview['draftTasks'][number] | undefined,
+  expectedTask: WorkspaceIntentEvalExpectedTask
+) {
+  if (!actualTask) {
+    return false
+  }
+
+  if (deriveDraftTaskActionClass(actualTask) !== expectedTask.actionClass) {
+    return false
+  }
+
+  if (actualTask.target !== expectedTask.target) {
+    return false
+  }
+
+  if (expectedTask.titleIncludes && !actualTask.title.includes(expectedTask.titleIncludes)) {
+    return false
+  }
+
+  if (
+    expectedTask.cleanTitleIncludes &&
+    !(actualTask.cleanTitle ?? '').includes(expectedTask.cleanTitleIncludes)
+  ) {
+    return false
+  }
+
+  if (
+    expectedTask.cleanContentIncludes &&
+    !(actualTask.cleanContent ?? '').includes(expectedTask.cleanContentIncludes)
+  ) {
+    return false
+  }
+
+  if (
+    expectedTask.cleanContentExcludes?.some((fragment) =>
+      (actualTask.cleanContent ?? '').includes(fragment)
+    )
+  ) {
+    return false
+  }
+
+  return true
+}
+
+export function matchWorkspaceIntentEvalCase(
+  understanding: WorkspaceUnderstandingPreview,
+  testCase: WorkspaceIntentEvalCase,
+  actual: WorkspaceIntentEvalPrediction
+) {
+  const baseMatched =
+    actual.actionClass === testCase.expected.actionClass &&
+    actual.intent === testCase.expected.intent &&
+    actual.target === testCase.expected.target
+
+  if (!testCase.expectedTasks) {
+    return baseMatched
+  }
+
+  if (understanding.draftTasks.length !== testCase.expectedTasks.length) {
+    return false
+  }
+
+  return testCase.expectedTasks.every((expectedTask, index) =>
+    matchesExpectedTask(understanding.draftTasks[index], expectedTask)
+  )
 }
 
 export async function runWorkspaceIntentEvalCase(input: {
@@ -291,10 +375,7 @@ export async function runWorkspaceIntentEvalCase(input: {
     })
 
     const actual = deriveWorkspaceIntentEvalPrediction(understanding)
-    const matched =
-      actual.actionClass === input.testCase.expected.actionClass &&
-      actual.intent === input.testCase.expected.intent &&
-      actual.target === input.testCase.expected.target
+    const matched = matchWorkspaceIntentEvalCase(understanding, input.testCase, actual)
 
     return {
       caseId: input.testCase.id,

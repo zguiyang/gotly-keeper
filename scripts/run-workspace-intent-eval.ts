@@ -33,6 +33,14 @@ async function main() {
         `  expected: ${mismatch.expected.actionClass}/${mismatch.expected.target}, actual: ${mismatch.actual.actionClass}/${mismatch.actual.target}`
       )
       console.log(`  reason: ${mismatch.actual.reason}`)
+      if (mismatch.understanding?.draftTasks.length) {
+        console.log('  draftTasks:')
+        mismatch.understanding.draftTasks.forEach((task, index) => {
+          console.log(
+            `    ${index + 1}. ${task.intent}/${task.target} title=${JSON.stringify(task.title)} cleanTitle=${JSON.stringify(task.cleanTitle ?? '')} cleanContent=${JSON.stringify(task.cleanContent ?? '')}`
+          )
+        })
+      }
       if (mismatch.error) {
         console.log(`  error: ${mismatch.error}`)
       }
