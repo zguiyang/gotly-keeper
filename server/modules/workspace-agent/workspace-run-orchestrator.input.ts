@@ -16,6 +16,7 @@ import { planWorkspaceRun } from './workspace-run-planner'
 import { buildWorkspaceRunPreview } from './workspace-run-preview'
 import { reviewWorkspaceRunPlan } from './workspace-run-review'
 import { isWorkspaceRunModelError } from './workspace-run-runtime'
+import { splitWorkspaceRunInputSemantically } from './workspace-run-semantic-split'
 import { normalizeTodoDraftTaskTimes } from './workspace-run-time-normalization'
 import { understandWorkspaceRunInput } from './workspace-run-understanding'
 
@@ -46,18 +47,76 @@ async function runNormalize(ctx: PhaseContext, rawText: string) {
 async function runUnderstand(
   ctx: PhaseContext,
   normalized: ReturnType<typeof normalizeWorkspaceRunInput>,
-  runModel: OrchestrateWorkspaceRunOptions['runModel']
+  runModel: OrchestrateWorkspaceRunOptions['runModel'],
+  inheritedCorrections: string[] = []
 ) {
   const startTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'understand' })
   const understanding = await understandWorkspaceRunInput({
     normalized,
     runModel,
+    inheritedCorrections,
     signal: ctx.signal,
   })
   emitEvent(ctx, { type: 'phase_completed', phase: 'understand', output: understanding })
   recordPhaseTiming(ctx.phaseTimings, 'understand', startTs, Date.now(), 'model')
   return understanding
+}
+
+async function runSemanticSplit(
+  ctx: PhaseContext,
+  normalized: ReturnType<typeof normalizeWorkspaceRunInput>,
+  runModel: OrchestrateWorkspaceRunOptions['runModel']
+) {
+  const startTs = Date.now()
+  emitEvent(ctx, { type: 'phase_started', phase: 'semantic_split' })
+  const semanticSplit = await splitWorkspaceRunInputSemantically({
+    normalized,
+    runModel,
+    signal: ctx.signal,
+  })
+  emitEvent(ctx, { type: 'phase_completed', phase: 'semantic_split', output: semanticSplit })
+  recordPhaseTiming(ctx.phaseTimings, 'semantic_split', startTs, Date.now(), 'model')
+  return semanticSplit
+}
+
+function formatSemanticCorrections(
+  corrections: Awaited<ReturnType<typeof runSemanticSplit>>['corrections']
+): string[] {
+  return corrections.map((correction) =>
+    correction.reason
+      ? `${correction.from}->${correction.to} (${correction.reason})`
+      : `${correction.from}->${correction.to}`
+  )
+}
+
+function buildUnderstandingInputs(
+  normalized: ReturnType<typeof normalizeWorkspaceRunInput>,
+  semanticSplit: Awaited<ReturnType<typeof runSemanticSplit>>
+): Array<ReturnType<typeof normalizeWorkspaceRunInput>> {
+  const groups: Array<{
+    rawText: string
+    normalizedText: string
+    urls: string[]
+    separators: string[]
+  }> = []
+
+  for (const segment of semanticSplit.segments) {
+    const normalizedSegment = normalizeWorkspaceRunInput(segment.text)
+    const previousGroup = groups.at(-1)
+
+    if (!previousGroup || segment.relation === 'independent') {
+      groups.push(normalizedSegment)
+      continue
+    }
+
+    previousGroup.rawText = `${previousGroup.rawText}\n${normalizedSegment.rawText}`
+    previousGroup.normalizedText = `${previousGroup.normalizedText}\n${normalizedSegment.normalizedText}`
+    previousGroup.urls = [...previousGroup.urls, ...normalizedSegment.urls]
+    previousGroup.separators = [...previousGroup.separators, ...normalizedSegment.separators]
+  }
+
+  return groups.length > 0 ? groups : [normalized]
 }
 
 async function runResolveTodoTimes(
@@ -285,7 +344,21 @@ export async function handleNewInput(
       normalizedInput: normalized.normalizedText,
     })
 
-    const understanding = await runUnderstand(ctx, normalized, runModel)
+    const semanticSplit = await runSemanticSplit(ctx, normalized, runModel)
+    const inheritedCorrections = formatSemanticCorrections(semanticSplit.corrections)
+    const understandingInputs = buildUnderstandingInputs(normalized, semanticSplit)
+    const understandingResults: Awaited<ReturnType<typeof runUnderstand>>[] = []
+    for (const segmentInput of understandingInputs) {
+      understandingResults.push(
+        await runUnderstand(ctx, segmentInput, runModel, inheritedCorrections)
+      )
+    }
+    const understanding = {
+      rawInput: normalized.rawText,
+      normalizedInput: normalized.normalizedText,
+      corrections: inheritedCorrections,
+      draftTasks: understandingResults.flatMap((result) => result.draftTasks),
+    }
 
     console.log(`${WS_LOG_PREFIX} understanding`, {
       runId,

@@ -4,6 +4,10 @@
 {{{normalizedJson}}}
 </normalized_input>
 
+<inherited_corrections>
+{{{inheritedCorrectionsJson}}}
+</inherited_corrections>
+
 ## Task
 
 Convert the natural language input above into one or more draft tasks following the semantics
@@ -28,6 +32,7 @@ Output format:
 
 Key rules:
 - Split into multiple tasks ONLY for genuinely independent operations.
+- Respect inherited corrections when they clarify obvious user wording mistakes.
 - `title` must NOT contain time expressions or command prefixes.
 - `hasRealContent: false` when the user only provides a command word without substance.
 - Return ONLY the JSON object — no prose, no explanation.

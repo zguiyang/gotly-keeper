@@ -15,6 +15,7 @@ type RunTimelineProps = {
 
 const phaseLabels: Record<string, string> = {
   normalize: '标准化',
+  semantic_split: '语义拆分',
   understand: '理解',
   plan: '计划',
   review: '审查',

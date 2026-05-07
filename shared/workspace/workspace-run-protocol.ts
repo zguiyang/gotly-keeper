@@ -49,6 +49,7 @@ export type WorkspacePatch = {
 
 export const workspaceRunPhaseSchema = z.enum([
   'normalize',
+  'semantic_split',
   'understand',
   'time_normalize',
   'plan',

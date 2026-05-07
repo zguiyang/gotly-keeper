@@ -231,12 +231,14 @@ function toDraftTasks(tasks: z.infer<typeof understandingTaskSchema>[]): DraftWo
 export async function understandWorkspaceRunInput(input: {
   normalized: NormalizedWorkspaceRunInput
   runModel: WorkspaceRunModel
+  inheritedCorrections?: string[]
   signal?: AbortSignal
 }): Promise<WorkspaceUnderstandingPreview> {
   const [systemPrompt, userPrompt] = await Promise.all([
     buildWorkspaceSystemPrompt('workspace-run/system', {}),
     renderPrompt('workspace-run/understand.user', {
       normalizedJson: JSON.stringify(input.normalized),
+      inheritedCorrectionsJson: JSON.stringify(input.inheritedCorrections ?? []),
     }),
   ])
 
@@ -259,7 +261,7 @@ export async function understandWorkspaceRunInput(input: {
       draftTasks: normalizeDraftTasks(
         toDraftTasks(normalizeModelDraftTasks(modelParsed.data.draftTasks)),
       ),
-      corrections: [],
+      corrections: input.inheritedCorrections ?? [],
     }
   }
 
@@ -282,7 +284,7 @@ export async function understandWorkspaceRunInput(input: {
       draftTasks: normalizeDraftTasks(
         toDraftTasks(normalizeModelDraftTasks(modelParsed.data.draftTasks)),
       ),
-      corrections: [],
+      corrections: input.inheritedCorrections ?? [],
     }
   }
 
@@ -296,6 +298,6 @@ export async function understandWorkspaceRunInput(input: {
     rawInput: input.normalized.rawText,
     normalizedInput: input.normalized.normalizedText,
     draftTasks: normalizeDraftTasks(toDraftTasks(validated.data.draftTasks)),
-    corrections: [],
+    corrections: input.inheritedCorrections ?? [],
   }
 }

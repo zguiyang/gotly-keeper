@@ -146,6 +146,329 @@ describe('workspace-run-orchestrator', () => {
 
       expect(understandIndex).toBeGreaterThan(normalizeIndex)
     })
+
+    it('runs semantic split before understanding each independent segment', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const events: unknown[] = []
+      const store = createMockStore()
+      const runModel = vi
+        .fn<WorkspaceRunModel>()
+        .mockResolvedValueOnce({
+          isMultiTask: true,
+          corrections: [],
+          segments: [
+            {
+              id: 'segment_1',
+              text: '记个待办：明天下午三点给产品经理发报价',
+              relation: 'independent',
+              confidence: 0.96,
+            },
+            {
+              id: 'segment_2',
+              text: '再记一下：首页 slogan 想走轻管家感',
+              relation: 'independent',
+              confidence: 0.94,
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          draftTasks: [
+            {
+              id: 'task_1',
+              intent: 'create',
+              target: 'todos',
+              title: '给产品经理发报价',
+              hasRealContent: true,
+              confidence: 0.92,
+              ambiguities: [],
+              corrections: [],
+              slots: { timeText: '明天下午三点' },
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          draftTasks: [
+            {
+              id: 'task_2',
+              intent: 'create',
+              target: 'notes',
+              title: '首页 slogan 想走轻管家感',
+              hasRealContent: true,
+              confidence: 0.9,
+              ambiguities: [],
+              corrections: [],
+              slots: {},
+            },
+          ],
+        })
+
+      await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'input',
+          text: '记个待办：明天下午三点给产品经理发报价；再记一下：首页 slogan 想走轻管家感',
+        },
+        store,
+        runModel,
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      const normalizeIndex = events.findIndex(
+        (e) => isPhaseEvent(e) && e.type === 'phase_completed' && e.phase === 'normalize'
+      )
+      const splitIndex = events.findIndex(
+        (e) => isPhaseEvent(e) && e.type === 'phase_started' && e.phase === 'semantic_split'
+      )
+      const understandIndex = events.findIndex(
+        (e) => isPhaseEvent(e) && e.type === 'phase_started' && e.phase === 'understand'
+      )
+
+      expect(splitIndex).toBeGreaterThan(normalizeIndex)
+      expect(understandIndex).toBeGreaterThan(splitIndex)
+      expect(runModel).toHaveBeenCalledTimes(3)
+      expect(runModel.mock.calls[1]?.[0]).toEqual(
+        expect.objectContaining({
+          userPrompt: expect.stringContaining('记个待办：明天下午三点给产品经理发报价'),
+        })
+      )
+      expect(runModel.mock.calls[2]?.[0]).toEqual(
+        expect.objectContaining({
+          userPrompt: expect.stringContaining('再记一下：首页 slogan 想走轻管家感'),
+        })
+      )
+    })
+
+    it('keeps T06 multi-task acceptance input split into todo plus note', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      executorMock.executeWorkspaceRunSteps.mockResolvedValueOnce({
+        stepResults: [
+          {
+            stepId: 'step_1',
+            toolName: 'create_todo',
+            result: { ok: true, target: 'todos', action: 'create', item: { title: '和设计过一下 RQA0506D 验收' } },
+          },
+          {
+            stepId: 'step_2',
+            toolName: 'create_note',
+            result: { ok: true, target: 'notes', action: 'create', item: { title: 'RQA0506E 小白用户更希望查询别总确认' } },
+          },
+        ],
+        summary: '执行了 2/2 个步骤',
+      })
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'input',
+          text: '记个待办：5月9日上午11点和设计过一下 RQA0506D 验收；再记一下：RQA0506E 小白用户更希望查询别总确认',
+        },
+        store: createMockStore(),
+        runModel: vi
+          .fn<WorkspaceRunModel>()
+          .mockResolvedValueOnce({
+            isMultiTask: true,
+            corrections: [],
+            segments: [
+              {
+                id: 'segment_1',
+                text: '记个待办：5月9日上午11点和设计过一下 RQA0506D 验收',
+                relation: 'independent',
+                confidence: 0.97,
+              },
+              {
+                id: 'segment_2',
+                text: '再记一下：RQA0506E 小白用户更希望查询别总确认',
+                relation: 'independent',
+                confidence: 0.95,
+              },
+            ],
+          })
+          .mockResolvedValueOnce({
+            draftTasks: [
+              {
+                id: 'task_1',
+                intent: 'create',
+                target: 'todos',
+                title: '和设计过一下 RQA0506D 验收',
+                hasRealContent: true,
+                confidence: 0.93,
+                ambiguities: [],
+                corrections: [],
+                slots: {
+                  dueAt: '2026-05-09T11:00:00.000Z',
+                  timeText: '5月9日上午11点',
+                },
+              },
+            ],
+          })
+          .mockResolvedValueOnce({
+            draftTasks: [
+              {
+                id: 'task_2',
+                intent: 'create',
+                target: 'notes',
+                title: 'RQA0506E 小白用户更希望查询别总确认',
+                hasRealContent: true,
+                confidence: 0.91,
+                ambiguities: [],
+                corrections: [],
+                slots: {},
+              },
+            ],
+          }),
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('completed')
+      if (!result.ok || result.phase !== 'completed') {
+        throw new Error('Expected completed result for T06 acceptance input')
+      }
+      const completedResult = result.result ?? null
+      expect(completedResult?.preview?.understanding?.draftTasks.map((task) => task.target)).toEqual([
+        'todos',
+        'notes',
+      ])
+    })
+
+    it('keeps T07 typo tolerance input on the direct todo-create path', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const events: unknown[] = []
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'input',
+          text: '记个待半：5月10日早上买燕麦奶 RQA0506F',
+        },
+        store: createMockStore(),
+        runModel: vi
+          .fn<WorkspaceRunModel>()
+          .mockResolvedValueOnce({
+            isMultiTask: false,
+            corrections: [
+              {
+                from: '待半',
+                to: '待办',
+                reason: 'typo',
+              },
+            ],
+            segments: [
+              {
+                id: 'segment_1',
+                text: '记个待办：5月10日早上买燕麦奶 RQA0506F',
+                relation: 'independent',
+                confidence: 0.96,
+              },
+            ],
+          })
+          .mockResolvedValueOnce({
+            draftTasks: [
+              {
+                id: 'task_1',
+                intent: 'create',
+                target: 'todos',
+                title: '买燕麦奶 RQA0506F',
+                hasRealContent: true,
+                confidence: 0.92,
+                ambiguities: [],
+                corrections: [],
+                slots: {
+                  dueAt: '2026-05-10T08:00:00.000Z',
+                  timeText: '5月10日早上',
+                },
+              },
+            ],
+          }),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('completed')
+      expect(events).not.toContainEqual(
+        expect.objectContaining({
+          type: 'awaiting_user',
+          interaction: expect.objectContaining({ type: 'clarify_slots' }),
+        })
+      )
+      if (!result.ok || result.phase !== 'completed') {
+        throw new Error('Expected completed result for T07 acceptance input')
+      }
+      const completedResult = result.result ?? null
+      expect(completedResult?.preview?.understanding?.corrections).toEqual(['待半->待办 (typo)'])
+    })
+
+    it('keeps T12 duplicate bookmark acceptance input in duplicate confirmation instead of execution failure', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates.mockResolvedValueOnce([
+        {
+          stepId: 'step_1',
+          target: 'bookmark',
+          duplicates: [
+            {
+              id: 'bookmark_1',
+              label: 'https://example.com/rqa0506c',
+              reason: 'URL already exists',
+            },
+          ],
+        },
+      ])
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'input',
+          text: '把这个链接存一下，真实验收回看用：https://example.com/rqa0506c',
+        },
+        store: createMockStore(),
+        runModel: vi
+          .fn<WorkspaceRunModel>()
+          .mockResolvedValueOnce({
+            isMultiTask: false,
+            corrections: [],
+            segments: [
+              {
+                id: 'segment_1',
+                text: '把这个链接存一下，真实验收回看用：https://example.com/rqa0506c',
+                relation: 'independent',
+                confidence: 0.97,
+              },
+            ],
+          })
+          .mockResolvedValueOnce({
+            draftTasks: [
+              {
+                id: 'task_1',
+                intent: 'create',
+                target: 'bookmarks',
+                title: '真实验收回看用',
+                hasRealContent: true,
+                confidence: 0.95,
+                ambiguities: [],
+                corrections: [],
+                slots: {
+                  url: 'https://example.com/rqa0506c',
+                  note: '真实验收回看用',
+                },
+              },
+            ],
+          }),
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('review')
+      expect(result.snapshot?.interaction).toMatchObject({
+        type: 'confirm_duplicate',
+        target: 'bookmark',
+      })
+      expect(executorMock.executeWorkspaceRunSteps).not.toHaveBeenCalled()
+    })
   })
 
   describe('plan phase', () => {

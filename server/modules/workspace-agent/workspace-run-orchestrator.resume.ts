@@ -674,8 +674,7 @@ export async function handleResume(
   const needsFullReplan =
     request.response.type === 'clarify_slots' ||
     request.response.type === 'edit_draft_tasks' ||
-    ((request.response.type === 'confirm_plan' || request.response.type === 'clarify_slots') &&
-      draftTasks.some(needsTodoTimeNormalization))
+    (request.response.type === 'confirm_plan' && draftTasks.some(needsTodoTimeNormalization))
 
   let plannerResult: WorkspaceRunPlannerResult
   if (needsFullReplan) {

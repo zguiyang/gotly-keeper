@@ -56,6 +56,10 @@ function getPhaseTitle(phase: VisibleWorkspaceRunPhase['phase']) {
     return '正在规范化输入'
   }
 
+  if (phase === 'semantic_split') {
+    return '正在拆分语义片段'
+  }
+
   if (phase === 'understand') {
     return '正在理解你的输入'
   }
@@ -149,6 +153,10 @@ function getVisiblePhase(
 function getPhaseFallbackMessage(visiblePhase: VisibleWorkspaceRunPhase) {
   if (visiblePhase.phase === 'normalize') {
     return '正在整理原始输入，准备后续判断。'
+  }
+
+  if (visiblePhase.phase === 'semantic_split') {
+    return '正在判断这是一项任务还是多项任务，并拆分独立语义片段。'
   }
 
   if (visiblePhase.phase === 'understand') {
