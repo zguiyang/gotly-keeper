@@ -10,6 +10,7 @@ import { executeWorkspaceTool } from './workspace-tools'
 
 import type { SearchWorkspaceRunCandidates } from './workspace-run-planner'
 import type { AssetListItem } from '@/shared/assets/assets.types'
+import type { WorkspaceSelector } from '@/shared/workspace/workspace-run-protocol'
 import type { ZodType } from 'zod'
 
 export class WorkspaceRunModelError extends Error {
@@ -93,10 +94,23 @@ function createRunModel(): WorkspaceRunModel {
 function createSearchCandidates(): SearchWorkspaceRunCandidates {
   return async (input) => {
     try {
+      const toolInput: Record<string, unknown> = { query: input.query, status: input.status }
+
+      if (input.timeConstraint) {
+        const selector: WorkspaceSelector = {
+          target: 'todos',
+          subject: input.query,
+          keywords: input.keywords,
+          timeConstraint: input.timeConstraint,
+          statusConstraint: input.status === 'all' ? null : input.status,
+        }
+        toolInput.selector = selector
+      }
+
       const result = await executeWorkspaceTool(
         {
           toolName: 'search_todos',
-          toolInput: { query: input.query, status: input.status },
+          toolInput,
         },
         { userId: input.userId }
       )

@@ -6,6 +6,7 @@ import type {
   DraftWorkspaceTask,
   WorkspacePatch,
   WorkspaceSelector,
+  WorkspaceTimeConstraint,
 } from '@/shared/workspace/workspace-run-protocol'
 
 export type WorkspaceRunPlannerAction =
@@ -67,6 +68,8 @@ export type SearchWorkspaceRunCandidates = (input: {
   target: 'todos'
   query: string
   status: 'open' | 'done' | 'all'
+  timeConstraint?: WorkspaceTimeConstraint | null
+  keywords?: string[]
 }) => Promise<WorkspaceRunPlannerCandidate[]>
 
 // ── Shared Selector Builder ────────────────────────────────────────────
@@ -550,6 +553,8 @@ async function buildUpdateStep(input: {
         target: 'todos',
         query,
         status: requestedStatus,
+        timeConstraint: selector.timeConstraint,
+        keywords: selector.keywords,
       })
     } catch {
       candidates = []

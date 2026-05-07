@@ -2,6 +2,7 @@ import 'server-only'
 
 import { z } from 'zod'
 
+import { normalizeSearchText } from '@/server/services/search/search.query-parser'
 import { matchesSearchTimeHint } from '@/server/services/search/search.time-match'
 import {
   createWorkspaceLinkAsset,
@@ -180,6 +181,7 @@ export async function resolveWorkspaceTargets(
     items = sortItemsByRecency(items)
   }
 
+  items = narrowItemsByExactIdentifierMatch(items, selector)
   items = items.slice(0, limit)
 
   const mode: ResolutionMode = items.length === 0 ? 'none' : items.length === 1 ? 'single' : 'multiple'
@@ -191,6 +193,59 @@ function buildSelectorQuery(selector: WorkspaceSelector): string | null {
   const parts = [selector.subject, ...(selector.keywords ?? [])].filter(Boolean)
   const unique = [...new Set(parts)]
   return unique.length > 0 ? unique.join(' ') : null
+}
+
+function narrowItemsByExactIdentifierMatch(items: AssetListItem[], selector: WorkspaceSelector) {
+  const exactTokens = extractHighSignalExactTokens([
+    selector.subject,
+    ...(selector.keywords ?? []),
+  ])
+
+  if (exactTokens.length === 0) {
+    return items
+  }
+
+  const scoredItems = items.map((item) => {
+    const searchable = normalizeSearchText(
+      [item.title, item.originalText, item.excerpt, item.url].filter(Boolean).join(' ')
+    )
+    const normalizedTitle = normalizeSearchText(item.title ?? '')
+    const everyTokenMatch = exactTokens.every((token) => searchable.includes(token))
+    const titleStartsWithToken = exactTokens.some((token) => normalizedTitle.startsWith(token))
+    return { item, everyTokenMatch, titleStartsWithToken }
+  })
+
+  const exactMatches = scoredItems.filter((r) => r.everyTokenMatch)
+  if (exactMatches.length === 0) {
+    return items
+  }
+
+  exactMatches.sort((a, b) => {
+    if (a.titleStartsWithToken !== b.titleStartsWithToken) {
+      return a.titleStartsWithToken ? -1 : 1
+    }
+    return 0
+  })
+
+  return exactMatches.slice(0, 2).map((r) => r.item)
+}
+
+function extractHighSignalExactTokens(parts: Array<string | undefined>) {
+  const combined = normalizeSearchText(parts.filter(Boolean).join(' '))
+  if (!combined) {
+    return []
+  }
+
+  const tokenMatches = combined.match(/[a-z0-9_-]{6,}/g) ?? []
+  return Array.from(
+    new Set(
+      tokenMatches.filter(
+        (token) =>
+          /[a-z]/.test(token) &&
+          /\d/.test(token)
+      )
+    )
+  )
 }
 
 function mapTargetToTypeHint(target: string): 'note' | 'todo' | 'link' | undefined {
