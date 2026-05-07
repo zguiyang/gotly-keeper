@@ -24,37 +24,14 @@ export default function SignInPage() {
 
           <SignInForm />
 
-          <AuthDivider className="mt-8" text="其他方式" />
+          <AuthDivider className="mt-8" text="或" />
 
-          <div className="mt-6 flex gap-3">
-            <Button className="flex-1 gap-2" size="lg" type="button" variant="secondary" disabled>
-              <svg className="h-4 w-4" viewBox="0 0 24 24">
-                <path
-                  d="M21.8 12.23c0-.74-.06-1.46-.19-2.14H12.2v4.05h5.39a4.7 4.7 0 0 1-2 3.09v2.64h3.24c1.89-1.74 2.97-4.31 2.97-7.64Z"
-                  fill="currentColor"
-                />
-                <path
-                  d="M12.2 22c2.7 0 4.96-.9 6.62-2.44l-3.24-2.64c-.9.6-2.02.97-3.38.97-2.6 0-4.82-1.76-5.61-4.12H3.29v2.7A9.99 9.99 0 0 0 12.2 22Z"
-                  fill="currentColor"
-                />
-                <path
-                  d="M6.59 13.77a5.96 5.96 0 0 1 0-3.54V7.54H3.29a10.05 10.05 0 0 0 0 8.92l3.3-2.69Z"
-                  fill="currentColor"
-                />
-                <path
-                  d="M12.2 6.11c1.47 0 2.79.5 3.83 1.49l2.87-2.87C17.15 3.09 14.89 2 12.2 2A9.99 9.99 0 0 0 3.29 7.54l3.3 2.69c.79-2.36 3.01-4.12 5.61-4.12Z"
-                  fill="currentColor"
-                />
-              </svg>
-              Google
-            </Button>
-            <Button className="flex-1 gap-2" size="lg" type="button" variant="secondary" disabled>
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-              </svg>
-              Apple
-            </Button>
-          </div>
+          <Button className="mt-6 w-full gap-3" size="lg" type="button" variant="secondary" disabled>
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 .5A12 12 0 0 0 8.2 23.9c.6.11.8-.26.8-.58v-2.1c-3.34.72-4.04-1.42-4.04-1.42-.55-1.38-1.34-1.75-1.34-1.75-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.23 1.83 1.23 1.07 1.84 2.8 1.3 3.49 1 .1-.77.42-1.3.76-1.6-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.6 11.6 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.65 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.49 5.92.44.38.83 1.11.83 2.24v3.31c0 .32.19.69.8.57A12 12 0 0 0 12 .5Z" />
+            </svg>
+            <span>使用 GitHub 登录</span>
+          </Button>
 
           <div className="mt-10 text-center">
             <p className="text-sm text-secondary">
