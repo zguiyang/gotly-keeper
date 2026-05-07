@@ -117,6 +117,7 @@ export type ReviewWorkspaceRunPlanDecision =
 export type ReviewableDuplicateCandidate = {
   stepId: string
   target: 'todo' | 'note' | 'bookmark'
+  source?: 'bookmark_precheck' | 'plan_duplicate_scan'
   duplicates: WorkspaceCandidate[]
 }
 
@@ -617,6 +618,7 @@ function buildConfirmDuplicateDecision(input: {
         runId: input.runId,
         id: interactionId,
         type: 'confirm_duplicate',
+        source: input.candidate.source,
         target: input.candidate.target,
         message: `发现可能重复的${targetLabelMap[input.candidate.target]}，请确认是否仍然创建。`,
         actions: ['create', 'skip', 'cancel'],

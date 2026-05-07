@@ -102,6 +102,7 @@ describe('WorkspaceRunPanel', () => {
             runId: 'run_1',
             id: 'interaction_duplicate',
             type: 'confirm_duplicate',
+            source: 'bookmark_precheck',
             target: 'bookmark',
             message: '发现可能重复的书签。',
             actions: ['create', 'skip', 'cancel'],
@@ -127,6 +128,8 @@ describe('WorkspaceRunPanel', () => {
         type: 'confirm_duplicate',
         action: 'create',
       })
+      expect(screen.getByText('链接预检命中')).toBeTruthy()
+      expect(screen.getByText('已按链接完成预检；如果这不是同一条书签，仍然可以继续创建。')).toBeTruthy()
       expect(screen.getByRole('button', { name: '跳过这项' })).toBeTruthy()
       expect(screen.getByRole('button', { name: '取消' })).toBeTruthy()
     })

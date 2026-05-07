@@ -47,6 +47,7 @@ describe('workspace run protocol', () => {
         runId: 'run_123',
         id: 'interaction_duplicate',
         type: 'confirm_duplicate',
+        source: 'bookmark_precheck',
         target: 'todo',
         message: '发现一条可能重复的待办。',
         actions: ['create', 'skip', 'cancel'],
@@ -65,6 +66,7 @@ describe('workspace run protocol', () => {
       })
     ).toMatchObject({
       type: 'confirm_duplicate',
+      source: 'bookmark_precheck',
       target: 'todo',
       actions: ['create', 'skip', 'cancel'],
     })

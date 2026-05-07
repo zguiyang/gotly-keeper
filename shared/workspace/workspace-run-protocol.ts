@@ -173,6 +173,7 @@ const workspaceInteractionSchema = z.discriminatedUnion('type', [
     runId: z.string(),
     id: z.string(),
     type: z.literal('confirm_duplicate'),
+    source: z.enum(['bookmark_precheck', 'plan_duplicate_scan']).optional(),
     target: z.enum(['todo', 'note', 'bookmark']),
     message: z.string(),
     actions: z.tuple([

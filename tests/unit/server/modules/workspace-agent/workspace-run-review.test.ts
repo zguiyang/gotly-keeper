@@ -273,6 +273,7 @@ describe('workspace-run-review', () => {
       duplicateCandidates: [
         {
           stepId: 'step_1',
+          source: 'bookmark_precheck',
           target: 'todo',
           duplicates: [
             {
@@ -289,6 +290,7 @@ describe('workspace-run-review', () => {
     expect(awaitUser.reason).toBe('confirm_duplicate')
     expect(awaitUser.snapshot.interaction).toMatchObject({
       type: 'confirm_duplicate',
+      source: 'bookmark_precheck',
       target: 'todo',
       actions: ['create', 'skip', 'cancel'],
       current: {

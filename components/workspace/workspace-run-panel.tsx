@@ -747,12 +747,26 @@ function DuplicateConfirmationCard({
     bookmark: '书签',
   } as const
 
+  const isBookmarkPrecheck = interaction.source === 'bookmark_precheck'
+
   return (
     <div className="space-y-3 rounded-[1rem] border border-border/10 bg-muted/35 px-4 py-3">
       <div className="space-y-1">
-        <p className="text-xs text-on-surface-variant/60">疑似重复{targetLabelMap[interaction.target]}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs text-on-surface-variant/60">疑似重复{targetLabelMap[interaction.target]}</p>
+          {isBookmarkPrecheck ? (
+            <span className="rounded-full border border-border/10 bg-surface-container-lowest/90 px-2 py-0.5 text-[11px] font-medium text-on-surface-variant/80">
+              链接预检命中
+            </span>
+          ) : null}
+        </div>
         <p className="text-sm font-medium text-on-surface">{interaction.current.title}</p>
         <p className="text-sm text-on-surface-variant/80">{interaction.current.preview}</p>
+        {isBookmarkPrecheck ? (
+          <p className="text-xs text-on-surface-variant/70">
+            已按链接完成预检；如果这不是同一条书签，仍然可以继续创建。
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-2">
@@ -838,6 +852,10 @@ function InteractionActionIntro({
   }
 
   if (interaction.type === 'confirm_duplicate') {
+    if (interaction.source === 'bookmark_precheck') {
+      return '这条书签在链接预检时命中了重复项；如果只是同域不同内容，你仍然可以继续创建。'
+    }
+
     return '这条内容看起来和已有记录重复，你可以继续创建，也可以只跳过这一项。'
   }
 

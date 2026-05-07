@@ -8,6 +8,7 @@ import type { DraftWorkspaceTask, WorkspaceCandidate } from '@/shared/workspace/
 export type ReviewableDuplicateCandidate = {
   stepId: string
   target: 'todo' | 'note' | 'bookmark'
+  source?: 'bookmark_precheck' | 'plan_duplicate_scan'
   duplicates: WorkspaceCandidate[]
 }
 
@@ -51,10 +52,15 @@ export async function findWorkspaceRunDuplicateCandidates(input: {
     return []
   }
 
-  return findWorkspaceCreateDuplicates({
+  const duplicates = await findWorkspaceCreateDuplicates({
     userId: input.userId,
     steps: createSteps,
   })
+
+  return duplicates.map((candidate) => ({
+    ...candidate,
+    source: 'plan_duplicate_scan' as const,
+  }))
 }
 
 export async function findWorkspaceBookmarkDuplicateCandidate(input: {
@@ -85,7 +91,12 @@ export async function findWorkspaceBookmarkDuplicateCandidate(input: {
     ],
   })
 
-  return result ?? null
+  return result
+    ? {
+        ...result,
+        source: 'bookmark_precheck',
+      }
+    : null
 }
 
 export async function findWorkspaceBookmarkDuplicateCandidates(input: {
