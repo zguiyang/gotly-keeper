@@ -43,6 +43,21 @@ describe('prompt-template', () => {
     )
   })
 
+  it('renders workspace understanding prompt with capture-preservation and clarify-order rules', async () => {
+    const rendered = await renderPrompt('workspace-run/system', {})
+
+    expect(rendered).toContain('preserve the likely type')
+    expect(rendered).toContain('clarify the record type before asking for more details')
+    expect(rendered).toContain('Do NOT reinterpret repeated capture content as a todo')
+  })
+
+  it('renders workspace compose system prompt with mixed-type summary grouping rules', async () => {
+    const rendered = await renderPrompt('workspace-agent/compose.system', {})
+
+    expect(rendered).toContain('report the counts per asset type first')
+    expect(rendered).toContain('Keep bookmarks distinct from notes')
+  })
+
   it('supports strict nested variables with dot path', () => {
     const output = renderTemplate(
       'demo',
