@@ -754,9 +754,15 @@ describe('workspace-run-review', () => {
       message: '我还不确定你是想记待办、笔记还是书签，也不确定具体要记录什么。',
       fields: [
         expect.objectContaining({
-          key: 'targetHint',
+          key: 'target',
           label: '记录类型',
-          placeholder: '例如：待办、笔记、书签',
+          input: 'select',
+          placeholder: '请选择记录类型',
+          options: [
+            { value: 'todos', label: '待办' },
+            { value: 'notes', label: '笔记' },
+            { value: 'bookmarks', label: '书签' },
+          ],
         }),
         expect.objectContaining({
           key: 'details',
@@ -1461,14 +1467,14 @@ describe('workspace-run-review', () => {
     })
   })
 
-  it('does not block todo creation when the only ambiguity is a vague time phrase', () => {
+  it('does not block todo creation when structured time normalization marks it as no_due_date', () => {
     const result = reviewWorkspaceRunPlan({
       runId: 'run_1',
       draftTasks: [
         createDraftTask({
           title: '尽快处理报销',
-          ambiguities: ['时间表述"尽快"不明确'],
-          slots: {},
+          ambiguities: ['任意未结构化歧义文案'],
+          slots: { title: '尽快处理报销', timeText: '尽快', timeResolutionKind: 'no_due_date' },
         }),
       ],
       plan: createPlan({
@@ -1529,7 +1535,16 @@ describe('workspace-run-review', () => {
     }
     expect(interaction.fields).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ key: 'targetHint', label: '记录类型' }),
+        expect.objectContaining({
+          key: 'target',
+          label: '记录类型',
+          input: 'select',
+          options: [
+            { value: 'todos', label: '待办' },
+            { value: 'notes', label: '笔记' },
+            { value: 'bookmarks', label: '书签' },
+          ],
+        }),
       ])
     )
   })
@@ -1570,7 +1585,11 @@ describe('workspace-run-review', () => {
       }
       expect(interaction.fields).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ key: 'targetHint', label: '记录类型' }),
+          expect.objectContaining({
+            key: 'target',
+            label: '记录类型',
+            input: 'select',
+          }),
           expect.objectContaining({ key: 'details', label: '具体内容' }),
         ])
       )

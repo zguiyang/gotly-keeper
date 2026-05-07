@@ -220,10 +220,16 @@ function buildClarifyFields(task: ReviewableDraftTask, step?: ReviewablePlanStep
   if (task.target === 'mixed') {
     return [
       {
-        key: 'targetHint',
+        key: 'target',
         label: '记录类型',
         required: true,
-        placeholder: '例如：待办、笔记、书签',
+        input: 'select' as const,
+        placeholder: '请选择记录类型',
+        options: [
+          { value: 'todos', label: '待办' },
+          { value: 'notes', label: '笔记' },
+          { value: 'bookmarks', label: '书签' },
+        ],
       },
       {
         key: 'details',
@@ -394,16 +400,12 @@ function getTimeResolutionKind(task: ReviewableDraftTask) {
     : null
 }
 
-function hasOnlyIgnorableTodoTimeAmbiguities(task: ReviewableDraftTask, step: ReviewablePlanStep) {
+function hasNonBlockingTodoTimeDecision(task: ReviewableDraftTask, step: ReviewablePlanStep) {
   if (task.target !== 'todos' || step.action !== 'create_todo') {
     return false
   }
 
-  if (task.ambiguities.length === 0) {
-    return false
-  }
-
-  return task.ambiguities.every((ambiguity) => /^时间表述.+不明确$/.test(ambiguity))
+  return getTimeResolutionKind(task) === 'no_due_date'
 }
 
 function getCorrectionNotes(input: ReviewWorkspaceRunPlanInput, task: ReviewableDraftTask) {
@@ -576,7 +578,7 @@ function canSkipEditDraftTasks(input: ReviewWorkspaceRunPlanInput): boolean {
     const task = input.draftTasks[i]
     if (!task) return false
     if (task.target === 'mixed') return false
-    if (task.ambiguities.length > 0 && !hasOnlyIgnorableTodoTimeAmbiguities(task, step)) return false
+    if (task.ambiguities.length > 0 && !hasNonBlockingTodoTimeDecision(task, step)) return false
     if (hasMissingRequiredWriteFields(task, step)) return false
     if (!isStepConsistentWithTask(task, step)) return false
     if (hasBlockingTimeClarity(task, step)) return false
@@ -857,26 +859,6 @@ export function reviewWorkspaceRunPlan(
     })
   }
 
-  if (task.ambiguities.length > 0 && !hasOnlyIgnorableTodoTimeAmbiguities(task, step)) {
-    const ambiguityMessage =
-      task.intent === 'query'
-        ? '我知道你想查询，但还缺更具体的关键词。'
-        : task.intent === 'summarize'
-          ? '我知道你想整理内容，但还缺更具体的范围或对象。'
-        : '还有未消除的歧义，请先澄清。'
-
-    return buildClarifyDecision({
-      runId: input.runId,
-      plan: input.plan,
-      understandingPreview: input.understandingPreview,
-      updatedAt: input.updatedAt,
-      referenceTime: input.referenceTime,
-      interactionIdSuffix: 'clarify_ambiguity',
-      message: ambiguityMessage,
-      fields: buildClarifyFields(task, step),
-    })
-  }
-
   if (task.target === 'mixed' && step && (
     step.action === 'create_note' || step.action === 'create_todo' || step.action === 'create_bookmark'
   )) {
@@ -997,6 +979,26 @@ export function reviewWorkspaceRunPlan(
         })
       }
     }
+  }
+
+  if (task.ambiguities.length > 0 && !hasNonBlockingTodoTimeDecision(task, step)) {
+    const ambiguityMessage =
+      task.intent === 'query'
+        ? '我知道你想查询，但还缺更具体的关键词。'
+        : task.intent === 'summarize'
+          ? '我知道你想整理内容，但还缺更具体的范围或对象。'
+        : '还有未消除的歧义，请先澄清。'
+
+    return buildClarifyDecision({
+      runId: input.runId,
+      plan: input.plan,
+      understandingPreview: input.understandingPreview,
+      updatedAt: input.updatedAt,
+      referenceTime: input.referenceTime,
+      interactionIdSuffix: 'clarify_ambiguity',
+      message: ambiguityMessage,
+      fields: buildClarifyFields(task, step),
+    })
   }
 
   if (

@@ -276,6 +276,33 @@ describe('workspace run protocol', () => {
     })
   })
 
+  it('accepts structured clarification select fields', () => {
+    expect(
+      workspaceInteractionSchema.parse({
+        runId: 'run_123',
+        id: 'interaction_clarify_target',
+        type: 'clarify_slots',
+        message: '请选择记录类型。',
+        actions: ['submit', 'cancel'],
+        fields: [
+          {
+            key: 'target',
+            label: '记录类型',
+            input: 'select',
+            options: [
+              { value: 'todos', label: '待办' },
+              { value: 'notes', label: '笔记' },
+              { value: 'bookmarks', label: '书签' },
+            ],
+          },
+        ],
+      })
+    ).toMatchObject({
+      type: 'clarify_slots',
+      fields: [expect.objectContaining({ key: 'target', input: 'select' })],
+    })
+  })
+
   it('rejects unknown stream event types', () => {
     expect(() =>
       workspaceRunStreamEventSchema.parse({

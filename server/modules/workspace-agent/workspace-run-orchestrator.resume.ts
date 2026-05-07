@@ -35,13 +35,12 @@ import type {
 
 type ResumeResponse = Extract<WorkspaceRunRequest, { kind: 'resume' }>['response']
 
-function normalizeTargetHint(value: string | undefined): WorkspaceTarget | null {
-  const normalized = value?.trim().toLowerCase()
-  if (!normalized) return null
+function parseClarifiedTarget(value: string | undefined): WorkspaceTarget | null {
+  const normalized = value?.trim()
+  if (normalized === 'todos' || normalized === 'notes' || normalized === 'bookmarks') {
+    return normalized
+  }
 
-  if (/(待办|todo|todos|提醒)/.test(normalized)) return 'todos'
-  if (/(笔记|note|notes|记录)/.test(normalized)) return 'notes'
-  if (/(书签|bookmark|bookmarks|链接|网址|url)/.test(normalized)) return 'bookmarks'
   return null
 }
 
@@ -163,8 +162,18 @@ function toDraftWorkspaceTasks(
 
 function mergeClarification(
   tasks: DraftWorkspaceTask[],
-  response: Extract<WorkspaceInteractionResponse, { type: 'clarify_slots'; action: 'submit' }>
+  response: Extract<WorkspaceInteractionResponse, { type: 'clarify_slots'; action: 'submit' }>,
+  fields: Extract<WorkspaceInteraction, { type: 'clarify_slots' }>['fields']
 ) {
+  const resolvedClarification = fields.every((field) => {
+    if (!field.required) {
+      return true
+    }
+
+    const value = response.values[field.key]
+    return typeof value === 'string' && value.trim().length > 0
+  })
+
   return tasks.map((task, index) => {
     if (index !== 0) {
       return task
@@ -175,7 +184,7 @@ function mergeClarification(
     const nextUrl = response.values.url?.trim()
     const details = response.values.details?.trim()
     const clarifiedTarget = task.target === 'mixed'
-      ? normalizeTargetHint(response.values.targetHint) ?? task.target
+      ? parseClarifiedTarget(response.values.target) ?? task.target
       : task.target
 
     let resolvedTitle = task.title
@@ -209,15 +218,7 @@ function mergeClarification(
       }
     }
 
-    const ambiguities = task.ambiguities.filter((ambiguity) => {
-      if (clarifiedTarget !== 'mixed' && ambiguity.includes('记录类型')) {
-        return false
-      }
-      if (details && details.length > 0 && ambiguity.includes('具体内容')) {
-        return false
-      }
-      return true
-    })
+    const ambiguities = resolvedClarification ? [] : task.ambiguities
 
     return {
       ...task,
@@ -666,7 +667,7 @@ export async function handleResume(
   let draftTasks = baseDraftTasks
 
   if (request.response.type === 'clarify_slots' && request.response.action === 'submit') {
-    draftTasks = mergeClarification(draftTasks, request.response)
+    draftTasks = mergeClarification(draftTasks, request.response, snapshot.interaction.fields)
   }
 
   const referenceTime = snapshot.referenceTime ?? snapshot.updatedAt

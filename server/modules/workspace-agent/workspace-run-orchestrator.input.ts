@@ -126,6 +126,34 @@ function formatTypoCorrections(
   return typoCandidates.map((candidate) => `${candidate.text}->${candidate.suggestion} (typo)`)
 }
 
+function applyTypoCorrectionsToText(
+  text: string,
+  typoCandidates: ReturnType<typeof normalizeWorkspaceRunInput>['typoCandidates']
+) {
+  return typoCandidates.reduce((acc, candidate) => {
+    if (candidate.text === candidate.suggestion || !acc.includes(candidate.text)) {
+      return acc
+    }
+
+    return acc.split(candidate.text).join(candidate.suggestion)
+  }, text)
+}
+
+function applyTypoCorrections(
+  normalized: ReturnType<typeof normalizeWorkspaceRunInput>
+): ReturnType<typeof normalizeWorkspaceRunInput> {
+  const normalizedText = applyTypoCorrectionsToText(normalized.normalizedText, normalized.typoCandidates)
+
+  if (normalizedText === normalized.normalizedText) {
+    return normalized
+  }
+
+  return {
+    ...normalized,
+    normalizedText,
+  }
+}
+
 function buildUnderstandingInputs(
   normalized: ReturnType<typeof normalizeWorkspaceRunInput>,
   semanticSplit: Awaited<ReturnType<typeof runSemanticSplit>>
@@ -140,7 +168,9 @@ function buildUnderstandingInputs(
   }> = []
 
   for (const segment of semanticSplit.segments) {
-    const normalizedSegment = normalizeWorkspaceRunInput(segment.text)
+    const normalizedSegment = normalizeWorkspaceRunInput(
+      applyTypoCorrectionsToText(segment.text, normalized.typoCandidates)
+    )
     const previousGroup = groups.at(-1)
 
     if (!previousGroup || segment.relation === 'independent') {
@@ -380,19 +410,20 @@ export async function handleNewInput(
   const ctx: PhaseContext = { runId, userId, onEvent, signal: options.signal, phaseTimings: [] }
   try {
     const normalized = await runNormalize(ctx, request.text, runModel)
+    const normalizedForUnderstanding = applyTypoCorrections(normalized)
 
     console.log(`${WS_LOG_PREFIX} normalize`, {
       runId,
       rawInput: request.text,
-      normalizedInput: normalized.normalizedText,
+      normalizedInput: normalizedForUnderstanding.normalizedText,
     })
 
-    const semanticSplit = await runSemanticSplit(ctx, normalized, runModel)
+    const semanticSplit = await runSemanticSplit(ctx, normalizedForUnderstanding, runModel)
     const inheritedCorrections = [
       ...formatSemanticCorrections(semanticSplit.corrections),
-      ...formatTypoCorrections(normalized.typoCandidates),
+      ...formatTypoCorrections(normalizedForUnderstanding.typoCandidates),
     ].filter((value, index, values) => values.indexOf(value) === index)
-    const understandingInputs = buildUnderstandingInputs(normalized, semanticSplit)
+    const understandingInputs = buildUnderstandingInputs(normalizedForUnderstanding, semanticSplit)
     const understandingResults: Awaited<ReturnType<typeof runUnderstand>>[] = []
     for (const segmentInput of understandingInputs) {
       understandingResults.push(
@@ -401,7 +432,7 @@ export async function handleNewInput(
     }
     const understanding = {
       rawInput: normalized.rawText,
-      normalizedInput: normalized.normalizedText,
+      normalizedInput: normalizedForUnderstanding.normalizedText,
       corrections: inheritedCorrections,
       draftTasks: understandingResults.flatMap((result) => result.draftTasks),
     }

@@ -136,7 +136,12 @@ const workspaceClarificationFieldSchema = z.object({
   key: z.string(),
   label: z.string(),
   required: z.boolean().default(true),
+  input: z.enum(['text', 'select']).default('text'),
   placeholder: z.string().optional(),
+  options: z.array(z.object({
+    value: z.string(),
+    label: z.string(),
+  })).optional(),
 })
 
 export type WorkspaceClarificationField = z.infer<

@@ -416,11 +416,8 @@ function assessReadRisk(task: DraftWorkspaceTask, target: string): { risk: 'low'
   const slotQuery = getStringSlot(task, 'query')
   const hasClearSubject = title.length > 0 || (slotQuery !== undefined && slotQuery.length > 0)
   const hasHighConfidence = task.confidence >= 0.7
-  const hasBroadAmbiguity = task.ambiguities.some(
-    (a) => /^(范围|主体|对象).*不明确/.test(a)
-  )
 
-  if (hasClearSubject && hasHighConfidence && !hasBroadAmbiguity) {
+  if (hasClearSubject && hasHighConfidence) {
     return { risk: 'low', requiresUserApproval: false }
   }
 

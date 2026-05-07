@@ -62,15 +62,33 @@ export function SlotClarificationForm({ interaction, formId, onSubmit }: SlotCla
                   {field.required ? <span className="ml-1 text-destructive">*</span> : null}
                 </FieldLabel>
                 <FieldContent>
-                  <Input
-                    id={inputId}
-                    placeholder={field.placeholder}
-                    value={values[field.key] || ''}
-                    onChange={(e) => handleChange(field.key, e.target.value)}
-                    required={field.required}
-                    name={field.key}
-                    className={workspaceInteractionInsetFieldClassName}
-                  />
+                  {field.input === 'select' && field.options && field.options.length > 0 ? (
+                    <select
+                      id={inputId}
+                      value={values[field.key] || ''}
+                      onChange={(e) => handleChange(field.key, e.target.value)}
+                      required={field.required}
+                      name={field.key}
+                      className={workspaceInteractionInsetFieldClassName}
+                    >
+                      <option value="">{field.placeholder ?? '请选择'}</option>
+                      {field.options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Input
+                      id={inputId}
+                      placeholder={field.placeholder}
+                      value={values[field.key] || ''}
+                      onChange={(e) => handleChange(field.key, e.target.value)}
+                      required={field.required}
+                      name={field.key}
+                      className={workspaceInteractionInsetFieldClassName}
+                    />
+                  )}
                 </FieldContent>
               </Field>
             )

@@ -519,6 +519,132 @@ describe('workspace-run-orchestrator', () => {
       expect(result.result?.preview?.understanding?.corrections).toEqual(['待半->待办 (typo)'])
     })
 
+    it('applies typo corrections before understanding so the todo path stays clear', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const events: unknown[] = []
+      let callCount = 0
+      const runModel = vi.fn<WorkspaceRunModel>().mockImplementation(async ({ userPrompt }) => {
+        callCount += 1
+
+        if (callCount === 1) {
+          return {
+            rawText: '记个待半：5月10日早上买燕麦奶 RQA0507F3',
+            normalizedText: '记个待半：5月10日早上买燕麦奶 RQA0507F3',
+            urls: [],
+            separators: [],
+            typoCandidates: [{ text: '待半', suggestion: '待办' }],
+            timeHints: ['5月10日早上'],
+          }
+        }
+
+        if (callCount === 2) {
+          if (userPrompt.includes('待办')) {
+            return {
+              isMultiTask: false,
+              corrections: [
+                {
+                  from: '待半',
+                  to: '待办',
+                  reason: 'typo',
+                },
+              ],
+              segments: [
+                {
+                  id: 'segment_1',
+                  text: '记个待办：5月10日早上买燕麦奶 RQA0507F3',
+                  relation: 'independent',
+                  confidence: 0.96,
+                },
+              ],
+            }
+          }
+
+          return {
+            isMultiTask: false,
+            corrections: [],
+            segments: [
+              {
+                id: 'segment_1',
+                text: '记个待半：5月10日早上买燕麦奶 RQA0507F3',
+                relation: 'independent',
+                confidence: 0.96,
+              },
+            ],
+          }
+        }
+
+        if (callCount === 3) {
+          if (userPrompt.includes('待办')) {
+            return {
+              draftTasks: [
+                {
+                  id: 'task_1',
+                  intent: 'create',
+                  target: 'todos',
+                  title: '买燕麦奶 RQA0507F3',
+                  hasRealContent: true,
+                  confidence: 0.92,
+                  ambiguities: [],
+                  corrections: [],
+                  slots: {
+                    dueAt: '2026-05-10T08:00:00.000Z',
+                    timeText: '5月10日早上',
+                  },
+                },
+              ],
+            }
+          }
+
+          return {
+            draftTasks: [
+              {
+                id: 'task_1',
+                intent: 'create',
+                target: 'mixed',
+                title: '记个待半：5月10日早上买燕麦奶 RQA0507F3',
+                hasRealContent: true,
+                confidence: 0.72,
+                ambiguities: ['还不确定记录类型和具体内容'],
+                corrections: [],
+                slots: {
+                  timeText: '5月10日早上',
+                },
+              },
+            ],
+          }
+        }
+
+        throw new Error(`Unexpected model call ${callCount}`)
+      })
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'input',
+          text: '记个待半：5月10日早上买燕麦奶 RQA0507F3',
+        },
+        store: createMockStore(),
+        runModel,
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (e) => events.push(e),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('completed')
+      expect(events).not.toContainEqual(
+        expect.objectContaining({
+          type: 'awaiting_user',
+          interaction: expect.objectContaining({ type: 'clarify_slots' }),
+        })
+      )
+      if (!result.ok || result.phase !== 'completed') {
+        throw new Error('Expected completed result when typo corrections are applied early')
+      }
+      expect(result.result?.preview?.understanding?.normalizedInput).toContain('待办')
+      expect(result.result?.preview?.understanding?.corrections).toEqual(['待半->待办 (typo)'])
+    })
+
     it('keeps T12 duplicate bookmark acceptance input in duplicate confirmation instead of execution failure', async () => {
       const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
 
@@ -1329,7 +1455,7 @@ describe('workspace-run-orchestrator', () => {
       )
     })
 
-    it('applies clarified targetHint to mixed create tasks before replanning', async () => {
+    it('applies clarified target enum to mixed create tasks before replanning', async () => {
       const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
 
       const store = createMockStore()
@@ -1345,7 +1471,17 @@ describe('workspace-run-orchestrator', () => {
           message: '我还不确定你是想记待办、笔记还是书签。',
           actions: ['submit', 'cancel'] as const,
           fields: [
-            { key: 'targetHint', label: '记录类型', required: true },
+            {
+              key: 'target',
+              label: '记录类型',
+              required: true,
+              input: 'select',
+              options: [
+                { value: 'todos', label: '待办' },
+                { value: 'notes', label: '笔记' },
+                { value: 'bookmarks', label: '书签' },
+              ],
+            },
             { key: 'details', label: '具体内容', required: true },
           ],
         },
@@ -1382,7 +1518,7 @@ describe('workspace-run-orchestrator', () => {
             type: 'clarify_slots',
             action: 'submit',
             values: {
-              targetHint: '待办',
+              target: 'todos',
               details: '下周整理 QA20260506G',
             },
           },
@@ -2017,6 +2153,92 @@ describe('workspace-run-orchestrator', () => {
       if (result.phase === 'review' && result.snapshot) {
         expect(result.snapshot.interaction.type).not.toBe('clarify_slots')
       }
+    })
+
+    it('does not re-clarify a mixed task after target enum and details are submitted', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const store = createMockStore()
+
+      store.loadLatestAwaiting = vi.fn().mockResolvedValue({
+        runId: 'run_789',
+        phase: 'review',
+        status: 'awaiting_user',
+        interactionId: 'run_789_clarify_mixed_target',
+        interaction: {
+          runId: 'run_789',
+          id: 'run_789_clarify_mixed_target',
+          type: 'clarify_slots',
+          message: '我还不确定你是想记待办、笔记还是书签。',
+          actions: ['submit', 'cancel'],
+          fields: [
+            {
+              key: 'target',
+              label: '记录类型',
+              required: true,
+              input: 'select',
+              options: [
+                { value: 'todos', label: '待办' },
+                { value: 'notes', label: '笔记' },
+                { value: 'bookmarks', label: '书签' },
+              ],
+            },
+            {
+              key: 'details',
+              label: '具体内容',
+              required: true,
+            },
+          ],
+        },
+        timeline: [],
+        preview: null,
+        understandingPreview: {
+          rawInput: '下周那个你帮我整理一下',
+          normalizedInput: '下周那个你帮我整理一下',
+          draftTasks: [
+            {
+              id: 'draft_1',
+              intent: 'create',
+              target: 'mixed',
+              title: '下周那个你帮我整理一下',
+              confidence: 0.65,
+              ambiguities: ['需要你再补充一些信息'],
+              corrections: [],
+              slots: {},
+            },
+          ],
+          corrections: [],
+        },
+        correctionNotes: [],
+        updatedAt: new Date().toISOString(),
+      })
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'resume',
+          runId: 'run_789',
+          interactionId: 'run_789_clarify_mixed_target',
+          response: {
+            type: 'clarify_slots',
+            action: 'submit',
+            values: {
+              target: 'todos',
+              details: '2026年5月12日上午整理第5轮验收问题清单 RQA0507R5G',
+            },
+          },
+        },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('completed')
+      if (!result.ok || result.phase !== 'completed') {
+        throw new Error('Expected completed result after clarification submit')
+      }
+      expect(executorMock.executeWorkspaceRunSteps).toHaveBeenCalled()
     })
 
     it('returns phaseTimings when resume stays in review after duplicate skip', async () => {
