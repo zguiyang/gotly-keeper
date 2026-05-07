@@ -61,6 +61,10 @@ When the input is a capture-like phrase (non-query, non-summarize) with vague ta
 
 3. **Time phrase alone is not a target signal.** A time expression such as "next week" or "tomorrow", without clear action content, does NOT mean the input is a todo. It only means there is a time reference. Target determination should depend on the action and substance, not the time phrase alone.
 
+4. **Vague future-time wording is weak evidence.** Phrases such as "later", "next week", "another day", "when there's time", or their equivalents are NOT enough by themselves to make the input a todo. If the rest of the sentence is still vague ("sort it out", "organize it", "confirm it", "sync it"), prefer `mixed` with ambiguity rather than forcing `todos`.
+
+5. **Capture prefix beats action-ish wording when the user is clearly recording something.** If the user explicitly says "make a note", "record this", "remember this observation", "leave a record", or similar capture-style note prefixes, keep the input in `notes` unless the user also clearly asks for a reminder/todo. Action-like content inside the note (for example "sync with the boss later", "confirm this with legal next week") can still be recorded as a note when the user is primarily capturing the thought.
+
 ## Operation Semantics
 
 - **create** — The user is providing NEW information to be saved.
@@ -101,6 +105,21 @@ When the user clearly requests an unsupported action:
    If a capture prefix strongly suggests a record type, and the nearby type word contains a minor typo, homophone, or ASR-like noise
    (for example, a slight misspelling of "todo" near a todo-style prefix), preserve the likely type when the overall intent is still clear.
    If you are still uncertain, clarify the record type before asking for more details.
+
+0c. **Todo requires explicit reminder semantics or a concrete future action.**
+   Classify create input as `todos` when at least one of these is clearly true:
+   - the user uses an explicit todo/reminder prefix ("remind me", "todo", "待办", "remember to")
+   - the content states a concrete future action with a clear object, even without a prefix
+   - the time reference is specific enough to schedule the action ("tomorrow 3pm", "next Wednesday afternoon", "in 20 minutes")
+   If none of these are clearly true, do NOT default to `todos`.
+
+0d. **Note-vs-clarify rule for capture prefixes with future action language.**
+   For inputs that contain both a capture-style note prefix and future-action language:
+   - use `notes` when the subject is substantive and recordable as an observation, conclusion, idea, clause, plan, or context
+   - use `todos` when the user gives a directly executable action plus a near or specific schedule, even if they used a note-like prefix
+     (for example "tomorrow morning reply to the designer", "at 3pm send the quote")
+   - use `mixed` with ambiguity when the sentence is mostly vague pronouns plus weak action verbs and does not clearly tell you what should be recorded
+   Do NOT convert such inputs to `todos` unless reminder semantics are explicit OR the sentence already describes a concrete scheduled action.
 
 1. **Title = pure subject/topic description**.
    Remove command prefixes (save this, remind me, bookmark) and time expressions from the title.
@@ -409,6 +428,94 @@ Critical constraints:
       "confidence": 0.95,
       "hasRealContent": true,
       "slotEntries": [{"key": "timeText", "value": "9am tomorrow"}]
+    }]
+  }
+  </output>
+</example>
+
+<example>
+  <user_input>记一下：这个判断稍后再和运营核对</user_input>
+  <reasoning>
+    "记一下" is a strong capture-style note prefix. The sentence contains a future-oriented action,
+    but the user is recording the judgment/context, not explicitly asking for a reminder.
+    Keep it as a note. Do not convert it to a todo just because of "稍后".
+  </reasoning>
+  <output>
+  {
+    "draftTasks": [{
+      "id": "task_1",
+      "intent": "create",
+      "target": "notes",
+      "title": "这个判断再和运营核对",
+      "confidence": 0.84,
+      "hasRealContent": true,
+      "slotEntries": [{"key": "content", "value": "这个判断稍后再和运营核对"}]
+    }]
+  }
+  </output>
+</example>
+
+<example>
+  <user_input>下周那个客户报价你帮我整理一下</user_input>
+  <reasoning>
+    The input has a vague future-time phrase plus a weak action verb ("整理一下"),
+    but no explicit note prefix, no explicit reminder/todo prefix, and no concrete record type.
+    The subject is not clear enough to force notes or todos. Keep target mixed and record ambiguity.
+  </reasoning>
+  <output>
+  {
+    "draftTasks": [{
+      "id": "task_1",
+      "intent": "create",
+      "target": "mixed",
+      "title": "客户报价",
+      "confidence": 0.56,
+      "hasRealContent": true,
+      "ambiguities": ["record type is unclear: could be a note capture or a todo reminder"],
+      "slotEntries": [{"key": "content", "value": "下周那个客户报价你帮我整理一下"}]
+    }]
+  }
+  </output>
+</example>
+
+<example>
+  <user_input>帮我记一下，下周再和法务确认这条条款</user_input>
+  <reasoning>
+    "帮我记一下" is a capture-style note prefix. The clause has a future action,
+    but the user is still asking to record the clause rather than setting an explicit reminder.
+    Because the subject ("这条条款") is substantive, classify as notes instead of todos.
+  </reasoning>
+  <output>
+  {
+    "draftTasks": [{
+      "id": "task_1",
+      "intent": "create",
+      "target": "notes",
+      "title": "和法务确认这条条款",
+      "confidence": 0.82,
+      "hasRealContent": true,
+      "slotEntries": [{"key": "content", "value": "下周再和法务确认这条条款"}]
+    }]
+  }
+  </output>
+</example>
+
+<example>
+  <user_input>帮我记一下明早给设计师回消息</user_input>
+  <reasoning>
+    The input uses a note-like prefix, but the content is a directly executable action with a near-time schedule ("明早").
+    This is strong reminder/todo behavior, so classify it as a todo instead of a note.
+  </reasoning>
+  <output>
+  {
+    "draftTasks": [{
+      "id": "task_1",
+      "intent": "create",
+      "target": "todos",
+      "title": "给设计师回消息",
+      "confidence": 0.9,
+      "hasRealContent": true,
+      "slotEntries": [{"key": "timeText", "value": "明早"}]
     }]
   }
   </output>
