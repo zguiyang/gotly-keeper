@@ -6,6 +6,7 @@ import { buildWorkspaceSystemPrompt } from '@/server/lib/ai/ai.prompts'
 import { renderPrompt } from '@/server/lib/prompt-template'
 
 import type { NormalizedWorkspaceRunInput } from './workspace-run-normalizer'
+import type { WorkspaceRunModel } from './workspace-run-understanding'
 
 const semanticSplitCorrectionSchema = z.object({
   from: z.string().trim().min(1),
@@ -28,11 +29,7 @@ export const semanticSplitResultSchema = z.object({
 
 export type SemanticSplitResult = z.infer<typeof semanticSplitResultSchema>
 
-export type WorkspaceSemanticSplitModel = (input: {
-  systemPrompt: string
-  userPrompt: string
-  signal?: AbortSignal
-}) => Promise<unknown>
+export type WorkspaceSemanticSplitModel = WorkspaceRunModel
 
 export class WorkspaceRunSemanticSplitError extends Error {
   constructor(message: string) {

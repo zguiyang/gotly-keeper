@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 import { buildWorkspaceSystemPrompt } from '@/server/lib/ai/ai.prompts'
 
 import { buildFallbackAnswer, composeWorkspaceAnswer } from './workspace-compose'
@@ -41,6 +43,19 @@ import type {
 import type { DraftWorkspaceTask, WorkspaceInteraction } from '@/shared/workspace/workspace-run-protocol'
 
 const WS_LOG_PREFIX = '[workspace]'
+const workspaceRunPlanHintSchema = z.object({
+  action: z.enum([
+    'create_note',
+    'create_todo',
+    'create_bookmark',
+    'query_assets',
+    'summarize_assets',
+    'update_todo',
+  ]),
+  title: z.string().optional(),
+  query: z.string().optional(),
+  reason: z.string().optional(),
+})
 
 async function runNormalize(
   ctx: PhaseContext,
@@ -177,6 +192,7 @@ async function runPlan(
       }
 
       const result = await runModel({
+        schema: workspaceRunPlanHintSchema,
         systemPrompt: planSystemPrompt,
         userPrompt,
         signal: ctx.signal,

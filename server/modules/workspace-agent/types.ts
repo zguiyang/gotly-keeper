@@ -9,7 +9,7 @@ export type WorkspaceTimeRangeType = 'today' | 'recent' | 'this_week' | 'this_mo
 
 export type WorkspaceTask = {
   intent: WorkspaceIntent
-  target?: Exclude<WorkspaceTarget, 'mixed'> | null
+  target?: WorkspaceTarget | null
   timeRange?: {
     type: WorkspaceTimeRangeType
     startAt?: string | null

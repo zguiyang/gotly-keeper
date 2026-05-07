@@ -617,7 +617,7 @@ describe('workspace-run-orchestrator', () => {
         'notes',
         'notes',
       ])
-      expect(result.snapshot?.preview?.plan.steps.map((step) => step.toolName)).toEqual([
+      expect(result.snapshot?.preview?.plan?.steps.map((step) => step.toolName)).toEqual([
         'create_note',
         'create_note',
       ])

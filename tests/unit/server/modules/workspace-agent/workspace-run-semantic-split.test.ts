@@ -5,6 +5,22 @@ import {
   splitWorkspaceRunInputSemantically,
 } from '@/server/modules/workspace-agent/workspace-run-semantic-split'
 
+import type { NormalizedWorkspaceRunInput } from '@/server/modules/workspace-agent/workspace-run-normalizer'
+
+function makeNormalizedInput(
+  input: Pick<NormalizedWorkspaceRunInput, 'rawText' | 'normalizedText'> &
+    Partial<Omit<NormalizedWorkspaceRunInput, 'rawText' | 'normalizedText'>>
+): NormalizedWorkspaceRunInput {
+  return {
+    rawText: input.rawText,
+    normalizedText: input.normalizedText,
+    urls: input.urls ?? [],
+    separators: input.separators ?? [],
+    typoCandidates: input.typoCandidates ?? [],
+    timeHints: input.timeHints ?? [],
+  }
+}
+
 describe('workspace-run-semantic-split', () => {
   it('returns validated split output and preserves corrections', async () => {
     const runModel = vi.fn().mockResolvedValue({
@@ -33,12 +49,12 @@ describe('workspace-run-semantic-split', () => {
     })
 
     const result = await splitWorkspaceRunInputSemantically({
-      normalized: {
+      normalized: makeNormalizedInput({
         rawText: '记个待半：明天给客户发报价；再记一下：首页 slogan 想走轻管家感',
         normalizedText: '记个待办：明天给客户发报价；再记一下：首页 slogan 想走轻管家感',
         urls: [],
         separators: ['；'],
-      },
+      }),
       runModel,
     })
 
@@ -86,12 +102,12 @@ describe('workspace-run-semantic-split', () => {
     })
 
     await splitWorkspaceRunInputSemantically({
-      normalized: {
+      normalized: makeNormalizedInput({
         rawText: '记个待办：明天给客户发报价',
         normalizedText: '记个待办：明天给客户发报价',
         urls: [],
         separators: [],
-      },
+      }),
       runModel,
       signal: controller.signal,
     })

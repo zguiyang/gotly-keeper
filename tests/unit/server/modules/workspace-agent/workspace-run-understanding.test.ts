@@ -2,6 +2,22 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { understandWorkspaceRunInput } from '@/server/modules/workspace-agent/workspace-run-understanding'
 
+import type { NormalizedWorkspaceRunInput } from '@/server/modules/workspace-agent/workspace-run-normalizer'
+
+function makeNormalizedInput(
+  input: Pick<NormalizedWorkspaceRunInput, 'rawText' | 'normalizedText'> &
+    Partial<Omit<NormalizedWorkspaceRunInput, 'rawText' | 'normalizedText'>>
+): NormalizedWorkspaceRunInput {
+  return {
+    rawText: input.rawText,
+    normalizedText: input.normalizedText,
+    urls: input.urls ?? [],
+    separators: input.separators ?? [],
+    typoCandidates: input.typoCandidates ?? [],
+    timeHints: input.timeHints ?? [],
+  }
+}
+
 describe('workspace-run-understanding', () => {
   it('trims task titles and returns validated understanding output', async () => {
     const runModel = vi.fn().mockResolvedValue({
@@ -23,13 +39,12 @@ describe('workspace-run-understanding', () => {
     })
 
     const result = await understandWorkspaceRunInput({
-      normalized: {
+      normalized: makeNormalizedInput({
         rawText: '帮我记个待办，明天下午三点发 prcing',
         normalizedText: '帮我记个待办，明天下午三点发 pricing',
         urls: [],
         separators: ['，'],
-
-      },
+      }),
       runModel,
     })
 
@@ -75,12 +90,12 @@ describe('workspace-run-understanding', () => {
     })
 
     const result = await understandWorkspaceRunInput({
-      normalized: {
+      normalized: makeNormalizedInput({
         rawText: '记个待办：定位样本，这周末买菜',
         normalizedText: '记个待办：定位样本，这周末买菜',
         urls: [],
         separators: ['，'],
-      },
+      }),
       runModel,
     })
 
@@ -97,12 +112,12 @@ describe('workspace-run-understanding', () => {
   it('rejects empty draft tasks', async () => {
     await expect(
       understandWorkspaceRunInput({
-        normalized: {
+        normalized: makeNormalizedInput({
           rawText: '记个待办',
           normalizedText: '记个待办',
           urls: [],
           separators: [],
-        },
+        }),
         runModel: vi.fn().mockResolvedValue({
           draftTasks: [],
         }),
@@ -112,12 +127,12 @@ describe('workspace-run-understanding', () => {
 
   it('normalizes command-only create titles into missing fields for later clarification', async () => {
     const result = await understandWorkspaceRunInput({
-      normalized: {
+      normalized: makeNormalizedInput({
         rawText: '记个待办',
         normalizedText: '记个待办',
         urls: [],
         separators: [],
-      },
+      }),
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
           {
@@ -147,12 +162,12 @@ describe('workspace-run-understanding', () => {
 
   it('normalizes combined command prefixes for create intents instead of rejecting them', async () => {
     const first = await understandWorkspaceRunInput({
-      normalized: {
+      normalized: makeNormalizedInput({
         rawText: '帮我记一下',
         normalizedText: '帮我记一下',
         urls: [],
         separators: [],
-      },
+      }),
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
           {
@@ -171,12 +186,12 @@ describe('workspace-run-understanding', () => {
     })
 
     const second = await understandWorkspaceRunInput({
-      normalized: {
+      normalized: makeNormalizedInput({
         rawText: '帮我记个待办',
         normalizedText: '帮我记个待办',
         urls: [],
         separators: [],
-      },
+      }),
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
           {
@@ -200,12 +215,12 @@ describe('workspace-run-understanding', () => {
 
   it('normalizes whitespace-only create titles after trimming', async () => {
     const result = await understandWorkspaceRunInput({
-      normalized: {
+      normalized: makeNormalizedInput({
         rawText: '帮我记一下',
         normalizedText: '帮我记一下',
         urls: [],
         separators: [],
-      },
+      }),
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
           {
@@ -228,12 +243,12 @@ describe('workspace-run-understanding', () => {
   it('rejects tasks missing required fields', async () => {
     await expect(
       understandWorkspaceRunInput({
-        normalized: {
+        normalized: makeNormalizedInput({
           rawText: '帮我整理一下',
           normalizedText: '帮我整理一下',
           urls: [],
           separators: [],
-        },
+        }),
         runModel: vi.fn().mockResolvedValue({
           draftTasks: [
             {
@@ -284,13 +299,13 @@ describe('workspace-run-understanding', () => {
     })
 
     const result = await understandWorkspaceRunInput({
-      normalized: {
+      normalized: makeNormalizedInput({
         rawText: '帮我记一下，明天下午三点给产品经理发报价；再保存 https://example.com/pricing',
         normalizedText:
           '帮我记一下，明天下午三点给产品经理发报价；再保存 https://example.com/pricing',
         urls: ['https://example.com/pricing'],
         separators: ['，', '；'],
-      },
+      }),
       runModel,
     })
 
@@ -317,12 +332,12 @@ describe('workspace-run-understanding', () => {
     })
 
     await understandWorkspaceRunInput({
-      normalized: {
+      normalized: makeNormalizedInput({
         rawText: '给产品经理发报价',
         normalizedText: '给产品经理发报价',
         urls: [],
         separators: [],
-      },
+      }),
       runModel,
       signal: controller.signal,
     })
@@ -336,12 +351,12 @@ describe('workspace-run-understanding', () => {
 
   it('keeps explicit bookmark save requests as create even when url is missing', async () => {
     const result = await understandWorkspaceRunInput({
-      normalized: {
+      normalized: makeNormalizedInput({
         rawText: '帮我存一下这个链接，标题叫 QA-BOOKMARK-DRAFT。',
         normalizedText: '帮我存一下这个链接，标题叫 QA-BOOKMARK-DRAFT。',
         urls: [],
         separators: ['，'],
-      },
+      }),
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
           {
@@ -376,12 +391,12 @@ describe('workspace-run-understanding', () => {
 
   it('accepts AI-friendly bookmark slotEntries and converts them to slots', async () => {
     const result = await understandWorkspaceRunInput({
-      normalized: {
+      normalized: makeNormalizedInput({
         rawText: '记一下：https://example.com 定价页，回头发给客户',
         normalizedText: '记一下：https://example.com 定价页，回头发给客户',
         urls: ['https://example.com'],
         separators: ['：'],
-      },
+      }),
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
           {
@@ -424,12 +439,12 @@ describe('workspace-run-understanding', () => {
 
   it('canonicalizes aliased time slot keys from slotEntries', async () => {
     const result = await understandWorkspaceRunInput({
-      normalized: {
+      normalized: makeNormalizedInput({
         rawText: '记个待办：下个月1号提交发票',
         normalizedText: '记个待办：下个月1号提交发票',
         urls: [],
         separators: ['：'],
-      },
+      }),
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
           {
@@ -458,12 +473,12 @@ describe('workspace-run-understanding', () => {
 
   it('canonicalizes generic due slot keys from slotEntries', async () => {
     const result = await understandWorkspaceRunInput({
-      normalized: {
+      normalized: makeNormalizedInput({
         rawText: '记个待办：本周五下班前发合同',
         normalizedText: '记个待办：本周五下班前发合同',
         urls: [],
         separators: ['：'],
-      },
+      }),
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
           {
@@ -493,12 +508,12 @@ describe('workspace-run-understanding', () => {
   it('rejects duplicate keys in AI-friendly slotEntries', async () => {
     await expect(
       understandWorkspaceRunInput({
-        normalized: {
+        normalized: makeNormalizedInput({
           rawText: '记一下：https://example.com 定价页',
           normalizedText: '记一下：https://example.com 定价页',
           urls: ['https://example.com'],
           separators: ['：'],
-        },
+        }),
         runModel: vi.fn().mockResolvedValue({
           draftTasks: [
             {
@@ -523,12 +538,12 @@ describe('workspace-run-understanding', () => {
 
   it('prefers slotEntries when both slots and slotEntries are present', async () => {
     const result = await understandWorkspaceRunInput({
-      normalized: {
+      normalized: makeNormalizedInput({
         rawText: '记一下：https://example.com 定价页',
         normalizedText: '记一下：https://example.com 定价页',
         urls: ['https://example.com'],
         separators: ['：'],
-      },
+      }),
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
           {
@@ -561,12 +576,12 @@ describe('workspace-run-understanding', () => {
   it('rejects intents outside the MVP action boundary', async () => {
     await expect(
       understandWorkspaceRunInput({
-        normalized: {
+        normalized: makeNormalizedInput({
           rawText: '帮我归档这条笔记',
           normalizedText: '帮我归档这条笔记',
           urls: [],
           separators: [],
-        },
+        }),
         runModel: vi.fn().mockResolvedValue({
           draftTasks: [
             {
@@ -589,12 +604,12 @@ describe('workspace-run-understanding', () => {
   it('rejects unsupported intent explicitly', async () => {
     await expect(
       understandWorkspaceRunInput({
-        normalized: {
+        normalized: makeNormalizedInput({
           rawText: '帮我处理这个请求',
           normalizedText: '帮我处理这个请求',
           urls: [],
           separators: [],
-        },
+        }),
         runModel: vi.fn().mockResolvedValue({
           draftTasks: [
             {
@@ -617,12 +632,12 @@ describe('workspace-run-understanding', () => {
   it('rejects update tasks targeting non-todos assets', async () => {
     await expect(
       understandWorkspaceRunInput({
-        normalized: {
+        normalized: makeNormalizedInput({
           rawText: '更新这条笔记',
           normalizedText: '更新这条笔记',
           urls: [],
           separators: [],
-        },
+        }),
         runModel: vi.fn().mockResolvedValue({
           draftTasks: [
             {
@@ -645,12 +660,12 @@ describe('workspace-run-understanding', () => {
   it('rejects confidence values outside 0 to 1', async () => {
     await expect(
       understandWorkspaceRunInput({
-        normalized: {
+        normalized: makeNormalizedInput({
           rawText: '帮我记个待办',
           normalizedText: '帮我记个待办',
           urls: [],
           separators: [],
-        },
+        }),
         runModel: vi.fn().mockResolvedValue({
           draftTasks: [
             {
@@ -672,12 +687,12 @@ describe('workspace-run-understanding', () => {
 
   it('rejects mixed target explicitly', async () => {
     const result = await understandWorkspaceRunInput({
-      normalized: {
+      normalized: makeNormalizedInput({
         rawText: '帮我整理这些内容',
         normalizedText: '帮我整理这些内容',
         urls: [],
         separators: [],
-      },
+      }),
       runModel: vi.fn().mockResolvedValue({
         draftTasks: [
           {
