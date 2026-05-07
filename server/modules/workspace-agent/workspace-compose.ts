@@ -137,6 +137,10 @@ function buildFallbackAnswer(task: WorkspaceTask, data: WorkspaceToolResult) {
   const total = data.total ?? data.items?.length ?? 0
 
   if (task.intent === 'query') {
+    if (total === 0) {
+      return '没有找到相关内容。可以换个关键词再试试。'
+    }
+
     return `已找到 ${total} 条${targetLabel}。`
   }
 
@@ -162,6 +166,14 @@ export async function composeWorkspaceAnswer(input: {
   const fallbackAnswer = buildFallbackAnswer(input.task, input.data)
 
   if (!input.data.ok) {
+    return {
+      answer: fallbackAnswer,
+      usedFallback: true,
+    }
+  }
+
+  const total = input.data.total ?? input.data.items?.length ?? 0
+  if ((input.task.intent === 'query' || input.task.intent === 'summarize') && total === 0) {
     return {
       answer: fallbackAnswer,
       usedFallback: true,

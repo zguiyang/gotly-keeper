@@ -458,6 +458,67 @@ describe('workspace-run-orchestrator', () => {
       expect(completedResult?.preview?.understanding?.corrections).toEqual(['待半->待办 (typo)'])
     })
 
+    it('preserves normalization typo corrections even when semantic split does not rewrite the wording', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'input',
+          text: '记个待半：5月10日早上买燕麦奶 RQA0507F2',
+        },
+        store: createMockStore(),
+        runModel: vi
+          .fn<WorkspaceRunModel>()
+          .mockResolvedValueOnce({
+            rawText: '记个待半：5月10日早上买燕麦奶 RQA0507F2',
+            normalizedText: '记个待半：5月10日早上买燕麦奶 RQA0507F2',
+            urls: [],
+            separators: [],
+            typoCandidates: [{ text: '待半', suggestion: '待办' }],
+            timeHints: ['5月10日早上'],
+          })
+          .mockResolvedValueOnce({
+            isMultiTask: false,
+            corrections: [],
+            segments: [
+              {
+                id: 'segment_1',
+                text: '记个待半：5月10日早上买燕麦奶 RQA0507F2',
+                relation: 'independent',
+                confidence: 0.96,
+              },
+            ],
+          })
+          .mockResolvedValueOnce({
+            draftTasks: [
+              {
+                id: 'task_1',
+                intent: 'create',
+                target: 'todos',
+                title: '买燕麦奶 RQA0507F2',
+                hasRealContent: true,
+                confidence: 0.92,
+                ambiguities: [],
+                corrections: [],
+                slotEntries: [
+                  { key: 'timeText', value: '5月10日早上' },
+                ],
+              },
+            ],
+          }),
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('completed')
+      if (!result.ok || result.phase !== 'completed') {
+        throw new Error('Expected completed result for typo tolerance fallback input')
+      }
+
+      expect(result.result?.preview?.understanding?.corrections).toEqual(['待半->待办 (typo)'])
+    })
+
     it('keeps T12 duplicate bookmark acceptance input in duplicate confirmation instead of execution failure', async () => {
       const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
 

@@ -104,7 +104,7 @@ describe('workspace-compose', () => {
     })
 
     expect(result).toEqual({
-      answer: '已找到 0 条笔记。',
+      answer: '没有找到相关内容。可以换个关键词再试试。',
       usedFallback: true,
     })
   })
@@ -124,6 +124,34 @@ describe('workspace-compose', () => {
         }
       )
     ).toBe('目前没有可整理的书签。')
+  })
+
+  it('skips AI compose and returns Chinese fallback for empty query results', async () => {
+    const result = await composeWorkspaceAnswer({
+      task: {
+        intent: 'query',
+        target: 'mixed',
+      },
+      plan: {
+        intent: 'query',
+        target: 'mixed',
+        toolName: 'search_all',
+        toolInput: {},
+        needsCompose: true,
+      },
+      data: {
+        ok: true,
+        target: 'mixed',
+        items: [],
+        total: 0,
+      },
+    })
+
+    expect(mocks.runAiGeneration).not.toHaveBeenCalled()
+    expect(result).toEqual({
+      answer: '没有找到相关内容。可以换个关键词再试试。',
+      usedFallback: true,
+    })
   })
 
   it('fallback answer for create does not mention scheduling', () => {

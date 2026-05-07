@@ -120,6 +120,12 @@ function formatSemanticCorrections(
   )
 }
 
+function formatTypoCorrections(
+  typoCandidates: ReturnType<typeof normalizeWorkspaceRunInput>['typoCandidates']
+): string[] {
+  return typoCandidates.map((candidate) => `${candidate.text}->${candidate.suggestion} (typo)`)
+}
+
 function buildUnderstandingInputs(
   normalized: ReturnType<typeof normalizeWorkspaceRunInput>,
   semanticSplit: Awaited<ReturnType<typeof runSemanticSplit>>
@@ -382,7 +388,10 @@ export async function handleNewInput(
     })
 
     const semanticSplit = await runSemanticSplit(ctx, normalized, runModel)
-    const inheritedCorrections = formatSemanticCorrections(semanticSplit.corrections)
+    const inheritedCorrections = [
+      ...formatSemanticCorrections(semanticSplit.corrections),
+      ...formatTypoCorrections(normalized.typoCandidates),
+    ].filter((value, index, values) => values.indexOf(value) === index)
     const understandingInputs = buildUnderstandingInputs(normalized, semanticSplit)
     const understandingResults: Awaited<ReturnType<typeof runUnderstand>>[] = []
     for (const segmentInput of understandingInputs) {
