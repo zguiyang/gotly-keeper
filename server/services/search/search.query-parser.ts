@@ -4,7 +4,6 @@ import {
   KEYWORD_LONG_TERM_THRESHOLD,
   KEYWORD_LONG_TERM_SCORE,
   KEYWORD_SHORT_TERM_SCORE,
-  KEYWORD_TIME_HINT_BONUS,
   KEYWORD_TYPE_HINT_SCORE,
 } from '@/server/lib/config/constants'
 
@@ -108,10 +107,5 @@ export function scoreAssetForQuery(
       score += term.length >= KEYWORD_LONG_TERM_THRESHOLD ? KEYWORD_LONG_TERM_SCORE : KEYWORD_SHORT_TERM_SCORE
     }
   }
-
-  if (query.includes('这周') && asset.timeText?.includes('本周')) {
-    score += KEYWORD_TIME_HINT_BONUS
-  }
-
   return score
 }

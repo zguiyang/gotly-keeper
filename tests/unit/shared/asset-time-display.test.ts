@@ -155,54 +155,54 @@ describe('getTodoGroupKey', () => {
     expect(getTodoGroupKey(item, now)).toBe('thisWeek')
   })
 
-  it('returns "today" when timeText includes "今天"', () => {
+  it('returns "noDate" when only timeText suggests today', () => {
     const now = new Date('2024-01-15T12:00:00Z')
     const item = makeItem({
       completed: false,
       dueAt: null,
       timeText: '今天',
     })
-    expect(getTodoGroupKey(item, now)).toBe('today')
+    expect(getTodoGroupKey(item, now)).toBe('noDate')
   })
 
-  it('returns "today" when timeText includes "明天"', () => {
+  it('returns "noDate" when only timeText suggests tomorrow', () => {
     const now = new Date('2024-01-15T12:00:00Z')
     const item = makeItem({
       completed: false,
       dueAt: null,
       timeText: '明天',
     })
-    expect(getTodoGroupKey(item, now)).toBe('today')
+    expect(getTodoGroupKey(item, now)).toBe('noDate')
   })
 
-  it('returns "thisWeek" when timeText includes "本周"', () => {
+  it('returns "noDate" when only timeText suggests this week', () => {
     const now = new Date('2024-01-15T12:00:00Z')
     const item = makeItem({
       completed: false,
       dueAt: null,
       timeText: '本周',
     })
-    expect(getTodoGroupKey(item, now)).toBe('thisWeek')
+    expect(getTodoGroupKey(item, now)).toBe('noDate')
   })
 
-  it('returns "thisWeek" when timeText includes "这周"', () => {
+  it('returns "noDate" when only timeText uses an equivalent phrase', () => {
     const now = new Date('2024-01-15T12:00:00Z')
     const item = makeItem({
       completed: false,
       dueAt: null,
       timeText: '这周',
     })
-    expect(getTodoGroupKey(item, now)).toBe('thisWeek')
+    expect(getTodoGroupKey(item, now)).toBe('noDate')
   })
 
-  it('returns "thisWeek" when timeText includes "周" (e.g. "周三")', () => {
+  it('returns "noDate" when only timeText contains a weekday', () => {
     const now = new Date('2024-01-15T12:00:00Z')
     const item = makeItem({
       completed: false,
       dueAt: null,
       timeText: '周三',
     })
-    expect(getTodoGroupKey(item, now)).toBe('thisWeek')
+    expect(getTodoGroupKey(item, now)).toBe('noDate')
   })
 
   it('returns "noDate" when no dueAt and no useful timeText', () => {

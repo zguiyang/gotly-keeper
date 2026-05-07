@@ -134,5 +134,24 @@ describe('search.query-parser', () => {
       const score = scoreAssetForQuery(asset, '木曜日咖啡 竞品参考', terms)
       expect(score > 0).toBe(true)
     })
+
+    it('does not add bonus from free-form timeText wording alone', () => {
+      const baselineAsset = {
+        originalText: '项目跟进',
+        url: null,
+        timeText: null,
+        type: 'todo' as const,
+      }
+      const textOnlyAsset = {
+        ...baselineAsset,
+        timeText: '本周处理',
+      }
+      const terms = ['项目跟进']
+
+      const baselineScore = scoreAssetForQuery(baselineAsset, '这周 项目跟进', terms)
+      const textOnlyScore = scoreAssetForQuery(textOnlyAsset, '这周 项目跟进', terms)
+
+      expect(textOnlyScore).toBe(baselineScore)
+    })
   })
 })

@@ -68,7 +68,5 @@ export function getTodoGroupKey(item: AssetListItem, now?: Date): TodoGroupKey {
     }
   }
 
-  if (item.timeText?.includes('今天') || item.timeText?.includes('明天')) return 'today'
-  if (item.timeText?.includes('本周') || item.timeText?.includes('这周') || item.timeText?.includes('周')) return 'thisWeek'
   return 'noDate'
 }

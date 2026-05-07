@@ -6,21 +6,10 @@ export type SearchTimeCandidate = {
   createdAt?: Date
 }
 
-export function getSearchTimeTextAliases(timeHint: string | null | undefined) {
-  const normalized = timeHint?.trim()
-  if (!normalized) return []
-
-  if (normalized.includes('这周') || normalized.includes('本周')) {
-    return ['这周', '本周']
-  }
-
-  return [normalized]
-}
-
 export function matchesSearchTimeHint(
   asset: SearchTimeCandidate,
   rangeHint: AssetTimeRangeHint,
-  timeHint: string | null | undefined
+  _timeHint: string | null | undefined
 ) {
   if (asset.dueAt) {
     const dueTime = asset.dueAt.getTime()
@@ -42,10 +31,5 @@ export function matchesSearchTimeHint(
     }
   }
 
-  const timeText = asset.timeText?.trim()
-  if (!timeText) return false
-
-  return getSearchTimeTextAliases(timeHint).some((alias) =>
-    timeText.includes(alias)
-  )
+  return false
 }
