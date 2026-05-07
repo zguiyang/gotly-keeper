@@ -7,16 +7,32 @@ import { Button } from '@/components/ui/button'
 import { useAuthSubmit } from '@/hooks/auth/use-auth-submit'
 import { authClient } from '@/lib/auth-client'
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export function SignInForm() {
   const { error, pending, onSubmit } = useAuthSubmit({
     fallbackErrorMessage: '登录失败，请检查邮箱和密码',
-    parse: (formData) => ({
-      ok: true,
-      payload: {
-        email: String(formData.get('email') ?? ''),
-        password: String(formData.get('password') ?? ''),
-      },
-    }),
+    parse: (formData) => {
+      const email = String(formData.get('email') ?? '').trim()
+      const password = String(formData.get('password') ?? '')
+
+      if (!email) {
+        return { ok: false, error: '请输入电子邮箱' }
+      }
+
+      if (!EMAIL_REGEX.test(email)) {
+        return { ok: false, error: '请输入有效的电子邮箱地址' }
+      }
+
+      if (!password) {
+        return { ok: false, error: '请输入密码' }
+      }
+
+      return {
+        ok: true,
+        payload: { email, password },
+      }
+    },
     submit: (payload) => authClient.signIn.email(payload),
   })
 

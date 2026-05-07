@@ -1,35 +1,53 @@
 'use client'
 
 import { ArrowRight } from 'lucide-react'
-import Link from 'next/link'
-
 import { AuthField } from '@/components/auth/auth-field'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Field, FieldContent, FieldLabel } from '@/components/ui/field'
 import { useAuthSubmit } from '@/hooks/auth/use-auth-submit'
 import { authClient } from '@/lib/auth-client'
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export function SignUpForm() {
   const { error, pending, onSubmit } = useAuthSubmit({
     fallbackErrorMessage: '注册失败，请稍后重试',
     parse: (formData) => {
       const name = String(formData.get('name') ?? '').trim()
-      const email = String(formData.get('email') ?? '')
+      const email = String(formData.get('email') ?? '').trim()
       const password = String(formData.get('password') ?? '')
-      const terms = formData.get('terms')
-
-      if (!terms) {
-        return {
-          ok: false,
-          error: '请同意服务协议和隐私政策',
-        }
-      }
 
       if (!name) {
         return {
           ok: false,
           error: '请输入昵称',
+        }
+      }
+
+      if (!email) {
+        return {
+          ok: false,
+          error: '请输入电子邮箱',
+        }
+      }
+
+      if (!EMAIL_REGEX.test(email)) {
+        return {
+          ok: false,
+          error: '请输入有效的电子邮箱地址',
+        }
+      }
+
+      if (!password) {
+        return {
+          ok: false,
+          error: '请输入密码',
+        }
+      }
+
+      if (password.length < 8) {
+        return {
+          ok: false,
+          error: '密码长度至少为 8 个字符',
         }
       }
 
@@ -71,26 +89,6 @@ export function SignUpForm() {
         required
         type="password"
       />
-
-      <Field orientation="horizontal" className="px-1">
-        <Checkbox
-          id="terms"
-          name="terms"
-          className="mt-1"
-        />
-        <FieldContent>
-          <FieldLabel className="text-sm leading-snug text-on-surface-variant" htmlFor="terms">
-            我同意{' '}
-            <Link className="font-medium text-primary hover:underline" href="/terms">
-              服务协议
-            </Link>{' '}
-            与{' '}
-            <Link className="font-medium text-primary hover:underline" href="/privacy">
-              隐私政策
-            </Link>
-          </FieldLabel>
-        </FieldContent>
-      </Field>
 
       {error && (
         <div className="rounded-md bg-error/10 px-4 py-3 text-sm text-error" aria-live="polite">

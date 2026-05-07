@@ -55,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" suppressHydrationWarning>
+    <html lang="zh-CN" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className="font-inter font-manrope min-h-full flex flex-col antialiased">
         <ThemeProvider
           attribute="class"
