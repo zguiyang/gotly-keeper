@@ -481,6 +481,86 @@ describe('workspace-run-orchestrator', () => {
       expect(store.failAwaitingRuns).toHaveBeenCalledWith('user_123')
     })
 
+    it('returns a user-facing skip message without replanning when candidate selection is skipped', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const store = createMockStore()
+      store.loadLatestAwaiting = vi.fn().mockResolvedValue({
+        runId: 'run_123',
+        phase: 'review',
+        status: 'awaiting_user',
+        interactionId: 'run_123_select_candidate',
+        interaction: {
+          runId: 'run_123',
+          id: 'run_123_select_candidate',
+          type: 'select_candidate',
+          target: 'todo',
+          message: '找到多个可能匹配的待办，请选择要更新的一项。',
+          actions: ['select', 'skip', 'cancel'] as const,
+          candidates: [
+            {
+              id: 'todo_1',
+              label: '给客户发报价',
+              type: 'todo',
+              reason: '标题完全匹配',
+            },
+          ],
+        },
+        timeline: [],
+        preview: null,
+        understandingPreview: {
+          rawInput: '把给客户发报价标记完成',
+          normalizedInput: '把给客户发报价标记完成',
+          draftTasks: [
+            {
+              id: 'draft_1',
+              intent: 'update',
+              target: 'todos',
+              title: '把给客户发报价标记完成',
+              confidence: 0.91,
+              ambiguities: [],
+              corrections: [],
+              slots: { status: 'done' },
+            },
+          ],
+          corrections: [],
+        },
+        correctionNotes: [],
+        updatedAt: new Date().toISOString(),
+      })
+
+      const events: WorkspaceRunStreamEvent[] = []
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'resume',
+          runId: 'run_123',
+          interactionId: 'run_123_select_candidate',
+          response: { type: 'select_candidate', action: 'skip' },
+        },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (event) => events.push(event),
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.phase).toBe('cancelled')
+      expect(result.message).toBe('已跳过这次候选选择，没有执行更新。')
+      expect(events).toContainEqual(
+        expect.objectContaining({
+          type: 'run_failed',
+          error: expect.objectContaining({
+            code: 'SKIPPED',
+            message: '已跳过这次候选选择，没有执行更新。',
+          }),
+        })
+      )
+      expect(events).not.toContainEqual(expect.objectContaining({ type: 'phase_started', phase: 'plan' }))
+      expect(events).not.toContainEqual(expect.objectContaining({ type: 'phase_started', phase: 'time_normalize' }))
+    })
+
     it('auto-executes after saving clear multi-task draft edits', async () => {
       const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
 
@@ -581,6 +661,85 @@ describe('workspace-run-orchestrator', () => {
           type: 'awaiting_user',
           interaction: expect.objectContaining({ type: 'confirm_plan' }),
         })
+      )
+    })
+
+    it('applies clarified targetHint to mixed create tasks before replanning', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const store = createMockStore()
+      store.loadLatestAwaiting = vi.fn().mockResolvedValue({
+        runId: 'run_123',
+        phase: 'review',
+        status: 'awaiting_user',
+        interactionId: 'run_123_clarify_mixed_target',
+        interaction: {
+          runId: 'run_123',
+          id: 'run_123_clarify_mixed_target',
+          type: 'clarify_slots',
+          message: '我还不确定你是想记待办、笔记还是书签。',
+          actions: ['submit', 'cancel'] as const,
+          fields: [
+            { key: 'targetHint', label: '记录类型', required: true },
+            { key: 'details', label: '具体内容', required: true },
+          ],
+        },
+        timeline: [],
+        preview: null,
+        understandingPreview: {
+          rawInput: '下周那个你帮我整理一下',
+          normalizedInput: '下周那个你帮我整理一下',
+          draftTasks: [
+            {
+              id: 'draft_1',
+              intent: 'create',
+              target: 'mixed',
+              title: '下周那个你帮我整理一下',
+              confidence: 0.65,
+              ambiguities: ['不确定记录类型和具体内容'],
+              corrections: [],
+              slots: {},
+            },
+          ],
+          corrections: [],
+        },
+        correctionNotes: [],
+        updatedAt: '2026-05-06T00:00:00.000Z',
+      })
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'resume',
+          runId: 'run_123',
+          interactionId: 'run_123_clarify_mixed_target',
+          response: {
+            type: 'clarify_slots',
+            action: 'submit',
+            values: {
+              targetHint: '待办',
+              details: '下周整理 QA20260506G',
+            },
+          },
+        },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('completed')
+      expect(executorMock.executeWorkspaceRunSteps).toHaveBeenCalled()
+      expect(executorMock.executeWorkspaceRunSteps.mock.calls[0]?.[0]).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            action: 'create_todo',
+            target: 'todos',
+            toolInput: expect.objectContaining({
+              title: '下周整理 QA20260506G',
+            }),
+          }),
+        ])
       )
     })
 
@@ -690,6 +849,94 @@ describe('workspace-run-orchestrator', () => {
             current: expect.objectContaining({ stepId: 'step_2' }),
           }),
         })
+      )
+    })
+
+    it('re-runs time normalization on confirm_plan when snapshot tasks still contain raw todo time', async () => {
+      const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
+
+      const store = createMockStore()
+      store.loadLatestAwaiting = vi.fn().mockResolvedValue({
+        runId: 'run_123',
+        phase: 'review',
+        status: 'awaiting_user',
+        interactionId: 'run_123_confirm_plan',
+        interaction: {
+          runId: 'run_123',
+          id: 'run_123_confirm_plan',
+          type: 'confirm_plan',
+          message: '请确认执行计划。',
+          actions: ['confirm', 'edit', 'cancel'] as const,
+          plan: {
+            summary: '准备执行 1 个任务。',
+            steps: [
+              {
+                id: 'step_1',
+                toolName: 'create_todo',
+                title: '发周报',
+                preview: '创建待办：发周报',
+              },
+            ],
+          },
+        },
+        timeline: [],
+        preview: null,
+        understandingPreview: {
+          rawInput: '明天下午3点发周报',
+          normalizedInput: '明天下午3点发周报',
+          draftTasks: [
+            {
+              id: 'draft_1',
+              intent: 'create',
+              target: 'todos',
+              title: '发周报',
+              confidence: 0.92,
+              ambiguities: [],
+              corrections: [],
+              slots: {
+                title: '发周报',
+                time: '明天下午3点',
+              },
+            },
+          ],
+          corrections: [],
+        },
+        correctionNotes: [],
+        updatedAt: '2026-05-06T00:00:00.000Z',
+      })
+
+      const events: WorkspaceRunStreamEvent[] = []
+
+      const result = await orchestrateWorkspaceRun({
+        userId: 'user_123',
+        request: {
+          kind: 'resume',
+          runId: 'run_123',
+          interactionId: 'run_123_confirm_plan',
+          response: {
+            type: 'confirm_plan',
+            action: 'confirm',
+          },
+        },
+        store,
+        runModel: createMockRunModel(),
+        searchCandidates: createMockSearchCandidates(),
+        onEvent: (event) => events.push(event),
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.phase).toBe('completed')
+      expect(events).toContainEqual(expect.objectContaining({ type: 'phase_started', phase: 'time_normalize' }))
+      expect(executorMock.executeWorkspaceRunSteps).toHaveBeenCalled()
+      expect(executorMock.executeWorkspaceRunSteps.mock.calls[0]?.[0]).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            action: 'create_todo',
+            toolInput: expect.objectContaining({
+              dueAt: expect.any(String),
+            }),
+          }),
+        ])
       )
     })
 
@@ -1209,6 +1456,13 @@ describe('workspace-run-orchestrator', () => {
           expect.objectContaining({
             phase: 'review',
             kind: 'orchestration',
+          }),
+        ])
+      )
+      expect(result.phaseTimings).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            phase: 'time_normalize',
           }),
         ])
       )

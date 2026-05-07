@@ -594,8 +594,8 @@ describe('workspace-run-planner', () => {
         action: 'query_assets',
         target: 'mixed',
         title: '帮我处理一下这个链接',
-        risk: 'high',
-        requiresUserApproval: true,
+        risk: 'low',
+        requiresUserApproval: false,
       }),
     ])
   })
@@ -683,8 +683,8 @@ describe('workspace-run-planner', () => {
       action: 'query_assets',
       target: 'mixed',
       title: '查一下这个内容',
-      risk: 'high',
-      requiresUserApproval: true,
+      risk: 'low',
+      requiresUserApproval: false,
       toolInput: {
         query: '这个内容',
         subjectHint: '查一下这个内容',
@@ -721,8 +721,8 @@ describe('workspace-run-planner', () => {
       action: 'query_assets',
       target: 'mixed',
       title: '查一下这个内容',
-      risk: 'high',
-      requiresUserApproval: true,
+      risk: 'low',
+      requiresUserApproval: false,
     })
   })
 
@@ -759,8 +759,8 @@ describe('workspace-run-planner', () => {
       action: 'query_assets',
       target: 'mixed',
       title: '查一下这个内容',
-      risk: 'high',
-      requiresUserApproval: true,
+      risk: 'low',
+      requiresUserApproval: false,
       toolInput: {
         query: '这个内容',
         subjectHint: '查一下这个内容',
@@ -803,10 +803,112 @@ describe('workspace-run-planner', () => {
         action: 'query_assets',
         target: 'mixed',
         title: '查一下这个内容',
-        risk: 'high',
-        requiresUserApproval: true,
+        risk: 'low',
+        requiresUserApproval: false,
       }),
     ])
+  })
+
+  // ── Read Risk Assessment Matrix ─────────────────────────────────────
+
+  it('query + mixed + recent + subject clear → low risk, no approval', async () => {
+    const result = await planWorkspaceRun({
+      userId: 'user_123',
+      draftTasks: [{
+        id: 'task_1',
+        intent: 'query',
+        target: 'mixed',
+        title: 'QA20260506 内容',
+        confidence: 0.9,
+        ambiguities: [],
+        corrections: [],
+        slots: { query: 'QA20260506', timeRange: 'recent' },
+      }],
+      searchCandidates: vi.fn(),
+      runPlanHints: vi.fn(),
+    })
+
+    const step = result.steps[0]
+    expect(step.action).toBe('query_assets')
+    expect(step.target).toBe('mixed')
+    expect(step.risk).toBe('low')
+    expect(step.requiresUserApproval).toBe(false)
+    expect(step.selector?.subject).toBe('QA20260506 内容')
+    expect(step.selector?.timeConstraint?.kind).toBe('recent')
+  })
+
+  it('summarize + mixed + recent + subject clear → low risk, no approval', async () => {
+    const result = await planWorkspaceRun({
+      userId: 'user_123',
+      draftTasks: [{
+        id: 'task_1',
+        intent: 'summarize',
+        target: 'mixed',
+        title: 'QA20260506',
+        confidence: 0.85,
+        ambiguities: [],
+        corrections: [],
+        slots: { query: 'QA20260506', timeRange: 'recent' },
+      }],
+      searchCandidates: vi.fn(),
+      runPlanHints: vi.fn(),
+    })
+
+    const step = result.steps[0]
+    expect(step.action).toBe('summarize_assets')
+    expect(step.target).toBe('mixed')
+    expect(step.risk).toBe('low')
+    expect(step.requiresUserApproval).toBe(false)
+    expect(step.selector?.subject).toBe('QA20260506')
+    expect(step.selector?.timeConstraint?.kind).toBe('recent')
+  })
+
+  it('query + mixed + no subject + no time → high risk, needs approval', async () => {
+    const result = await planWorkspaceRun({
+      userId: 'user_123',
+      draftTasks: [{
+        id: 'task_1',
+        intent: 'query',
+        target: 'mixed',
+        title: '看看最近都存了什么',
+        confidence: 0.5,
+        ambiguities: ['范围"最近都存了什么"不够具体'],
+        corrections: [],
+        slots: {},
+      }],
+      searchCandidates: vi.fn(),
+      runPlanHints: vi.fn(),
+    })
+
+    const step = result.steps[0]
+    expect(step.action).toBe('query_assets')
+    expect(step.target).toBe('mixed')
+    expect(step.risk).toBe('high')
+    expect(step.requiresUserApproval).toBe(true)
+  })
+
+  it('summarize + mixed + broad intent → high risk, needs approval', async () => {
+    const result = await planWorkspaceRun({
+      userId: 'user_123',
+      draftTasks: [{
+        id: 'task_1',
+        intent: 'summarize',
+        target: 'mixed',
+        title: '所有东西',
+        confidence: 0.55,
+        ambiguities: [],
+        corrections: [],
+        slots: {},
+      }],
+      searchCandidates: vi.fn(),
+      runPlanHints: vi.fn(),
+    })
+
+    const step = result.steps[0]
+    expect(step.action).toBe('summarize_assets')
+    expect(step.target).toBe('mixed')
+    expect(step.risk).toBe('high')
+    expect(step.requiresUserApproval).toBe(true)
   })
 
   // ── Regression: Representative Utterances ───────────────────────────
@@ -863,8 +965,8 @@ describe('workspace-run-planner', () => {
     expect(step.selector).toBeDefined()
     expect(step.selector?.timeConstraint?.kind).toBe('recent')
     expect(step.selector?.subject).toBe('报价')
-    expect(step.risk).toBe('high')
-    expect(step.requiresUserApproval).toBe(true)
+    expect(step.risk).toBe('low')
+    expect(step.requiresUserApproval).toBe(false)
   })
 
   it('把报价待办标记为已完成 → update, todos, status done', async () => {

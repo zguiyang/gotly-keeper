@@ -40,6 +40,8 @@ export type WorkspaceRunPlannerCandidate = {
   status?: 'open' | 'done'
   createdAt?: string
   updatedAt?: string
+  dueAt?: string
+  timeText?: string
   preview?: string
 }
 
@@ -394,6 +396,26 @@ function buildCreateToolInput(task: DraftWorkspaceTask, action: WorkspaceRunPlan
 
 // ── Step Builders ─────────────────────────────────────────────────────
 
+function assessReadRisk(task: DraftWorkspaceTask, target: string): { risk: 'low' | 'medium' | 'high'; requiresUserApproval: boolean } {
+  if (target !== 'mixed') {
+    return { risk: 'low', requiresUserApproval: false }
+  }
+
+  const title = task.title.trim()
+  const slotQuery = getStringSlot(task, 'query')
+  const hasClearSubject = title.length > 0 || (slotQuery !== undefined && slotQuery.length > 0)
+  const hasHighConfidence = task.confidence >= 0.7
+  const hasBroadAmbiguity = task.ambiguities.some(
+    (a) => /^(范围|主体|对象).*不明确/.test(a)
+  )
+
+  if (hasClearSubject && hasHighConfidence && !hasBroadAmbiguity) {
+    return { risk: 'low', requiresUserApproval: false }
+  }
+
+  return { risk: 'high', requiresUserApproval: true }
+}
+
 function buildReadStep(input: {
   id: string
   action: 'query_assets' | 'summarize_assets'
@@ -402,16 +424,16 @@ function buildReadStep(input: {
   task: DraftWorkspaceTask
 }): WorkspaceRunPlannerStep {
   const selector = buildSelector(input.task)
-  const isMixedRead = input.target === 'mixed'
   const slotQuery = getStringSlot(input.task, 'query')
+  const { risk, requiresUserApproval } = assessReadRisk(input.task, input.target)
 
   return {
     id: input.id,
     action: input.action,
     target: input.target,
     title: input.title,
-    risk: isMixedRead ? 'high' : 'low',
-    requiresUserApproval: isMixedRead,
+    risk,
+    requiresUserApproval,
     selector,
     toolInput: buildSearchToolInput(selector, slotQuery),
   }

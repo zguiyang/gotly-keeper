@@ -22,6 +22,26 @@ function getTargetLabel(target: SelectCandidateInteraction['target']) {
   return '书签'
 }
 
+function getStatusLabel(status: string | undefined) {
+  if (status === 'done') return '已完成'
+  if (status === 'open') return '未完成'
+  return null
+}
+
+function formatTime(iso: string | undefined) {
+  if (!iso) return null
+  try {
+    const d = new Date(iso)
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    const hour = String(d.getHours()).padStart(2, '0')
+    const min = String(d.getMinutes()).padStart(2, '0')
+    return `${month}-${day} ${hour}:${min}`
+  } catch {
+    return null
+  }
+}
+
 export function CandidatePicker({ interaction, selectedId, onSelect }: CandidatePickerProps) {
   return (
     <div className="space-y-3">
@@ -52,15 +72,41 @@ export function CandidatePicker({ interaction, selectedId, onSelect }: Candidate
             >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-on-surface">
-                      {candidate.label}
-                    </p>
-                    {candidate.reason ? (
-                      <p className="mt-1 text-xs leading-5 text-on-surface-variant/72">
-                        {candidate.reason}
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-sm font-medium text-on-surface">
+                        {candidate.label}
+                      </p>
+                      {candidate.status ? (
+                        <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium leading-4 ${
+                          candidate.status === 'done'
+                            ? 'bg-primary/10 text-status-success'
+                            : 'bg-muted/70 text-on-surface-variant'
+                        }`}>
+                          {getStatusLabel(candidate.status)}
+                        </span>
+                      ) : null}
+                    </div>
+                    {candidate.dueAt || candidate.timeText ? (
+                      <p className="text-xs leading-5 text-on-surface-variant">
+                        {candidate.dueAt ? `计划: ${formatTime(candidate.dueAt)}` : ''}
+                        {candidate.dueAt && candidate.timeText ? ' · ' : ''}
+                        {candidate.timeText && !candidate.dueAt ? `时间: ${candidate.timeText}` : ''}
                       </p>
                     ) : null}
+                    {candidate.preview && candidate.preview !== candidate.label ? (
+                      <p className="line-clamp-2 text-xs leading-5 text-on-surface-variant/72">
+                        {candidate.preview}
+                      </p>
+                    ) : null}
+                    <div className="flex items-center gap-2 text-[10px] leading-4 text-on-surface-variant/60">
+                      {candidate.updatedAt ? (
+                        <span>更新: {formatTime(candidate.updatedAt)}</span>
+                      ) : null}
+                      {candidate.reason ? (
+                        <span>{candidate.reason}</span>
+                      ) : null}
+                    </div>
                   </div>
                   <div
                     className={`mt-0.5 flex size-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors ${

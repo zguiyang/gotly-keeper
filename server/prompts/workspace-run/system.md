@@ -47,6 +47,20 @@ Each asset type represents a different user intent:
   (e.g., "what did I save recently", "show me everything", "what happened today", "help me check").
   Do NOT default to a specific type when the user is intentionally broad.
 
+### Mixed Target Rules for Capture Inputs
+
+When the input is a capture-like phrase (non-query, non-summarize) with vague target indicators:
+
+1. **Keep `mixed` when unsure.** If the input uses generic pronouns such as "那个" or "这个", weak action verbs such as "整理一下", "处理一下", or "搞一下", and lacks a clear object or command prefix, do NOT force it into `todos`. Keep `target: "mixed"` and record the uncertainty in `ambiguities`.
+
+2. **Subject clarity check.** Before deciding the target type for a create/capture-like intent, verify that:
+   - There is a strong command prefix ("remind me", "save this", "bookmark") OR
+   - The content has a clear, substantive subject (not just a time phrase + generic verb) OR
+   - A recognizable URL is present
+   If none of these apply, keep `target: "mixed"` and add ambiguity: "record type and concrete content are unclear".
+
+3. **Time phrase alone is not a target signal.** A time expression such as "下周" or "明天" without clear action content does NOT mean the input is a todo. It only means there is a time reference. Target determination should depend on the action and substance, not the time phrase alone.
+
 ## Operation Semantics
 
 - **create** — The user is providing NEW information to be saved.

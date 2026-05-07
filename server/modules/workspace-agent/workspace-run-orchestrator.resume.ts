@@ -35,6 +35,48 @@ import type {
 
 type ResumeResponse = Extract<WorkspaceRunRequest, { kind: 'resume' }>['response']
 
+function normalizeTargetHint(value: string | undefined): WorkspaceTarget | null {
+  const normalized = value?.trim().toLowerCase()
+  if (!normalized) return null
+
+  if (/(待办|todo|todos|提醒)/.test(normalized)) return 'todos'
+  if (/(笔记|note|notes|记录)/.test(normalized)) return 'notes'
+  if (/(书签|bookmark|bookmarks|链接|网址|url)/.test(normalized)) return 'bookmarks'
+  return null
+}
+
+function isLikelyUrl(value: string | undefined) {
+  if (!value) return false
+  return /^https?:\/\//i.test(value.trim())
+}
+
+function needsTodoTimeNormalization(task: DraftWorkspaceTask) {
+  if (task.target !== 'todos') {
+    return false
+  }
+
+  const timeText = typeof task.slots.timeText === 'string' ? task.slots.timeText.trim() : ''
+  const dueAt = typeof task.slots.dueAt === 'string' ? task.slots.dueAt.trim() : ''
+  const timeResolutionKind =
+    typeof task.slots.timeResolutionKind === 'string' ? task.slots.timeResolutionKind.trim() : ''
+
+  if (
+    typeof task.slots.time === 'string' ||
+    typeof task.slots.due === 'string' ||
+    typeof task.slots.dueTime === 'string' ||
+    typeof task.slots.dueText === 'string' ||
+    typeof task.slots.dueDate === 'string'
+  ) {
+    return true
+  }
+
+  if (!timeText) {
+    return false
+  }
+
+  return dueAt.length === 0 && timeResolutionKind.length === 0
+}
+
 async function runExecute(
   ctx: PhaseContext,
   steps: WorkspaceRunPlannerResult['steps'],
@@ -132,23 +174,57 @@ function mergeClarification(
     const nextTitle = response.values.title?.trim()
     const nextUrl = response.values.url?.trim()
     const details = response.values.details?.trim()
+    const clarifiedTarget = task.target === 'mixed'
+      ? normalizeTargetHint(response.values.targetHint) ?? task.target
+      : task.target
 
     let resolvedTitle = task.title
 
     if (nextTitle && nextTitle.length > 0) {
       resolvedTitle = nextTitle
-    } else if (task.target === 'todos' && (!resolvedTitle || resolvedTitle.length === 0) && details && details.length > 0) {
+    } else if (
+      task.target === 'mixed' &&
+      (clarifiedTarget === 'todos' || clarifiedTarget === 'notes') &&
+      details &&
+      details.length > 0
+    ) {
       resolvedTitle = details
-    } else if (task.target === 'bookmarks' && (!resolvedTitle || resolvedTitle.length === 0) && nextUrl && nextUrl.length > 0) {
+    } else if (clarifiedTarget === 'todos' && (!resolvedTitle || resolvedTitle.length === 0) && details && details.length > 0) {
+      resolvedTitle = details
+    } else if (clarifiedTarget === 'bookmarks' && (!resolvedTitle || resolvedTitle.length === 0) && nextUrl && nextUrl.length > 0) {
       resolvedTitle = nextUrl
-    } else if (task.target === 'notes' && (!resolvedTitle || resolvedTitle.length === 0) && details && details.length > 0) {
+    } else if (clarifiedTarget === 'notes' && (!resolvedTitle || resolvedTitle.length === 0) && details && details.length > 0) {
       resolvedTitle = details
       mergedSlots.content = details
     }
 
+    if (clarifiedTarget === 'notes' && details && details.length > 0) {
+      mergedSlots.content = details
+    }
+
+    if (clarifiedTarget === 'bookmarks' && details && isLikelyUrl(details) && !nextUrl) {
+      mergedSlots.url = details
+      if (!resolvedTitle || resolvedTitle.length === 0) {
+        resolvedTitle = details
+      }
+    }
+
+    const ambiguities = task.ambiguities.filter((ambiguity) => {
+      if (clarifiedTarget !== 'mixed' && ambiguity.includes('记录类型')) {
+        return false
+      }
+      if (details && details.length > 0 && ambiguity.includes('具体内容')) {
+        return false
+      }
+      return true
+    })
+
     return {
       ...task,
+      target: clarifiedTarget,
       title: resolvedTitle,
+      confidence: clarifiedTarget !== 'mixed' ? Math.max(task.confidence, 0.8) : task.confidence,
+      ambiguities,
       slots: mergedSlots,
     }
   })
@@ -182,12 +258,33 @@ function toReviewablePlan(result: WorkspaceRunPlannerResult): ReviewablePlan {
   }
 }
 
+async function quickPlanDraftTasks(
+  ctx: PhaseContext,
+  tasks: DraftWorkspaceTask[],
+  options: OrchestrateWorkspaceRunOptions
+): Promise<{ draftTasks: DraftWorkspaceTask[]; plannerResult: WorkspaceRunPlannerResult }> {
+  const planStartTs = Date.now()
+  emitEvent(ctx, { type: 'phase_started', phase: 'plan' })
+  const plannerResult = await planWorkspaceRun({
+    userId: options.userId,
+    draftTasks: tasks,
+    searchCandidates: options.searchCandidates,
+    runPlanHints: async () => null,
+  })
+  emitEvent(ctx, { type: 'phase_completed', phase: 'plan', output: plannerResult })
+  recordPhaseTiming(ctx.phaseTimings, 'plan', planStartTs, Date.now(), 'orchestration')
+  return {
+    draftTasks: tasks,
+    plannerResult,
+  }
+}
+
 async function replanDraftTasks(
   ctx: PhaseContext,
   tasks: DraftWorkspaceTask[],
   options: OrchestrateWorkspaceRunOptions,
   referenceTime: string
-) {
+): Promise<{ draftTasks: DraftWorkspaceTask[]; plannerResult: WorkspaceRunPlannerResult }> {
   const timeNormalizeStartTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'time_normalize' })
   const normalizedDraftTasks = await normalizeTodoDraftTaskTimes(tasks, {
@@ -197,18 +294,7 @@ async function replanDraftTasks(
   emitEvent(ctx, { type: 'phase_completed', phase: 'time_normalize', output: normalizedDraftTasks })
   recordPhaseTiming(ctx.phaseTimings, 'time_normalize', timeNormalizeStartTs, Date.now(), 'model')
 
-  const planStartTs = Date.now()
-  emitEvent(ctx, { type: 'phase_started', phase: 'plan' })
-  const plannerResult = await planWorkspaceRun({
-    userId: options.userId,
-    draftTasks: normalizedDraftTasks,
-    searchCandidates: options.searchCandidates,
-    runPlanHints: async () => null,
-  })
-  emitEvent(ctx, { type: 'phase_completed', phase: 'plan', output: plannerResult })
-  recordPhaseTiming(ctx.phaseTimings, 'plan', planStartTs, Date.now(), 'orchestration')
-
-  return plannerResult
+  return quickPlanDraftTasks(ctx, normalizedDraftTasks, options)
 }
 
 function applySelectedCandidate(
@@ -565,7 +651,7 @@ export async function handleResume(
   }
 
   if (request.response.type === 'select_candidate' && request.response.action === 'skip') {
-    return failRun(ctx, store, request.runId, userId, 'SKIPPED', 'User skipped candidate selection')
+    return failRun(ctx, store, request.runId, userId, 'SKIPPED', '已跳过这次候选选择，没有执行更新。')
   }
 
   const baseDraftTasks = toDraftWorkspaceTasks(snapshot, request.response)
@@ -585,12 +671,22 @@ export async function handleResume(
 
   const referenceTime = snapshot.referenceTime ?? snapshot.updatedAt
 
-  let plannerResult = await replanDraftTasks(
-    ctx,
-    draftTasks,
-    options,
-    referenceTime
-  )
+  const needsFullReplan =
+    request.response.type === 'clarify_slots' ||
+    request.response.type === 'edit_draft_tasks' ||
+    ((request.response.type === 'confirm_plan' || request.response.type === 'clarify_slots') &&
+      draftTasks.some(needsTodoTimeNormalization))
+
+  let plannerResult: WorkspaceRunPlannerResult
+  if (needsFullReplan) {
+    const replanned = await replanDraftTasks(ctx, draftTasks, options, referenceTime)
+    draftTasks = replanned.draftTasks
+    plannerResult = replanned.plannerResult
+  } else {
+    const replanned = await quickPlanDraftTasks(ctx, draftTasks, options)
+    draftTasks = replanned.draftTasks
+    plannerResult = replanned.plannerResult
+  }
   let duplicateReview = snapshot.duplicateReview
 
   if (request.response.type === 'select_candidate' && request.response.action === 'select') {

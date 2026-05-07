@@ -115,6 +115,8 @@ const workspaceCandidateSchema = z.object({
   status: z.enum(['open', 'done']).optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
+  dueAt: z.string().optional(),
+  timeText: z.string().optional(),
   preview: z.string().optional(),
   reason: z.string().optional(),
 })
