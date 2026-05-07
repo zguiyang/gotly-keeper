@@ -13,10 +13,12 @@ import type {
 
 const duplicateCandidatesMock = vi.hoisted(() => ({
   findWorkspaceRunDuplicateCandidates: vi.fn<() => Promise<ReviewableDuplicateCandidate[]>>(async () => []),
+  findWorkspaceBookmarkDuplicateCandidate: vi.fn<() => Promise<ReviewableDuplicateCandidate | null>>(async () => null),
 }))
 
 vi.mock('@/server/modules/workspace-agent/workspace-run-duplicates', () => ({
   findWorkspaceRunDuplicateCandidates: duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates,
+  findWorkspaceBookmarkDuplicateCandidate: duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidate,
 }))
 
 const executorMock = vi.hoisted(() => ({
@@ -77,6 +79,7 @@ describe('workspace-run-orchestrator', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates.mockResolvedValue([])
+    duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidate.mockResolvedValue(null)
   })
 
   describe('aborted signal', () => {
@@ -405,19 +408,17 @@ describe('workspace-run-orchestrator', () => {
     it('keeps T12 duplicate bookmark acceptance input in duplicate confirmation instead of execution failure', async () => {
       const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
 
-      duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates.mockResolvedValueOnce([
-        {
-          stepId: 'step_1',
-          target: 'bookmark',
-          duplicates: [
-            {
-              id: 'bookmark_1',
-              label: 'https://example.com/rqa0506c',
-              reason: 'URL already exists',
-            },
-          ],
-        },
-      ])
+      duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidate.mockResolvedValueOnce({
+        stepId: 'step_1',
+        target: 'bookmark',
+        duplicates: [
+          {
+            id: 'bookmark_1',
+            label: 'https://example.com/rqa0506c',
+            reason: 'URL already exists',
+          },
+        ],
+      })
 
       const result = await orchestrateWorkspaceRun({
         userId: 'user_123',
@@ -467,6 +468,8 @@ describe('workspace-run-orchestrator', () => {
         type: 'confirm_duplicate',
         target: 'bookmark',
       })
+      expect(duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidate).toHaveBeenCalledTimes(1)
+      expect(duplicateCandidatesMock.findWorkspaceRunDuplicateCandidates).not.toHaveBeenCalled()
       expect(executorMock.executeWorkspaceRunSteps).not.toHaveBeenCalled()
     })
   })

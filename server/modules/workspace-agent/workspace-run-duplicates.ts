@@ -3,7 +3,7 @@ import 'server-only'
 import { findWorkspaceCreateDuplicates } from '@/server/services/workspace/workspace-assets.service'
 
 import type { WorkspaceRunPlannerResult } from './workspace-run-planner'
-import type { WorkspaceCandidate } from '@/shared/workspace/workspace-run-protocol'
+import type { DraftWorkspaceTask, WorkspaceCandidate } from '@/shared/workspace/workspace-run-protocol'
 
 export type ReviewableDuplicateCandidate = {
   stepId: string
@@ -55,4 +55,35 @@ export async function findWorkspaceRunDuplicateCandidates(input: {
     userId: input.userId,
     steps: createSteps,
   })
+}
+
+export async function findWorkspaceBookmarkDuplicateCandidate(input: {
+  userId: string
+  draftTask: DraftWorkspaceTask
+  stepId?: string
+}): Promise<ReviewableDuplicateCandidate | null> {
+  if (input.draftTask.intent !== 'create' || input.draftTask.target !== 'bookmarks') {
+    return null
+  }
+
+  const url = typeof input.draftTask.slots.url === 'string' ? input.draftTask.slots.url.trim() : ''
+  if (!url) {
+    return null
+  }
+
+  const [result] = await findWorkspaceCreateDuplicates({
+    userId: input.userId,
+    steps: [
+      {
+        stepId: input.stepId ?? 'step_1',
+        action: 'create_bookmark',
+        target: 'bookmarks',
+        title: input.draftTask.title,
+        content: typeof input.draftTask.slots.content === 'string' ? input.draftTask.slots.content : undefined,
+        url,
+      },
+    ],
+  })
+
+  return result ?? null
 }
