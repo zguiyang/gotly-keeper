@@ -1,5 +1,6 @@
 'use client'
 
+import { LoaderCircle } from 'lucide-react'
 import Link from 'next/link'
 
 import { AuthField } from '@/components/auth/auth-field'
@@ -51,14 +52,14 @@ export function SignInForm() {
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1">
           <label
-            className="block text-xs font-semibold uppercase tracking-[0.22em] text-on-surface-variant"
+            className="block text-[12px] font-medium tracking-normal text-on-surface-variant/85"
             htmlFor="sign-in-password"
           >
             PASSWORD
           </label>
           <Link
             href="/auth/forgot-password"
-            className="text-xs font-medium text-primary transition-colors hover:text-primary-container"
+            className="text-xs font-medium text-primary transition-colors duration-150 hover:text-primary-dim"
           >
             忘记密码
           </Link>
@@ -76,16 +77,17 @@ export function SignInForm() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-error/10 px-4 py-3 text-sm text-error" aria-live="polite">
+        <div className="rounded-xl border border-destructive/15 bg-destructive/[0.045] px-3.5 py-2.5 text-sm leading-5 text-destructive" aria-live="polite">
           {error}
         </div>
       )}
 
       <Button
-        className="h-12 w-full text-base"
+        className="h-10 w-full gap-2 rounded-xl text-sm"
         disabled={pending}
         type="submit"
       >
+        {pending ? <LoaderCircle className="size-4 animate-spin" /> : null}
         {pending ? '登录中…' : '立即登录'}
       </Button>
     </form>

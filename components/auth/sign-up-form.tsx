@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, LoaderCircle } from 'lucide-react'
 
 import { AuthField } from '@/components/auth/auth-field'
 import { Button } from '@/components/ui/button'
@@ -64,7 +64,6 @@ export function SignUpForm() {
     <form className="space-y-6" onSubmit={onSubmit}>
       <AuthField
         autoComplete="username"
-        inputClassName="bg-muted focus:bg-surface-container-lowest"
         label="昵称"
         name="name"
         placeholder="例如：Joy"
@@ -73,7 +72,6 @@ export function SignUpForm() {
       />
       <AuthField
         autoComplete="email"
-        inputClassName="bg-muted focus:bg-surface-container-lowest"
         label="电子邮箱"
         name="email"
         placeholder="name@example.com"
@@ -83,7 +81,6 @@ export function SignUpForm() {
       />
       <AuthField
         autoComplete="new-password"
-        inputClassName="bg-muted focus:bg-surface-container-lowest"
         label="密码"
         name="password"
         placeholder="••••••••"
@@ -92,18 +89,19 @@ export function SignUpForm() {
       />
 
       {error && (
-        <div className="rounded-md bg-error/10 px-4 py-3 text-sm text-error" aria-live="polite">
+        <div className="rounded-xl border border-destructive/15 bg-destructive/[0.045] px-3.5 py-2.5 text-sm leading-5 text-destructive" aria-live="polite">
           {error}
         </div>
       )}
 
       <Button
-        className="h-12 w-full gap-2 text-base"
+        className="h-10 w-full gap-2 rounded-xl text-sm"
         disabled={pending}
         type="submit"
       >
+        {pending && <LoaderCircle className="size-4 animate-spin" />}
         <span>{pending ? '创建中…' : '创建账号'}</span>
-        {!pending && <ArrowRight className="h-5 w-5" />}
+        {!pending && <ArrowRight className="size-4" />}
       </Button>
     </form>
   )

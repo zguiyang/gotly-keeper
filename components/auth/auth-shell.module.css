@@ -16,33 +16,33 @@
 }
 
 .shell::before {
-  width: 44vw;
-  height: 44vw;
-  min-width: 320px;
-  min-height: 320px;
+  width: 36vw;
+  height: 36vw;
+  min-width: 260px;
+  min-height: 260px;
   background: radial-gradient(
     circle,
-    color-mix(in srgb, var(--color-primary) 12%, transparent) 0%,
-    color-mix(in srgb, var(--color-primary) 6%, transparent) 42%,
+    color-mix(in srgb, var(--color-primary) 7%, transparent) 0%,
+    color-mix(in srgb, var(--color-primary) 3%, transparent) 44%,
     transparent 72%
   );
-  top: 4%;
-  left: -12%;
-  filter: blur(100px);
+  top: 10%;
+  left: -16%;
+  filter: blur(90px);
 }
 
 .shell::after {
-  width: 34vw;
-  height: 34vw;
-  min-width: 280px;
-  min-height: 280px;
+  width: 30vw;
+  height: 30vw;
+  min-width: 240px;
+  min-height: 240px;
   background: radial-gradient(
     circle,
-    color-mix(in srgb, var(--color-primary-container) 14%, transparent) 0%,
-    color-mix(in srgb, var(--color-tertiary-fixed) 8%, transparent) 46%,
+    color-mix(in srgb, var(--color-primary-container) 8%, transparent) 0%,
+    color-mix(in srgb, var(--color-tertiary-fixed) 4%, transparent) 46%,
     transparent 72%
   );
-  right: -8%;
-  bottom: 4%;
-  filter: blur(100px);
+  right: -12%;
+  bottom: 8%;
+  filter: blur(90px);
 }

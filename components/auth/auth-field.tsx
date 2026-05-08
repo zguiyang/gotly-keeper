@@ -43,7 +43,7 @@ const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
           <FieldLabel
             htmlFor={fieldId}
             className={cn(
-              "ml-1 block text-xs font-semibold uppercase tracking-[0.22em] text-on-surface-variant",
+              "ml-1 block text-[12px] font-medium tracking-normal text-on-surface-variant/85",
               labelClassName
             )}
           >
@@ -62,11 +62,11 @@ const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
             ref={ref}
             aria-invalid={!!error}
             className={cn(
-              "w-full rounded-xl border-0 bg-surface-container-lowest px-4 py-3.5 text-sm text-on-surface outline-none",
-              "placeholder:text-muted-foreground/60 transition-[background-color,box-shadow,color] duration-200 focus-visible:ring-2 focus-visible:ring-primary/15",
+              "h-10 w-full rounded-xl border border-border/12 bg-muted/45 px-3.5 py-2 text-sm text-on-surface outline-none shadow-none",
+              "placeholder:text-muted-foreground/58 transition-[background-color,border-color,box-shadow,color] duration-200 hover:bg-muted/60 focus-visible:border-primary/24 focus-visible:bg-surface-container-lowest focus-visible:ring-4 focus-visible:ring-primary/10",
               prefixIcon && "pl-11",
               suffixIcon && "pr-11",
-              error && "ring-2 ring-destructive/20",
+              error && "border-destructive/35 bg-destructive/[0.035] ring-4 ring-destructive/10",
               inputClassName,
               className
             )}
@@ -78,7 +78,7 @@ const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
             </div>
           ) : null}
         </div>
-        <FieldError>{error}</FieldError>
+        <FieldError className="ml-1 text-xs">{error}</FieldError>
       </Field>
     );
   }
