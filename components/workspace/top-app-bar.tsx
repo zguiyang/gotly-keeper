@@ -1,6 +1,6 @@
 "use client"
 
-import { Command, Menu, Sparkles } from "lucide-react"
+import { Menu } from "lucide-react"
 
 import { AccountMenu } from "@/components/account-menu"
 import { BrandLogo } from "@/components/brand-logo"
@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/theme/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { WorkspaceNavList } from "@/components/workspace/workspace-nav-list"
+import { appVersion } from "@/config/app-meta"
 
 type TopAppBarProps = {
   userName: string
@@ -36,24 +37,18 @@ export function TopAppBar({ userName, userEmail, userImage }: TopAppBarProps) {
                 <WorkspaceNavList variant="sheet" />
               </nav>
               <div className="border-t border-border/15 px-4 py-6">
-                <p className="text-sm leading-6 text-on-surface-variant">
-                  一句话就能保存、整理或找回内容。
-                </p>
+                <p className="text-xs font-medium text-on-surface-variant/80">Gotly Keeper</p>
+                <p className="mt-1 text-xs leading-5 text-on-surface-variant/65">Version {appVersion}</p>
               </div>
             </div>
           </SheetContent>
         </Sheet>
       </div>
 
-      <div className="flex min-w-0 flex-1 items-center gap-2">
-        <span className="hidden h-8 items-center gap-2 rounded-full border border-border/10 bg-surface-container-lowest/80 px-3 text-xs font-medium text-on-surface-variant shadow-[var(--shadow-elevation-1)] sm:inline-flex">
-          <Sparkles className="size-3.5 text-primary" />
-          工作区已就绪
-        </span>
-        <span className="hidden items-center gap-1.5 text-xs text-on-surface-variant/75 lg:inline-flex">
-          <Command className="size-3.5" />
-          在启动台输入即可捕获或查询
-        </span>
+      <div className="flex min-w-0 flex-1 items-center">
+        <p className="hidden truncate text-xs text-on-surface-variant/75 sm:block">
+          一句话沉淀笔记、链接和待办，需要时直接找回
+        </p>
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
