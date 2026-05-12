@@ -1,4 +1,4 @@
-import 'dotenv/config'
+import './load-env'
 
 import { BookmarkEnrichWorker } from '@/server/workers/bookmark-enrich.worker'
 
