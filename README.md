@@ -95,7 +95,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `pnpm db:migrate` | Apply database migrations |
 | `pnpm db:studio` | Open Drizzle Studio |
 | `pnpm db:check` | Check DB schema against migrations |
-| `pnpm worker:start` | Start the bookmark enrichment worker |
+| `pnpm worker:start` | Start the URL metadata fetch worker |
 | `pnpm test` | Run all tests |
 | `pnpm test:unit` | Run unit tests |
 | `pnpm test:integration` | Run integration tests |

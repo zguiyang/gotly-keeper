@@ -17,11 +17,10 @@ COPY . .
 RUN --mount=type=secret,id=app_env,target=/run/secrets/app_env \
   sh -ac 'set -a && . /run/secrets/app_env && set +a && pnpm build && pnpm worker:build'
 
-FROM base AS prod-deps
-COPY --from=deps /app/node_modules ./node_modules
+FROM base AS worker-migrate-deps
 COPY .npmrc pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-RUN node -e "const fs=require('node:fs'); const pkg=require('./package.json'); delete pkg.scripts.prepare; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n')" \
-  && pnpm prune --prod
+RUN node -e "const fs=require('node:fs'); const root=require('./package.json'); const deps=['dotenv','drizzle-kit','drizzle-orm','pg']; const pkg={name:'gotly-keeper-worker-migrate',private:true,dependencies:Object.fromEntries(deps.map((name)=>[name,root.dependencies[name]]))}; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n')" \
+  && HUSKY=0 pnpm install --prod --no-frozen-lockfile
 
 FROM node:22-alpine AS web-runner
 WORKDIR /app
@@ -49,8 +48,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
 
-COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist-workers ./dist-workers
+COPY --from=worker-migrate-deps /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/drizzle ./drizzle
 COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts

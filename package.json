@@ -23,6 +23,7 @@
     "db:studio": "drizzle-kit studio",
     "db:check": "drizzle-kit check",
     "worker:build": "node scripts/build-worker.mjs",
+    "preworker:start": "pnpm worker:build",
     "worker:start": "node dist-workers/run-workers.cjs",
     "typecheck": "tsc --noEmit",
     "verify": "pnpm typecheck && pnpm test:unit",
