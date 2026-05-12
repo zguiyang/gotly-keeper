@@ -3,7 +3,7 @@ import 'server-only'
 import { lookup } from 'node:dns/promises'
 import { isIP } from 'node:net'
 
-type UrlSafetyCheckResult =
+export type UrlSafetyCheckResult =
   | { safe: true }
   | { safe: false; reason: 'invalid_url' | 'unsupported_protocol' | 'private_network' }
 
@@ -86,4 +86,3 @@ export async function checkUrlSafety(urlText: string): Promise<UrlSafetyCheckRes
 
   return { safe: true }
 }
-

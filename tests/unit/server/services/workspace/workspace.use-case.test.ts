@@ -111,8 +111,8 @@ vi.mock('@/server/services/assets/asset-lifecycle', async () => {
   return actual
 })
 
-vi.mock('@/server/services/bookmark/bookmark-enrich.service', () => ({
-  scheduleBookmarkEnrichTask: vi.fn(),
+vi.mock('@/server/services/bookmark/bookmark-url-metadata.service', () => ({
+  scheduleBookmarkUrlMetadataTask: vi.fn(),
 }))
 
 vi.mock('@/server/services/search/semantic-search.service', () => ({

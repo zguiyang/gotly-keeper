@@ -1,13 +1,14 @@
 import 'server-only'
 
+import type { UrlMetadataTask } from '@/server/lib/metadata/url-metadata-task.contract'
+import { checkUrlSafety } from '@/server/lib/network/url-safety'
 import { updateBookmarkEnrichment } from '@/server/services/bookmarks'
 import { BOOKMARK_META_STATUS, type BookmarkMeta } from '@/shared/assets/bookmark-meta.types'
 import { nowIso } from '@/shared/time/dayjs'
 
-import { enqueueBookmarkEnrichTask } from './bookmark-queue.service'
-import { checkUrlSafety } from './url-safety'
+import { enqueueBookmarkUrlMetadataTask } from './bookmark-url-metadata-queue.service'
 
-import type { BookmarkEnrichResult, BookmarkEnrichTask } from './bookmark-enrich.contract'
+import type { BookmarkUrlMetadataResult, BookmarkUrlMetadataTask } from './bookmark-url-metadata.contract'
 
 function createPendingBookmarkMeta(): BookmarkMeta {
   return {
@@ -51,30 +52,36 @@ function createFailedBookmarkMeta(errorCode: string, errorMessage: string): Book
   }
 }
 
-function createSuccessBookmarkMeta(result: NonNullable<BookmarkEnrichResult['data']>): BookmarkMeta {
+function createSuccessBookmarkMeta(result: NonNullable<BookmarkUrlMetadataResult['data']>): BookmarkMeta {
   return {
     status: BOOKMARK_META_STATUS.SUCCESS,
     title: result.title,
     icon: result.icon,
-    bookmarkType: result.bookmarkType,
+    bookmarkType: null,
     description: result.description,
-    contentSummary: result.contentSummary,
+    contentSummary: null,
     errorCode: null,
     errorMessage: null,
     updatedAt: nowIso(),
   }
 }
 
-function createBookmarkEnrichTask(input: {
+function createBookmarkUrlMetadataTask(input: {
   bookmarkId: string
   userId: string
   url: string
-}): BookmarkEnrichTask {
+}): BookmarkUrlMetadataTask {
   return {
-    taskId: crypto.randomUUID(),
     bookmarkId: input.bookmarkId,
     userId: input.userId,
-    url: input.url,
+    metadataTask: createUrlMetadataTask(input.url),
+  }
+}
+
+function createUrlMetadataTask(url: string): UrlMetadataTask {
+  return {
+    taskId: crypto.randomUUID(),
+    url,
     traceId: crypto.randomUUID(),
     createdAt: nowIso(),
   }
@@ -84,7 +91,7 @@ export function buildPendingBookmarkMetaForResponse(): BookmarkMeta {
   return createPendingBookmarkMeta()
 }
 
-export async function scheduleBookmarkEnrichTask(input: {
+export async function scheduleBookmarkUrlMetadataTask(input: {
   bookmarkId: string
   userId: string
   url: string
@@ -111,8 +118,8 @@ export async function scheduleBookmarkEnrichTask(input: {
       return
     }
 
-    const task = createBookmarkEnrichTask(input)
-    await enqueueBookmarkEnrichTask(task)
+    const task = createBookmarkUrlMetadataTask(input)
+    await enqueueBookmarkUrlMetadataTask(task)
   } catch (error) {
     await updateBookmarkEnrichment({
       bookmarkId: input.bookmarkId,
@@ -125,10 +132,10 @@ export async function scheduleBookmarkEnrichTask(input: {
   }
 }
 
-export async function writeBookmarkEnrichResult(input: {
+export async function writeBookmarkUrlMetadataResult(input: {
   userId: string
   bookmarkId: string
-  result: BookmarkEnrichResult
+  result: BookmarkUrlMetadataResult
 }): Promise<void> {
   const bookmarkMeta = input.result.success && input.result.data
     ? createSuccessBookmarkMeta(input.result.data)

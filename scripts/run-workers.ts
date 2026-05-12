@@ -1,9 +1,9 @@
 import './load-env'
 
-import { BookmarkEnrichWorker } from '@/server/workers/bookmark-enrich.worker'
+import { UrlMetadataFetchQueueWorker } from '@/server/workers/url-metadata-fetch-queue.worker'
 
 async function main() {
-  const workers = [new BookmarkEnrichWorker()]
+  const workers = [new UrlMetadataFetchQueueWorker()]
 
   console.info(`[workers] starting ${workers.length} worker(s): ${workers.map((worker) => worker.name).join(', ')}`)
 

@@ -23,7 +23,7 @@ const searchEmbeddingsMock = vi.hoisted(() => ({
 
 const bookmarkEnrichMock = vi.hoisted(() => ({
   buildPendingBookmarkMetaForResponse: vi.fn(),
-  scheduleBookmarkEnrichTask: vi.fn(),
+  scheduleBookmarkUrlMetadataTask: vi.fn(),
 }))
 
 function buildNoteAsset(overrides: Record<string, unknown> = {}) {
@@ -100,7 +100,7 @@ vi.mock('@/server/services/bookmarks', () => ({
 
 vi.mock('@/server/services/search/semantic-search.service', () => searchEmbeddingsMock)
 
-vi.mock('@/server/services/bookmark/bookmark-enrich.service', () => bookmarkEnrichMock)
+vi.mock('@/server/services/bookmark/bookmark-url-metadata.service', () => bookmarkEnrichMock)
 
 const {
   findWorkspaceCreateDuplicates,
@@ -291,7 +291,7 @@ describe('workspace-assets service', () => {
       assetType: 'link',
       assetId: 'link_1',
     })
-    expect(bookmarkEnrichMock.scheduleBookmarkEnrichTask).toHaveBeenCalledWith({
+    expect(bookmarkEnrichMock.scheduleBookmarkUrlMetadataTask).toHaveBeenCalledWith({
       bookmarkId: 'link_1',
       userId: 'user_1',
       url: 'https://example.com/new',

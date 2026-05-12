@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { checkUrlSafety } from '@/server/services/bookmark/url-safety'
+import { checkUrlSafety } from '@/server/lib/network/url-safety'
 
 const mocks = vi.hoisted(() => ({
   lookupMock: vi.fn(),
@@ -10,7 +10,7 @@ vi.mock('node:dns/promises', () => ({
   lookup: mocks.lookupMock,
 }))
 
-describe('bookmark.url-safety', () => {
+describe('network.url-safety', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -39,4 +39,3 @@ describe('bookmark.url-safety', () => {
     })
   })
 })
-

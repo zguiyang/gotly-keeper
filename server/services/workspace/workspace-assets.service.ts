@@ -2,8 +2,8 @@ import 'server-only'
 
 import {
   buildPendingBookmarkMetaForResponse,
-  scheduleBookmarkEnrichTask,
-} from '@/server/services/bookmark/bookmark-enrich.service'
+  scheduleBookmarkUrlMetadataTask,
+} from '@/server/services/bookmark/bookmark-url-metadata.service'
 import {
   createBookmark,
   findDuplicateBookmarks,
@@ -279,7 +279,7 @@ export async function createWorkspaceLinkAsset(input: {
   const asset = toAssetListItemFromBookmark(bookmark)
   asset.bookmarkMeta = buildPendingBookmarkMetaForResponse()
 
-  void scheduleBookmarkEnrichTask({
+  void scheduleBookmarkUrlMetadataTask({
     bookmarkId: asset.id,
     userId: input.userId,
     url: input.url,
@@ -375,7 +375,7 @@ export async function updateWorkspaceLinkAsset(input: {
   await deleteEmbeddingsForAsset({ assetType: 'link', assetId: updated.item.id })
 
   if (updated.urlChanged && updated.item.url) {
-    void scheduleBookmarkEnrichTask({
+    void scheduleBookmarkUrlMetadataTask({
       bookmarkId: updated.item.id,
       userId: input.userId,
       url: updated.item.url,
