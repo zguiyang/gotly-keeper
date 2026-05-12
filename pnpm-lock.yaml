@@ -80,6 +80,9 @@ importers:
       dotenv:
         specifier: ^17.4.1
         version: 17.4.1
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.28.16)(pg@8.20.0)
@@ -174,9 +177,9 @@ importers:
       babel-plugin-react-compiler:
         specifier: 1.0.0
         version: 1.0.0
-      drizzle-kit:
-        specifier: ^0.31.10
-        version: 0.31.10
+      esbuild:
+        specifier: ^0.27.0
+        version: 0.27.7
       eslint:
         specifier: ^9
         version: 9.39.4(jiti@2.6.1)
@@ -198,9 +201,6 @@ importers:
       tailwindcss:
         specifier: ^4
         version: 4.2.2
-      tsx:
-        specifier: ^4.21.0
-        version: 4.21.0
       typescript:
         specifier: ^5
         version: 5.9.3
