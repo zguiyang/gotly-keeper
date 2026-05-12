@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.gitignore
+*.md
+prd
+docs
+.env*
+.agents
+.ai-rules
+.codex
+.husky
+.stitch
+tests
