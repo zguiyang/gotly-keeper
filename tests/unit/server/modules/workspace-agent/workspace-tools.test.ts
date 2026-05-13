@@ -513,7 +513,6 @@ describe('workspaceTools', () => {
             keywords: ['报价'],
             timeConstraint: {
               kind: 'recent',
-              strength: 'strong',
             },
             sort: 'recent_first',
             limit: 3,

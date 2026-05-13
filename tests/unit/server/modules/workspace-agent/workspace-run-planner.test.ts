@@ -321,7 +321,7 @@ describe('workspace-run-planner', () => {
     expect(step.selector).toMatchObject({
       target: 'todos',
       subject: '报价',
-      timeConstraint: { kind: 'recent', strength: 'soft' },
+      timeConstraint: { kind: 'recent' },
       sort: 'recent_first',
     })
     expect(step.toolInput?.recentFocus).toBe(true)
