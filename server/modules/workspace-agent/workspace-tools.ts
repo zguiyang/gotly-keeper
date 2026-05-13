@@ -23,7 +23,6 @@ import type { WorkspaceSelector, WorkspaceTimeConstraint } from '@/shared/worksp
 const workspaceTimeConstraintSchema: z.ZodType<WorkspaceTimeConstraint> = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('recent'),
-    strength: z.enum(['soft', 'strong']),
   }),
   z.object({
     kind: z.literal('relative_window'),

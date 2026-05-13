@@ -90,7 +90,7 @@ function buildSelector(task: DraftWorkspaceTask): WorkspaceSelector {
     timeConstraint,
     statusConstraint,
     sort: timeConstraint?.kind === 'recent' ? 'recent_first' : 'relevance',
-    limit: timeConstraint?.kind === 'recent' && timeConstraint.strength === 'strong' ? 3 : undefined,
+    limit: undefined,
   }
 }
 
@@ -103,7 +103,7 @@ function buildTimeConstraint(task: DraftWorkspaceTask): WorkspaceSelector['timeC
   }
 
   if (timeRange === 'recent') {
-    return { kind: 'recent', strength: 'soft' }
+    return { kind: 'recent' }
   }
 
   if (timeRange === 'today' || timeRange === 'yesterday') {
@@ -183,13 +183,6 @@ function parseRelativeWindow(rawText: string): WorkspaceSelector['timeConstraint
   }
 
   const normalized = text.replace(/\s+/g, '')
-
-  if (/^(刚刚|刚才|最近|近期|前面|之前)/.test(normalized)) {
-    return {
-      kind: 'recent',
-      strength: /^(刚刚|刚才)/.test(normalized) ? 'strong' : 'soft',
-    }
-  }
 
   const namedRangeMap: Record<string, 'today' | 'yesterday' | 'this_week' | 'this_month'> = {
     今天: 'today',
@@ -457,7 +450,7 @@ function buildReadStep(input: {
     }
 
     const hadTimeConstraint = selector.timeConstraint !== null
-    selector.timeConstraint ??= { kind: 'recent', strength: 'soft' }
+    selector.timeConstraint ??= { kind: 'recent' }
     selector.sort = 'recent_first'
     selector.limit ??= 8
     const { risk, requiresUserApproval } = assessReadRisk(input.task, input.target)
