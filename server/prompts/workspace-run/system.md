@@ -7,11 +7,21 @@ Process the input internally through these steps. Do NOT include reasoning in th
 1. **IDENTIFY OPERATION**: Determine what the user wants to do — `create`, `query`, `summarize`, or `update`.
 2. **IDENTIFY TARGET**: Determine what type of content — `notes`, `todos`, `bookmarks`, or `mixed`.
 3. **IDENTIFY SUBJECT**: Extract the core subject or topic the user is referring to.
-4. **DETECT TIME SEMANTICS**: Determine if the user uses time as a **selector constraint**. Do NOT enumerate possible time phrases. Instead, recognize the semantic class:
-   - **recency preference**: "just now", "recently", "a moment ago" — time proximity, affects ranking
-   - **relative window**: "within ten minutes", "over the past week" — specific window from now
-   - **named range**: "today", "yesterday", "this week", "this month"
-   - If no time expression, no time constraint.
+4. **DETECT TIME SEMANTICS**: Determine if the user expresses a time constraint. Do NOT enumerate possible time phrases. Instead, classify the user's time intent into one of three categories — pick the one that best matches what the user means:
+
+   - **Bounded range** — the user names a concrete, calendar-bounded period. The system will calculate an exact date range from the current time.
+     Use `slotEntries[{ key: "timeRange", value: "today" | "yesterday" | "this_week" | "this_month" }]`.
+     Example intent: "today's notes", "this week's bookmarks", "yesterday's todos".
+
+   - **Recency preference** — the user wants results weighted toward recent items but does NOT name a specific boundary. This is a sorting preference, not a hard filter. The system will NOT exclude older matching items.
+     Use `slotEntries[{ key: "timeRange", value: "recent" }]`.
+     Example intent: "recent bookmarks", "what did I save recently", "latest notes".
+
+   - **Relative duration** — the user specifies a concrete duration measured from now (minutes, hours, days, weeks, months). The system will parse the phrase and calculate a hard date range.
+     Use `slotEntries[{ key: "timeText", value: "<the user's original time phrase>" }]`.
+     Example intent: "within the last 10 minutes", "over the past 3 days", "last 2 weeks".
+
+   Choose the category by what the user actually expresses, not by keyword matching. If no time expression, no time constraint.
 5. **DETECT STATUS**: For todos, does the user imply completion status preference?
 6. **EXTRACT PATCH**: For update, what fields should change?
 
@@ -128,10 +138,11 @@ When the user clearly requests an unsupported action:
    such as "recent records", "recent todos", or "all bookmarks" as the title, and do NOT invent a keyword query.
 
 2. **Time -> selector constraint, not raw text**.
-   Detect whether the user expresses:
-   - recency (affects ranking, expressed via `timeRange: "recent"`)
-   - a time window (affects filtering, expressed via `timeRange: "today"` / `"this_week"` / `"this_month"`)
-   Time expressions used for locating existing items become selector constraints, not plain query text.
+   Time expressions used for locating existing items become selector constraints, never plain query text.
+   The three categories from step 4 map to slot entries as follows:
+   - Bounded range → `{ key: "timeRange", value: "today" | "yesterday" | "this_week" | "this_month" }`
+   - Recency preference → `{ key: "timeRange", value: "recent" }`
+   - Relative duration → `{ key: "timeText", value: "<original phrase>" }`
 
 3. **URL -> slotEntries**.
    Extracted URLs go into `slotEntries` with key `url`.
@@ -172,10 +183,10 @@ When the user clearly requests an unsupported action:
 
 | key | values | when to use |
 |-----|--------|------------|
-| `timeRange` | `today` / `this_week` / `this_month` / `recent` | user specifies a temporal scope for search |
+| `timeRange` | `today` / `yesterday` / `this_week` / `this_month` / `recent` | user specifies a temporal scope for search. `today`/`yesterday`/`this_week`/`this_month` are hard calendar-bounded filters. `recent` is a soft recency preference — it sorts results by time but does NOT exclude older items. |
 | `todoStatus` | `open` / `done` / `all` | user expresses a todo completion preference |
 | `query` | search keywords | query/summarize search terms |
-| `timeText` | natural language time phrase | create operations with time intent, or read/update operations when the user specifies a relative time window like "within ten minutes" |
+| `timeText` | natural language time phrase | for create operations with time intent, or for read/update operations when the user specifies a relative duration measured from now (e.g. "within ten minutes", "over the past 3 days"). The system will parse this into a hard date range. Do NOT use `timeText` for vague recency — use `timeRange: "recent"` instead. |
 | `url` | full URL | bookmark create with a link |
 | `note` | user-provided bookmark context | why the bookmark matters / how it will be used |
 | `status` | `open` / `done` | update operations that mutate todo state |
