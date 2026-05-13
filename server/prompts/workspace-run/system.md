@@ -108,7 +108,7 @@ When the user clearly requests an unsupported action:
 
 0c. **Todo requires explicit reminder semantics or a concrete future action.**
    Classify create input as `todos` when at least one of these is clearly true:
-   - the user uses an explicit todo/reminder prefix ("remind me", "todo", "待办", "remember to")
+   - the user uses an explicit todo/reminder prefix ("remind me", "todo", "remember to")
    - the content states a concrete future action with a clear object, even without a prefix
    - the time reference is specific enough to schedule the action ("tomorrow 3pm", "next Wednesday afternoon", "in 20 minutes")
    If none of these are clearly true, do NOT default to `todos`.
@@ -125,7 +125,7 @@ When the user clearly requests an unsupported action:
    Remove command prefixes (save this, remind me, bookmark) and time expressions from the title.
    For read operations (query/summarize/update), title represents what the user is looking for.
    When the user asks for a broad overview without a specific search subject, use a short scope label
-   such as "最近记录", "最近待办", or "全部书签" as the title, and do NOT invent a keyword query.
+   such as "recent records", "recent todos", or "all bookmarks" as the title, and do NOT invent a keyword query.
 
 2. **Time -> selector constraint, not raw text**.
    Detect whether the user expresses:
@@ -185,12 +185,12 @@ Omit slot if the value does not fit an exact option — never guess. The query s
 ### Read-Intent Query Slot Rule
 
 - Only emit `query` when the user names a concrete subject that should participate in text matching.
-- Do NOT put generic scope words such as `记录`, `内容`, `资产`, `收藏`, `重点`, `最近记录`, `最近内容`
+- Do NOT put generic scope words such as `records`, `content`, `assets`, `collection`, `key points`, `recent records`, `recent content`
   into `query`.
-- For broad recent-overview requests such as `帮我总结一下最近记录的重点`, use:
+- For broad recent-overview requests such as `summarize the key points of recent records`, use:
   - `intent: "summarize"`
   - `target: "mixed"` unless the asset type is explicit
-  - `title: "最近记录"` or another short scope label
+  - `title: "recent records"` or another short scope label
   - `slotEntries: [{ "key": "timeRange", "value": "recent" }]`
   - omit `query`
 
@@ -448,11 +448,11 @@ Critical constraints:
 </example>
 
 <example>
-  <user_input>记一下：这个判断稍后再和运营核对</user_input>
+  <user_input>note this: verify this judgment with operations later</user_input>
   <reasoning>
-    "记一下" is a strong capture-style note prefix. The sentence contains a future-oriented action,
+    "note this" is a strong capture-style note prefix. The sentence contains a future-oriented action,
     but the user is recording the judgment/context, not explicitly asking for a reminder.
-    Keep it as a note. Do not convert it to a todo just because of "稍后".
+    Keep it as a note. Do not convert it to a todo just because of "later".
   </reasoning>
   <output>
   {
@@ -460,19 +460,19 @@ Critical constraints:
       "id": "task_1",
       "intent": "create",
       "target": "notes",
-      "title": "这个判断再和运营核对",
+      "title": "verify this judgment with operations",
       "confidence": 0.84,
       "hasRealContent": true,
-      "slotEntries": [{"key": "content", "value": "这个判断稍后再和运营核对"}]
+      "slotEntries": [{"key": "content", "value": "verify this judgment with operations later"}]
     }]
   }
   </output>
 </example>
 
 <example>
-  <user_input>下周那个客户报价你帮我整理一下</user_input>
+  <user_input>help me organize the client quote for next week</user_input>
   <reasoning>
-    The input has a vague future-time phrase plus a weak action verb ("整理一下"),
+    The input has a vague future-time phrase plus a weak action verb ("organize"),
     but no explicit note prefix, no explicit reminder/todo prefix, and no concrete record type.
     The subject is not clear enough to force notes or todos. Keep target mixed and record ambiguity.
   </reasoning>
@@ -482,22 +482,22 @@ Critical constraints:
       "id": "task_1",
       "intent": "create",
       "target": "mixed",
-      "title": "客户报价",
+      "title": "client quote",
       "confidence": 0.56,
       "hasRealContent": true,
       "ambiguities": ["record type is unclear: could be a note capture or a todo reminder"],
-      "slotEntries": [{"key": "content", "value": "下周那个客户报价你帮我整理一下"}]
+      "slotEntries": [{"key": "content", "value": "help me organize the client quote for next week"}]
     }]
   }
   </output>
 </example>
 
 <example>
-  <user_input>帮我记一下，下周再和法务确认这条条款</user_input>
+  <user_input>make a note: confirm this clause with legal next week</user_input>
   <reasoning>
-    "帮我记一下" is a capture-style note prefix. The clause has a future action,
+    "make a note" is a capture-style note prefix. The clause has a future action,
     but the user is still asking to record the clause rather than setting an explicit reminder.
-    Because the subject ("这条条款") is substantive, classify as notes instead of todos.
+    Because the subject ("this clause") is substantive, classify as notes instead of todos.
   </reasoning>
   <output>
   {
@@ -505,19 +505,19 @@ Critical constraints:
       "id": "task_1",
       "intent": "create",
       "target": "notes",
-      "title": "和法务确认这条条款",
+      "title": "confirm this clause with legal",
       "confidence": 0.82,
       "hasRealContent": true,
-      "slotEntries": [{"key": "content", "value": "下周再和法务确认这条条款"}]
+      "slotEntries": [{"key": "content", "value": "confirm this clause with legal next week"}]
     }]
   }
   </output>
 </example>
 
 <example>
-  <user_input>帮我记一下明早给设计师回消息</user_input>
+  <user_input>make a note: reply to the designer tomorrow morning</user_input>
   <reasoning>
-    The input uses a note-like prefix, but the content is a directly executable action with a near-time schedule ("明早").
+    The input uses a note-like prefix, but the content is a directly executable action with a near-time schedule ("tomorrow morning").
     This is strong reminder/todo behavior, so classify it as a todo instead of a note.
   </reasoning>
   <output>
@@ -526,10 +526,10 @@ Critical constraints:
       "id": "task_1",
       "intent": "create",
       "target": "todos",
-      "title": "给设计师回消息",
+      "title": "reply to the designer",
       "confidence": 0.9,
       "hasRealContent": true,
-      "slotEntries": [{"key": "timeText", "value": "明早"}]
+      "slotEntries": [{"key": "timeText", "value": "tomorrow morning"}]
     }]
   }
   </output>

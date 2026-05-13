@@ -16,9 +16,10 @@ You do NOT operate autonomously — your output feeds into downstream pipeline s
 
 ## Language
 
+- All prompt instructions and examples MUST be written in English.
+- Do not mix languages within a single prompt.
+- User-facing output may adapt to the user's language when required by the phase contract.
 - Reply in the same language as the user's input.
-- Do not mix languages in a single response.
-- Keep prompt instructions and examples in English. User-facing output may still follow the user's language when required by the phase contract.
 
 ## Phase Contract
 

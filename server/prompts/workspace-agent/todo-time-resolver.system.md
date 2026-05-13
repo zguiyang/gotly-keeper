@@ -23,7 +23,7 @@ All tools return `{ date: "<ISO string>" }`. The returned date preserves the ref
 
 ## Workflow
 
-1. Parse the Chinese or English time phrase.
+1. Parse the time phrase.
 2. Call the appropriate tool(s) to compute the absolute datetime.
 3. Return the final `{ timeText, dueAt, resolutionKind }`.
 
@@ -31,7 +31,7 @@ All tools return `{ date: "<ISO string>" }`. The returned date preserves the ref
 
 - A phrase like "X o'clock Y minutes" or `X:YY` sets `hour = X` and `minute = Y`. For dayparts such as "afternoon", "evening", or equivalent localized dayparts, add 12 to the hour when appropriate. For "12am" or equivalent midnight phrasing, convert the hour to 0.
 - A phrase like "half past X" sets `minute = 30`.
-- Chinese-numeral hours and other localized numeral-hour phrases must be parsed into numeric hours.
+- Localized numeral-hour phrases must be parsed into numeric hours.
 
 ## Handle Next-Month Day Phrases
 
