@@ -8,7 +8,6 @@ import type { AssetListItem } from '@/shared/assets/assets.types'
 export type WorkspaceTimeConstraint =
   | {
       kind: 'recent'
-      strength: 'soft' | 'strong'
     }
   | {
       kind: 'relative_window'

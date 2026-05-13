@@ -24,15 +24,7 @@ export function timeConstraintToFilter(
   if (!tc) return { kind: 'none' }
 
   if (tc.kind === 'recent') {
-    const windowMinutes = tc.strength === 'strong' ? 15 : 240
-    const start = new Date(now.getTime() - windowMinutes * 60 * 1000)
-    return {
-      kind: 'exact_range',
-      phrase: tc.strength === 'strong' ? '刚刚' : '最近',
-      startIso: start.toISOString(),
-      endIso: now.toISOString(),
-      basis: `time-constraint-recent-${tc.strength}`,
-    }
+    return { kind: 'none' }
   }
 
   if (tc.kind === 'relative_window') {
