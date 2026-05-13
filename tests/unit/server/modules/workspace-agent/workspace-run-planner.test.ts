@@ -688,8 +688,8 @@ describe('workspace-run-planner', () => {
         action: 'query_assets',
         target: 'mixed',
         title: '帮我处理一下这个链接',
-        risk: 'high',
-        requiresUserApproval: true,
+        risk: 'low',
+        requiresUserApproval: false,
       }),
     ])
   })

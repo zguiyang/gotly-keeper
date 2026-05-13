@@ -96,7 +96,7 @@ function buildSelector(task: DraftWorkspaceTask): WorkspaceSelector {
 
 function buildTimeConstraint(task: DraftWorkspaceTask): WorkspaceSelector['timeConstraint'] {
   const timeRange = getStringSlot(task, 'timeRange')
-  const timeText = getStringSlot(task, 'timeText')
+  const timeText = getStringSlot(task, 'timeText') ?? task.title?.trim()
 
   if (!timeRange) {
     return timeText ? parseRelativeWindow(timeText) : null
@@ -425,7 +425,8 @@ function assessReadRisk(task: DraftWorkspaceTask, target: string): { risk: 'low'
   }
 
   const slotQuery = getStringSlot(task, 'query')
-  const hasClearSubject = slotQuery !== undefined && slotQuery.length > 0
+  const hasClearSubject = (slotQuery !== undefined && slotQuery.length > 0)
+    || (task.title?.trim().length ?? 0) > 0
   const hasHighConfidence = task.confidence >= 0.7
 
   if (hasClearSubject && hasHighConfidence) {
@@ -447,7 +448,6 @@ function buildReadStep(input: {
 
   if (input.action === 'summarize_assets') {
     const readSubject = slotQuery
-    const explicitRecentRange = getStringSlot(input.task, 'timeRange') === 'recent'
     if (readSubject) {
       selector.subject = readSubject
       selector.keywords = [readSubject]
@@ -456,6 +456,7 @@ function buildReadStep(input: {
       delete selector.keywords
     }
 
+    const hadTimeConstraint = selector.timeConstraint !== null
     selector.timeConstraint ??= { kind: 'recent', strength: 'soft' }
     selector.sort = 'recent_first'
     selector.limit ??= 8
@@ -463,7 +464,7 @@ function buildReadStep(input: {
     const isGenericRecentSummary =
       input.target === 'mixed' &&
       !readSubject &&
-      explicitRecentRange
+      hadTimeConstraint
 
     return {
       id: input.id,

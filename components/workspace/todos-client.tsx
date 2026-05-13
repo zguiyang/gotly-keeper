@@ -1,6 +1,6 @@
 'use client'
 
-import { addMonths, format, isSameDay, startOfDay, startOfMonth } from 'date-fns'
+import { addMonths, format, isSameDay, isValid, startOfDay, startOfMonth } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { ListTodo, Square, SquareCheck } from 'lucide-react'
 import { useMemo, useState, type ComponentProps } from 'react'
@@ -36,11 +36,16 @@ function getDateKey(date: Date) {
 function parseDateKeyAsLocalDate(dateKey: string) {
   const [year, month, day] = dateKey.split('-').map(Number)
 
-  if (!year || !month || !day) {
+  if (!year || !month || !day || month < 1 || month > 12 || day < 1 || day > 31) {
     return startOfDay(new Date())
   }
 
-  return startOfDay(new Date(year, month - 1, day))
+  const date = new Date(year, month - 1, day)
+  if (!isValid(date) || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return startOfDay(new Date())
+  }
+
+  return startOfDay(date)
 }
 
 function getTodoDate(item: AssetListItem) {
