@@ -55,11 +55,23 @@ function buildFallbackSplitResult(normalized: NormalizedWorkspaceRunInput): Sema
   }
 }
 
+function shouldUseDeterministicSingleSegment(normalized: NormalizedWorkspaceRunInput) {
+  const separatorCount = normalized.separators.length
+  const hasLineBreak = /\r?\n/.test(normalized.rawText)
+
+  return !hasLineBreak && separatorCount === 0
+}
+
 export async function splitWorkspaceRunInputSemantically(input: {
   normalized: NormalizedWorkspaceRunInput
   runModel: WorkspaceSemanticSplitModel
+  preferDeterministic?: boolean
   signal?: AbortSignal
 }): Promise<SemanticSplitResult> {
+  if (input.preferDeterministic && shouldUseDeterministicSingleSegment(input.normalized)) {
+    return buildFallbackSplitResult(input.normalized)
+  }
+
   const [systemPrompt, userPrompt] = await Promise.all([
     buildWorkspaceSystemPrompt('workspace-run/semantic-split.system', {}),
     renderPrompt('workspace-run/semantic-split.user', {

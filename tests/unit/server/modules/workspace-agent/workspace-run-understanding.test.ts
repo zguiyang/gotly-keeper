@@ -72,6 +72,80 @@ describe('workspace-run-understanding', () => {
     })
   })
 
+  it('keeps broad recent-summary requests model-driven and preserves structured read slots', async () => {
+    const runModel = vi.fn().mockResolvedValue({
+      draftTasks: [
+        {
+          id: 'task_1',
+          intent: 'summarize',
+          target: 'mixed',
+          title: '最近记录',
+          hasRealContent: true,
+          confidence: 0.95,
+          ambiguities: [],
+          corrections: [],
+          slotEntries: [{ key: 'timeRange', value: 'recent' }],
+        },
+      ],
+    })
+
+    const result = await understandWorkspaceRunInput({
+      normalized: makeNormalizedInput({
+        rawText: '帮我总结一下最近记录的重点',
+        normalizedText: '帮我总结一下最近记录的重点',
+      }),
+      runModel,
+    })
+
+    expect(runModel).toHaveBeenCalledTimes(1)
+    expect(result.draftTasks).toEqual([
+      expect.objectContaining({
+        intent: 'summarize',
+        target: 'mixed',
+        title: '最近记录',
+        slots: {
+          timeRange: 'recent',
+        },
+      }),
+    ])
+  })
+
+  it('keeps clear command-style capture model-driven and normalizes create metadata', async () => {
+    const runModel = vi.fn().mockResolvedValue({
+      draftTasks: [
+        {
+          id: 'task_1',
+          intent: 'create',
+          target: 'todos',
+          title: '明天下午给客户发报价',
+          hasRealContent: true,
+          confidence: 0.95,
+          ambiguities: [],
+          corrections: [],
+          slots: {},
+        },
+      ],
+    })
+
+    const result = await understandWorkspaceRunInput({
+      normalized: makeNormalizedInput({
+        rawText: '记个待办：明天下午给客户发报价',
+        normalizedText: '记个待办：明天下午给客户发报价',
+      }),
+      runModel,
+    })
+
+    expect(runModel).toHaveBeenCalledTimes(1)
+    expect(result.draftTasks).toEqual([
+      expect.objectContaining({
+        intent: 'create',
+        target: 'todos',
+        title: '明天下午给客户发报价',
+        captureMode: 'todo_capture',
+      }),
+    ])
+  })
+
   it('extracts the action-only todo title when the model title still contains a time phrase', async () => {
     const runModel = vi.fn().mockResolvedValue({
       draftTasks: [
@@ -423,7 +497,7 @@ describe('workspace-run-understanding', () => {
     })
 
     expect(result.draftTasks).toEqual([
-      {
+      expect.objectContaining({
         id: 'task_1',
         intent: 'create',
         target: 'bookmarks',
@@ -433,11 +507,11 @@ describe('workspace-run-understanding', () => {
         ambiguities: [],
         corrections: [],
         slots: {},
-      },
+      }),
     ])
   })
 
-  it('forces simple retrieval phrasing into query intent for mvp search flow', async () => {
+  it('preserves model-owned retrieval intent when the model classifies it correctly', async () => {
     const result = await understandWorkspaceRunInput({
       normalized: makeNormalizedInput({
         rawText: '帮我找一下刚刚那篇讲 RSC 边界的书签',
@@ -449,14 +523,17 @@ describe('workspace-run-understanding', () => {
         draftTasks: [
           {
             id: 'task_1',
-            intent: 'create',
-            target: 'notes',
+            intent: 'query',
+            target: 'bookmarks',
             title: '刚刚那篇讲 RSC 边界的书签',
             hasRealContent: true,
-            confidence: 0.62,
+            confidence: 0.92,
             ambiguities: [],
             corrections: [],
-            slots: {},
+            slotEntries: [
+              { key: 'query', value: 'RSC 边界' },
+              { key: 'timeRange', value: 'recent' },
+            ],
           },
         ],
       }),
@@ -467,8 +544,11 @@ describe('workspace-run-understanding', () => {
         intent: 'query',
         target: 'bookmarks',
         title: '刚刚那篇讲 RSC 边界的书签',
-        clarifyReason: 'none',
         ambiguities: [],
+        slots: {
+          query: 'RSC 边界',
+          timeRange: 'recent',
+        },
       }),
     ])
   })

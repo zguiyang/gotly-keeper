@@ -360,7 +360,7 @@ describe('workspace-run-planner', () => {
       requiresUserApproval: false,
       toolInput: {
         query: '会议纪要',
-        subjectHint: '查找本周会议纪要',
+        subjectHint: '会议纪要',
       },
     })
     expect(runPlanHints).not.toHaveBeenCalled()
@@ -395,8 +395,8 @@ describe('workspace-run-planner', () => {
       risk: 'low',
       requiresUserApproval: false,
       toolInput: {
-        query: '总结最近收藏',
-        subjectHint: '总结最近收藏',
+        query: null,
+        subjectHint: null,
       },
     })
     expect(runPlanHints).not.toHaveBeenCalled()
@@ -446,7 +446,7 @@ describe('workspace-run-planner', () => {
       target: 'todos',
       query: '给客户发报价',
       status: 'open',
-      keywords: ['把给客户发报价标记完成', '给客户发报价'],
+      keywords: ['给客户发报价'],
       timeConstraint: null,
     })
     expect(result.steps[0]).toMatchObject({
@@ -514,7 +514,7 @@ describe('workspace-run-planner', () => {
       target: 'todos',
       query: '给客户发报价',
       status: 'open',
-      keywords: ['把给客户发报价标记完成', '给客户发报价'],
+      keywords: ['给客户发报价'],
       timeConstraint: null,
     })
     expect(result.steps[0]).toMatchObject({
@@ -688,8 +688,8 @@ describe('workspace-run-planner', () => {
         action: 'query_assets',
         target: 'mixed',
         title: '帮我处理一下这个链接',
-        risk: 'low',
-        requiresUserApproval: false,
+        risk: 'high',
+        requiresUserApproval: true,
       }),
     ])
   })
@@ -781,7 +781,7 @@ describe('workspace-run-planner', () => {
       requiresUserApproval: false,
       toolInput: {
         query: '这个内容',
-        subjectHint: '查一下这个内容',
+        subjectHint: '这个内容',
       },
     })
   })
@@ -857,7 +857,7 @@ describe('workspace-run-planner', () => {
       requiresUserApproval: false,
       toolInput: {
         query: '这个内容',
-        subjectHint: '查一下这个内容',
+        subjectHint: '这个内容',
       },
     })
   })
@@ -927,7 +927,7 @@ describe('workspace-run-planner', () => {
     expect(step.target).toBe('mixed')
     expect(step.risk).toBe('low')
     expect(step.requiresUserApproval).toBe(false)
-    expect(step.selector?.subject).toBe('QA20260506 内容')
+    expect(step.selector?.subject).toBe('QA20260506')
     expect(step.selector?.timeConstraint?.kind).toBe('recent')
   })
 
@@ -1003,6 +1003,35 @@ describe('workspace-run-planner', () => {
     expect(step.target).toBe('mixed')
     expect(step.risk).toBe('high')
     expect(step.requiresUserApproval).toBe(true)
+  })
+
+  it('summarize + mixed + generic recent summary → low risk recent retrieval without subject query', async () => {
+    const result = await planWorkspaceRun({
+      userId: 'user_123',
+      draftTasks: [{
+        id: 'task_1',
+        intent: 'summarize',
+        target: 'mixed',
+        title: '最近记录',
+        confidence: 0.95,
+        ambiguities: [],
+        corrections: [],
+        slots: { timeRange: 'recent' },
+      }],
+      searchCandidates: vi.fn(),
+      runPlanHints: vi.fn(),
+    })
+
+    const step = result.steps[0]
+    expect(step.action).toBe('summarize_assets')
+    expect(step.target).toBe('mixed')
+    expect(step.selector?.subject).toBeUndefined()
+    expect(step.selector?.keywords).toBeUndefined()
+    expect(step.selector?.timeConstraint?.kind).toBe('recent')
+    expect(step.selector?.sort).toBe('recent_first')
+    expect(step.selector?.limit).toBe(8)
+    expect(step.risk).toBe('low')
+    expect(step.requiresUserApproval).toBe(false)
   })
 
   // ── Regression: Representative Utterances ───────────────────────────

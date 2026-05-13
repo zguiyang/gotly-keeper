@@ -64,11 +64,6 @@ describe('workspace-run-orchestrator', () => {
     const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
     const runModel = createRunModel([
       {
-        isMultiTask: false,
-        corrections: [],
-        segments: [{ id: 'segment_1', text: '记个待办：给客户发报价', relation: 'independent', confidence: 0.95 }],
-      },
-      {
         draftTasks: [
           {
             id: 'task_1',
@@ -93,7 +88,7 @@ describe('workspace-run-orchestrator', () => {
     })
 
     expect(result.ok).toBe(true)
-    expect(runModel).toHaveBeenCalledTimes(2)
+    expect(runModel).toHaveBeenCalledTimes(1)
     expect(executorMock.executeWorkspaceRunSteps).toHaveBeenCalled()
   })
 
@@ -158,11 +153,6 @@ describe('workspace-run-orchestrator', () => {
     const store = createMockStore()
     const runModel = createRunModel([
       {
-        isMultiTask: false,
-        corrections: [],
-        segments: [{ id: 'segment_1', text: '存书签：https://openai.com', relation: 'independent', confidence: 0.96 }],
-      },
-      {
         draftTasks: [
           {
             id: 'task_1',
@@ -194,7 +184,7 @@ describe('workspace-run-orchestrator', () => {
     })
 
     expect(result.ok).toBe(true)
-    expect(runModel).toHaveBeenCalledTimes(2)
+    expect(runModel).toHaveBeenCalledTimes(1)
     expect(result.snapshot?.interaction.type).toBe('confirm_duplicate')
     expect(store.saveSnapshot).toHaveBeenCalled()
   })
@@ -203,21 +193,19 @@ describe('workspace-run-orchestrator', () => {
     const { orchestrateWorkspaceRun } = await import('@/server/modules/workspace-agent/workspace-run-orchestrator')
     const runModel = createRunModel([
       {
-        isMultiTask: false,
-        corrections: [],
-        segments: [{ id: 'segment_1', text: '帮我找一下刚刚那篇讲 RSC 边界的书签', relation: 'independent', confidence: 0.95 }],
-      },
-      {
         draftTasks: [
           {
             id: 'task_1',
-            intent: 'create',
-            target: 'notes',
+            intent: 'query',
+            target: 'bookmarks',
             title: '刚刚那篇讲 RSC 边界的书签',
-            confidence: 0.61,
+            confidence: 0.91,
             ambiguities: [],
             corrections: [],
-            slots: {},
+            slotEntries: [
+              { key: 'query', value: 'RSC 边界' },
+              { key: 'timeRange', value: 'recent' },
+            ],
           },
         ],
       },
@@ -232,7 +220,7 @@ describe('workspace-run-orchestrator', () => {
     })
 
     expect(result.ok).toBe(true)
-    expect(runModel).toHaveBeenCalledTimes(2)
+    expect(runModel).toHaveBeenCalledTimes(1)
     expect(executorMock.executeWorkspaceRunSteps).toHaveBeenCalled()
   })
 

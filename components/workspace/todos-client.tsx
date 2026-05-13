@@ -33,6 +33,16 @@ function getDateKey(date: Date) {
   return format(startOfDay(date), 'yyyy-MM-dd')
 }
 
+function parseDateKeyAsLocalDate(dateKey: string) {
+  const [year, month, day] = dateKey.split('-').map(Number)
+
+  if (!year || !month || !day) {
+    return startOfDay(new Date())
+  }
+
+  return startOfDay(new Date(year, month - 1, day))
+}
+
 function getTodoDate(item: AssetListItem) {
   if (!item.dueAt) return null
 
@@ -42,8 +52,8 @@ function getTodoDate(item: AssetListItem) {
   return dueAt
 }
 
-function getSelectedDateLabel(date: Date) {
-  if (isSameDay(date, new Date())) return '今天'
+function getSelectedDateLabel(date: Date, today: Date) {
+  if (isSameDay(date, today)) return '今天'
   return format(date, 'M月d日 EEEE', { locale: zhCN })
 }
 
@@ -82,14 +92,16 @@ function TodoDateHeader({
   scheduledCount,
   unscheduledCount,
   promotedUnscheduled,
+  todayDate,
 }: {
   selectedDate: Date
   selectedCount: number
   scheduledCount: number
   unscheduledCount: number
   promotedUnscheduled: boolean
+  todayDate: Date
 }) {
-  const label = getSelectedDateLabel(selectedDate)
+  const label = getSelectedDateLabel(selectedDate, todayDate)
 
   return (
     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -298,6 +310,7 @@ function TodoSection({
 }
 
 function TodoCalendarPanel({
+  calendarMonth,
   selectedDate,
   selectedCount,
   scheduledDateKeys,
@@ -305,7 +318,9 @@ function TodoCalendarPanel({
   unscheduledCount,
   onSelectDate,
   onMonthChange,
+  todayDate,
 }: {
+  calendarMonth: Date
   selectedDate: Date
   selectedCount: number
   scheduledDateKeys: Set<string>
@@ -313,6 +328,7 @@ function TodoCalendarPanel({
   unscheduledCount: number
   onSelectDate: (date: Date) => void
   onMonthChange: (month: Date) => void
+  todayDate: Date
 }) {
   function DayButtonWithTodoMarker(props: ComponentProps<typeof CalendarDayButton>) {
     const hasTodo = scheduledDateKeys.has(getDateKey(props.day.date))
@@ -335,7 +351,9 @@ function TodoCalendarPanel({
 
       <Calendar
         mode="single"
+        month={calendarMonth}
         selected={selectedDate}
+        today={todayDate}
         onSelect={(date) => {
           if (date) onSelectDate(date)
         }}
@@ -396,8 +414,11 @@ export function TodosClient({
 
   const { updateAsset, archiveAsset, moveToTrash, isPending } = useAssetMutations()
   const { state, toggleCompletion } = useTodoCompletion()
-  const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date(`${initialSelectedDate}T00:00:00`)))
-  const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(selectedDate))
+  const today = parseDateKeyAsLocalDate(todayDate)
+  const [selectedDate, setSelectedDate] = useState(() => parseDateKeyAsLocalDate(initialSelectedDate))
+  const [calendarMonth, setCalendarMonth] = useState(() =>
+    startOfMonth(parseDateKeyAsLocalDate(initialSelectedDate))
+  )
 
   const selectedItems = selectedDateTodos
   const unscheduledItems = unscheduledTodos
@@ -452,6 +473,7 @@ export function TodosClient({
   async function handleSelectDate(date: Date) {
     const nextDate = startOfDay(date)
     setSelectedDate(nextDate)
+    setCalendarMonth(startOfMonth(nextDate))
     setLoadingDate(true)
     try {
       const todos = await loadWorkspaceTodosByDate({ date: getDateKey(nextDate) })
@@ -561,6 +583,7 @@ export function TodosClient({
               scheduledCount={dateMarkers.length}
               unscheduledCount={unscheduledItems.length}
               promotedUnscheduled={shouldPromoteUnscheduled}
+              todayDate={today}
             />
             {loadingDate ? (
               <WorkspaceTodosDateLoading />
@@ -646,6 +669,7 @@ export function TodosClient({
         </div>
 
         <TodoCalendarPanel
+          calendarMonth={calendarMonth}
           selectedDate={selectedDate}
           selectedCount={selectedItems.length}
           scheduledDateKeys={scheduledDateKeys}
@@ -653,6 +677,7 @@ export function TodosClient({
           unscheduledCount={unscheduledItems.length}
           onSelectDate={(date) => void handleSelectDate(date)}
           onMonthChange={(month) => void handleMonthChange(month)}
+          todayDate={today}
         />
       </div>
 

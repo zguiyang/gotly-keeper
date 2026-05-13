@@ -96,6 +96,7 @@ async function runSemanticSplit(
   const semanticSplit = await splitWorkspaceRunInputSemantically({
     normalized,
     runModel,
+    preferDeterministic: true,
     signal: ctx.signal,
   })
   emitEvent(ctx, { type: 'phase_completed', phase: 'semantic_split', output: semanticSplit })

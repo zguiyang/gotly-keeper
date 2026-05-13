@@ -79,9 +79,9 @@ function buildSelector(task: DraftWorkspaceTask): WorkspaceSelector {
   const timeConstraint = buildTimeConstraint(task)
   const statusConstraint = buildStatusConstraint(task)
   const target = task.target as WorkspaceSelector['target']
-  const subject = task.title.trim() || undefined
+  const subject = getStringSlot(task, 'query')
   const queryText = getStringSlot(task, 'query')
-  const keywords = [subject, queryText].filter(Boolean) as string[]
+  const keywords = queryText ? [queryText] : []
 
   return {
     target,
@@ -96,10 +96,7 @@ function buildSelector(task: DraftWorkspaceTask): WorkspaceSelector {
 
 function buildTimeConstraint(task: DraftWorkspaceTask): WorkspaceSelector['timeConstraint'] {
   const timeRange = getStringSlot(task, 'timeRange')
-  const timeText =
-    getStringSlot(task, 'timeText') ??
-    (timeRange ? undefined : getStringSlot(task, 'query')) ??
-    (timeRange ? undefined : task.title.trim() || undefined)
+  const timeText = getStringSlot(task, 'timeText')
 
   if (!timeRange) {
     return timeText ? parseRelativeWindow(timeText) : null
@@ -427,9 +424,8 @@ function assessReadRisk(task: DraftWorkspaceTask, target: string): { risk: 'low'
     return { risk: 'low', requiresUserApproval: false }
   }
 
-  const title = task.title.trim()
   const slotQuery = getStringSlot(task, 'query')
-  const hasClearSubject = title.length > 0 || (slotQuery !== undefined && slotQuery.length > 0)
+  const hasClearSubject = slotQuery !== undefined && slotQuery.length > 0
   const hasHighConfidence = task.confidence >= 0.7
 
   if (hasClearSubject && hasHighConfidence) {
@@ -446,8 +442,41 @@ function buildReadStep(input: {
   title?: string
   task: DraftWorkspaceTask
 }): WorkspaceRunPlannerStep {
-  const selector = buildSelector(input.task)
   const slotQuery = getStringSlot(input.task, 'query')
+  const selector = buildSelector(input.task)
+
+  if (input.action === 'summarize_assets') {
+    const readSubject = slotQuery
+    const explicitRecentRange = getStringSlot(input.task, 'timeRange') === 'recent'
+    if (readSubject) {
+      selector.subject = readSubject
+      selector.keywords = [readSubject]
+    } else {
+      delete selector.subject
+      delete selector.keywords
+    }
+
+    selector.timeConstraint ??= { kind: 'recent', strength: 'soft' }
+    selector.sort = 'recent_first'
+    selector.limit ??= 8
+    const { risk, requiresUserApproval } = assessReadRisk(input.task, input.target)
+    const isGenericRecentSummary =
+      input.target === 'mixed' &&
+      !readSubject &&
+      explicitRecentRange
+
+    return {
+      id: input.id,
+      action: input.action,
+      target: input.target,
+      title: input.title,
+      risk: isGenericRecentSummary ? 'low' : risk,
+      requiresUserApproval: isGenericRecentSummary ? false : requiresUserApproval,
+      selector,
+      toolInput: buildSearchToolInput(selector, readSubject ?? slotQuery),
+    }
+  }
+
   const { risk, requiresUserApproval } = assessReadRisk(input.task, input.target)
 
   return {
@@ -461,7 +490,6 @@ function buildReadStep(input: {
     toolInput: buildSearchToolInput(selector, slotQuery),
   }
 }
-
 function buildCreateStep(input: {
   id: string
   action: 'create_note' | 'create_todo' | 'create_bookmark'

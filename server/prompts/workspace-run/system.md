@@ -124,6 +124,8 @@ When the user clearly requests an unsupported action:
 1. **Title = pure subject/topic description**.
    Remove command prefixes (save this, remind me, bookmark) and time expressions from the title.
    For read operations (query/summarize/update), title represents what the user is looking for.
+   When the user asks for a broad overview without a specific search subject, use a short scope label
+   such as "最近记录", "最近待办", or "全部书签" as the title, and do NOT invent a keyword query.
 
 2. **Time -> selector constraint, not raw text**.
    Detect whether the user expresses:
@@ -179,6 +181,18 @@ When the user clearly requests an unsupported action:
 | `status` | `open` / `done` | update operations that mutate todo state |
 
 Omit slot if the value does not fit an exact option — never guess. The query slot still carries raw keywords for text search.
+
+### Read-Intent Query Slot Rule
+
+- Only emit `query` when the user names a concrete subject that should participate in text matching.
+- Do NOT put generic scope words such as `记录`, `内容`, `资产`, `收藏`, `重点`, `最近记录`, `最近内容`
+  into `query`.
+- For broad recent-overview requests such as `帮我总结一下最近记录的重点`, use:
+  - `intent: "summarize"`
+  - `target: "mixed"` unless the asset type is explicit
+  - `title: "最近记录"` or another short scope label
+  - `slotEntries: [{ "key": "timeRange", "value": "recent" }]`
+  - omit `query`
 
 **Important**: Do NOT enumerate possible time phrases. Recognize the user's time-selection intent semantically. Time expressions used for locating existing items should become `timeRange` constraints, not `query` text.
 
