@@ -103,21 +103,4 @@ Load `.ai-rules/advanced-workflows/phase-execution-protocol.md` only when the ta
 
 If a rule changes, update the rule document in `.ai-rules`, not `AGENTS.md`, unless the entry workflow itself has changed.
 
----
 
-## Claude Code Integration
-
-Claude Code users should start from `CLAUIDE.md`, which redirects here.
-
-### How Claude Code consumes this project
-
-1. **Entry**: `CLAUIDE.md` → `AGENTS.md` (this file) — covers workflow, read order, and principles.
-2. **Rules**: Same path-based minimal loading in the **Path-Based Minimal Loading** section above — read only what your touched code needs.
-3. **Skills reference**: `.agents/skills/` contains domain skill documents (Next.js, Drizzle, shadcn, etc.). These are **prose references** — Claude Code does not have a native skills runner, but should read the relevant skill doc when working in its domain to understand project conventions.
-4. **CLAUDE.md**: Already created as the bridge entry point. No further changes needed — all canonical rules stay in `AGENTS.md` and `.ai-rules/`.
-
-### What NOT to do
-
-- Do not duplicate `.agents/skills/` into `.claude/` — skills live in `.agents/` only.
-- Do not rewrite `.ai-rules/` for Claude Code — rules are shared across all AI tools.
-- Do not add Claude Code-specific formats to `AGENTS.md` — keep it minimal and tool-agnostic.
