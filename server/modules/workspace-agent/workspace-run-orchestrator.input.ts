@@ -75,15 +75,48 @@ async function runUnderstand(
 ) {
   const startTs = Date.now()
   emitEvent(ctx, { type: 'phase_started', phase: 'understand' })
-  const understanding = await understandWorkspaceRunInput({
-    normalized,
-    runModel,
-    inheritedCorrections,
-    signal: ctx.signal,
-  })
-  emitEvent(ctx, { type: 'phase_completed', phase: 'understand', output: understanding })
-  recordPhaseTiming(ctx.phaseTimings, 'understand', startTs, Date.now(), 'model')
-  return understanding
+  try {
+    const understanding = await understandWorkspaceRunInput({
+      normalized,
+      runModel,
+      inheritedCorrections,
+      signal: ctx.signal,
+    })
+    emitEvent(ctx, { type: 'phase_completed', phase: 'understand', output: understanding })
+    recordPhaseTiming(ctx.phaseTimings, 'understand', startTs, Date.now(), 'model')
+    return understanding
+  } catch (error) {
+    console.warn(`${WS_LOG_PREFIX} understanding failed; falling back to search`, {
+      error: error instanceof Error ? error.message : String(error),
+    })
+    const fallback = createFallbackSearchUnderstanding(normalized, inheritedCorrections)
+    emitEvent(ctx, { type: 'phase_completed', phase: 'understand', output: fallback })
+    recordPhaseTiming(ctx.phaseTimings, 'understand', startTs, Date.now(), 'orchestration')
+    return fallback
+  }
+}
+
+function createFallbackSearchUnderstanding(
+  normalized: ReturnType<typeof normalizeWorkspaceRunInput>,
+  corrections: string[]
+): ReturnType<typeof understandWorkspaceRunInput> extends Promise<infer T> ? T : never {
+  return {
+    rawInput: normalized.rawText,
+    normalizedInput: normalized.normalizedText,
+    corrections,
+    draftTasks: [{
+      id: 'task_1',
+      intent: 'query' as const,
+      target: 'mixed' as const,
+      title: normalized.normalizedText,
+      cleanTitle: normalized.normalizedText,
+      confidence: 0.2,
+      hasRealContent: false,
+      ambiguities: ['Input could not be understood; falling back to search'],
+      corrections: [] as string[],
+      slots: { query: normalized.normalizedText },
+    }],
+  }
 }
 
 async function runSemanticSplit(
