@@ -73,6 +73,18 @@ export async function summarizeWorkspaceRecentBookmarksInternal(
         toAssetListItemFromBookmark
       )
 
+  if (bookmarks.length <= 2) {
+    const fallback = getFallbackBookmarkSummary(bookmarks)
+    return {
+      headline: fallback.headline,
+      summary: fallback.summary,
+      keyPoints: fallback.keyPoints,
+      sourceAssetIds: fallback.sourceAssetIds,
+      sources: bookmarks.filter((b) => fallback.sourceAssetIds.includes(b.id)),
+      generatedAt: new Date(),
+    }
+  }
+
   return generateWorkspaceInsight({
     assets: bookmarks,
     buildPromptInput: buildBookmarkSummaryPromptInput,
