@@ -480,6 +480,10 @@ function shouldClarify(task: ReviewableDraftTask, step?: ReviewablePlanStep) {
     }
 
     if (task.target === 'mixed') {
+      if (task.intent === 'summarize') {
+        const title = task.title?.trim() ?? ''
+        return title.length === 0 && queryText.length === 0
+      }
       return queryText.length === 0
     }
 
