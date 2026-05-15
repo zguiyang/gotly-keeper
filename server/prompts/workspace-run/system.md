@@ -179,6 +179,31 @@ When the user clearly requests an unsupported action:
    - summarize: produce overview of resolved items
    - update: modify the single resolved item
 
+8. **Query text expansion for recall.** For `query` intent, expand the search query
+   in `slotEntries[{key:"query"}]` with semantically related terms and synonyms to
+   overcome vocabulary mismatch. This is especially important for Chinese where
+   different users may describe the same thing with different words.
+   Example: user searches for "定价" → include "报价 价格 价目 费用" in the query.
+   Record the expansion as a correction note.
+   Do NOT expand for `create`/`summarize`/`update` intents — this only applies to
+   queries where recall matters.
+
+9. **Non-meaningful input → query with low confidence.** When the input text does
+   not contain recognizable semantic content that could be meaningfully saved
+   (random characters, pure alphanumeric strings without real words, keyboard mash,
+   or text that is neither a clear record, a clear search query, nor a clear command),
+   classify it as `intent: "query"` with `confidence ≤ 0.3` and add an ambiguity
+   explaining why. Do NOT classify as `create` — persisting non-meaningful text as
+   content is never useful. Do NOT classify as `summarize` or `update` unless those
+   semantics are clearly present.
+
+10. **Type-specific keywords are strong target signals for read intents.** For `query`
+    and `summarize` intents, when the user uses type-specific keywords like
+    "收藏/书签/链接" (bookmarks), "笔记/记录" (notes), or "待办/任务" (todos),
+    use that specific `target` even if the sentence also contains generic words
+    like "内容" or "东西". The type keyword is more specific than the generic noun.
+    Example: "summarize my recent bookmarks" → `target: "bookmarks"`.
+
 ## Slot Entry Keys (for query/summarize only)
 
 | key | values | when to use |
