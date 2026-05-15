@@ -338,6 +338,17 @@ export function useWorkspaceStream(options: {
     [runRequest, state.runId, state.interaction]
   )
 
+  const cancelRun = useCallback(() => {
+    abortControllerRef.current?.abort()
+    runStartedAtRef.current = null
+    setState((current) => ({
+      ...current,
+      status: 'error',
+      errorMessage: '处理已取消',
+      endedAt: Date.now(),
+    }))
+  }, [])
+
   const resetRun = useCallback(() => {
     runStartedAtRef.current = null
     setState({ ...INITIAL_RUN_STATE })
@@ -386,6 +397,7 @@ export function useWorkspaceStream(options: {
     pendingRunDismissing,
     submitInput,
     resumeInteraction,
+    cancelRun,
     resetRun,
     restorePendingRun,
     dismissPendingRun,

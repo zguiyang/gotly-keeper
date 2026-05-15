@@ -98,6 +98,7 @@ export function WorkspaceClient({
     pendingRunLoading,
     pendingRunDismissing,
     submitInput,
+    cancelRun,
     resetRun,
     resumeInteraction,
     restorePendingRun,
@@ -184,26 +185,35 @@ export function WorkspaceClient({
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
           />
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            disabled={
-              state.status === 'streaming' ||
-              state.status === 'awaiting_user' ||
-              inputValue.trim().length === 0
-            }
-            className="absolute right-3 bottom-3 h-8 rounded-full px-3 text-xs sm:right-4 sm:bottom-3.5 sm:h-9 sm:px-4 sm:text-sm"
-          >
-            {state.status === 'streaming' ? (
-              '处理中'
-            ) : (
+          {state.status === 'streaming' ? (
+            <div className="absolute right-3 bottom-3 flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={cancelRun}
+                className="h-8 rounded-full px-3 text-xs text-destructive hover:text-destructive"
+              >
+                取消
+              </Button>
+              <span className="text-xs text-muted-foreground">处理中</span>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={
+                state.status === 'awaiting_user' ||
+                inputValue.trim().length === 0
+              }
+              className="absolute right-3 bottom-3 h-8 rounded-full px-3 text-xs sm:right-4 sm:bottom-3.5 sm:h-9 sm:px-4 sm:text-sm"
+            >
               <>
                 <span className="sm:hidden">发送</span>
                 <span className="hidden sm:inline">发送</span>
                 <SendHorizontal className="size-3.5" />
               </>
-            )}
-          </Button>
+            </Button>
+          )}
         </div>
         {inputValue ? (
           <p className="mt-2 px-4 text-xs text-on-surface-variant/80">
