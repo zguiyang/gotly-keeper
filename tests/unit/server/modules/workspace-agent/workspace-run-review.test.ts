@@ -441,7 +441,7 @@ describe('workspace-run-review', () => {
         {
           stepId: 'step_1',
           target: 'bookmark',
-          source: 'bookmark_precheck',
+          source: 'precheck',
           duplicates: [{ id: 'bookmark_1', label: 'OpenAI', type: 'bookmark' }],
         },
       ],

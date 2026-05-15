@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { findWorkspaceBookmarkDuplicateCandidates } from '@/server/modules/workspace-agent/workspace-run-duplicates'
+import { findWorkspaceCreateDuplicateCandidates } from '@/server/modules/workspace-agent/workspace-run-duplicates'
 
 describe('workspace-run-duplicates', () => {
   it('detects repeated note creates within the same batch before execution', async () => {
-    const result = await findWorkspaceBookmarkDuplicateCandidates({
+    const result = await findWorkspaceCreateDuplicateCandidates({
       userId: 'user_123',
       draftTasks: [
         {

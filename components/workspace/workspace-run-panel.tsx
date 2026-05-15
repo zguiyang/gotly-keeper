@@ -746,7 +746,7 @@ function DuplicateConfirmationCard({
     bookmark: '书签',
   } as const
 
-  const isBookmarkPrecheck = interaction.source === 'bookmark_precheck'
+  const isBookmarkPrecheck = interaction.source === 'precheck'
 
   return (
     <div className="space-y-3 rounded-[1rem] border border-border/10 bg-muted/35 px-4 py-3">
@@ -843,7 +843,7 @@ function InteractionActionIntro({
   }
 
   if (interaction.type === 'confirm_duplicate') {
-    if (interaction.source === 'bookmark_precheck') {
+    if (interaction.source === 'precheck') {
       return '这条书签在链接预检时命中了重复项；如果只是同域不同内容，你仍然可以继续创建。'
     }
 

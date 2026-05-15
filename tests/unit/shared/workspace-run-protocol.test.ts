@@ -74,7 +74,7 @@ describe('workspace run protocol', () => {
         runId: 'run_123',
         id: 'interaction_duplicate',
         type: 'confirm_duplicate',
-        source: 'bookmark_precheck',
+        source: 'precheck',
         target: 'bookmark',
         message: '发现可能重复的书签。',
         actions: ['create', 'skip', 'cancel'],

@@ -7,13 +7,13 @@ import type { WorkspaceRunModel } from '@/server/modules/workspace-agent/workspa
 import type { WorkspacePendingRunSnapshot } from '@/shared/workspace/workspace-run-protocol'
 
 const duplicateCandidatesMock = vi.hoisted(() => ({
-  findWorkspaceBookmarkDuplicateCandidate: vi.fn<() => Promise<ReviewableDuplicateCandidate | null>>(async () => null),
-  findWorkspaceBookmarkDuplicateCandidates: vi.fn<() => Promise<ReviewableDuplicateCandidate[]>>(async () => []),
+  findWorkspaceCreateDuplicateCandidate: vi.fn<() => Promise<ReviewableDuplicateCandidate | null>>(async () => null),
+  findWorkspaceCreateDuplicateCandidates: vi.fn<() => Promise<ReviewableDuplicateCandidate[]>>(async () => []),
 }))
 
 vi.mock('@/server/modules/workspace-agent/workspace-run-duplicates', () => ({
-  findWorkspaceBookmarkDuplicateCandidate: duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidate,
-  findWorkspaceBookmarkDuplicateCandidates: duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidates,
+  findWorkspaceCreateDuplicateCandidate: duplicateCandidatesMock.findWorkspaceCreateDuplicateCandidate,
+  findWorkspaceCreateDuplicateCandidates: duplicateCandidatesMock.findWorkspaceCreateDuplicateCandidates,
 }))
 
 const executorMock = vi.hoisted(() => ({
@@ -56,8 +56,8 @@ function createRunModel(outputs: unknown[]): WorkspaceRunModel {
 describe('workspace-run-orchestrator', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidate.mockResolvedValue(null)
-    duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidates.mockResolvedValue([])
+    duplicateCandidatesMock.findWorkspaceCreateDuplicateCandidate.mockResolvedValue(null)
+    duplicateCandidatesMock.findWorkspaceCreateDuplicateCandidates.mockResolvedValue([])
   })
 
   it('auto-executes a clear single todo create request', async () => {
@@ -168,10 +168,10 @@ describe('workspace-run-orchestrator', () => {
       },
     ])
 
-    duplicateCandidatesMock.findWorkspaceBookmarkDuplicateCandidate.mockResolvedValue({
+    duplicateCandidatesMock.findWorkspaceCreateDuplicateCandidate.mockResolvedValue({
       stepId: 'step_1',
       target: 'bookmark',
-      source: 'bookmark_precheck',
+      source: 'precheck',
       duplicates: [{ id: 'bookmark_1', label: 'OpenAI', type: 'bookmark' }],
     })
 

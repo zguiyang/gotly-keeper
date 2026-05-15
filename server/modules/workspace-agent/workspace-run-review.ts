@@ -120,7 +120,7 @@ export type ReviewWorkspaceRunPlanDecision =
 export type ReviewableDuplicateCandidate = {
   stepId: string
   target: 'todo' | 'note' | 'bookmark'
-  source?: 'bookmark_precheck'
+  source?: 'precheck'
   duplicates: WorkspaceCandidate[]
 }
 

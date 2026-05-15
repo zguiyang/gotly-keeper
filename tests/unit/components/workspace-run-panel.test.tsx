@@ -44,7 +44,7 @@ describe('WorkspaceRunPanel', () => {
           runId: 'run_1',
           id: 'interaction_duplicate',
           type: 'confirm_duplicate',
-          source: 'bookmark_precheck',
+          source: 'precheck',
           target: 'bookmark',
           message: '发现可能重复的书签。',
           actions: ['create', 'skip', 'cancel'],

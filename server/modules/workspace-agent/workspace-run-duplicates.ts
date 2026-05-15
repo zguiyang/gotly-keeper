@@ -7,7 +7,7 @@ import type { DraftWorkspaceTask, WorkspaceCandidate } from '@/shared/workspace/
 export type ReviewableDuplicateCandidate = {
   stepId: string
   target: 'todo' | 'note' | 'bookmark'
-  source?: 'bookmark_precheck'
+  source?: 'precheck'
   duplicates: WorkspaceCandidate[]
 }
 
@@ -100,49 +100,98 @@ function findInBatchCreateDuplicateCandidates(
   return duplicates
 }
 
-export async function findWorkspaceBookmarkDuplicateCandidate(input: {
+export async function findWorkspaceCreateDuplicateCandidate(input: {
   userId: string
   draftTask: DraftWorkspaceTask
   stepId?: string
 }): Promise<ReviewableDuplicateCandidate | null> {
-  if (input.draftTask.intent !== 'create' || input.draftTask.target !== 'bookmarks') {
+  if (input.draftTask.intent !== 'create') {
     return null
   }
 
-  const url = typeof input.draftTask.slots.url === 'string' ? input.draftTask.slots.url.trim() : ''
-  if (!url) {
-    return null
+  const stepId = input.stepId ?? 'step_1'
+  const { target, title, cleanTitle, cleanContent, slots } = input.draftTask
+
+  if (target === 'bookmarks') {
+    const url = typeof slots.url === 'string' ? slots.url.trim() : ''
+    if (!url) return null
+
+    const [result] = await findWorkspaceCreateDuplicates({
+      userId: input.userId,
+      steps: [
+        {
+          stepId,
+          action: 'create_bookmark',
+          target: 'bookmarks',
+          title,
+          content: typeof slots.content === 'string' ? slots.content : undefined,
+          url,
+        },
+      ],
+    })
+
+    return result ? { ...result, source: 'precheck' as const } : null
   }
 
-  const [result] = await findWorkspaceCreateDuplicates({
-    userId: input.userId,
-    steps: [
-      {
-        stepId: input.stepId ?? 'step_1',
-        action: 'create_bookmark',
-        target: 'bookmarks',
-        title: input.draftTask.title,
-        content: typeof input.draftTask.slots.content === 'string' ? input.draftTask.slots.content : undefined,
-        url,
-      },
-    ],
-  })
+  if (target === 'todos') {
+    const todoTitle = (cleanTitle ?? title ?? '').trim()
+    if (!todoTitle) return null
 
-  return result
-    ? {
-        ...result,
-        source: 'bookmark_precheck',
-      }
-    : null
+    const rawDueAt = slots.dueAt
+    const dueAt = typeof rawDueAt === 'string'
+      ? (() => { const d = new Date(rawDueAt); return Number.isNaN(d.getTime()) ? null : d })()
+      : null
+
+    const [result] = await findWorkspaceCreateDuplicates({
+      userId: input.userId,
+      steps: [
+        {
+          stepId,
+          action: 'create_todo',
+          target: 'todos',
+          title: todoTitle,
+          dueAt,
+          timeText: typeof slots.timeText === 'string' ? slots.timeText : undefined,
+        },
+      ],
+    })
+
+    return result ? { ...result, source: 'precheck' as const } : null
+  }
+
+  if (target === 'notes') {
+    const content = (cleanContent ??
+      (typeof slots.content === 'string' ? slots.content : undefined) ??
+      cleanTitle ??
+      title ?? '').trim()
+    if (!content) return null
+
+    const [result] = await findWorkspaceCreateDuplicates({
+      userId: input.userId,
+      steps: [
+        {
+          stepId,
+          action: 'create_note',
+          target: 'notes',
+          title,
+          content,
+        },
+      ],
+    })
+
+    return result ? { ...result, source: 'precheck' as const } : null
+  }
+
+  return null
 }
 
-export async function findWorkspaceBookmarkDuplicateCandidates(input: {
+export async function findWorkspaceCreateDuplicateCandidates(input: {
   userId: string
   draftTasks: DraftWorkspaceTask[]
 }): Promise<ReviewableDuplicateCandidate[]> {
-  const bookmarkCandidates = await Promise.all(
+  const dbCandidates = await Promise.all(
     input.draftTasks.map((draftTask, index) =>
-      findWorkspaceBookmarkDuplicateCandidate({
+      findWorkspaceCreateDuplicateCandidate({
         userId: input.userId,
         draftTask,
         stepId: `step_${index + 1}`,
@@ -150,7 +199,7 @@ export async function findWorkspaceBookmarkDuplicateCandidates(input: {
     )
   )
 
-  const results = bookmarkCandidates.filter(
+  const results = dbCandidates.filter(
     (result): result is ReviewableDuplicateCandidate => result !== null
   )
   const inBatchDuplicates = findInBatchCreateDuplicateCandidates(input.draftTasks)

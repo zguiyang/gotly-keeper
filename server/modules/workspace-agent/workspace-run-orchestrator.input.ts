@@ -5,8 +5,8 @@ import { buildWorkspaceSystemPrompt } from '@/server/lib/ai/ai.prompts'
 import { buildFallbackAnswer, composeWorkspaceAnswer } from './workspace-compose'
 import { buildBatchAnswer, buildCompletedRunResult } from './workspace-run-completed'
 import {
-  findWorkspaceBookmarkDuplicateCandidate,
-  findWorkspaceBookmarkDuplicateCandidates,
+  findWorkspaceCreateDuplicateCandidate,
+  findWorkspaceCreateDuplicateCandidates,
 } from './workspace-run-duplicates'
 import { executeWorkspaceRunSteps } from './workspace-run-executor'
 import {
@@ -470,16 +470,16 @@ export async function handleNewInput(
 
     const draftTasks = normalizedUnderstanding.draftTasks as Parameters<typeof reviewWorkspaceRunPlan>[0]['draftTasks']
 
-    const bookmarkDuplicateCandidates = normalizedUnderstanding.draftTasks.length === 1
+    const duplicateCandidates = normalizedUnderstanding.draftTasks.length === 1
       ? await (async () => {
-          const bookmarkDuplicateCandidate = await findWorkspaceBookmarkDuplicateCandidate({
+          const candidate = await findWorkspaceCreateDuplicateCandidate({
             userId,
             draftTask: normalizedUnderstanding.draftTasks[0],
             stepId: 'step_1',
           })
-          return bookmarkDuplicateCandidate ? [bookmarkDuplicateCandidate] : []
+          return candidate ? [candidate] : []
         })()
-      : await findWorkspaceBookmarkDuplicateCandidates({
+      : await findWorkspaceCreateDuplicateCandidates({
           userId,
           draftTasks: normalizedUnderstanding.draftTasks,
         })
@@ -506,7 +506,7 @@ export async function handleNewInput(
       normalizedUnderstanding,
       updatedAt,
       updatedAt,
-      bookmarkDuplicateCandidates
+      duplicateCandidates
     )
 
     console.log(`${WS_LOG_PREFIX} review`, {
