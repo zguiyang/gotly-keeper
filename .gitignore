@@ -55,3 +55,6 @@ worktrees
 
 # worker
 dist-workers
+
+# personal deployment script (keep local only)
+deploy.sh
