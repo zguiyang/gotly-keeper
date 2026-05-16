@@ -107,12 +107,16 @@ function applyPostGenerationValidation(
     }
   }
 
-  if (resolutionKind === 'vague') {
-    return { timeText, dueAt: null, resolutionKind: 'vague' }
-  }
-
-  if (resolutionKind === 'no_due_date') {
-    return { timeText, dueAt: null, resolutionKind: 'no_due_date' }
+  if (resolutionKind === 'vague' || resolutionKind === 'no_due_date') {
+    const dtResult = resolveDatetime({
+      phrase: timeText,
+      referenceTime: input.referenceTime,
+      timezone,
+    })
+    if (dtResult.granularity !== 'vague' && dtResult.granularity !== 'unresolved' && dtResult.dueAt) {
+      return { timeText, dueAt: dtResult.dueAt, resolutionKind: 'clear' }
+    }
+    return { timeText, dueAt: null, resolutionKind }
   }
 
   if (validAiDueAt) {
@@ -177,7 +181,7 @@ export async function resolveTodoTimeWithAi(
       timezone,
     })
 
-    if (localResolution.granularity === 'exact' && localResolution.dueAt) {
+    if (localResolution.granularity !== 'vague' && localResolution.granularity !== 'unresolved' && localResolution.dueAt) {
       return {
         timeText: preservedSource.timeText,
         dueAt: localResolution.dueAt,
