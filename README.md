@@ -36,9 +36,9 @@ all in one place. No folders, no tags, no friction.
 
 ## Demo
 
-[![Gotly Keeper Demo](https://cloud.zgyk.cc/f/Y3cO/demo.mp4)](https://cloud.zgyk.cc/f/Y3cO/demo.mp4)
+<video src="https://cloud.zgyk.cc/f/Y3cO/demo.mp4" controls muted loop playsinline referrerpolicy="no-referrer" style="width:100%;border-radius:10px;border:1px solid rgba(0,0,0,0.1)"></video>
 
-https://cloud.zgyk.cc/f/Y3cO/demo.mp4
+[Direct link to demo video](https://cloud.zgyk.cc/f/Y3cO/demo.mp4)
 
 ---
 
