@@ -1,11 +1,10 @@
 'use client'
 
-import { Card, CardContent } from '@/components/ui/card'
+// DESIGN_TOKEN_EXCEPTION: Warm modern accent colors (amber/emerald) are intentionally raw for selection states
 
 import {
   workspaceInteractionBodyTextClassName,
   workspacePillClassName,
-  workspaceSurfaceClassName,
 } from './workspace-view-primitives'
 
 import type { SelectCandidateInteraction } from '@/shared/workspace/workspace-run-protocol'
@@ -52,86 +51,76 @@ export function CandidatePicker({ interaction, selectedId, onSelect }: Candidate
         </span>
       </div>
 
-      <div className="space-y-2.5">
+      <div className="grid gap-2.5 sm:grid-cols-2">
         {interaction.candidates.map((candidate) => (
           <button
             key={candidate.id}
             type="button"
             onClick={() => onSelect(candidate.id)}
             aria-pressed={selectedId === candidate.id}
-            className={`block w-full rounded-[14px] text-left outline-none transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-px focus-visible:ring-4 focus-visible:ring-primary/12 ${
-              selectedId === candidate.id ? 'translate-y-[-1px]' : ''
+            className={`w-full rounded-[1.15rem] text-left outline-none transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 focus-visible:ring-4 focus-visible:ring-amber-500/15 ${
+              selectedId === candidate.id ? 'shadow-[var(--shadow-elevation-2)]' : ''
             }`}
           >
-            <Card
-              className={`${workspaceSurfaceClassName} transition-[border-color,background-color,box-shadow] duration-200 ${
+            <div
+              className={`rounded-[1.15rem] border p-4 transition-[border-color,background-color,box-shadow] duration-200 ${
                 selectedId === candidate.id
-                  ? 'border-primary/35 bg-primary/[0.045] shadow-[var(--shadow-elevation-1)]'
-                  : 'hover:border-primary/18 hover:bg-surface-container-lowest'
+                  ? 'border-amber-400/40 bg-amber-50/70 shadow-[var(--shadow-elevation-1)] dark:bg-amber-900/10'
+                  : 'border-border/12 bg-surface-container-lowest/90 shadow-[var(--shadow-elevation-1)] hover:border-amber-300/25 hover:bg-amber-50/30 dark:hover:bg-amber-900/5'
               }`}
             >
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-sm font-medium text-on-surface">
-                        {candidate.label}
-                      </p>
-                      {candidate.status ? (
-                        <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium leading-4 ${
-                          candidate.status === 'done'
-                            ? 'bg-primary/10 text-status-success'
-                            : 'bg-muted/70 text-on-surface-variant'
-                        }`}>
-                          {getStatusLabel(candidate.status)}
-                        </span>
-                      ) : null}
-                    </div>
-                    {candidate.dueAt || candidate.timeText ? (
-                      <p className="text-xs leading-5 text-on-surface-variant">
-                        {candidate.dueAt ? `计划: ${formatTime(candidate.dueAt)}` : ''}
-                        {candidate.dueAt && candidate.timeText ? ' · ' : ''}
-                        {candidate.timeText && !candidate.dueAt ? `时间: ${candidate.timeText}` : ''}
-                      </p>
+              <div className="flex items-start gap-3">
+                <div
+                  className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                    selectedId === candidate.id
+                      ? 'border-amber-500 bg-amber-500 text-white'
+                      : 'border-border/60 bg-surface-container-lowest'
+                  }`}
+                >
+                  {selectedId === candidate.id ? (
+                    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : null}
+                </div>
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium text-on-surface">
+                      {candidate.label}
+                    </p>
+                    {candidate.status ? (
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium leading-4 ${
+                        candidate.status === 'done'
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                          : 'bg-muted/70 text-on-surface-variant'
+                      }`}>
+                        {getStatusLabel(candidate.status)}
+                      </span>
                     ) : null}
-                    {candidate.preview && candidate.preview !== candidate.label ? (
-                      <p className="line-clamp-2 text-xs leading-5 text-on-surface-variant/72">
-                        {candidate.preview}
-                      </p>
-                    ) : null}
-                    <div className="flex items-center gap-2 text-[10px] leading-4 text-on-surface-variant/60">
-                      {candidate.updatedAt ? (
-                        <span>更新: {formatTime(candidate.updatedAt)}</span>
-                      ) : null}
-                      {candidate.reason ? (
-                        <span>{candidate.reason}</span>
-                      ) : null}
-                    </div>
                   </div>
-                  <div
-                    className={`mt-0.5 flex size-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                      selectedId === candidate.id
-                        ? 'border-primary bg-primary'
-                        : 'border-border/70 bg-surface-container-lowest'
-                    }`}
-                  >
-                    {selectedId === candidate.id ? (
-                      <svg
-                        className="size-full text-primary-foreground"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
+                  {candidate.dueAt || candidate.timeText ? (
+                    <p className="text-xs leading-5 text-on-surface-variant">
+                      {candidate.dueAt ? `计划: ${formatTime(candidate.dueAt)}` : ''}
+                      {candidate.dueAt && candidate.timeText ? ' · ' : ''}
+                      {candidate.timeText && !candidate.dueAt ? `时间: ${candidate.timeText}` : ''}
+                    </p>
+                  ) : null}
+                  {candidate.preview && candidate.preview !== candidate.label ? (
+                    <p className="line-clamp-2 text-xs leading-5 text-on-surface-variant/72">
+                      {candidate.preview}
+                    </p>
+                  ) : null}
+                  <div className="flex items-center gap-2 text-[10px] leading-4 text-on-surface-variant/60">
+                    {candidate.updatedAt ? (
+                      <span>更新: {formatTime(candidate.updatedAt)}</span>
+                    ) : null}
+                    {candidate.reason ? (
+                      <span>{candidate.reason}</span>
                     ) : null}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </button>
         ))}
       </div>

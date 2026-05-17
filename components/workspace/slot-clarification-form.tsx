@@ -48,7 +48,7 @@ export function SlotClarificationForm({ interaction, formId, onSubmit }: SlotCla
 
       <form
         id={formId}
-        className={`${workspaceInteractionCardClassName} p-5`}
+        className={`${workspaceInteractionCardClassName} p-4 sm:p-5`}
         onSubmit={(event) => {
           event.preventDefault()
           onSubmit({

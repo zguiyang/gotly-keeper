@@ -1,16 +1,11 @@
 'use client'
 
+// DESIGN_TOKEN_EXCEPTION: Warm modern accent colors (amber) are intentionally raw for step indicators
+
 import { useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 
 import {
@@ -43,8 +38,8 @@ export function PlanPreviewCard({ interaction }: PlanPreviewCardProps) {
     : interaction.plan.steps.slice(0, 2)
 
   return (
-    <Card className={workspaceInteractionCardClassName}>
-      <CardHeader className="gap-2 px-5 pt-4">
+    <div className={workspaceInteractionCardClassName}>
+      <div className="space-y-3 px-5 pt-4">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-[11px] font-medium tracking-normal">
             待确认执行
@@ -54,16 +49,16 @@ export function PlanPreviewCard({ interaction }: PlanPreviewCardProps) {
           </Badge>
         </div>
         <div className="flex flex-col gap-1">
-          <CardTitle className="text-base text-on-surface">{interaction.plan.summary}</CardTitle>
-          <CardDescription className={workspaceInteractionBodyTextClassName}>
+          <p className="text-base font-semibold text-on-surface">{interaction.plan.summary}</p>
+          <p className={workspaceInteractionBodyTextClassName}>
             {interaction.message}
-          </CardDescription>
+          </p>
         </div>
-      </CardHeader>
+      </div>
 
-      <Separator className="bg-border/10" />
+      <Separator className="mx-5 my-3 w-auto bg-border/10" />
 
-      <CardContent className="flex flex-col gap-2 px-5 pb-4 pt-3">
+      <div className="flex flex-col gap-3 px-5 pb-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-[12px] font-medium tracking-normal text-on-surface-variant/72">
             将执行
@@ -82,16 +77,16 @@ export function PlanPreviewCard({ interaction }: PlanPreviewCardProps) {
           ) : null}
         </div>
 
-        <ol className="flex flex-col gap-2">
+        <ol className="grid gap-2.5">
           {previewSteps.map((step, index) => (
             <li
               key={step.id}
-              className="rounded-[1rem] border border-border/10 bg-muted/30 px-4 py-3 transition-[transform,border-color,background-color,box-shadow] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-px hover:border-border/20 hover:bg-muted/40 hover:shadow-[var(--shadow-elevation-1)]"
+              className="rounded-[1rem] border-l-4 border-l-amber-400 border-border/10 bg-amber-50/40 px-4 py-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-1)] dark:bg-amber-900/8"
             >
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[10px] font-medium tracking-normal">
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
                   步骤 {index + 1}
-                </Badge>
+                </span>
                 <span className="text-xs font-medium text-on-surface-variant/75">
                   {getToolNameLabel(step.toolName)}
                 </span>
@@ -107,7 +102,7 @@ export function PlanPreviewCard({ interaction }: PlanPreviewCardProps) {
             还有 {interaction.plan.steps.length - 2} 个动作会继续处理。
           </p>
         ) : null}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
