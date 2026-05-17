@@ -122,15 +122,18 @@ export default async function LandingPage() {
             </ScrollReveal>
           </div>
 
-          {/* Video placeholder */}
+          {/* Demo video */}
           <ScrollReveal variant="fade-up" delay={320} className={cn(container, "mt-[clamp(3rem,5vw,4.5rem)] flex flex-col items-center gap-5")}>
             <div className="w-full rounded-[10px] overflow-hidden border border-foreground/8 shadow-[0_-2px_40px_color-mix(in_srgb,var(--color-on-surface)_5%,transparent)]"> {/* DESIGN_TOKEN_EXCEPTION: shadow depth blend, no semantic token */}
-              <div className="aspect-video bg-foreground/3 flex flex-col items-center justify-center gap-4">
-                <div className="w-[52px] h-[52px] rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-70">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                </div>
-                <p className="text-[0.8125rem] text-on-surface-variant opacity-50">产品演示视频</p>
-              </div>
+              <video
+                className="aspect-video w-full"
+                src="https://cloud.zgyk.cc/f/Y3cO/demo.mp4"
+                autoPlay
+                muted
+                loop
+                playsInline
+                controls
+              />
             </div>
             <p className="text-sm text-on-surface-variant opacity-70 text-center">轻量的个人信息收纳箱。不是笔记软件，不是任务管理。</p>
           </ScrollReveal>
