@@ -75,8 +75,8 @@ export default async function LandingPage() {
                 </>
               ) : (
                 <>
-                  <Link href="/auth/sign-in" className={navLinkCls}>登录</Link>
-                  <Link href="/auth/sign-up" className={primaryCtaCls}>免费注册</Link>
+                  <Link href="/auth/sign-in" className={cn(navLinkCls, "max-[900px]:hidden")}>登录</Link>
+                  <Link href="/auth/sign-up" className={cn(navLinkCls, "max-[900px]:hidden")}>免费注册</Link>
                 </>
               )}
             </div>
