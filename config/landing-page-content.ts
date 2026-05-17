@@ -1,105 +1,105 @@
-import {
-  Brain,
-  Search,
-  Zap,
-  type LucideIcon,
-} from "lucide-react";
+import { Bookmark, Brain, FileText, Search, type LucideIcon } from "lucide-react";
 
-export type LandingFloatCard = {
-  eyebrow: string;
-  title: string;
-  description: string;
-};
-
-export type LandingFeatureCard = {
+export type FeatureCard = {
   icon: LucideIcon;
   title: string;
-  subtitle: string;
-  description: string;
-  example: string;
+  desc: string;
 };
 
-export type LandingScenario = {
+export type PainPoint = {
   title: string;
-  description: string;
+  desc: string;
+};
+
+export type Scenario = {
+  role: string;
+  desc: string;
   example: string;
 };
 
-export type SocialProofItem = {
-  value: string;
+export type RoadmapItem = {
   label: string;
+  status: "shipped" | "building" | "planned";
 };
 
-export const floatingCards: LandingFloatCard[] = [
+export const featureCards: FeatureCard[] = [
   {
-    eyebrow: "Capture",
-    title: "记一下首页 slogan 想法",
-    description: "一条普通记录，先收着，后面再继续完善。",
+    icon: FileText,
+    title: "随手记录",
+    desc: "一句话进来，自动识别是笔记、待办还是书签。",
   },
   {
-    eyebrow: "Retrieve",
-    title: "我上次收藏的那个 AI 文章在哪",
-    description: "直接问，不用再回忆它当时放在哪。",
-  },
-  {
-    eyebrow: "Todo",
-    title: "明天下午记得发报价",
-    description: "带时间感的事项会被轻量收纳，不需要先建项目。",
-  },
-];
-
-export const featureCards: LandingFeatureCard[] = [
-  {
-    icon: Zap,
-    title: "① 扔进来",
-    subtitle: "先存再说，零决策成本",
-    description:
-      "记录、链接、待办都从一个入口进，先保存再整理。你只管扔进来，剩下的交给系统。",
-    example: '\u201c这周要看下用户反馈整理\u201d',
+    icon: Bookmark,
+    title: "收藏链接",
+    desc: "贴个链接，标题摘要自动抓取，以后直接问。",
   },
   {
     icon: Brain,
-    title: "② 自动整理",
-    subtitle: "后台归类，你永远不用管",
-    description:
-      "系统自动识别类型与时间信息。结构化是后台能力，不是你的工作。",
-    example: '\u201chttps://example.com 这个后面看\u201d',
+    title: "时间提醒",
+    desc: '说"下周三跟进报价"，时间自动提取，不用手动建任务。',
   },
   {
     icon: Search,
-    title: "③ 随时找回",
-    subtitle: "自然语言一问，什么都能找回",
-    description:
-      "忘记分类也没关系，直接问就能找到。系统基于已有内容做智能召回。",
-    example: '\u201c我最近记过关于定价的内容吗\u201d',
+    title: "自然语言找回",
+    desc: "不记得放哪了？直接问，系统帮你找。",
   },
 ];
 
-export const scenarios: LandingScenario[] = [
+export const painPoints: PainPoint[] = [
   {
-    title: "产品经理",
-    description: "会议结束后随手记一句结论，不需要先打开笔记 app、新建文档、想好标题。",
+    title: "收藏了，但找不到",
+    desc: "书签、微信收藏、笔记 app，分散在各处，需要时想不起来放在哪。",
+  },
+  {
+    title: "记了，但没整理",
+    desc: "随手记的东西堆在一起，时间一长就成了信息垃圾场。",
+  },
+  {
+    title: "整理了，但太费时",
+    desc: "分类、打标签、写摘要，整理本身比记录更费劲。",
+  },
+];
+
+export const scenarios: Scenario[] = [
+  {
+    role: "产品经理",
+    desc: "会议结束，随手记一句结论。不用新建文档，不用想标题。",
     example: '"刚才讨论的定价方案先记一下"',
   },
   {
-    title: "研究者",
-    description: "看到有价值的论文或文章先收着，之后用自然语言找回，不需要记住放在哪。",
+    role: "研究者",
+    desc: "看到有价值的论文先收着，之后用自然语言找回。",
     example: '"我收藏过关于 RAG 的文章吗"',
   },
   {
-    title: "自由职业者",
-    description: "把客户跟进事项直接说出来，系统识别时间信息，不需要手动建任务。",
+    role: "自由职业者",
+    desc: "说出客户跟进事项，时间自动识别，不用手动建任务。",
     example: '"下周三记得跟李总确认报价"',
   },
   {
-    title: "重度收藏者",
-    description: "不再为「收藏了但找不到」烦恼，所有内容都能被问出来。",
+    role: "重度收藏者",
+    desc: '所有收藏都能被问出来，再也不为"找不到"烦恼。',
     example: '"帮我总结最近收藏的内容"',
   },
 ];
 
-export const socialProof: SocialProofItem[] = [
+export const roadmapItems: RoadmapItem[] = [
+  { label: "笔记 / 书签 / 待办", status: "shipped" },
+  { label: "AI 统一入口", status: "shipped" },
+  { label: "自然语言检索", status: "shipped" },
+  { label: "AI 内容摘要", status: "shipped" },
+  { label: "PWA 支持", status: "shipped" },
+  { label: "链接正文提取 + AI 摘要", status: "building" },
+  { label: "Markdown 编辑器", status: "building" },
+  { label: "数据导出（Markdown / JSON）", status: "building" },
+  { label: "浏览器插件", status: "planned" },
+  { label: "移动端推送提醒", status: "planned" },
+  { label: "邮件转资产", status: "planned" },
+  { label: "iOS 快捷指令", status: "planned" },
+];
+
+export const socialProof = [
   { value: "1,000+", label: "早期用户" },
-  { value: "< 2s",   label: "平均找回时间" },
-  { value: "0",      label: "需要手动分类" },
+  { value: "< 2s", label: "平均找回时间" },
+  { value: "0", label: "需要手动分类" },
 ];
