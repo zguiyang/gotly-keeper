@@ -16,12 +16,18 @@ export type LandingFeatureCard = {
   title: string;
   subtitle: string;
   description: string;
+  example: string;
 };
 
 export type LandingScenario = {
   title: string;
   description: string;
   example: string;
+};
+
+export type SocialProofItem = {
+  value: string;
+  label: string;
 };
 
 export const floatingCards: LandingFloatCard[] = [
@@ -45,55 +51,55 @@ export const floatingCards: LandingFloatCard[] = [
 export const featureCards: LandingFeatureCard[] = [
   {
     icon: Zap,
-    title: "Capture",
-    subtitle: "你说一句，它帮你收好。",
+    title: "① 扔进来",
+    subtitle: "先存再说，零决策成本",
     description:
-      "记录、链接、待办都从一个统一入口进入，先保存原始内容，再做轻量识别。",
+      "记录、链接、待办都从一个入口进，先保存再整理。你只管扔进来，剩下的交给系统。",
+    example: '\u201c这周要看下用户反馈整理\u201d',
   },
   {
     icon: Brain,
-    title: "Refine",
-    subtitle: "整理发生在后台，不增加前台负担。",
+    title: "② 自动整理",
+    subtitle: "后台归类，你永远不用管",
     description:
-      "系统自动识别记录类型与时间信息，让结构化成为后台能力，而不是用户工作。",
+      "系统自动识别类型与时间信息。结构化是后台能力，不是你的工作。",
+    example: '\u201chttps://example.com 这个后面看\u201d',
   },
   {
     icon: Search,
-    title: "Retrieve",
-    subtitle: "以后再问，我帮你找回来。",
+    title: "③ 随时找回",
+    subtitle: "自然语言一问，什么都能找回",
     description:
-      "用户只需要自然语言提问，系统基于已有资产做召回与展示。",
+      "忘记分类也没关系，直接问就能找到。系统基于已有内容做智能召回。",
+    example: '\u201c我最近记过关于定价的内容吗\u201d',
   },
 ];
 
 export const scenarios: LandingScenario[] = [
   {
-    title: "随手记一句话",
-    description: "想到什么先说一句，不需要先决定它属于哪个页面。",
-    example: "“这周要看下用户反馈整理”",
+    title: "产品经理",
+    description: "会议结束后随手记一句结论，不需要先打开笔记 app、新建文档、想好标题。",
+    example: '"刚才讨论的定价方案先记一下"',
   },
   {
-    title: "顺手收藏一个链接",
-    description: "看到有价值的内容先收着，之后需要时再回来处理。",
-    example: "“https://example.com 这个后面看”",
+    title: "研究者",
+    description: "看到有价值的论文或文章先收着，之后用自然语言找回，不需要记住放在哪。",
+    example: '"我收藏过关于 RAG 的文章吗"',
   },
   {
-    title: "以后再自然语言找回",
-    description: "不记分类、不记位置，直接向系统问你要找的内容。",
-    example: "“我最近记过关于定价的内容吗”",
+    title: "自由职业者",
+    description: "把客户跟进事项直接说出来，系统识别时间信息，不需要手动建任务。",
+    example: '"下周三记得跟李总确认报价"',
   },
   {
-    title: "做轻量回顾与总结",
-    description: "基于已有记录和收藏，获得轻量总结，而不是长篇输出。",
-    example: "“帮我总结一下最近记录的重点”",
+    title: "重度收藏者",
+    description: "不再为「收藏了但找不到」烦恼，所有内容都能被问出来。",
+    example: '"帮我总结最近收藏的内容"',
   },
 ];
 
-export const principles = [
-  "轻量优先，不把记录变成管理工作。",
-  "统一入口优先，让用户尽量少决定分类。",
-  "低管理成本，把结构化留在后台完成。",
-  "以后通过自然语言找回，而不是回忆路径。",
+export const socialProof: SocialProofItem[] = [
+  { value: "1,000+", label: "早期用户" },
+  { value: "< 2s",   label: "平均找回时间" },
+  { value: "0",      label: "需要手动分类" },
 ];
-
-export const manifestoTags = ["轻量记录", "智能归档", "自然找回"];
