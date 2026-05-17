@@ -15,7 +15,7 @@ export default async function WorkspaceLayout({
       <Sidebar />
       <main className="min-h-screen min-h-dvh lg:ml-64">
         <TopAppBar userEmail={user.email} userImage={user.image} userName={user.name} />
-        <div className="mx-auto px-4 sm:px-6 lg:px-12 pt-[4.5rem] lg:pt-[5.5rem] pb-28 lg:pb-12 max-w-6xl">
+        <div className="mx-auto px-4 sm:px-6 lg:px-12 pt-[4.5rem] lg:pt-[5.5rem] pb-32 lg:pb-12 max-w-6xl">
           {children}
         </div>
       </main>

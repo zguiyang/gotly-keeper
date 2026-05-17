@@ -33,19 +33,19 @@ const workspaceCriticalSurfaceClassName =
   'rounded-[14px] border border-destructive/24 bg-destructive/[0.045] shadow-[var(--shadow-elevation-1)]'
 
 const workspaceRunShellClassName =
-  'mb-8 flex max-h-[32rem] flex-col rounded-[1.75rem] border border-border/10 bg-surface-container-lowest px-4 py-4 shadow-[var(--shadow-soft)] sm:px-5'
+  'mb-8 flex max-h-[60vh] min-h-[180px] flex-col rounded-[1.5rem] border border-border/10 bg-surface-container-lowest/95 shadow-[var(--shadow-soft)] sm:max-h-[32rem] lg:max-h-[36rem] sm:rounded-[1.75rem] px-4 pb-1 pt-4 sm:px-5 sm:pb-1 sm:pt-5'
 
 const workspaceRunScrollBodyClassName =
   'flex-1 min-h-0 overflow-y-auto pb-4'
 
 const workspaceRunActionBarClassName =
-  'sticky bottom-0 mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/10 bg-surface-container-lowest/98 pt-3'
+  'sticky bottom-0 z-50 mt-auto flex flex-col gap-3 border-t border-border/10 bg-surface-container-lowest/98 px-0 pt-3 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between'
 
 const workspaceRunSectionClassName =
   'space-y-3'
 
 const workspaceInteractionCardClassName =
-  'overflow-hidden gap-2 rounded-[1.35rem] border border-border/15 bg-surface-container-lowest/95 shadow-[var(--shadow-elevation-1)]'
+  'overflow-hidden rounded-[1.25rem] border border-border/12 bg-surface-container-lowest/98 shadow-[var(--shadow-elevation-1)] transition-shadow duration-200 hover:shadow-[var(--shadow-elevation-2)]'
 
 const workspaceInteractionInsetFieldClassName =
   'h-10 rounded-xl border-border/8 bg-muted/55 px-3.5 shadow-none transition-[background-color,border-color,box-shadow] duration-200 placeholder:text-on-surface-variant/45 hover:bg-muted/65 focus-visible:border-primary/20 focus-visible:bg-surface-container-lowest focus-visible:ring-4 focus-visible:ring-primary/10'
@@ -57,10 +57,10 @@ const workspaceInteractionBodyTextClassName =
   'text-sm leading-6 text-on-surface-variant'
 
 const workspacePrimaryActionButtonClassName =
-  'h-9 rounded-full px-4.5 text-sm shadow-[var(--shadow-elevation-1)]'
+  'h-10 rounded-full px-5 text-sm shadow-[var(--shadow-elevation-1)] transition-all duration-200 hover:shadow-[var(--shadow-elevation-2)] active:scale-[0.97]'
 
 const workspaceSecondaryActionButtonClassName =
-  'h-9 rounded-full px-4 text-sm'
+  'h-10 rounded-full px-4.5 text-sm transition-all duration-200 active:scale-[0.97]'
 
 type WorkspacePageHeaderProps = {
   title: string

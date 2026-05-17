@@ -1,6 +1,6 @@
 'use client'
 
-import { SendHorizontal, Sparkles } from 'lucide-react'
+import { Loader2, SendHorizontal, Sparkles } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import { useCallback, useRef, useState } from 'react'
 
@@ -188,16 +188,17 @@ export function WorkspaceClient({
             onKeyDown={handleKeyDown}
           />
           {state.status === 'streaming' ? (
-            <div className="absolute right-3 bottom-3 flex items-center gap-2">
+            <div className="absolute right-3 bottom-3 flex items-center gap-2 sm:right-4 sm:bottom-3.5">
+              <span className="hidden text-xs text-on-surface-variant/70 sm:inline">处理中</span>
               <Button
                 type="button"
                 variant="ghost"
                 onClick={cancelRun}
                 className="h-8 rounded-full px-3 text-xs text-destructive hover:text-destructive"
               >
+                <Loader2 className="mr-1 size-3 animate-spin sm:hidden" />
                 取消
               </Button>
-              <span className="text-xs text-muted-foreground">处理中</span>
             </div>
           ) : (
             <Button
@@ -207,13 +208,10 @@ export function WorkspaceClient({
                 state.status === 'awaiting_user' ||
                 inputValue.trim().length === 0
               }
-              className="absolute right-3 bottom-3 h-8 rounded-full px-3 text-xs sm:right-4 sm:bottom-3.5 sm:h-9 sm:px-4 sm:text-sm"
+              className="absolute right-3 bottom-3 h-9 rounded-full px-3.5 text-xs shadow-[var(--shadow-elevation-1)] transition-all duration-200 active:scale-[0.97] sm:right-4 sm:bottom-3.5 sm:h-10 sm:px-5 sm:text-sm"
             >
-              <>
-                <span className="sm:hidden">发送</span>
-                <span className="hidden sm:inline">发送</span>
-                <SendHorizontal className="size-3.5" />
-              </>
+              <SendHorizontal className="mr-1 size-3.5 sm:mr-1.5" />
+              <span>发送</span>
             </Button>
           )}
         </div>
