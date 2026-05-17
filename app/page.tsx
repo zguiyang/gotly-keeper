@@ -50,7 +50,7 @@ export default async function LandingPage() {
   const planned = roadmapItems.filter((i) => i.status === "planned");
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen min-h-dvh bg-surface">
       {/* Navbar */}
       <header className="fixed inset-x-0 top-0 z-20 border-b border-foreground/6 bg-surface/88 backdrop-blur-xl">
         <div className={cn(container, "py-3.5")}>

@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 
 export default function OfflinePage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/20 px-6 py-16">
+    <main className="flex min-h-screen min-h-dvh items-center justify-center bg-muted/20 px-6 py-16">
       <section className="w-full max-w-lg rounded-[2rem] border border-border/10 bg-background p-8 shadow-[var(--shadow-elevation-3)] sm:p-10">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/70">
           Offline

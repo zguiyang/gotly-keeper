@@ -12,7 +12,7 @@ interface AuthShellProps {
 export function AuthShell({ children, className }: AuthShellProps) {
   return (
     <div className={styles.shell}>
-      <div className={cn("relative flex min-h-screen flex-col", className)}>{children}</div>
+      <div className={cn("relative flex min-h-screen min-h-dvh flex-col", className)}>{children}</div>
     </div>
   );
 }

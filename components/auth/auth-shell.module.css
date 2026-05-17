@@ -1,6 +1,6 @@
 .shell {
   position: relative;
-  min-height: 100vh;
+  min-height: 100dvh;
   isolation: isolate;
   overflow: hidden;
   background-color: var(--surface);
