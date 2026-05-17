@@ -287,6 +287,7 @@ function LifecycleAssetItem({
               取消归档
             </Button>
             <AssetActionMenu
+              ariaLabel={`更多操作：${item.title}`}
               actions={[
                 {
                   label: '移入回收站',

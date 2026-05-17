@@ -116,13 +116,6 @@ export function AccountMenu({
         <DropdownMenuGroup>
           <DropdownMenuItem
             className="gap-2 rounded-lg px-2.5 py-2 text-[12px]"
-            disabled
-          >
-            <UserRound className="size-3.5 text-on-surface-variant" />
-            当前账号
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="gap-2 rounded-lg px-2.5 py-2 text-[12px]"
             disabled={pending}
             onClick={handleSignOut}
             variant="destructive"

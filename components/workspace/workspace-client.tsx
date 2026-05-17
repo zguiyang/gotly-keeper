@@ -173,7 +173,9 @@ export function WorkspaceClient({
           <div className="pointer-events-none absolute top-4 left-4 sm:top-5 sm:left-5">
             <Sparkles className="h-4 w-4 text-on-surface-variant/70 sm:h-5 sm:w-5" />
           </div>
+          <label className="sr-only" htmlFor="workspace-query">输入内容或搜索知识库</label>
           <Textarea
+            id="workspace-query"
             aria-label="输入内容或搜索知识库"
             aria-keyshortcuts="Meta+Enter Control+Enter"
             className="max-h-56 w-full resize-none overflow-y-auto rounded-[1.35rem] border border-border/10 bg-surface-container-lowest pt-4 pr-4 pb-[4.3rem] pl-12 text-[15px] leading-6 text-on-surface shadow-[var(--shadow-elevation-3)] transition-[box-shadow,border-color] duration-200 placeholder:text-on-surface-variant/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 focus:shadow-[var(--shadow-soft)] sm:max-h-64 sm:pt-5 sm:pr-5 sm:pb-[4.5rem] sm:pl-14 sm:text-base"

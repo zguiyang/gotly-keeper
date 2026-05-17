@@ -155,7 +155,7 @@ function AssetItem({
             </div>
 
             <div className="shrink-0 pt-0.5 opacity-100 transition-opacity duration-200 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100">
-              <AssetActionMenu actions={actions} />
+              <AssetActionMenu actions={actions} ariaLabel={`更多操作：${asset.title}`} />
             </div>
           </div>
         </div>

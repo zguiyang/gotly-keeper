@@ -118,12 +118,15 @@ function WorkspaceFilterTabs<TValue extends string>({
         'flex flex-wrap items-center gap-2 border-b border-border/18 pb-4 sm:gap-2.5',
         className
       )}
+      role="tablist"
       aria-label="内容筛选"
     >
       {tabs.map((tab) => (
         <ToggleGroupItem
           key={tab.key}
           value={tab.key}
+          role="tab"
+          aria-selected={value === tab.key}
           className="h-8 rounded-full px-3.5 text-[12px] tracking-normal data-[pressed]:border-primary/30 data-[pressed]:bg-primary/12 data-[pressed]:text-primary"
         >
           {tab.label}
