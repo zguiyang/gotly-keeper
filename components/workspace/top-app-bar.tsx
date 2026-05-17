@@ -1,12 +1,12 @@
 "use client"
 
-import { Menu } from "lucide-react"
+import { Menu, XIcon } from "lucide-react"
 
 import { AccountMenu } from "@/components/account-menu"
 import { BrandLogo } from "@/components/brand-logo"
 import { ThemeToggle } from "@/components/theme/theme-toggle"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { WorkspaceNavList } from "@/components/workspace/workspace-nav-list"
 import { appVersion } from "@/config/app-meta"
 
@@ -23,15 +23,18 @@ export function TopAppBar({ userName, userEmail, userImage }: TopAppBarProps) {
         <Sheet>
           <SheetTrigger
             aria-label="打开工作区导航"
-            render={<Button variant="ghost" size="icon-lg" className="text-on-surface-variant hover:text-on-surface" />}
+            render={<Button variant="ghost" size="icon-lg" className="size-11 text-on-surface-variant hover:text-on-surface" />}
           >
             <Menu />
           </SheetTrigger>
-            <SheetContent side="left" className="w-64 border-r border-border/15 bg-surface p-0">
+            <SheetContent side="left" className="w-64 border-r border-border/15 bg-surface p-0" showCloseButton={false}>
               <SheetTitle className="sr-only">工作区导航</SheetTitle>
               <div className="flex h-full flex-col">
-                <div className="border-b border-border/15 px-4 py-6">
+                <div className="flex items-center justify-between border-b border-border/15 px-3 py-4">
                   <BrandLogo className="h-9" />
+                  <SheetClose render={<Button variant="ghost" size="icon" className="text-on-surface-variant hover:text-on-surface" />}>
+                    <XIcon className="size-5" />
+                  </SheetClose>
                 </div>
                 <nav className="flex-1 px-2 py-4">
                 <WorkspaceNavList variant="sheet" />
