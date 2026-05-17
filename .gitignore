@@ -56,5 +56,6 @@ worktrees
 # worker
 dist-workers
 
-# personal deployment script (keep local only)
+# personal deployment files (keep local only)
 deploy.sh
+docker-compose.prod.yml
