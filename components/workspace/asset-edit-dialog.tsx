@@ -400,7 +400,7 @@ export function AssetEditDialog({
 
             {asset?.type === 'link' ? (
               <Field>
-                <FieldLabel htmlFor="asset-edit-url">URL</FieldLabel>
+                <FieldLabel htmlFor="asset-edit-url">链接</FieldLabel>
                 <Input
                   id="asset-edit-url"
                   type="url"
