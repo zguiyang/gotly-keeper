@@ -2,18 +2,18 @@
 
 # Gotly Keeper
 
-**Quietly keeping what matters**
+**Say it once. Find it anytime.**
 
-AI-powered personal capture & retrieval workspace — collect ideas, save bookmarks,
-manage todos, and find everything again with natural language.
+AI-powered personal knowledge workspace — notes, bookmarks, and todos,
+all in one place. No folders, no tags, no friction.
 
 <p>
+  <a href="#demo">Demo</a> ·
   <a href="#features">Features</a> ·
   <a href="#quick-start">Quick Start</a> ·
   <a href="#architecture">Architecture</a> ·
   <a href="#deployment">Deployment</a> ·
-  <a href="#tech-stack">Tech Stack</a> ·
-  <a href="#contributing">Contributing</a>
+  <a href="#tech-stack">Tech Stack</a>
 </p>
 
 <p>
@@ -21,82 +21,97 @@ manage todos, and find everything again with natural language.
   <a href="./README.zh.md">中文</a>
 </p>
 
+<p>
+  <a href="https://github.com/zguiyang/gotly-keeper/stargazers">
+    <img src="https://img.shields.io/github/stars/zguiyang/gotly-keeper?style=flat&label=Stars" alt="Stars">
+  </a>
+  <a href="https://github.com/zguiyang/gotly-keeper/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/zguiyang/gotly-keeper?style=flat&label=License" alt="License">
+  </a>
+</p>
+
 </div>
 
 ---
 
-## What is Gotly Keeper?
+## Demo
 
-Gotly Keeper is a **personal knowledge curator** — a lightweight workspace where you
-capture ideas, save bookmarks, manage todos, and retrieve everything later simply by
-asking. It bridges the gap between "I'll remember this" and "where did I put it?"
+[![Gotly Keeper Demo](https://cloud.zgyk.cc/f/Y3cO/demo.mp4)](https://cloud.zgyk.cc/f/Y3cO/demo.mp4)
 
-Instead of forcing you into folders and taxonomies up front, Gotly Keeper accepts
-whatever you throw at it — a sentence, a link, a reminder — and uses AI to
-classify, organize, and make it searchable. The structure happens in the background,
-not on your screen.
+https://cloud.zgyk.cc/f/Y3cO/demo.mp4
 
-### Core Philosophy
+---
 
-| Principle | Meaning |
-|-----------|---------|
-| **Capture first, organize later** | One input for everything — notes, links, todos. The AI figures out what it is. |
-| **Retrieve by asking, not browsing** | Search with natural language — semantic understanding, not keyword matching. |
-| **Background structure** | Time parsing, content summarization, URL metadata — all happen asynchronously. |
-| **Quietly reliable** | PWA, works offline, dockerized deployment, no noisy notifications. |
+## The Problem
+
+Your mind is full of things to remember. Ideas strike at odd moments. Links pile
+up in chat history. Todos live in three different apps. And when you need
+something — that article about RAG, the feedback from last week's meeting,
+the link a colleague shared — you end up digging through folders, scrolling
+chat history, and wondering where you put it.
+
+**Gotly Keeper is the place you throw it all, and the place you find it all.**
+
+---
+
+## How It Works
+
+One input box. Whatever you type — a note, a bookmark, a todo — the AI
+classifies it, extracts time if any, and stores it. Later, just ask in natural
+language. Semantic search finds what you need, even if you don't remember
+how you filed it.
+
+> *"Keep this: the Q3 pricing proposal feedback"* → **Note**
+>
+> *"Save this: https://example.com/ai-paper"* → **Bookmark**
+>
+> *"Remind me: send the report by Friday 3pm"* → **Todo with due date**
+>
+> *"Where's that article about RAG I saved last month?"* → **Found instantly**
 
 ---
 
 ## Features
 
-### 🎯 Unified Capture
+### Unified Capture
 
-A single input field handles everything:
-- **Notes** — `"记一下：product review 的几点反馈"`
-- **Todos** — `"记个待办：下周三交周报"`
-- **Bookmarks** — `"把这个链接存一下 https://example.com"`
+A single input field for everything:
+- Notes, bookmarks, todos — the AI figures out which is which
+- Time expressions are parsed automatically ("next Wednesday 3pm")
+- No dropdowns, no forms, no friction
 
-The AI classifies intent, extracts time expressions, and creates the right asset type
-— no dropdowns, no forms, no friction.
+### Semantic Search
 
-### 🔍 Semantic Retrieval
+Stop guessing which folder you put something in. Ask in natural language:
 
-Stop guessing which folder you put something in. Search across all your assets with
-natural language:
-
-> *"我上次收藏的那篇关于 RAG 的文章在哪？"*
-> *"show me todos from last week"*
+> *"Show me todos from last week"*
+> *"What bookmarks do I have about AI tools?"*
+> *"Summarize my notes from this month"*
 
 Powered by pgvector embeddings and a multi-stage ranking pipeline.
 
-### 📋 Smart Summaries
+### Smart Summaries
 
-Ask the AI to summarize what you've collected:
+Let the AI summarize what you've collected:
 - *"Summarize my notes from this week"*
 - *"Review unfinished todos"*
-- *"What bookmarks do I have about AI tools?"*
+- *"What have I been collecting about AI tools?"*
 
-### ⏰ Time-Aware Todos
+### Auto Bookmark Metadata
 
-Write todos naturally — *"明天下午3点发邮件"* — and the AI extracts the due date.
-Overdue, today, and upcoming views keep you on track without a calendar app.
+Save a URL → the background worker automatically fetches the page title,
+description, and preview image. No manual filling.
 
-### 🔖 Auto Metadata for Bookmarks
+### Lifecycle Management
 
-Save a URL and the background worker automatically fetches the page title,
-description, and preview image — no manual filling.
+Every asset follows: **Active → Archive → Trash → Purge**
 
-### 📎 Lifecycle Management
+Move things out of sight without deleting. Or permanently remove them.
 
-Every asset (note, bookmark, todo) has a clean lifecycle:
-**Active → Archive → Trash → Purge**
+### PWA Ready
 
-Move things out of sight without deleting, or permanently remove them when you're done.
-
-### 📱 PWA Ready
-
-Install as a standalone app on mobile or desktop. Works offline with service worker
-caching. Full-screen, no browser chrome.
+Install as a standalone app on mobile or desktop. Works offline. Full-screen,
+no browser chrome.
 
 ---
 
@@ -114,11 +129,7 @@ caching. Full-screen, no browser chrome.
 docker compose up -d
 ```
 
-This starts:
-| Service | Version | Port |
-|---------|---------|------|
-| PostgreSQL (pgvector) | 16 | `5434` |
-| Redis | 7 | `6382` |
+This starts PostgreSQL 16 (pgvector, port `5434`) and Redis 7 (port `6382`).
 
 ### 2. Configure environment
 
@@ -126,18 +137,16 @@ This starts:
 cp .env.example .env
 ```
 
-Edit `.env` with your settings. At minimum you'll need:
+Edit `.env` with your settings. At minimum:
 
 | Variable | Description |
 |----------|-------------|
 | `BETTER_AUTH_SECRET` | At least 32 random characters |
-| `AI_GATEWAY_API_KEY` | Your AI gateway/LLM API key |
+| `AI_GATEWAY_API_KEY` | Your LLM API key |
 | `AI_GATEWAY_URL` | AI gateway endpoint |
 | `AI_MODEL_NAME` | LLM model (e.g. `qwen3-max`) |
 | `AI_EMBEDDING_MODEL_NAME` | Embedding model |
 | `AI_EMBEDDING_DIMENSIONS` | Embedding vector dimensions |
-
-See `.env.example` for the full list.
 
 ### 3. Install & initialize
 
@@ -181,7 +190,7 @@ Open [http://localhost:3000](http://localhost:3000).
      └─────────────────────────────────────────────┘
 ```
 
-### Stack Details
+### Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -195,21 +204,20 @@ Open [http://localhost:3000](http://localhost:3000).
 | **UI** | Tailwind CSS v4 + shadcn/ui + Base UI |
 | **Animation** | Motion (framer-motion) |
 | **Forms** | TanStack Form |
-| **Icons** | Lucide |
 | **Testing** | Vitest + Testing Library |
 | **PWA** | Next.js PWA manifest + service worker |
 
 ### Key Modules
 
-- **`server/modules/workspace-agent/`** — AI orchestration: classifies intent, plans
-  actions, executes tool calls, returns structured results
+- **`server/modules/workspace-agent/`** — AI orchestration: classifies intent,
+  plans actions, executes tool calls, returns structured results
 - **`server/services/search/`** — Multi-stage search: semantic (pgvector cosine
   distance), keyword (trigram), ranking fusion
-- **`server/services/queue/`** — Redis-backed background job queue for async tasks
+- **`server/services/queue/`** — Redis-backed background job queue
 - **`server/prompts/`** — System & user prompts for all AI pipeline stages
-- **`server/services/bookmarks|notes|todos/`** — CRUD + lifecycle for each asset type
-- **`components/workspace/`** — Workspace UI: unified input, run timeline, asset panels
-- **`scripts/run-workers.ts`** — Background worker entry point (esbuild-bundled)
+- **`server/services/bookmarks|notes|todos/`** — CRUD + lifecycle for each asset
+- **`components/workspace/`** — Workspace UI: unified input, timeline, panels
+- **`scripts/run-workers.ts`** — Background worker entry point
 
 ---
 
@@ -219,36 +227,21 @@ Open [http://localhost:3000](http://localhost:3000).
 
 The project includes a deployment script (`deploy.sh`) that:
 
-1. **Builds** two Docker images (`gotly-keeper-web`, `gotly-keeper-worker`) for
-   `linux/amd64` using multi-stage Docker builds
-2. **Pushes** them to a private registry
-3. **Syncs** configuration to the remote server via SSH + SCP
-4. **Runs** database migrations (Drizzle Kit)
-5. **Pulls & restarts** containers on the remote server
+1. Builds two Docker images for `linux/amd64`
+2. Pushes to a private registry
+3. Syncs configuration via SSH + SCP
+4. Runs database migrations
+5. Pulls & restarts containers on the remote server
 
 ```bash
-# Full deploy (build + migrate + start)
 ./deploy.sh
 ```
 
-The script offers 4 modes:
+Offers 4 modes: full deploy, build + start, start only, or migrate only.
 
-| Option | Action |
-|--------|--------|
-| `1` | Build + Migrate + Start (full deploy) |
-| `2` | Build + Start (skip migration) |
-| `3` | Start only (skip build & migration) |
-| `4` | Migrate only |
-
-### Docker Compose
-
-- **`docker-compose.yml`** — Local development (PostgreSQL + Redis)
-- **`docker-compose.prod.yml`** — Production (PostgreSQL + Web + Worker, uses
-  external 1panel network)
-
-### Environment Variables
-
-Production requires a `.env.production` file — see `.env.example` for the schema.
+**Docker Compose files:**
+- `docker-compose.yml` — Local dev (PostgreSQL + Redis)
+- `docker-compose.prod.yml` — Production (PostgreSQL + Web + Worker)
 
 ---
 
@@ -278,21 +271,17 @@ Production requires a `.env.production` file — see `.env.example` for the sche
 ```
 ├── app/                      # Next.js App Router routes
 │   ├── api/                  # API routes (auth, workspace)
-│   ├── auth/                 # Auth pages (sign-in, sign-up, reset-password)
-│   └── workspace/            # Workspace pages (notes, todos, bookmarks, all)
+│   ├── auth/                 # Auth pages
+│   └── workspace/            # Workspace pages
 │
 ├── server/                   # Server-side logic
 │   ├── lib/                  # Infrastructure (db, cache, ai, config)
-│   ├── modules/              # Server entrypoints (auth, workspace, workspace-agent)
-│   ├── services/             # Domain services (notes, todos, bookmarks, search)
+│   ├── modules/              # Server entrypoints
+│   ├── services/             # Domain services
 │   ├── prompts/              # AI system/user prompts
 │   └── workers/              # Background workers
 │
 ├── components/               # Reusable UI components
-│   ├── ui/                   # Base UI primitives (shadcn/ui)
-│   ├── workspace/            # Workspace-specific components
-│   └── auth/                 # Auth form components
-│
 ├── shared/                   # Cross-runtime types, schemas, helpers
 ├── hooks/                    # Client-side React hooks
 ├── config/                   # UI and app configuration
@@ -305,17 +294,16 @@ Production requires a `.env.production` file — see `.env.example` for the sche
 
 ## Contributing
 
-1. Read `.ai-rules/` for repository governance and coding standards
+1. Read `.ai-rules/` for repository governance
 2. Run `pnpm verify` before committing (typecheck + unit tests)
-3. Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)
-   (enforced by commitlint + husky)
+3. Commits follow [Conventional Commits](https://www.conventionalcommits.org/)
 4. Pre-commit hooks run linters and governance checks
 
 ---
 
 ## License
 
-This project is open source. See the LICENSE file for details.
+Open source. See [LICENSE](./LICENSE) for details.
 
 ---
 
