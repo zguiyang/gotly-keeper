@@ -26,12 +26,12 @@ export const featureCards: FeatureCard[] = [
   {
     icon: FileText,
     title: "随手记录",
-    desc: "一句话进来，自动识别是笔记、待办还是书签。",
+    desc: "一句话输入，自动识别是笔记、待办还是书签。",
   },
   {
     icon: Bookmark,
     title: "收藏链接",
-    desc: "贴个链接，标题摘要自动抓取，以后直接问。",
+    desc: "粘贴链接，标题摘要自动抓取，以后直接检索。",
   },
   {
     icon: Brain,
@@ -41,7 +41,7 @@ export const featureCards: FeatureCard[] = [
   {
     icon: Search,
     title: "自然语言找回",
-    desc: "不记得放哪了？直接问，系统帮你找。",
+    desc: "不记得放在哪了？描述一下就能找到。",
   },
 ];
 
@@ -68,7 +68,7 @@ export const scenarios: Scenario[] = [
   },
   {
     role: "研究者",
-    desc: "看到有价值的论文先收着，之后用自然语言找回。",
+    desc: "看到有价值的论文先收藏，之后用自然语言找回。",
     example: '"我收藏过关于 RAG 的文章吗"',
   },
   {
@@ -78,7 +78,7 @@ export const scenarios: Scenario[] = [
   },
   {
     role: "重度收藏者",
-    desc: '所有收藏都能被问出来，再也不为"找不到"烦恼。',
+    desc: '所有收藏都能通过提问找到，再也不为"找不到"烦恼。',
     example: '"帮我总结最近收藏的内容"',
   },
 ];

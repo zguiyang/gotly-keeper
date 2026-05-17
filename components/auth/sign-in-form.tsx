@@ -41,7 +41,7 @@ export function SignInForm() {
     <form className="space-y-6" onSubmit={onSubmit}>
       <AuthField
         autoComplete="email"
-        label="EMAIL"
+        label="邮箱"
         name="email"
         placeholder="name@example.com"
         required
@@ -55,7 +55,7 @@ export function SignInForm() {
             className="block text-[12px] font-medium tracking-normal text-on-surface-variant/85"
             htmlFor="sign-in-password"
           >
-            PASSWORD
+            密码
           </label>
           <Link
             href="/auth/forgot-password"

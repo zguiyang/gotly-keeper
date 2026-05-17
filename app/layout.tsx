@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "Gotly Keeper",
   applicationName: "Gotly Keeper",
   description:
-    "Gotly Keeper is a lightweight AI-powered capture tool for collecting, refining, and retrieving ideas.",
+    "Gotly Keeper 是一款轻量级 AI 内容收集工具，用于记录、整理和检索灵感。",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,

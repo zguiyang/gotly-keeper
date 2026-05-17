@@ -14,7 +14,7 @@ export default function SignInPage() {
       withFooter={false}
     >
       <AuthCard>
-        <AuthHeader title="欢迎回来" description="登录 Gotly Keeper，继续管理你的灵感。" />
+        <AuthHeader title="欢迎回来" description="登录 Gotly Keeper，继续记录你的想法。" />
 
         <SignInForm />
 

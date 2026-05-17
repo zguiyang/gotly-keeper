@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'Gotly Keeper',
     short_name: 'Gotly Keeper',
     description:
-      'Gotly Keeper is a lightweight AI-powered capture tool for collecting, refining, and retrieving ideas.',
+      'Gotly Keeper 是一款轻量级 AI 内容收集工具，用于记录、整理和检索灵感。',
     start_url: '/',
     scope: '/',
     display: 'standalone',

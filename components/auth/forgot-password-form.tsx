@@ -90,12 +90,12 @@ export function ForgotPasswordForm() {
       withFooter={false}
     >
       <AuthCard>
-        <AuthHeader title="找回密码" description="输入注册邮箱，我们会发送重置链接。" />
+        <AuthHeader title="找回密码" description="输入注册邮箱以接收重置链接。" />
 
         <form className="space-y-6" onSubmit={handleSubmit}>
           <AuthField
             autoComplete="email"
-            label="EMAIL"
+            label="邮箱"
             name="email"
             placeholder="your@email.com"
             prefixIcon={<Mail className="size-4" />}

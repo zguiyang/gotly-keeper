@@ -28,7 +28,6 @@ const ANCHORS = {
   features: "#features", // DESIGN_TOKEN_EXCEPTION: anchor href string, not a color value
   scenarios: "#scenarios",
   roadmap: "#roadmap",
-  howItWorks: "#how-it-works",
 } as const;
 
 // Shared class strings
@@ -135,7 +134,7 @@ export default async function LandingPage() {
                 controls
               />
             </div>
-            <p className="text-sm text-on-surface-variant opacity-70 text-center">轻量的个人信息收纳箱。不是笔记软件，不是任务管理。</p>
+            <p className="text-sm text-on-surface-variant opacity-70 text-center">轻量的个人信息助理。能记笔记，能存书签，能管待办。</p>
           </ScrollReveal>
         </section>
 
@@ -177,7 +176,7 @@ export default async function LandingPage() {
           <ScrollReveal variant="fade-in">
             <div className="flex flex-col gap-2.5 mb-12">
               <p className={eyebrowCls}>使用场景</p>
-              <h2 className={sectionTitleCls}>不需要经营系统，<br />只需要先交给它。</h2>
+              <h2 className={sectionTitleCls}>不需要分类整理，<br />先交给它就好。</h2>
             </div>
           </ScrollReveal>
           <ScrollReveal variant="fade-in" delay={80}>
@@ -233,7 +232,7 @@ export default async function LandingPage() {
         <section className="py-[clamp(5rem,9vw,9rem)] text-center">
           <div className={cn(container, "flex flex-col items-center gap-6")}>
             <ScrollReveal variant="fade-up">
-              <p className={eyebrowCls}>开源 · 自托管 · 数据完全归你</p>
+              <p className={eyebrowCls}>轻量 · 开源 · 数据归你</p>
               <h2 className="text-[clamp(2rem,4vw,3rem)] font-bold tracking-[-0.04em] text-on-surface leading-[1.1] mt-2">开始用 Gotly Keeper</h2>
               <div className="flex flex-wrap items-center justify-center gap-3.5 mt-6 max-sm:flex-col max-sm:items-stretch">
                 <Link href={workspaceHref} className={primaryCtaLargeCls}>
@@ -253,7 +252,7 @@ export default async function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-foreground/7">
         <div className={cn(container, "py-[1.625rem] flex items-center justify-between gap-6 max-sm:flex-col max-sm:items-start max-sm:gap-4")}>
-          <p className="text-[0.8125rem] text-on-surface-variant/65">© 2026 Gotly Keeper. Quietly keeping what matters.</p>
+          <p className="text-[0.8125rem] text-on-surface-variant/65">© 2026 Gotly Keeper. 安静地保管你的一切。</p>
           <div className="flex items-center gap-6">
             <Link href="/privacy" className="text-[0.8125rem] text-on-surface-variant/55 no-underline transition-colors duration-150 hover:text-on-surface">隐私政策</Link>
             <Link href="/terms" className="text-[0.8125rem] text-on-surface-variant/55 no-underline transition-colors duration-150 hover:text-on-surface">使用条款</Link>
