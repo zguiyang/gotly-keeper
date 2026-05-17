@@ -223,25 +223,74 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Deployment
 
-### Production Deploy (deploy.sh)
+### Docker Deployment
 
-The project includes a deployment script (`deploy.sh`) that:
+The project provides a multi-stage `Dockerfile` that produces two runtime images:
 
-1. Builds two Docker images for `linux/amd64`
-2. Pushes to a private registry
-3. Syncs configuration via SSH + SCP
-4. Runs database migrations
-5. Pulls & restarts containers on the remote server
+| Stage | Purpose |
+|-------|---------|
+| `web-runner` | Next.js production server (port 3000) |
+| `worker-runner` | Background worker (URL metadata fetch) |
+
+#### 1. Prepare environment
+
+Create a `.env` file with your production settings (see `.env.example` for all variables).
+
+The `.env` file is used at build time via a Docker secret — no env files are baked into the image:
 
 ```bash
-./deploy.sh
+docker build --secret id=app_env,src=.env -t gotly-keeper:latest .
 ```
 
-Offers 4 modes: full deploy, build + start, start only, or migrate only.
+#### 2. Infrastructure
 
-**Docker Compose files:**
-- `docker-compose.yml` — Local dev (PostgreSQL + Redis)
-- `docker-compose.prod.yml` — Production (PostgreSQL + Web + Worker)
+You need PostgreSQL 16 (with pgvector) and Redis 7. Use the provided `docker-compose.yml` for infrastructure only:
+
+```bash
+docker compose up -d postgres redis
+```
+
+#### 3. Build & run
+
+Example `docker-compose.prod.yml` for production:
+
+```yaml
+services:
+  web:
+    image: gotly-keeper:latest
+    target: web-runner
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    image: gotly-keeper:latest
+    target: worker-runner
+    environment:
+      NODE_ENV: production
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+```
+
+#### 4. Database migrations
+
+```bash
+# Run migrations against your production database
+pnpm db:migrate
+```
+
+Or run them inside the worker container with a one-off command.
 
 ---
 
