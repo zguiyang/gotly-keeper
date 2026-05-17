@@ -36,9 +36,7 @@ AI 驱动的个人知识工作台 —— 笔记、书签、待办，一个入口
 
 ## 演示
 
-<video src="https://cloud.zgyk.cc/f/Y3cO/demo.mp4" controls muted loop playsinline referrerpolicy="no-referrer" style="width:100%;border-radius:10px;border:1px solid rgba(0,0,0,0.1)"></video>
-
-[演示视频直链](https://cloud.zgyk.cc/f/Y3cO/demo.mp4)
+![Gotly Keeper 演示](https://raw.githubusercontent.com/zguiyang/gotly-keeper/main/public/demo.webp)
 
 ---
 
