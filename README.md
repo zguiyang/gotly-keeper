@@ -36,7 +36,9 @@ all in one place. No folders, no tags, no friction.
 
 ## Demo
 
-![Gotly Keeper Demo](https://raw.githubusercontent.com/zguiyang/gotly-keeper/main/public/demo.webp)
+<img src="https://raw.githubusercontent.com/zguiyang/gotly-keeper/main/public/demo.webp" alt="Gotly Keeper Demo" width="100%" style="max-width:100%;border-radius:10px;border:1px solid rgba(0,0,0,0.1)">
+
+[▶ Watch full demo video](https://cloud.zgyk.cc/f/Y3cO/demo.mp4)
 
 ---
 
