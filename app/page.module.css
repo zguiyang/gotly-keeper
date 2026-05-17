@@ -1,68 +1,9 @@
+/* ─── Page shell ─────────────────────────────────────────────── */
 .pageShell {
   position: relative;
   min-height: 100vh;
   isolation: isolate;
-  overflow: hidden;
   background-color: var(--surface);
-}
-
-.pageShell::before,
-.pageShell::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.pageShell::before {
-  width: 44vw;
-  height: 44vw;
-  min-width: 320px;
-  min-height: 320px;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--color-primary) 12%, transparent) 0%,
-    color-mix(in srgb, var(--color-primary) 6%, transparent) 42%,
-    transparent 72%
-  );
-  top: 4%;
-  left: -12%;
-  filter: blur(100px);
-}
-
-.pageShell::after {
-  width: 34vw;
-  height: 34vw;
-  min-width: 280px;
-  min-height: 280px;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--color-primary-container) 14%, transparent) 0%,
-    color-mix(in srgb, var(--color-tertiary-fixed) 8%, transparent) 46%,
-    transparent 72%
-  );
-  right: -8%;
-  bottom: 4%;
-  filter: blur(100px);
-}
-
-.noise {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image: linear-gradient(
-      color-mix(in srgb, var(--color-surface-container-lowest) 34%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--color-surface-container-lowest) 34%, transparent) 1px,
-      transparent 1px
-    );
-  background-size: 32px 32px;
-  mask-image: radial-gradient(circle at center, black 18%, transparent 78%);
-  opacity: 0.22;
 }
 
 .content {
@@ -70,46 +11,34 @@
   display: flex;
   min-height: 100vh;
   flex-direction: column;
-  padding-top: 4.8rem;
+  padding-top: 4rem;
 }
 
 .container {
-  width: min(1380px, calc(100% - 3rem));
+  width: min(1200px, calc(100% - 3rem));
   margin-inline: auto;
 }
 
-.containerHero {
-  width: min(1520px, calc(100% - 3rem));
-}
-
 .section {
-  padding-block: clamp(4rem, 5.8vw, 6.25rem);
-}
-
-.sectionTight {
-  padding-top: 0.5rem;
+  padding-block: clamp(5rem, 7vw, 8rem);
 }
 
 .sectionAnchor {
-  scroll-margin-top: 5.1rem;
+  scroll-margin-top: 4rem;
 }
 
+/* ─── Navbar ─────────────────────────────────────────────────── */
 .topbar {
   position: fixed;
-  top: 0;
-  right: 0;
-  left: 0;
+  inset: 0 0 auto 0;
   z-index: 20;
-  width: 100%;
   border-bottom: 1px solid color-mix(in srgb, var(--color-on-surface) 6%, transparent);
-  background: color-mix(in srgb, var(--color-surface-container-lowest) 86%, var(--color-primary-fixed) 14%);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 12px 28px -24px color-mix(in srgb, var(--color-primary) 22%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  backdrop-filter: blur(20px);
 }
 
 .topbarInner {
-  position: relative;
-  padding-block: 0.9rem;
+  padding-block: 0.875rem;
 }
 
 .nav {
@@ -122,636 +51,414 @@
 
 .brandLockup {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.2rem;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .brandLogo {
-  height: 2.5rem;
+  height: 2rem;
   width: auto;
 }
 
 .navMenu {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  border-radius: 9999px;
-  background: color-mix(in srgb, var(--color-surface-container-lowest) 80%, var(--color-primary-fixed) 20%);
-  padding: 0.3rem;
+  gap: 0.125rem;
 }
 
 .navLink {
   display: inline-flex;
-  min-height: 2.25rem;
   align-items: center;
-  border-radius: 9999px;
-  padding-inline: 0.9rem;
-  font-size: 0.92rem;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 450;
   color: var(--color-on-surface-variant);
-  transition: background-color 180ms ease, color 180ms ease;
+  border-radius: 6px;
+  transition: color 150ms ease;
+  text-decoration: none;
 }
 
 .navLink:hover {
-  background: color-mix(in srgb, var(--color-surface-container-lowest) 72%, var(--color-primary-fixed) 28%);
   color: var(--color-on-surface);
 }
 
-.navLink:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 18%, transparent),
-    0 0 0 4px color-mix(in srgb, var(--color-primary) 8%, transparent);
-  background: color-mix(in srgb, var(--color-surface-container-lowest) 68%, var(--color-primary-fixed) 32%);
-  color: var(--color-on-surface);
+/* ─── Hero ───────────────────────────────────────────────────── */
+.heroSection {
+  padding-top: clamp(5rem, 8vw, 9rem);
+  padding-bottom: clamp(4rem, 6vw, 7rem);
 }
 
 .heroGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(480px, 0.92fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
   align-items: center;
-  gap: clamp(2.5rem, 4.2vw, 3.75rem);
+  gap: clamp(3rem, 6vw, 7rem);
 }
 
 .heroCopy {
   display: flex;
   flex-direction: column;
-  gap: 1.15rem;
-}
-
-.softBadge {
-  background: color-mix(in srgb, var(--color-surface-container-lowest) 80%, transparent);
+  gap: 1.75rem;
 }
 
 .display {
-  max-width: 12ch;
-  font-size: clamp(3rem, 4.7vw, 4.9rem);
-  line-height: 0.94;
-  letter-spacing: -0.055em;
-  text-wrap: balance;
+  font-size: clamp(3.25rem, 6vw, 5.5rem);
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: -0.04em;
+  color: var(--color-on-surface);
 }
 
 .lead {
-  max-width: 46rem;
-  font-size: clamp(1rem, 1vw, 1.12rem);
-  line-height: 1.72;
+  font-size: clamp(1rem, 1.15vw, 1.125rem);
+  font-weight: 400;
+  line-height: 1.75;
   color: var(--color-on-surface-variant);
+  max-width: 32rem;
 }
 
-.sectionIntro {
-  max-width: 42rem;
-  font-size: 1rem;
-  line-height: 1.72;
-  color: color-mix(in srgb, var(--color-on-surface-variant) 92%, var(--color-primary) 8%);
-}
-
-.primaryCta,
-.secondaryCta {
-  min-width: 10.5rem;
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .primaryCta {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dim) 100%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: var(--color-primary);
   color: var(--color-on-primary) !important;
-  box-shadow: 0 18px 36px -20px color-mix(in srgb, var(--color-primary) 45%, transparent);
+  border: none;
+  border-radius: 7px;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 150ms ease, transform 120ms ease;
 }
 
 .primaryCta:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
   color: var(--color-on-primary) !important;
-  background: linear-gradient(135deg, var(--color-primary-dim) 0%, var(--color-primary) 100%);
+}
+
+.primaryCta:active {
+  transform: scale(0.98);
 }
 
 .secondaryCta {
-  color: var(--color-on-surface);
-  border-color: color-mix(in srgb, var(--color-primary) 16%, var(--color-surface-container-lowest));
-  background: color-mix(in srgb, var(--color-surface-container-lowest) 84%, var(--color-primary-fixed) 16%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--color-on-surface-variant) !important;
+  font-size: 0.9rem;
+  font-weight: 450;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-on-surface) 20%, transparent);
+  padding-bottom: 1px;
+  transition: color 150ms ease, border-color 150ms ease;
 }
 
 .secondaryCta:hover {
-  color: var(--color-on-surface);
-  background: color-mix(in srgb, var(--color-surface-container-lowest) 52%, var(--color-primary-fixed) 48%);
-  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--color-surface-container-lowest));
+  color: var(--color-on-surface) !important;
+  border-color: var(--color-on-surface);
 }
 
-.inlinePoints {
+.trustNote {
+  font-size: 0.775rem;
+  color: color-mix(in srgb, var(--color-on-surface-variant) 60%, transparent);
+  letter-spacing: 0.01em;
+}
+
+/* ─── Hero visual ────────────────────────────────────────────── */
+.heroVisual {
+  position: relative;
+}
+
+/* ─── Stats strip ────────────────────────────────────────────── */
+.statsStrip {
+  border-top: 1px solid color-mix(in srgb, var(--color-on-surface) 7%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-on-surface) 7%, transparent);
+}
+
+.statsRow {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  font-size: 0.95rem;
-  color: var(--color-on-surface-variant);
+  align-items: stretch;
+  padding-block: clamp(1.75rem, 3vw, 2.5rem);
 }
 
-.inlinePoints span {
-  display: inline-flex;
+.statItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.3rem;
+  text-align: center;
+  padding-inline: 1.5rem;
 }
 
-.inlinePoints span::before {
-  content: "";
-  height: 0.4rem;
-  width: 0.4rem;
-  border-radius: 9999px;
-  background: color-mix(in srgb, var(--color-primary) 34%, transparent);
+.statItem + .statItem {
+  border-left: 1px solid color-mix(in srgb, var(--color-on-surface) 8%, transparent);
 }
 
-.stageWrap {
-  position: relative;
-  padding-left: 1rem;
-}
-
-.stageGlow {
-  position: absolute;
-  inset: 8% 0% auto 10%;
-  height: 82%;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--color-primary-container) 22%, transparent) 0%,
-    color-mix(in srgb, var(--color-primary-fixed-dim) 14%, transparent) 42%,
-    transparent 72%
-  );
-  filter: blur(40px);
-}
-
-.floatStage {
-  position: relative;
-  min-height: 35rem;
-}
-
-.floatCard {
-  position: absolute;
-  width: min(100%, 24rem);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 14%, transparent);
-  border-radius: 1.75rem;
-  background: color-mix(in srgb, var(--color-surface-container-lowest) 92%, var(--color-primary-fixed) 8%);
-  padding: 1.2rem 1.25rem 1.35rem;
-  backdrop-filter: blur(18px);
-  box-shadow: 0 34px 72px -30px color-mix(in srgb, var(--color-primary) 28%, transparent);
-  transition: transform 240ms ease, box-shadow 240ms ease, border-color 240ms ease;
-  animation: floatCard 7s ease-in-out infinite;
-}
-
-.floatCard:hover {
-  transform: translateY(-6px);
-  border-color: color-mix(in srgb, var(--color-primary) 22%, transparent);
-  box-shadow: 0 30px 70px -28px color-mix(in srgb, var(--color-primary) 30%, transparent);
-}
-
-.floatCard[data-index="0"] {
-  top: 2rem;
-  left: 0;
-  z-index: 3;
-}
-
-.floatCard[data-index="1"] {
-  top: 10.5rem;
-  right: 0;
-  z-index: 2;
-  animation-delay: -2s;
-}
-
-.floatCard[data-index="2"] {
-  bottom: 5.5rem;
-  left: 3rem;
-  z-index: 1;
-  animation-delay: -4s;
-}
-
-.floatEyebrow,
-.kicker,
-.stageKicker {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--color-primary) 78%, transparent);
-}
-
-.floatTitle {
-  margin-top: 0.7rem;
-  font-family: "Manrope", var(--font-heading), var(--font-sans);
-  font-size: 1.14rem;
+.statValue {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
   font-weight: 700;
-  line-height: 1.4;
+  letter-spacing: -0.04em;
   color: var(--color-on-surface);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
-.floatDescription {
-  margin-top: 0.7rem;
-  font-size: 0.95rem;
-  line-height: 1.72;
+.statLabel {
+  font-size: 0.8125rem;
   color: var(--color-on-surface-variant);
 }
 
-.panel {
-  border: 1px solid color-mix(in srgb, var(--color-on-surface) 8%, transparent);
-  border-radius: 1.75rem;
-  background: color-mix(in srgb, var(--color-surface-container-lowest) 88%, var(--color-primary-fixed) 12%);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 20px 42px -28px color-mix(in srgb, var(--color-primary) 17%, transparent);
-}
-
-.stageCaption {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: min(18.5rem, 82%);
-  padding: 1.25rem 1.35rem;
-}
-
+/* ─── Section headings ───────────────────────────────────────── */
 .sectionHeading {
   display: flex;
-  max-width: 44rem;
   flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: 0.75rem;
+  margin-bottom: 3.5rem;
 }
 
-.featureGrid,
-.scenarioGrid {
-  display: grid;
-  gap: 1rem;
+.eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-primary);
 }
 
-.featureGrid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: start;
-}
-
-.cardSurface {
-  overflow: hidden;
-  transition: transform 240ms ease, box-shadow 240ms ease, border-color 240ms ease;
-}
-
-.cardSurface:hover,
-.scenarioCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 24px 48px -28px color-mix(in srgb, var(--color-primary) 24%, transparent);
-  border-color: color-mix(in srgb, var(--color-primary) 14%, transparent);
-}
-
-.featureIcon {
-  display: flex;
-  height: 3rem;
-  width: 3rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 1rem;
-  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
-}
-
-.storyGrid {
-  display: grid;
-  grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.18fr);
-  align-items: start;
-  gap: 2rem;
-}
-
-.storyIntro {
-  position: sticky;
-  top: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
-}
-
-.storyCopy {
-  max-width: 34rem;
-}
-
-.scenarioGrid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.scenarioCard {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  padding: 1.35rem;
-  transition: transform 240ms ease, box-shadow 240ms ease, border-color 240ms ease;
-}
-
-.principles {
-  display: grid;
-  grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
-  gap: 1.5rem;
-  padding: clamp(1.6rem, 2.6vw, 2.4rem);
-}
-
-.principlesGrid {
-  display: grid;
-  gap: 1rem;
-}
-
-.principleItem {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: start;
-  gap: 1rem;
-  border-top: 1px solid color-mix(in srgb, var(--color-on-surface) 8%, transparent);
-  padding-top: 1rem;
-}
-
-.principleIndex {
-  font-family: "Manrope", var(--font-heading), var(--font-sans);
-  font-size: 1.35rem;
+.sectionTitle {
+  font-size: clamp(2rem, 3.5vw, 2.75rem);
   font-weight: 700;
-  color: color-mix(in srgb, var(--color-primary) 45%, transparent);
-}
-
-.manifesto {
-  padding-block: clamp(3.5rem, 6vw, 5rem);
-}
-
-.manifestoPanel {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
-  align-items: end;
-  gap: 2rem;
-  padding: clamp(1.75rem, 3vw, 2.8rem);
-}
-
-.manifestoCopyBlock {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.manifestoCopy {
-  max-width: 12ch;
-  font-size: clamp(2rem, 3.9vw, 3.5rem);
-  line-height: 1.02;
-  letter-spacing: -0.05em;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--color-on-surface);
   text-wrap: balance;
 }
 
-.manifestoDescription {
-  max-width: 38rem;
-  font-size: 1rem;
-  line-height: 1.72;
-  color: color-mix(in srgb, var(--color-on-surface-variant) 94%, var(--color-primary) 6%);
+/* ─── Scenarios ──────────────────────────────────────────────── */
+.scenariosSection {
+  background: color-mix(in srgb, var(--color-on-surface) 2.5%, var(--color-surface));
 }
 
-.manifestoSide {
+.scenarioList {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-on-surface) 8%, transparent);
 }
 
-.manifestoTags {
+.scenarioRow {
+  display: grid;
+  grid-template-columns: 3rem 1fr auto;
+  align-items: start;
+  gap: 2rem;
+  padding-block: 2rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-on-surface) 8%, transparent);
+  transition: background 200ms ease;
+}
+
+.scenarioRow:hover {
+  background: color-mix(in srgb, var(--color-on-surface) 2%, transparent);
+  margin-inline: -1.5rem;
+  padding-inline: 1.5rem;
+  border-radius: 8px;
+}
+
+.scenarioIndex {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: color-mix(in srgb, var(--color-on-surface-variant) 50%, transparent);
+  padding-top: 0.2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.scenarioBody {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.375rem;
 }
 
-.manifestoTag {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 12%, transparent);
-  border-radius: 9999px;
-  background: color-mix(in srgb, var(--color-surface-container-lowest) 78%, var(--color-primary-fixed) 22%);
-  padding: 0.6rem 1rem;
-  font-size: 0.92rem;
-  color: color-mix(in srgb, var(--color-on-surface-variant) 84%, var(--color-primary) 16%);
+.scenarioTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-on-surface);
+  letter-spacing: -0.01em;
 }
 
-.manifestoNote {
-  max-width: 24rem;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent);
-  border-radius: 1.25rem;
-  background: color-mix(in srgb, var(--color-surface-container-lowest) 90%, var(--color-primary-fixed) 10%);
-  padding: 1rem 1.05rem;
-  font-size: 0.95rem;
+.scenarioDesc {
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--color-on-surface-variant);
+  max-width: 36rem;
+}
+
+.scenarioExample {
+  font-size: 0.8125rem;
+  color: var(--color-on-surface-variant);
+  font-style: italic;
+  max-width: 18rem;
+  text-align: right;
+  padding-top: 0.2rem;
+  opacity: 0.7;
+}
+
+/* ─── Final CTA ──────────────────────────────────────────────── */
+.finalCta {
+  padding-block: clamp(6rem, 10vw, 10rem);
+}
+
+.finalCtaInner {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 44rem;
+}
+
+.finalCtaHeadline {
+  font-size: clamp(2.25rem, 4.5vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  color: var(--color-on-surface);
+}
+
+.finalCtaBody {
+  font-size: 1.0625rem;
   line-height: 1.7;
   color: var(--color-on-surface-variant);
+  max-width: 36rem;
 }
 
+.finalCtaButton {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--color-primary) !important;
+  color: var(--color-on-primary) !important;
+  border: none !important;
+  border-radius: 7px !important;
+  padding: 0.75rem 1.75rem !important;
+  font-size: 0.9375rem !important;
+  font-weight: 600 !important;
+  text-decoration: none;
+  width: fit-content;
+  transition: opacity 150ms ease, transform 120ms ease;
+}
+
+.finalCtaButton:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+/* ─── Footer ─────────────────────────────────────────────────── */
 .bottombar {
-  width: 100%;
-  margin-top: 1rem;
-  border-top: 1px solid color-mix(in srgb, var(--color-on-surface) 6%, transparent);
-  background: color-mix(in srgb, var(--color-surface-container-lowest) 82%, var(--color-primary-fixed) 18%);
+  border-top: 1px solid color-mix(in srgb, var(--color-on-surface) 7%, transparent);
 }
 
 .bottombarInner {
-  border-top: 1px solid color-mix(in srgb, var(--color-surface-container-lowest) 55%, transparent);
+  padding-block: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
 }
 
-@keyframes floatCard {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-8px);
-  }
+.footerCopy {
+  font-size: 0.8125rem;
+  color: color-mix(in srgb, var(--color-on-surface-variant) 70%, transparent);
 }
 
+.footerLinks {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.footerLink {
+  font-size: 0.8125rem;
+  color: color-mix(in srgb, var(--color-on-surface-variant) 60%, transparent);
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.footerLink:hover {
+  color: var(--color-on-surface);
+}
+
+/* ─── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .container,
-  .containerHero {
-    width: min(1120px, calc(100% - 2rem));
+  .heroGrid {
+    grid-template-columns: 1fr;
+    gap: 3rem;
   }
 
   .navMenu {
-    order: 3;
-    width: 100%;
-    justify-content: flex-start;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .navMenu::-webkit-scrollbar {
     display: none;
   }
 
-  .heroGrid,
-  .storyGrid,
-  .principles,
-  .featureGrid,
-  .scenarioGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .heroGrid {
-    gap: 2rem;
-  }
-
-  .heroCopy {
+  .scenarioRow {
+    grid-template-columns: 2.5rem 1fr;
     gap: 1rem;
   }
 
-  .display {
-    max-width: 9ch;
-    font-size: clamp(2.7rem, 9vw, 4.2rem);
-    line-height: 0.96;
+  .scenarioExample {
+    display: none;
   }
 
-  .lead,
-  .sectionIntro,
-  .storyCopy {
-    max-width: 100%;
-    font-size: 1rem;
-    line-height: 1.7;
+  .statsRow {
+    flex-direction: column;
+    gap: 0;
   }
 
-  .stageWrap {
-    padding-left: 0;
+  .statItem {
+    padding-block: 1.5rem;
   }
 
-  .storyIntro {
-    position: static;
-  }
-
-  .floatStage {
-    display: grid;
-    min-height: auto;
-    gap: 1rem;
-  }
-
-  .floatCard,
-  .stageCaption {
-    position: relative;
-    inset: auto;
-    width: 100%;
-    animation: none;
-  }
-
-  .floatCard {
-    padding: 1rem 1rem 1.1rem;
-  }
-
-  .featureGrid,
-  .scenarioGrid,
-  .principlesGrid {
-    gap: 0.85rem;
-  }
-
-  .principles {
-    padding: 1.35rem;
-  }
-
-  .manifestoPanel {
-    grid-template-columns: 1fr;
-    gap: 1.25rem;
-    padding: 1.35rem;
-  }
-
-  .manifestoCopy {
-    max-width: 12ch;
-  }
-}
-
-@media (min-width: 1800px) {
-  .container {
-    width: min(1520px, calc(100% - 6rem));
-  }
-
-  .containerHero {
-    width: min(1680px, calc(100% - 6rem));
-  }
-
-  .heroGrid {
-    grid-template-columns: minmax(0, 1.2fr) minmax(520px, 0.8fr);
-    gap: 5rem;
-  }
-
-  .sectionHeading,
-  .sectionIntro,
-  .lead {
-    max-width: 48rem;
+  .statItem + .statItem {
+    border-left: none;
+    border-top: 1px solid color-mix(in srgb, var(--color-on-surface) 8%, transparent);
   }
 }
 
 @media (max-width: 640px) {
-  .sectionAnchor {
-    scroll-margin-top: 7rem;
-  }
-
-  .nav {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.8rem;
-  }
-
-  .brandLockup {
-    gap: 0.75rem;
-  }
-
   .content {
-    padding-top: 6.4rem;
+    padding-top: 3.5rem;
   }
 
-  .display {
-    max-width: 8ch;
-  }
-
-  .section {
-    padding-block: 3.25rem;
-  }
-
-  .brandLogo {
-    height: 2.2rem;
+  .ctaRow {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .primaryCta,
   .secondaryCta {
-    width: 100%;
+    justify-content: center;
   }
 
-  .inlinePoints {
-    row-gap: 0.35rem;
-    font-size: 0.88rem;
+  .bottombarInner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
   }
 
-  .featureIcon {
-    height: 2.75rem;
-    width: 2.75rem;
-  }
-
-  .manifestoTag {
-    padding: 0.55rem 0.85rem;
-    font-size: 0.85rem;
-  }
-
-  .manifestoCopy {
-    max-width: 9ch;
-    font-size: clamp(1.9rem, 9vw, 2.6rem);
-  }
-
-  .manifestoDescription,
-  .manifestoNote {
-    max-width: 100%;
-    font-size: 0.95rem;
-  }
-}
-
-@media (min-width: 1200px) and (max-width: 1599px) {
-  .container {
-    width: min(1280px, calc(100% - 3rem));
-  }
-
-  .containerHero {
-    width: min(1400px, calc(100% - 3rem));
+  .scenarioRow:hover {
+    margin-inline: 0;
+    padding-inline: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .floatCard,
-  .cardSurface,
-  .scenarioCard,
-  .primaryCta :global(svg) {
-    animation: none !important;
-    transition: none !important;
-  }
-
-  .floatCard:hover,
-  .cardSurface:hover,
-  .scenarioCard:hover {
-    transform: none;
+  .primaryCta:hover,
+  .secondaryCta:hover,
+  .finalCtaButton:hover {
+    transform: none !important;
   }
 }
