@@ -1,5 +1,7 @@
 'use client'
 
+// DESIGN_TOKEN_EXCEPTION: Warm modern accent colors (amber/emerald/red) are intentionally raw for semantic phase states
+
 import { Check } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useId, useState } from 'react'
@@ -297,43 +299,45 @@ function StreamingSinglePanel({
 
   return (
     <div className="flex min-h-[7rem] items-center justify-start">
-      <div className="flex w-full items-start gap-3 px-1 pt-2 sm:px-2">
-        <span className="relative flex h-2.5 w-2.5 shrink-0">
-          <span className="absolute inline-flex h-full w-full rounded-full bg-primary/45 motion-safe:animate-ping" />
-          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
-        </span>
-
-        <div className="min-w-0 flex-1 space-y-1" role="status" aria-live="polite" aria-atomic="true">
+      <div className="flex w-full items-start gap-3" role="status" aria-live="polite" aria-atomic="true">
+        <ol className="w-full space-y-2.5">
           <AnimatePresence initial={false} mode="popLayout">
-            {lines.map((line, index) => (
-              <motion.p
-                key={line.key}
-                layout
-                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
-                animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-                exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -12 }}
-                transition={prefersReducedMotion
-                  ? { duration: 0.18, ease: 'linear' }
-                  : { duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-                className={index === lines.length - 1
-                  ? 'truncate text-sm leading-7 text-on-surface'
-                  : 'truncate text-sm leading-6 text-on-surface-variant/58'}
-                title={line.text}
-              >
-                {line.text}
-              </motion.p>
-            ))}
+            {lines.map((line, index) => {
+              const isLatest = index === lines.length - 1
+              return (
+                <motion.li
+                  key={line.key}
+                  layout
+                  initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: -8 }}
+                  animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
+                  exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: 8 }}
+                  transition={prefersReducedMotion
+                    ? { duration: 0.2, ease: 'linear' }
+                    : { duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex items-start gap-2.5"
+                >
+                  {isLatest ? (
+                    <span className="relative mt-0.5 flex h-3 w-3 shrink-0">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-amber-500/50 motion-safe:animate-ping" />
+                      <span className="relative inline-flex h-3 w-3 rounded-full bg-amber-500" />
+                    </span>
+                  ) : (
+                    <span className="mt-1 flex h-1.5 w-1.5 shrink-0 rounded-full bg-amber-600/40" />
+                  )}
+                  <p
+                    className={`min-w-0 ${isLatest ? 'text-sm leading-6 text-on-surface' : 'text-sm leading-6 text-on-surface-variant/60'}`}
+                    title={line.text}
+                  >
+                    {line.text}
+                  </p>
+                </motion.li>
+              )
+            })}
           </AnimatePresence>
-        </div>
+        </ol>
       </div>
     </div>
   )
-}
-
-function getMarker(isActive: boolean, isCompleted: boolean) {
-  if (isActive) return { symbol: '○', className: 'text-primary' }
-  if (isCompleted) return { symbol: '✓', className: 'text-status-success' }
-  return { symbol: '·', className: 'text-on-surface-variant/40' }
 }
 
 function StreamingMultiPanel({
@@ -351,24 +355,57 @@ function StreamingMultiPanel({
   const isComposePhase = visiblePhase.phase === 'compose'
 
   return (
-    <div className="space-y-3 px-1 sm:px-2">
+    <div className="space-y-3">
       <p className="text-sm font-medium text-on-surface">{planPreview.summary}</p>
 
-      <ol className="space-y-1.5">
+      <ol className="grid gap-2.5 sm:gap-3">
         {visibleSteps.map((step) => {
           const absoluteIndex = planPreview.steps.findIndex((candidate) => candidate.id === step.id)
           const isActive = activeIndex !== null ? absoluteIndex === activeIndex : false
           const isCompleted = isComposePhase || areToolsFinished || absoluteIndex < nextIndex
-          const marker = getMarker(isActive, isCompleted)
 
           return (
-            <li key={step.id} className="flex items-start gap-2">
-              <span className={`mt-0.5 shrink-0 text-sm leading-6 ${marker.className}`}>
-                {marker.symbol}
-              </span>
-              <p className={`min-w-0 text-sm leading-6 ${isActive ? 'font-medium text-on-surface' : isCompleted ? 'text-on-surface-variant/70' : 'text-on-surface-variant/50'}`}>
-                {step.preview}
-              </p>
+            <li
+              key={step.id}
+              className={`rounded-[1rem] border px-3.5 py-3 transition-all duration-300 ${
+                isActive
+                  ? 'border-amber-500/25 bg-amber-50/60 shadow-[var(--shadow-elevation-1)] dark:bg-amber-900/10'
+                  : isCompleted
+                    ? 'border-emerald-500/15 bg-emerald-50/40 dark:bg-emerald-900/8'
+                    : 'border-border/10 bg-muted/30'
+              }`}
+            >
+              <div className="flex items-start gap-2.5">
+                <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+                  isActive
+                    ? 'bg-amber-500 text-white'
+                    : isCompleted
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-border/20 text-on-surface-variant/50'
+                }`}>
+                  {isCompleted ? '✓' : absoluteIndex + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className={`text-sm font-medium ${
+                    isActive
+                      ? 'text-amber-900 dark:text-amber-200'
+                      : isCompleted
+                        ? 'text-emerald-800 dark:text-emerald-200'
+                        : 'text-on-surface-variant/60'
+                  }`}>
+                    {step.preview}
+                  </p>
+                  {isActive ? (
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-amber-700/70 dark:text-amber-300/70">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-amber-500/60 motion-safe:animate-ping" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-500" />
+                      </span>
+                      处理中
+                    </p>
+                  ) : null}
+                </div>
+              </div>
             </li>
           )
         })}
@@ -508,9 +545,9 @@ function FinalResult({
       : errorMessage ?? '处理失败'
 
     return (
-      <div className="rounded-[1rem] border border-destructive/15 bg-destructive/5 px-4 py-3">
-        <p className="text-sm font-semibold text-destructive">这次没有完成处理</p>
-        <p className="mt-1.5 text-sm text-destructive/80">
+      <div className="rounded-[1rem] border-l-4 border-l-red-400 border-red-200/20 bg-red-50/60 px-4 py-3 dark:bg-red-950/10">
+        <p className="text-sm font-semibold text-red-700 dark:text-red-400">这次没有完成处理</p>
+        <p className="mt-1.5 text-sm leading-6 text-red-600/80 dark:text-red-400/80">
           {detailMessage}
         </p>
         <p className="mt-3 text-xs text-on-surface-variant/70">可以换成更明确的说法，让 AI 助手更容易理解你的需求。</p>
@@ -569,7 +606,7 @@ function FinalResult({
           ) : null}
         </div>
         {result.item ? (
-          <div className="rounded-[1rem] border border-border/10 bg-muted/45 px-3 py-2.5">
+          <div className="rounded-[1rem] border-l-4 border-l-emerald-400 border-border/10 bg-emerald-50/40 px-3 py-2.5 dark:bg-emerald-900/8">
             <p className="truncate text-sm font-medium text-on-surface">
               {result.item.title}
             </p>
@@ -594,7 +631,7 @@ function FinalResult({
             <span className={workspaceMetaTextClassName}>{assistantText}</span>
           ) : null}
         </div>
-        <div className="space-y-2">
+        <div className="grid gap-2">
           {result.stepResults.map((step) => {
             const normalized = getBatchStepItem(step)
 
@@ -602,7 +639,7 @@ function FinalResult({
               return (
                 <div
                   key={step.stepId}
-                  className="rounded-[1rem] border border-border/10 bg-muted/45 px-3 py-2.5"
+                  className="rounded-[1rem] border-l-4 border-l-emerald-400 border-border/10 bg-emerald-50/40 px-3 py-2.5 dark:bg-emerald-900/8"
                 >
                   <p className="text-xs font-medium text-on-surface-variant/70">
                     {normalized.action === 'create' ? '已创建' : '已更新'}
@@ -640,12 +677,12 @@ function FinalResult({
               return (
                 <div
                   key={step.stepId}
-                  className="rounded-[1rem] border border-destructive/15 bg-destructive/5 px-3 py-2.5"
+                  className="rounded-[1rem] border-l-4 border-l-red-400 border-red-200/20 bg-red-50/60 px-3 py-2.5 dark:bg-red-950/10"
                 >
-                  <p className="text-xs font-medium text-destructive">
+                  <p className="text-xs font-medium text-red-600/90 dark:text-red-400">
                     {getToolLabel(step.toolName)}
                   </p>
-                  <p className="mt-1 text-sm font-medium text-destructive">
+                  <p className="mt-1 text-sm font-medium text-red-700 dark:text-red-300">
                     {normalized.message}
                   </p>
                 </div>
@@ -749,36 +786,39 @@ function DuplicateConfirmationCard({
   const isBookmarkPrecheck = interaction.source === 'precheck'
 
   return (
-    <div className="space-y-3 rounded-[1rem] border border-border/10 bg-muted/35 px-4 py-3">
-      <div className="space-y-1">
+    <div className="space-y-3 rounded-[1.25rem] border-l-4 border-l-amber-400 border-border/10 bg-amber-50/50 px-4 py-3 dark:bg-amber-900/8">
+      <div className="space-y-1.5">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-xs text-on-surface-variant/60">疑似重复{targetLabelMap[interaction.target]}</p>
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+            <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+            疑似重复{targetLabelMap[interaction.target]}
+          </span>
           {isBookmarkPrecheck ? (
-            <span className="rounded-full border border-border/10 bg-surface-container-lowest/90 px-2 py-0.5 text-[11px] font-medium text-on-surface-variant/80">
+            <span className="rounded-full border border-amber-200/40 bg-amber-100/60 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:border-amber-800/30 dark:bg-amber-900/20 dark:text-amber-300">
               链接预检命中
             </span>
           ) : null}
         </div>
         <p className="text-sm font-medium text-on-surface">{interaction.current.title}</p>
-        <p className="text-sm text-on-surface-variant/80">{interaction.current.preview}</p>
+        <p className="text-sm leading-6 text-on-surface-variant/80">{interaction.current.preview}</p>
         {isBookmarkPrecheck ? (
-          <p className="text-xs text-on-surface-variant/70">
+          <p className="text-xs leading-5 text-amber-700/70 dark:text-amber-300/70">
             已按链接完成预检；如果这不是同一条书签，仍然可以继续创建。
           </p>
         ) : null}
       </div>
 
-      <div className="space-y-2">
-        <p className="text-xs text-on-surface-variant/60">已存在内容</p>
-        <ol className="space-y-2">
+      <div className="space-y-1.5">
+        <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/60 uppercase">已存在内容</p>
+        <ol className="space-y-1.5">
           {interaction.duplicates.map((candidate) => (
             <li
               key={candidate.id}
-              className="rounded-[0.85rem] border border-border/10 bg-surface-container-lowest/80 px-3 py-2"
+              className="rounded-[0.85rem] border border-border/10 bg-surface-container-lowest/90 px-3 py-2 shadow-[var(--shadow-elevation-1)]"
             >
-              <p className="text-sm text-on-surface">{candidate.label}</p>
+              <p className="text-sm font-medium text-on-surface">{candidate.label}</p>
               {candidate.reason ? (
-                <p className="mt-1 text-xs text-on-surface-variant/70">{candidate.reason}</p>
+                <p className="mt-0.5 text-xs text-on-surface-variant/70">{candidate.reason}</p>
               ) : null}
             </li>
           ))}
@@ -982,7 +1022,7 @@ export function WorkspaceRunPanel({
 
     if (interaction.type === 'confirm_duplicate') {
       return (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
           <Button
             variant="default"
             onClick={() => onResume({ type: 'confirm_duplicate', action: 'create' })}
@@ -1089,47 +1129,45 @@ export function WorkspaceRunPanel({
       </div>
 
       {showDisclosure ? (
-        <div className="mt-3 border-t border-border/10 pt-3">
+        <div className="mt-2 border-t border-border/8 pt-2">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={() => setDetailsExpanded((prev) => !prev)}
             aria-expanded={detailsExpanded}
-            className="rounded-full px-3 text-xs text-on-surface-variant/70"
+            className="rounded-full px-3 text-xs text-on-surface-variant/60 hover:text-on-surface"
           >
             {detailsExpanded ? '收起详情' : '展开详情'}
           </Button>
 
           {detailsExpanded ? (
-            <div className="mt-3 space-y-3">
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {resolvedUnderstandingPreview ? (
-                <div className="space-y-2 rounded-[0.75rem] bg-muted/30 px-3 py-2.5">
-                  <p className="text-xs text-on-surface-variant/50">原始输入</p>
-                  <p className="text-sm text-on-surface">{resolvedUnderstandingPreview.rawInput}</p>
+                <div className="space-y-2 rounded-[0.85rem] bg-amber-50/50 px-3.5 py-3 dark:bg-amber-900/8">
+                  <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/50 uppercase">原始输入</p>
+                  <p className="text-sm leading-6 text-on-surface">{resolvedUnderstandingPreview.rawInput}</p>
 
                   {resolvedUnderstandingPreview.normalizedInput !== resolvedUnderstandingPreview.rawInput ? (
-                    <div className="space-y-1">
-                      <p className="text-xs text-on-surface-variant/50">标准化后</p>
-                      <p className="text-sm text-on-surface">{resolvedUnderstandingPreview.normalizedInput}</p>
+                    <div className="space-y-1 pt-1">
+                      <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/50 uppercase">标准化后</p>
+                      <p className="text-sm leading-6 text-on-surface">{resolvedUnderstandingPreview.normalizedInput}</p>
                     </div>
                   ) : null}
 
                   {resolvedUnderstandingPreview.corrections.length > 0 ? (
-                    <div className="space-y-1">
-                      <p className="text-xs text-on-surface-variant/50">修正</p>
-                      <p className="text-sm text-on-surface">{resolvedUnderstandingPreview.corrections.join('、')}</p>
+                    <div className="space-y-1 pt-1">
+                      <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/50 uppercase">修正</p>
+                      <p className="text-sm leading-6 text-on-surface">{resolvedUnderstandingPreview.corrections.join('、')}</p>
                     </div>
                   ) : null}
 
                   {resolvedUnderstandingPreview.draftTasks.length > 0 ? (
-                    <div className="space-y-1">
-                      <p className="text-xs text-on-surface-variant/50">识别任务 ({resolvedUnderstandingPreview.draftTasks.length})</p>
+                    <div className="space-y-1 pt-1">
+                      <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/50 uppercase">识别任务 ({resolvedUnderstandingPreview.draftTasks.length})</p>
                       <ol className="space-y-1">
                         {resolvedUnderstandingPreview.draftTasks.map((task) => (
-                          <li key={task.id} className="text-sm text-on-surface">
-                            {task.title}
-                          </li>
+                          <li key={task.id} className="text-sm text-on-surface">{task.title}</li>
                         ))}
                       </ol>
                     </div>
@@ -1138,11 +1176,12 @@ export function WorkspaceRunPanel({
               ) : null}
 
               {resolvedPlanPreview ? (
-                <div className="space-y-2 rounded-[0.75rem] bg-muted/30 px-3 py-2.5">
-                  <p className="text-xs text-on-surface-variant/50">执行步骤 ({resolvedPlanPreview.steps.length})</p>
+                <div className="space-y-2 rounded-[0.85rem] bg-emerald-50/50 px-3.5 py-3 dark:bg-emerald-900/8">
+                  <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/50 uppercase">执行步骤 ({resolvedPlanPreview.steps.length})</p>
                   <ol className="space-y-1">
                     {resolvedPlanPreview.steps.map((step) => (
-                      <li key={step.id} className="text-sm text-on-surface">
+                      <li key={step.id} className="flex items-start gap-2 text-sm text-on-surface">
+                        <span className="mt-1 flex h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500/60" />
                         {step.preview}
                       </li>
                     ))}
