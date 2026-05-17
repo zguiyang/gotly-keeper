@@ -37,12 +37,11 @@ export function FeatureGrid() {
                 <Icon className="h-4 w-4 text-primary" />
               </div>
               <h3 className="mt-3 text-lg font-semibold leading-snug tracking-tight text-on-surface">
-                {feature.subtitle}
+                {feature.title}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
-                {feature.description}
+                {feature.desc}
               </p>
-              <p className={styles.featureExample}>{feature.example}</p>
             </div>
           </motion.div>
         );
