@@ -70,7 +70,6 @@ export default async function LandingPage() {
               </Link>
               {user ? (
                 <>
-                  <Link href="/workspace" className={primaryCtaCls}>进入工作区</Link>
                   <AccountMenu userEmail={user.email} userImage={user.image} userName={user.name} />
                 </>
               ) : (
