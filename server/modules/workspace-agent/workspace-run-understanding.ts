@@ -307,6 +307,7 @@ export async function understandWorkspaceRunInput(input: {
   normalized: {
     rawText: string
     normalizedText: string
+    urls?: string[]
   }
   runModel: WorkspaceRunModel
   inheritedCorrections?: string[]

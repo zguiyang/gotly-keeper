@@ -408,9 +408,9 @@ function buildCreateToolInput(task: DraftWorkspaceTask, action: WorkspaceRunPlan
 
   if (action === 'create_bookmark') {
     const cleanContent = resolveCleanContent(task)
-    const rawTitle = title ?? task.title.trim()
+    const rawTitle = (title ?? task.title).trim()
     const url = normalizeUrlString(getStringSlot(task, 'url'))
-    const resolvedTitle = rawTitle && isUrlString(rawTitle) ? undefined : rawTitle
+    const resolvedTitle = rawTitle && !isUrlString(rawTitle) ? rawTitle : undefined
     return {
       url,
       title: resolvedTitle,

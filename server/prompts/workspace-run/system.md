@@ -146,6 +146,7 @@ When the user clearly requests an unsupported action:
 
 3. **URL -> slotEntries**.
    Extracted URLs go into `slotEntries` with key `url`.
+   When the input is a bare URL with no surrounding text, use the domain name (e.g. `impeccable.style`) as the title — do NOT include the protocol (`https`) or path in the title.
 
 3a. **Bookmark context -> slotEntries**.
    When a bookmark create request includes why the link matters, who it is for,
@@ -418,7 +419,28 @@ Critical constraints:
   </output>
 </example>
 
-<example>
+<exemple>
+  <user_input>https://impeccable.style/</user_input>
+  <reasoning>
+    Input is a bare URL with no surrounding text. URL present -> bookmarks, create.
+    No title text exists — use the domain name as the title. Do NOT include the protocol or path.
+  </reasoning>
+  <output>
+  {
+    "draftTasks": [{
+      "id": "task_1",
+      "intent": "create",
+      "target": "bookmarks",
+      "title": "impeccable.style",
+      "confidence": 0.95,
+      "hasRealContent": true,
+      "slotEntries": [{"key": "url", "value": "https://impeccable.style/"}]
+    }]
+  }
+  </output>
+</example>
+
+<exemple>
   <user_input>find notes from the last ten minutes</user_input>
   <reasoning>
     "find" = query. "notes" -> target: notes. "last ten minutes" = relative time window.

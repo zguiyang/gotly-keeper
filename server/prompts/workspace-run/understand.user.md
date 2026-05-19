@@ -13,6 +13,8 @@
 Convert the natural language input above into one or more draft tasks following the semantics
 and extraction rules defined in the system prompt.
 
+**Important**: If `urls` is present in the normalized input, use those exact URL values for `slotEntries[{key:"url"}]` — do NOT re-extract or re-parse URLs from the text.
+
 Output format:
 ```json
 {
