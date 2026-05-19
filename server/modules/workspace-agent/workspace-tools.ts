@@ -283,8 +283,10 @@ function buildBookmarkRawInput(input: {
   const title = input.title?.trim()
   const dedupedTitle = title && title !== url ? title : null
   const note = input.note?.trim()
+  const dedupedNote = note && note !== url ? note : null
   const summary = input.summary?.trim()
-  const bookmarkContext = note && note !== summary ? [note, summary].filter(Boolean) : [note ?? summary].filter(Boolean)
+  const dedupedSummary = summary && summary !== url ? summary : null
+  const bookmarkContext = dedupedNote && dedupedNote !== dedupedSummary ? [dedupedNote, dedupedSummary].filter(Boolean) : [dedupedNote ?? dedupedSummary].filter(Boolean)
   return [dedupedTitle, ...bookmarkContext, url].filter(Boolean).join('\n\n')
 }
 
