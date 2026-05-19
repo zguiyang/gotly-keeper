@@ -377,6 +377,15 @@ function isIsoDateTime(value: string | undefined) {
   return !Number.isNaN(Date.parse(value)) && value.includes('T')
 }
 
+function isUrlString(value: string) {
+  return /^https?:\/\//.test(value) || /^([\w-]+\.)+[a-z]{2,}(\/.*)?$/i.test(value)
+}
+
+function normalizeUrlString(value: string | undefined): string | undefined {
+  if (!value) return undefined
+  return value.includes('://') ? value : `https://${value}`
+}
+
 // ── Create-payload builders (unchanged behavior) ──────────────────────
 
 function buildCreateToolInput(task: DraftWorkspaceTask, action: WorkspaceRunPlannerAction, title?: string): Record<string, unknown> {
@@ -399,9 +408,12 @@ function buildCreateToolInput(task: DraftWorkspaceTask, action: WorkspaceRunPlan
 
   if (action === 'create_bookmark') {
     const cleanContent = resolveCleanContent(task)
+    const rawTitle = title ?? task.title.trim()
+    const url = normalizeUrlString(getStringSlot(task, 'url'))
+    const resolvedTitle = rawTitle && isUrlString(rawTitle) ? undefined : rawTitle
     return {
-      url: getStringSlot(task, 'url'),
-      title: title ?? task.title.trim(),
+      url,
+      title: resolvedTitle,
       note: cleanContent ?? getStringSlot(task, 'note') ?? getStringSlot(task, 'details') ?? getStringSlot(task, 'content'),
       summary: getStringSlot(task, 'summary'),
     }

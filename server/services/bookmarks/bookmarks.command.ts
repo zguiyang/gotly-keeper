@@ -18,9 +18,13 @@ function resolveRawInput(input: { rawInput?: string; text?: string }): string {
 }
 
 function normalizeUrlOrThrow(url: string): string {
-  const normalized = url.trim()
+  let normalized = url.trim()
   if (!normalized) {
     throw new Error('URL_REQUIRED')
+  }
+
+  if (!normalized.includes('://')) {
+    normalized = `https://${normalized}`
   }
 
   let parsedUrl: URL

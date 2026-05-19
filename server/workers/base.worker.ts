@@ -18,6 +18,7 @@ export abstract class BaseWorker<TTask> {
   }
 
   async start(): Promise<never> {
+    console.log(`[worker:${this.name}] started`)
     for (;;) {
       let task: TTask | null = null
 
@@ -31,7 +32,9 @@ export abstract class BaseWorker<TTask> {
           continue
         }
 
+        console.log(`[worker:${this.name}] dequeued task`, task)
         await this.handleTask(task)
+        console.log(`[worker:${this.name}] task completed`)
       } catch (error) {
         await this.onError(error, task)
         if (this.errorDelayMs > 0) {

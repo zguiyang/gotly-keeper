@@ -1,7 +1,11 @@
 import 'server-only'
 
+import { and, eq } from 'drizzle-orm'
+
 import type { UrlMetadataTask } from '@/server/lib/metadata/url-metadata-task.contract'
 import { checkUrlSafety } from '@/server/lib/network/url-safety'
+import { db } from '@/server/lib/db'
+import { bookmarks } from '@/server/lib/db/schema'
 import { updateBookmarkEnrichment } from '@/server/services/bookmarks'
 import { BOOKMARK_META_STATUS, type BookmarkMeta } from '@/shared/assets/bookmark-meta.types'
 import { nowIso } from '@/shared/time/dayjs'
@@ -96,6 +100,7 @@ export async function scheduleBookmarkUrlMetadataTask(input: {
   userId: string
   url: string
 }): Promise<void> {
+  console.log(`[bookmark-meta] scheduling task`, { bookmarkId: input.bookmarkId, url: input.url })
   try {
     await updateBookmarkEnrichment({
       bookmarkId: input.bookmarkId,
@@ -105,6 +110,7 @@ export async function scheduleBookmarkUrlMetadataTask(input: {
 
     const safety = await checkUrlSafety(input.url)
     if (!safety.safe) {
+      console.warn(`[bookmark-meta] url blocked`, { url: input.url, reason: safety.reason })
       const errorMeta =
         safety.reason === 'private_network'
           ? createSkippedPrivateUrlMeta()
@@ -120,6 +126,7 @@ export async function scheduleBookmarkUrlMetadataTask(input: {
 
     const task = createBookmarkUrlMetadataTask(input)
     await enqueueBookmarkUrlMetadataTask(task)
+    console.log(`[bookmark-meta] task enqueued`, { bookmarkId: input.bookmarkId, taskId: task.metadataTask.taskId })
   } catch (error) {
     await updateBookmarkEnrichment({
       bookmarkId: input.bookmarkId,
@@ -132,17 +139,46 @@ export async function scheduleBookmarkUrlMetadataTask(input: {
   }
 }
 
+function shouldPromoteTitle(currentTitle: string | null): boolean {
+  if (!currentTitle) return true
+  return /^https?:\/\//.test(currentTitle) || /^([\w-]+\.)+[a-z]{2,}(\/.*)?$/i.test(currentTitle)
+}
+
 export async function writeBookmarkUrlMetadataResult(input: {
   userId: string
   bookmarkId: string
   result: BookmarkUrlMetadataResult
 }): Promise<void> {
+  console.log(`[bookmark-meta] writing result`, {
+    bookmarkId: input.bookmarkId,
+    success: input.result.success,
+    title: input.result.success && input.result.data ? input.result.data.title : null,
+    error: !input.result.success ? input.result.error : null,
+  })
   const bookmarkMeta = input.result.success && input.result.data
     ? createSuccessBookmarkMeta(input.result.data)
     : createFailedBookmarkMeta(
         input.result.error?.code ?? 'UNKNOWN_ERROR',
         input.result.error?.message ?? 'unknown worker failure'
       )
+
+  const metadataTitle = bookmarkMeta.status === BOOKMARK_META_STATUS.SUCCESS ? bookmarkMeta.title : null
+
+  if (metadataTitle) {
+    const [row] = await db
+      .select({ title: bookmarks.title })
+      .from(bookmarks)
+      .where(and(eq(bookmarks.id, input.bookmarkId), eq(bookmarks.userId, input.userId)))
+      .limit(1)
+
+    if (row && shouldPromoteTitle(row.title)) {
+      await db
+        .update(bookmarks)
+        .set({ title: metadataTitle, bookmarkMeta, updatedAt: new Date() })
+        .where(and(eq(bookmarks.id, input.bookmarkId), eq(bookmarks.userId, input.userId)))
+      return
+    }
+  }
 
   await updateBookmarkEnrichment({
     bookmarkId: input.bookmarkId,
