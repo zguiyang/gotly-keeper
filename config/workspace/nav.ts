@@ -5,34 +5,39 @@ export interface WorkspaceNavItem {
   icon: LucideIcon
   label: string
   href: string
+  tKey: string
 }
 
 export interface WorkspaceNavGroup {
   label: string
+  tKey: string
   items: WorkspaceNavItem[]
 }
 
 export const workspaceNavGroups: WorkspaceNavGroup[] = [
   {
-    label: '工作台',
+    label: 'Workspace',
+    tKey: 'groups.workspace',
     items: [
-      { icon: Bot, label: '启动台', href: '/workspace' },
-      { icon: Library, label: '知识库', href: '/workspace/all' },
+      { icon: Bot, label: 'Launchpad', href: '/workspace', tKey: 'items.launchpad' },
+      { icon: Library, label: 'Knowledge Base', href: '/workspace/all', tKey: 'items.knowledgeBase' },
     ],
   },
   {
-    label: '内容类型',
+    label: 'Content Type',
+    tKey: 'groups.contentType',
     items: [
-      { icon: NotepadText, label: '笔记', href: '/workspace/notes' },
-      { icon: ListTodo, label: '待办', href: '/workspace/todos' },
-      { icon: Bookmark, label: '书签', href: '/workspace/bookmarks' },
+      { icon: NotepadText, label: 'Notes', href: '/workspace/notes', tKey: 'items.notes' },
+      { icon: ListTodo, label: 'Todos', href: '/workspace/todos', tKey: 'items.todos' },
+      { icon: Bookmark, label: 'Bookmarks', href: '/workspace/bookmarks', tKey: 'items.bookmarks' },
     ],
   },
   {
-    label: '管理',
+    label: 'Management',
+    tKey: 'groups.manage',
     items: [
-      { icon: Archive, label: '归档', href: '/workspace/archive' },
-      { icon: Trash2, label: '回收站', href: '/workspace/trash' },
+      { icon: Archive, label: 'Archive', href: '/workspace/archive', tKey: 'items.archive' },
+      { icon: Trash2, label: 'Trash', href: '/workspace/trash', tKey: 'items.trash' },
     ],
   },
 ]

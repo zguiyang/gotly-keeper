@@ -78,7 +78,7 @@ export function WorkspaceQueryResultsContent({
   return (
     <WorkspaceActionableAssetList
       assets={results}
-      emptyMessage="没有找到相关内容。可以换个关键词，或先在上方保存一条新记录。"
+      emptyMessage="No matching content found. Try a different keyword or save something new above."
     />
   )
 }
@@ -87,7 +87,7 @@ export function WorkspaceTodoReviewContent({ review }: { review: TodoReviewResul
   return (
     <WorkspaceActionableAssetList
       assets={review.sources}
-      emptyMessage="没有可操作的待办。"
+      emptyMessage="No actionable tasks."
     />
   )
 }
@@ -96,7 +96,7 @@ export function WorkspaceNoteSummaryContent({ summary }: { summary: NoteSummaryR
   return (
     <WorkspaceActionableAssetList
       assets={summary.sources}
-      emptyMessage="没有可操作的笔记。"
+      emptyMessage="No actionable notes."
     />
   )
 }
@@ -105,7 +105,7 @@ export function WorkspaceBookmarkSummaryContent({ summary }: { summary: Bookmark
   return (
     <WorkspaceActionableAssetList
       assets={summary.sources}
-      emptyMessage="没有可操作的书签。"
+      emptyMessage="No actionable bookmarks."
     />
   )
 }

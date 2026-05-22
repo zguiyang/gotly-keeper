@@ -4,10 +4,12 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 import { workspaceNavGroups, isWorkspaceNavItemActive } from "@/config/workspace/nav"
+import { useTranslations } from "@/hooks/use-locale"
 
 const MOBILE_NAV_HREFS = new Set(["/workspace/all", "/workspace/notes", "/workspace/bookmarks", "/workspace/todos"])
 
 export function MobileBottomNav() {
+  const t = useTranslations('workspace.nav')
   const pathname = usePathname()
 
   const items = workspaceNavGroups
@@ -20,7 +22,7 @@ export function MobileBottomNav() {
     <nav
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border/15 bg-surface/92 backdrop-blur-xl pb-[env(safe-area-inset-bottom,0px)] lg:hidden"
       role="navigation"
-      aria-label="主要内容分类"
+      aria-label={t('mobileNavLabel')}
     >
       <div className="flex items-center justify-around h-14">
         {items.map((item) => {
@@ -39,7 +41,7 @@ export function MobileBottomNav() {
               aria-current={active ? "page" : undefined}
             >
               <Icon className="h-5 w-5" aria-hidden="true" />
-              <span className="truncate max-w-[4rem]">{item.label}</span>
+              <span className="truncate max-w-[4rem]">{t(item.tKey)}</span>
             </Link>
           )
         })}

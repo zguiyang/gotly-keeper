@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from '@/hooks/use-locale'
+
 import { Link2, Share2, Bookmark, ExternalLink } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -62,6 +64,7 @@ function BookmarkItem({
   onArchive: (item: AssetListItem) => void
   onMoveToTrash: (item: AssetListItem) => void
 }) {
+  const t = useTranslations('workspace.bookmarks')
   return (
     <article
       className={cn(
@@ -121,16 +124,16 @@ function BookmarkItem({
             variant="ghost"
             size="icon"
             className="text-on-surface-variant transition-colors duration-150 hover:text-primary"
-            aria-label="分享收藏"
+            aria-label={t('share')}
             onClick={() => void onShare(item)}
           >
             <Share2 />
           </Button>
           <AssetActionMenu
             actions={[
-              { label: '编辑', onClick: () => onEdit(item) },
-              { label: '归档', onClick: () => onArchive(item) },
-              { label: '移入回收站', onClick: () => onMoveToTrash(item), danger: true },
+              { label: t('edit'), onClick: () => onEdit(item) },
+              { label: t('archive'), onClick: () => onArchive(item) },
+              { label: t('moveToTrash'), onClick: () => onMoveToTrash(item), danger: true },
             ]}
           />
         </div>
@@ -152,6 +155,7 @@ export function BookmarksClient({
 }: {
   initialPage: PaginatedResult<AssetListItem>
 }) {
+  const t = useTranslations('workspace.bookmarks')
   const { items, setItems, pageInfo, loadingMore, loadMore } = useWorkspaceAssetsPage({
     initialPage,
     initialQuery: { type: 'link' },
@@ -161,7 +165,7 @@ export function BookmarksClient({
 
   async function handleShare(item: AssetListItem) {
     if (!item.url) {
-      toast.error('该书签没有可分享的链接')
+      toast.error(t('noShareLink'))
       return
     }
 
@@ -174,7 +178,7 @@ export function BookmarksClient({
         return
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
-          toast('已取消分享')
+          toast(t('unshared'))
           return
         }
       }
@@ -183,21 +187,21 @@ export function BookmarksClient({
     const copyResult = await copyBookmarkUrl(item.url)
 
     if (copyResult.ok) {
-      toast.success('链接已复制，可直接粘贴分享')
+      toast.success(t('linkCopied'))
       return
     }
 
     if (!navigator.share && copyResult.reason === 'clipboard-unavailable') {
-      toast.error('当前浏览器不支持系统分享，且无法复制链接')
+      toast.error(t('shareNotSupported'))
       return
     }
 
     if (copyResult.reason === 'clipboard-blocked') {
-      toast.error('无法访问剪贴板，请检查浏览器复制权限')
+      toast.error(t('clipboardError'))
       return
     }
 
-    toast.error('复制链接失败，请稍后重试')
+    toast.error(t('copyFailed'))
   }
 
   async function submitEdit(
@@ -253,17 +257,17 @@ export function BookmarksClient({
   return (
     <div className="mx-auto w-full max-w-7xl px-1 sm:px-2">
       <WorkspacePageHeader
-        title="我的收藏"
-        eyebrow="阅读队列"
-        description="按来源与内容整理过的链接收藏，支持快速回看、二次筛选和继续深入。"
+        title={t('title')}
+        eyebrow={t('eyebrow')}
+        description={t('description')}
       />
 
       <div className="mb-7 flex flex-col gap-2 md:mb-8">
         <p className="text-sm leading-6 text-on-surface-variant">
-          已加载 {items.length} 条
-          {pageInfo.hasNextPage ? '，还有更多' : '，已加载全部'}
+          Loaded  {items.length}  items
+          {pageInfo.hasNextPage ? '，more to load' : '，Loaded all'}
         </p>
-        <span className={workspacePillClassName}>按来源排序回看</span>
+        <span className={workspacePillClassName}>Sorted by source for review.</span>
       </div>
 
       <div className="max-w-6xl space-y-4">
@@ -284,8 +288,8 @@ export function BookmarksClient({
 
         {items.length === 0 ? (
           <WorkspaceEmptyState
-            title="暂无书签"
-            description="从浏览器插件、快捷入口或粘贴链接开始收集，你的阅读队列会在这里形成。"
+            title={t('empty')}
+            description={t('emptyHint')}
             icon={Bookmark}
             className="mt-20 py-12"
           />
@@ -300,7 +304,7 @@ export function BookmarksClient({
             disabled={!pageInfo.hasNextPage || loadingMore}
             onClick={() => void loadMore()}
           >
-            {pageInfo.hasNextPage ? (loadingMore ? '加载中...' : '加载更多') : '已加载全部'}
+            {pageInfo.hasNextPage ? (loadingMore ? t('loading') : t('loadMore')) : t('allLoaded')}
           </Button>
         </div>
       ) : null}

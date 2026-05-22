@@ -12,24 +12,24 @@ import { cn } from '@/lib/utils'
 type LifecycleLoadingMode = 'archive' | 'trash'
 
 const timelineGroups = [
-  { label: '今天', hint: '最近 24 小时', rows: ['w-7/12', 'w-5/6'] },
-  { label: '昨天', hint: '前一天', rows: ['w-2/3', 'w-4/5'] },
-  { label: '更早', hint: '更久以前', rows: ['w-3/5'] },
+  { label: 'Today', hint: 'Last 24 hours', rows: ['w-7/12', 'w-5/6'] },
+  { label: 'Yesterday', hint: 'Previous day', rows: ['w-2/3', 'w-4/5'] },
+  { label: 'Earlier', hint: 'Older', rows: ['w-3/5'] },
 ]
 
 const lifecycleContent = {
   archive: {
-    eyebrow: '已收起',
-    title: '归档',
-    description: '正在整理已归档内容，恢复入口马上就绪…',
-    summary: '正在整理已归档内容',
+    eyebrow: 'Collapsed',
+    title: 'Archive',
+    description: 'Organizing archived content, restore entry coming right up…',
+    summary: 'Organizing archived content',
     tone: 'default',
   },
   trash: {
-    eyebrow: '待确认',
-    title: '回收站',
-    description: '正在检查待清理内容，恢复与永久删除操作稍后可用…',
-    summary: '正在检查待清理内容',
+    eyebrow: 'Pending',
+    title: 'Trash',
+    description: 'Checking items for cleanup; restore and permanent delete coming soon…',
+    summary: 'Checking items for cleanup',
     tone: 'critical',
   },
 } satisfies Record<LifecycleLoadingMode, {
@@ -132,7 +132,7 @@ function TimelineGroupLoading({
             <p className="text-[11px] text-on-surface-variant/75">{hint}</p>
           </div>
         </div>
-        <span className={workspacePillClassName}>加载中</span>
+        <span className={workspacePillClassName}>Loading</span>
         <span className="hidden md:absolute md:left-[0.35rem] md:top-7 md:block md:h-full md:w-px md:bg-border/10" />
       </div>
 
@@ -159,8 +159,8 @@ function TodoItemLoading({ widthClassName = 'w-3/5' }: { widthClassName?: string
 }
 
 function TodoListLoading({
-  title = '当天待办',
-  description = '正在同步当前日期的待办。',
+  title = "Today's Tasks",
+  description = 'Syncing tasks for the current date.',
 }: {
   title?: string
   description?: string
@@ -173,7 +173,7 @@ function TodoListLoading({
           <p className="mt-0.5 text-[12px] leading-5 text-on-surface-variant/75">{description}</p>
         </div>
         <span className={cn(workspaceMetaTextClassName, 'rounded-full border border-border/10 bg-muted/35 px-2.5 py-1')}>
-          加载中
+          Loading
         </span>
       </div>
       <div className="space-y-2.5 p-3 sm:p-4">
@@ -189,7 +189,7 @@ function CalendarPanelLoading() {
   return (
     <aside className={cn(workspacePanelSurfaceClassName, 'p-4 sm:p-5 xl:sticky xl:top-24')}>
       <div className="mb-4 space-y-2">
-        <p className="text-[12px] font-semibold tracking-normal text-on-surface-variant/80">日历</p>
+        <p className="text-[12px] font-semibold tracking-normal text-on-surface-variant/80">Calendar</p>
         <PulseBlock className="h-6 w-28" />
         <PulseBlock className="h-4 w-44" />
       </div>
@@ -288,9 +288,9 @@ function WorkspaceAllLoading() {
     <LoadingShell>
       <section className="mb-8 sm:mb-10">
         <WorkspacePageHeader
-          title="知识库"
-          eyebrow="全部内容"
-          description="时间线同步中，最近捕获的笔记、书签和待办马上出现…"
+          title="Knowledge Base"
+          eyebrow="All Content"
+          description="Timeline syncing; recently captured notes, bookmarks and tasks coming right up…"
           className="mb-6"
         />
         <SummaryLoadingBar />
@@ -307,22 +307,22 @@ function WorkspaceAllLoading() {
 }
 
 function WorkspaceTodosDateLoading() {
-  return <TodoListLoading title="任务列表同步中" description="正在加载这一天的待办。" />
+  return <TodoListLoading title="Syncing Tasks" description="Loading tasks for this date." />
 }
 
 function WorkspaceTodosLoading() {
   return (
     <LoadingShell>
       <WorkspacePageHeader
-        title="待办"
-        description="日历同步中，按日期整理的任务流马上就绪…"
-        eyebrow="任务计划"
+        title="Tasks"
+        description="Syncing calendar; task flows organized by date coming right up…"
+        eyebrow="Task Plan"
       />
 
       <LoadingPills>
-        <span className={workspacePillClassName}>加载中</span>
-        <span className={workspacePillClassName}>日历同步中</span>
-        <p className={`${workspaceMetaTextClassName} text-on-surface-variant`}>任务列表与日期标记正在准备。</p>
+        <span className={workspacePillClassName}>Loading</span>
+        <span className={workspacePillClassName}>Calendar Syncing</span>
+        <p className={`${workspaceMetaTextClassName} text-on-surface-variant`}>Task list and date markers are being prepared.</p>
       </LoadingPills>
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
@@ -330,7 +330,7 @@ function WorkspaceTodosLoading() {
           <section>
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div className="space-y-2">
-                <p className="text-[12px] font-semibold tracking-normal text-on-surface-variant/80">任务日</p>
+                <p className="text-[12px] font-semibold tracking-normal text-on-surface-variant/80">Task Day</p>
                 <PulseBlock className="h-8 w-40" />
                 <PulseBlock className="h-4 w-80 max-w-full" />
               </div>
@@ -339,7 +339,7 @@ function WorkspaceTodosLoading() {
             <WorkspaceTodosDateLoading />
           </section>
 
-          <TodoListLoading title="未排期待办" description="暂时没有具体日期时间的待办也在同步。" />
+          <TodoListLoading title="Unscheduled Tasks" description="Syncing tasks without a specific date." />
         </div>
 
         <CalendarPanelLoading />

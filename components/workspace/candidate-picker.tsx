@@ -16,14 +16,14 @@ type CandidatePickerProps = {
 }
 
 function getTargetLabel(target: SelectCandidateInteraction['target']) {
-  if (target === 'todo') return '待办'
-  if (target === 'note') return '笔记'
-  return '书签'
+  if (target === 'todo') return 'Todo'
+  if (target === 'note') return 'Note'
+  return 'Bookmark'
 }
 
 function getStatusLabel(status: string | undefined) {
-  if (status === 'done') return '已完成'
-  if (status === 'open') return '未完成'
+  if (status === 'done') return 'Completed'
+  if (status === 'open') return 'Open'
   return null
 }
 
@@ -47,7 +47,7 @@ export function CandidatePicker({ interaction, selectedId, onSelect }: Candidate
       <div className="space-y-1.5">
         <p className={workspaceInteractionBodyTextClassName}>{interaction.message}</p>
         <span className={workspacePillClassName}>
-          目标: {getTargetLabel(interaction.target)}
+          Target: {getTargetLabel(interaction.target)}
         </span>
       </div>
 
@@ -100,9 +100,9 @@ export function CandidatePicker({ interaction, selectedId, onSelect }: Candidate
                   </div>
                   {candidate.dueAt || candidate.timeText ? (
                     <p className="text-xs leading-5 text-on-surface-variant">
-                      {candidate.dueAt ? `计划: ${formatTime(candidate.dueAt)}` : ''}
+                      {candidate.dueAt ? `Scheduled: ${formatTime(candidate.dueAt)}` : ''}
                       {candidate.dueAt && candidate.timeText ? ' · ' : ''}
-                      {candidate.timeText && !candidate.dueAt ? `时间: ${candidate.timeText}` : ''}
+                      {candidate.timeText && !candidate.dueAt ? `Time: ${candidate.timeText}` : ''}
                     </p>
                   ) : null}
                   {candidate.preview && candidate.preview !== candidate.label ? (
@@ -112,7 +112,7 @@ export function CandidatePicker({ interaction, selectedId, onSelect }: Candidate
                   ) : null}
                   <div className="flex items-center gap-2 text-[10px] leading-4 text-on-surface-variant/60">
                     {candidate.updatedAt ? (
-                      <span>更新: {formatTime(candidate.updatedAt)}</span>
+                      <span>Updated: {formatTime(candidate.updatedAt)}</span>
                     ) : null}
                     {candidate.reason ? (
                       <span>{candidate.reason}</span>

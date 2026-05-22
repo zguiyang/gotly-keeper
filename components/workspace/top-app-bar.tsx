@@ -4,10 +4,12 @@ import { Menu, XIcon } from "lucide-react"
 
 import { AccountMenu } from "@/components/account-menu"
 import { BrandLogo } from "@/components/brand-logo"
+import { LanguageSwitcher } from "@/components/language-switcher"
 import { ThemeToggle } from "@/components/theme/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { WorkspaceNavList } from "@/components/workspace/workspace-nav-list"
+import { useTranslations } from "@/hooks/use-locale"
 import { appVersion } from "@/config/app-meta"
 
 type TopAppBarProps = {
@@ -17,18 +19,19 @@ type TopAppBarProps = {
 }
 
 export function TopAppBar({ userName, userEmail, userImage }: TopAppBarProps) {
+  const t = useTranslations("workspace.topBar")
   return (
     <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between gap-4 border-b border-border/15 bg-surface/88 px-4 text-sm backdrop-blur-xl lg:px-8">
       <div className="lg:hidden flex items-center shrink-0">
         <Sheet>
           <SheetTrigger
-            aria-label="打开工作区导航"
+            aria-label={t("sheetOpenLabel")}
             render={<Button variant="ghost" size="icon-lg" className="size-11 text-on-surface-variant hover:text-on-surface" />}
           >
             <Menu />
           </SheetTrigger>
             <SheetContent side="left" className="w-64 border-r border-border/15 bg-surface p-0" showCloseButton={false}>
-              <SheetTitle className="sr-only">工作区导航</SheetTitle>
+              <SheetTitle className="sr-only">{t("sheetNavTitle")}</SheetTitle>
               <div className="flex h-full flex-col">
                 <div className="flex items-center justify-between border-b border-border/15 px-3 py-4">
                   <BrandLogo className="h-9" />
@@ -41,7 +44,7 @@ export function TopAppBar({ userName, userEmail, userImage }: TopAppBarProps) {
               </nav>
               <div className="border-t border-border/15 px-4 py-6">
                 <p className="text-xs font-medium text-on-surface-variant/80">Gotly Keeper</p>
-                <p className="mt-1 text-xs leading-5 text-on-surface-variant/65">Version {appVersion}</p>
+                <p className="mt-1 text-xs leading-5 text-on-surface-variant/65">{t("version")} {appVersion}</p>
               </div>
             </div>
           </SheetContent>
@@ -50,11 +53,12 @@ export function TopAppBar({ userName, userEmail, userImage }: TopAppBarProps) {
 
       <div className="flex min-w-0 flex-1 items-center">
         <p className="hidden truncate text-xs text-on-surface-variant/75 sm:block">
-          一句话沉淀笔记、链接和待办，需要时直接找回
+          {t("description")}
         </p>
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
+        <LanguageSwitcher />
         <ThemeToggle />
         <AccountMenu
           className="ml-1"

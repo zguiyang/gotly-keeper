@@ -20,7 +20,7 @@ type MenuAction = {
 
 export function AssetActionMenu({
   actions,
-  ariaLabel = '更多操作',
+  ariaLabel = 'More actions',
 }: {
   actions: MenuAction[]
   ariaLabel?: string

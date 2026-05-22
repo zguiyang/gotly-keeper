@@ -125,7 +125,7 @@ export function NoteInlineEditor({
           }
           placeholder={
             <div className="pointer-events-none absolute top-3 left-3 text-[15px] leading-7 text-muted-foreground md:text-[16px]">
-              开始记录...
+              Start recording...
             </div>
           }
           ErrorBoundary={LexicalErrorBoundary}

@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from '@/hooks/use-locale'
+
 import { Archive, ArrowRight, Bookmark, Inbox, ListTodo, NotepadText } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -16,7 +18,7 @@ import {
   workspacePillClassName,
   WorkspaceTypeBadge,
 } from '@/components/workspace/workspace-view-primitives'
-import { assetTypePresentation } from '@/config/ui/asset-presentation'
+import { assetTypePresentation, getAssetLocaleKey } from '@/config/ui/asset-presentation'
 import { filterTabs, emptyFilterMessages } from '@/config/workspace/filters'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
@@ -30,12 +32,20 @@ import { type PaginatedResult } from '@/shared/pagination'
 type AssetType = 'note' | 'link' | 'todo'
 
 const typeLabels: Record<AssetType, string> = {
-  note: '笔记',
-  link: '书签',
-  todo: '待办',
+  note: 'Note',
+  link: 'Bookmark',
+  todo: 'Todo',
+}
+
+// Maps internal asset type to locale key (type is "link", locale key is "bookmark")
+const ASSET_LOCALE_MAP: Record<AssetType, string> = {
+  note: getAssetLocaleKey('note'),
+  link: getAssetLocaleKey('link'),
+  todo: getAssetLocaleKey('todo'),
 }
 
 function TypePill({ type }: { type: AssetType }) {
+  const tC = useTranslations('common')
   const variants: Record<AssetType, 'default' | 'secondary' | 'outline'> = {
     note: 'default',
     link: 'secondary',
@@ -43,7 +53,7 @@ function TypePill({ type }: { type: AssetType }) {
   }
 
   return (
-    <WorkspaceTypeBadge label={typeLabels[type]} variant={variants[type]} />
+    <WorkspaceTypeBadge label={tC(`assets.${ASSET_LOCALE_MAP[type]}`)} variant={variants[type]} />
   )
 }
 
@@ -58,6 +68,7 @@ function ArchiveSummaryBar({
   completedTodoCount: number
   hasNextPage: boolean
 }) {
+  const tSummary = useTranslations('common')
   const summaryItems: Array<{ type: AssetType; icon: typeof NotepadText }> = [
     { type: 'note', icon: NotepadText },
     { type: 'link', icon: Bookmark },
@@ -71,11 +82,11 @@ function ArchiveSummaryBar({
           <span className="h-8 w-1 shrink-0 rounded-full bg-primary/55" />
           <div className="min-w-0">
             <p className="text-sm font-medium text-on-surface">
-              已加载 {totalCount} 条内容
-              {hasNextPage ? '，还有更多待载入' : '，已加载全部'}
+              Loaded {totalCount} items
+              {hasNextPage ? ', more to load' : ', all loaded'}
             </p>
             <p className="text-[11px] text-on-surface-variant/75">
-              时间线按捕获时间分组，不是按待办排期排序，便于快速回看。
+              Timeline grouped by capture time, not todo schedule. Easy for quick review.
             </p>
           </div>
         </div>
@@ -83,10 +94,10 @@ function ArchiveSummaryBar({
           {summaryItems.map(({ type, icon: Icon }) => (
             <span key={type} className={workspacePillClassName}>
               <Icon className="mr-1.5 size-3.5" />
-              {typeLabels[type]} {assetCounts[type]}
+              {tSummary(`assets.${ASSET_LOCALE_MAP[type]}`)} {assetCounts[type]}
             </span>
           ))}
-          {completedTodoCount > 0 ? <span className={workspacePillClassName}>已完成 {completedTodoCount}</span> : null}
+          {completedTodoCount > 0 ? <span className={workspacePillClassName}>{tSummary('assets.completed')} {completedTodoCount}</span> : null}
         </div>
       </div>
     </div>
@@ -107,10 +118,11 @@ function AssetItem({
   const presentation = assetTypePresentation[asset.type]
   const Icon = presentation.icon
   const createdTimeText = formatAssetRelativeTime(asset.createdAt)
+  const tA = useTranslations('workspace.all')
   const actions = [
-    { label: '编辑', onClick: () => onEdit(asset) },
-    { label: '归档', onClick: () => onArchive(asset) },
-    { label: '移入回收站', onClick: () => onMoveToTrash(asset), danger: true },
+    { label: tA('edit'), onClick: () => onEdit(asset) },
+    { label: tA('archive'), onClick: () => onArchive(asset) },
+    { label: tA('moveToTrash'), onClick: () => onMoveToTrash(asset), danger: true },
   ]
 
   return (
@@ -150,12 +162,12 @@ function AssetItem({
                   <span className={workspaceMetaTextClassName}>{createdTimeText}</span>
                 )}
                 <TypePill type={asset.type} />
-                {asset.completed ? <span className={workspacePillClassName}>已完成</span> : null}
+                {asset.completed ? <span className={workspacePillClassName}>Completed</span> : null}
               </div>
             </div>
 
             <div className="shrink-0 pt-0.5 opacity-100 transition-opacity duration-200 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100">
-              <AssetActionMenu actions={actions} ariaLabel={`更多操作：${asset.title}`} />
+              <AssetActionMenu actions={actions} ariaLabel={`More actions: ${asset.title}`} />
             </div>
           </div>
         </div>
@@ -193,7 +205,7 @@ function TimelineGroup({
             <p className="text-[11px] text-on-surface-variant/75">{hint}</p>
           </div>
         </div>
-        <span className={workspacePillClassName}>{count} 条</span>
+        <span className={workspacePillClassName}>{count}</span>
         <span className="hidden md:block md:absolute md:left-[0.35rem] md:top-7 md:h-full md:w-px md:bg-border/10" />
       </div>
 
@@ -213,6 +225,8 @@ function TimelineGroup({
 }
 
 export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetListItem> }) {
+  const t = useTranslations('workspace.all')
+  const tF = useTranslations('workspace.filters')
   const { items, setItems, pageInfo, loadingMore, refreshing, loadFirstPage, loadMore } =
     useWorkspaceAssetsPage({ initialPage })
   const [activeFilter, setActiveFilter] = useState<string>('all')
@@ -234,9 +248,9 @@ export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetL
   const completedTodoCount = items.filter((asset) => asset.type === 'todo' && asset.completed).length
   const totalCount = items.length
   const timelineGroups = [
-    { key: 'today', label: '今天', hint: '今天捕获', assets: todayAssets },
-    { key: 'yesterday', label: '昨天', hint: '昨天捕获', assets: yesterdayAssets },
-    { key: 'older', label: '更早', hint: '昨天之前捕获', assets: olderAssets },
+    { key: 'today', label: t('todayCapture'), hint: t('todayCapture'), assets: todayAssets },
+    { key: 'yesterday', label: t('yesterdayCapture'), hint: t('yesterdayCapture'), assets: yesterdayAssets },
+    { key: 'older', label: t('olderCapture'), hint: t('olderCapture'), assets: olderAssets },
   ].filter((group) => group.assets.length > 0)
 
   async function handleFilterChange(nextFilter: string) {
@@ -332,9 +346,9 @@ export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetL
     <>
       <section className="mb-8 sm:mb-10">
         <WorkspacePageHeader
-          title="知识库"
-          eyebrow="全部内容"
-          description="把最近捕获的笔记、书签和待办按捕获时间排成一条时间线。先看全局，再按类型收窄，快速找到该处理的内容。"
+          title={t('title')}
+          eyebrow={t('eyebrow')}
+          description={t('description')}
           className="mb-6"
         />
 
@@ -349,7 +363,7 @@ export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetL
 
         <div className="mt-5 flex flex-col gap-4 border-y border-border/10 py-4 sm:flex-row sm:items-center sm:justify-between">
           <WorkspaceFilterTabs
-            tabs={filterTabs}
+            tabs={filterTabs.map((tab) => ({ key: tab.key, label: tF(`tabs.${tab.key}`) }))}
             value={activeFilter}
             onValueChange={(value) => void handleFilterChange(value)}
             className="border-b-0 pb-0"
@@ -373,11 +387,11 @@ export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetL
 
         {!hasAnyAssets && (
           <WorkspaceEmptyState
-            title={emptyFilterMessages[activeFilter] ?? emptyFilterMessages.all}
+            title={tF(`empty.${emptyFilterMessages[activeFilter] ?? emptyFilterMessages.all}`)}
             description={
               activeFilter === 'all'
-                ? '打开启动台输入一句话，Gotly Keeper 会自动识别它是笔记、书签还是待办。'
-                : '切回知识库可以查看其它类型，或从启动台继续捕获新内容。'
+                ? t('emptyHint1')
+                : t('emptyHint2')
             }
             icon={activeFilter === 'all' ? Inbox : Archive}
             action={
@@ -385,7 +399,7 @@ export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetL
                 href="/workspace"
                 className="inline-flex h-9 items-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground shadow-[0_12px_26px_-16px_rgba(0,81,177,0.65)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-px"
               >
-                打开启动台
+                {t('openLaunchpad')}
                 <ArrowRight className="size-4" />
               </Link>
             }
@@ -400,7 +414,7 @@ export function AllClient({ initialPage }: { initialPage: PaginatedResult<AssetL
               disabled={!pageInfo.hasNextPage || loadingMore || refreshing}
               onClick={() => void loadMore()}
             >
-              {pageInfo.hasNextPage ? (loadingMore ? '加载中...' : '加载更多') : '已加载全部'}
+              {pageInfo.hasNextPage ? (loadingMore ? t('loading') : t('loadMore')) : t('allLoaded')}
             </Button>
           </div>
         ) : null}

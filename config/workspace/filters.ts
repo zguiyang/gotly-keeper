@@ -1,13 +1,13 @@
 export const filterTabs = [
-  { key: 'all', label: '知识库' },
-  { key: 'note', label: '笔记' },
-  { key: 'link', label: '书签' },
-  { key: 'todo', label: '待办' },
+  { key: 'all', label: 'All' },
+  { key: 'note', label: 'Notes' },
+  { key: 'link', label: 'Bookmarks' },
+  { key: 'todo', label: 'Todos' },
 ] as const
 
 export const emptyFilterMessages: Record<string, string> = {
-  all: '暂无内容。先从启动台保存一条记录。',
-  note: '暂无笔记。先保存一条想法或文本记录。',
-  link: '暂无书签。粘贴链接后会出现在这里。',
-  todo: '暂无待办。记录待办事项后会自动显示。',
+  all: 'all',
+  note: 'note',
+  link: 'link',
+  todo: 'todo',
 }

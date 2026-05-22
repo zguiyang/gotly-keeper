@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from '@/hooks/use-locale'
+
 // DESIGN_TOKEN_EXCEPTION: Warm modern accent colors (amber/emerald/red) are intentionally raw for semantic phase states
 
 import { Check } from 'lucide-react'
@@ -54,72 +56,72 @@ type ProcessLine = {
 
 function getPhaseTitle(phase: VisibleWorkspaceRunPhase['phase']) {
   if (phase === 'normalize') {
-    return '正在规范化输入'
+    return 'Normalizing input'
   }
 
   if (phase === 'semantic_split') {
-    return '正在拆分语义片段'
+    return 'Splitting semantic fragments'
   }
 
   if (phase === 'understand') {
-    return '正在理解你的输入'
+    return 'Understanding your input'
   }
 
   if (phase === 'plan') {
-    return '正在规划执行步骤'
+    return 'Planning execution steps'
   }
 
   if (phase === 'review') {
-    return '正在检查执行风险'
+    return 'Checking execution risks'
   }
 
   if (phase === 'preview') {
-    return '正在整理执行预览'
+    return 'Preparing execution preview'
   }
 
   if (phase === 'execute') {
-    return '正在执行处理'
+    return 'Executing'
   }
 
-  return '正在生成结果'
+  return 'Composing result'
 }
 
 function getTargetLabel(target: 'notes' | 'todos' | 'bookmarks' | 'mixed') {
   if (target === 'notes') {
-    return '笔记'
+    return 'Notes'
   }
 
   if (target === 'todos') {
-    return '待办'
+    return 'Todos'
   }
 
   if (target === 'bookmarks') {
-    return '书签'
+    return 'Bookmarks'
   }
 
-  return '内容'
+  return 'Content'
 }
 
 function getMutationTargetLabel(target: 'notes' | 'todos' | 'bookmarks') {
   if (target === 'notes') {
-    return '笔记'
+    return 'Note'
   }
 
   if (target === 'todos') {
-    return '待办'
+    return 'Todo'
   }
 
-  return '书签'
+  return 'Bookmark'
 }
 
 function getToolLabel(toolName: string) {
-  if (toolName === 'create_todo') return '创建待办'
-  if (toolName === 'update_todo') return '更新待办'
-  if (toolName === 'create_note') return '创建笔记'
-  if (toolName === 'update_note') return '更新笔记'
-  if (toolName === 'create_bookmark') return '创建书签'
-  if (toolName === 'query_assets') return '查询内容'
-  if (toolName === 'summarize_assets') return '总结内容'
+  if (toolName === 'create_todo') return 'Create Todo'
+  if (toolName === 'update_todo') return 'Update Todo'
+  if (toolName === 'create_note') return 'Create Note'
+  if (toolName === 'update_note') return 'Update Note'
+  if (toolName === 'create_bookmark') return 'Create Bookmark'
+  if (toolName === 'query_assets') return 'Query Content'
+  if (toolName === 'summarize_assets') return 'Summarize Content'
   return toolName
 }
 
@@ -147,40 +149,40 @@ function getVisiblePhase(
   return {
     phase: 'normalize',
     status: 'active',
-    message: '正在准备执行',
+    message: 'Preparing to execute',
   }
 }
 
 function getPhaseFallbackMessage(visiblePhase: VisibleWorkspaceRunPhase) {
   if (visiblePhase.phase === 'normalize') {
-    return '正在整理原始输入，准备后续判断。'
+    return 'Organizing raw input for processing.'
   }
 
   if (visiblePhase.phase === 'semantic_split') {
-    return '正在判断这是一项任务还是多项任务，并拆分独立语义片段。'
+    return 'Determining if single or multi-task, splitting semantic fragments.'
   }
 
   if (visiblePhase.phase === 'understand') {
-    return '正在识别意图、对象和需要执行的任务。'
+    return 'Identifying intent and tasks to execute.'
   }
 
   if (visiblePhase.phase === 'plan') {
-    return '正在把理解结果整理成可执行步骤。'
+    return 'Organizing understanding into executable steps.'
   }
 
   if (visiblePhase.phase === 'review') {
-    return '正在判断是否可以直接执行，还是需要你确认。'
+    return 'Determining if direct execution or confirmation needed.'
   }
 
   if (visiblePhase.phase === 'preview') {
-    return '正在整理给你看的执行预览。'
+    return 'Preparing execution preview.'
   }
 
   if (visiblePhase.phase === 'execute') {
-    return '正在处理相关内容。'
+    return 'Processing related content.'
   }
 
-  return '正在把结果整理成可读的回复。'
+  return 'Composing readable response.'
 }
 
 function formatElapsedMs(elapsedMs: number | null | undefined) {
@@ -193,10 +195,10 @@ function formatElapsedMs(elapsedMs: number | null | undefined) {
   const seconds = totalSeconds % 60
 
   if (minutes === 0) {
-    return `耗时 ${seconds}s`
+    return `${seconds}s`
   }
 
-  return `耗时 ${minutes}m${String(seconds).padStart(2, '0')}s`
+  return `${minutes}m${String(seconds).padStart(2, '0')}s`
 }
 
 function getPhaseLine(visiblePhase: VisibleWorkspaceRunPhase) {
@@ -349,6 +351,7 @@ function StreamingMultiPanel({
   timeline: WorkspaceRunStreamEvent[]
   visiblePhase: VisibleWorkspaceRunPhase
 }) {
+  const t = useTranslations('workspace.runPanel')
   const { activeIndex, nextIndex } = getToolProgress(timeline)
   const visibleSteps = getCompactPlanSteps(planPreview, activeIndex, nextIndex)
   const areToolsFinished = nextIndex >= planPreview.steps.length
@@ -401,7 +404,7 @@ function StreamingMultiPanel({
                         <span className="absolute inline-flex h-full w-full rounded-full bg-amber-500/60 motion-safe:animate-ping" />
                         <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-500" />
                       </span>
-                      处理中
+                      {t('processing')}
                     </p>
                   ) : null}
                 </div>
@@ -488,7 +491,7 @@ function normalizeWorkspaceResultData(
   if (!data.ok) {
     return {
       kind: 'error',
-      message: data.message ?? '处理失败',
+      message: data.message ?? 'Processing failed',
     }
   }
 
@@ -533,6 +536,7 @@ function FinalResult({
   status: 'streaming' | 'success' | 'error'
   elapsedMs?: number | null
 }) {
+  const t = useTranslations('workspace.runPanel')
   const elapsedText = formatElapsedMs(elapsedMs)
 
   if (status === 'streaming') {
@@ -542,15 +546,15 @@ function FinalResult({
   if (status === 'error' || result?.kind === 'error') {
     const detailMessage = result?.kind === 'error'
       ? result.message
-      : errorMessage ?? '处理失败'
+      : errorMessage ?? 'Processing failed'
 
     return (
-      <div className="rounded-[1rem] border-l-4 border-l-red-400 border-red-200/20 bg-red-50/60 px-4 py-3 dark:bg-red-950/10">
-        <p className="text-sm font-semibold text-red-700 dark:text-red-400">这次没有完成处理</p>
-        <p className="mt-1.5 text-sm leading-6 text-red-600/80 dark:text-red-400/80">
+      <div className="rounded-[1rem] border-l-4 border-l-red-400 border-red-200/20 bg-red-50/60 px-4 py-3 dark:bg-red-950/10"> {/* DESIGN_TOKEN_EXCEPTION: semantic error surface tokens */}
+        <p className="text-sm font-semibold text-red-700 dark:text-red-400">{t('processingFailed')} {/* DESIGN_TOKEN_EXCEPTION: semantic error color for failure states */}</p>
+        <p className="mt-1.5 text-sm leading-6 text-red-600/80 dark:text-red-400/80"> {/* DESIGN_TOKEN_EXCEPTION: semantic error description */}
           {detailMessage}
         </p>
-        <p className="mt-3 text-xs text-on-surface-variant/70">可以换成更明确的说法，让 AI 助手更容易理解你的需求。</p>
+        <p className="mt-3 text-xs text-on-surface-variant/70">{t('retryHint')}</p>
         {elapsedText ? (
           <p className="mt-2 text-xs text-on-surface-variant/70">{elapsedText}</p>
         ) : null}
@@ -562,7 +566,7 @@ function FinalResult({
     if (result.total === 0) {
     return (
       <div className="space-y-2">
-          <p className="text-sm font-semibold text-on-surface">没有找到相关内容</p>
+          <p className="text-sm font-semibold text-on-surface">{t('noResults')}</p>
           {assistantText ? (
             <p className="text-sm leading-6 text-on-surface-variant/80">
               {assistantText}
@@ -579,7 +583,7 @@ function FinalResult({
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className={workspacePillClassName}>
-            找到 {result.total} 条{getTargetLabel(result.target)}
+            {t('found')} {result.total} {getTargetLabel(result.target)}
           </span>
           {assistantText ? (
             <span className={workspaceMetaTextClassName}>{assistantText}</span>
@@ -598,7 +602,7 @@ function FinalResult({
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className={workspacePillClassName}>
-            {result.action === 'create' ? '已创建' : '已更新'}
+            {result.action === 'create' ? t('created') : t('updated')}
             {getMutationTargetLabel(result.target)}
           </span>
           {assistantText ? (
@@ -642,7 +646,7 @@ function FinalResult({
                   className="rounded-[1rem] border-l-4 border-l-emerald-400 border-border/10 bg-emerald-50/40 px-3 py-2.5 dark:bg-emerald-900/8"
                 >
                   <p className="text-xs font-medium text-on-surface-variant/70">
-                    {normalized.action === 'create' ? '已创建' : '已更新'}
+                    {normalized.action === 'create' ? t('created') : t('updated')}
                     {getMutationTargetLabel(normalized.target)}
                   </p>
                   <p className="mt-1 truncate text-sm font-medium text-on-surface">
@@ -667,7 +671,7 @@ function FinalResult({
                     {getToolLabel(step.toolName)}
                   </p>
                   <p className="mt-1 text-sm font-medium text-on-surface">
-                    找到 {normalized.total} 条{getTargetLabel(normalized.target)}
+                    {t('found')} {normalized.total} {getTargetLabel(normalized.target)}
                   </p>
                 </div>
               )
@@ -677,12 +681,12 @@ function FinalResult({
               return (
                 <div
                   key={step.stepId}
-                  className="rounded-[1rem] border-l-4 border-l-red-400 border-red-200/20 bg-red-50/60 px-3 py-2.5 dark:bg-red-950/10"
+                  className="rounded-[1rem] border-l-4 border-l-red-400 border-red-200/20 bg-red-50/60 px-3 py-2.5 dark:bg-red-950/10" {/* DESIGN_TOKEN_EXCEPTION: step failure surface */}
                 >
-                  <p className="text-xs font-medium text-red-600/90 dark:text-red-400">
+                  <p className="text-xs font-medium text-red-600/90 dark:text-red-400"> {/* DESIGN_TOKEN_EXCEPTION: step failure label */}
                     {getToolLabel(step.toolName)}
                   </p>
-                  <p className="mt-1 text-sm font-medium text-red-700 dark:text-red-300">
+                  <p className="mt-1 text-sm font-medium text-red-700 dark:text-red-300"> {/* DESIGN_TOKEN_EXCEPTION: semantic error color for step failure */}
                     {normalized.message}
                   </p>
                 </div>
@@ -711,7 +715,7 @@ function FinalResult({
   return (
     <div className="space-y-2 rounded-[1rem] border border-border/10 bg-muted/35 px-4 py-3">
       <p className="break-words text-sm leading-6 text-on-surface">
-        {assistantText ?? '处理完成。'}
+        {assistantText ?? t('completed')}
       </p>
       {elapsedText ? (
         <p className="text-xs text-on-surface-variant/70">{elapsedText}</p>
@@ -777,10 +781,11 @@ function DuplicateConfirmationCard({
 }: {
   interaction: Extract<WorkspaceInteraction, { type: 'confirm_duplicate' }>
 }) {
+  const t = useTranslations('workspace.runPanel')
   const targetLabelMap = {
-    todo: '待办',
-    note: '笔记',
-    bookmark: '书签',
+    todo: 'Todo',
+    note: 'Note',
+    bookmark: 'Bookmark',
   } as const
 
   const isBookmarkPrecheck = interaction.source === 'precheck'
@@ -791,11 +796,11 @@ function DuplicateConfirmationCard({
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
             <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-            疑似重复{targetLabelMap[interaction.target]}
+            {t('possibleDuplicate')}{targetLabelMap[interaction.target]}
           </span>
           {isBookmarkPrecheck ? (
             <span className="rounded-full border border-amber-200/40 bg-amber-100/60 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:border-amber-800/30 dark:bg-amber-900/20 dark:text-amber-300">
-              链接预检命中
+              {t('linkPreflightHit')}
             </span>
           ) : null}
         </div>
@@ -803,13 +808,13 @@ function DuplicateConfirmationCard({
         <p className="text-sm leading-6 text-on-surface-variant/80">{interaction.current.preview}</p>
         {isBookmarkPrecheck ? (
           <p className="text-xs leading-5 text-amber-700/70 dark:text-amber-300/70">
-            已按链接完成预检；如果这不是同一条书签，仍然可以继续创建。
+            {t('linkPreflightDescription')}
           </p>
         ) : null}
       </div>
 
       <div className="space-y-1.5">
-        <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/60 uppercase">已存在内容</p>
+        <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/60 uppercase">{t('existingContent')}</p>
         <ol className="space-y-1.5">
           {interaction.duplicates.map((candidate) => (
             <li
@@ -841,6 +846,7 @@ function InteractionPanel({
   slotFormId: string
   onResume: (response: WorkspaceInteractionResponse) => void
 }) {
+  const t = useTranslations('workspace.runPanel')
   switch (interaction.type) {
     case 'select_candidate':
       return (
@@ -874,23 +880,24 @@ function InteractionActionIntro({
 }: {
   interaction: WorkspaceInteraction
 }) {
+  const t = useTranslations('workspace.runPanel')
   if (interaction.type === 'confirm_plan') {
-    return '执行前最后确认一遍步骤；确认后会按顺序处理这些动作。'
+    return t('confirmSteps')
   }
 
   if (interaction.type === 'select_candidate') {
-    return '选择最合适的候选内容，或跳过这次匹配。'
+    return t('selectCandidate')
   }
 
   if (interaction.type === 'confirm_duplicate') {
     if (interaction.source === 'precheck') {
-      return '这条书签在链接预检时命中了重复项；如果只是同域不同内容，你仍然可以继续创建。'
+      return t('duplicateBookmarkHint')
     }
 
-    return '这条内容看起来和已有记录重复，你可以继续创建，也可以只跳过这一项。'
+    return t('duplicateContentHint')
   }
 
-  return '补充缺失信息后即可继续。'
+  return t('fillMissingInfo')
 }
 
 export function WorkspaceRunPanel({
@@ -915,9 +922,9 @@ export function WorkspaceRunPanel({
   understandingPreview?: WorkspaceUnderstandingPreview | null
   planPreview?: WorkspacePlanPreview | null
   elapsedMs?: number | null
-  correctionNotes?: string[]
   onResume?: (response: WorkspaceInteractionResponse) => void
 }) {
+  const t = useTranslations('workspace.runPanel')
   const visiblePhase = getVisiblePhase(timeline)
   const resolvedResult = normalizeFinalResult(result)
   const derivedPreviewState = derivePreviewStateFromTimeline(timeline)
@@ -956,21 +963,21 @@ export function WorkspaceRunPanel({
             disabled={!selectedCandidateId}
             className={workspacePrimaryActionButtonClassName}
           >
-            使用这条候选
+            {t('useCandidate')}
           </Button>
           <Button
             variant="outline"
             onClick={() => onResume({ type: 'select_candidate', action: 'skip' })}
             className={workspaceSecondaryActionButtonClassName}
           >
-            跳过
+            {t('skip')}
           </Button>
           <Button
             variant="ghost"
             onClick={() => onResume({ type: 'select_candidate', action: 'cancel' })}
             className={workspaceSecondaryActionButtonClassName}
           >
-            取消
+            {t('cancel')}
           </Button>
         </div>
       )
@@ -985,14 +992,14 @@ export function WorkspaceRunPanel({
             form={slotFormId}
             className={workspacePrimaryActionButtonClassName}
           >
-            提交信息
+            {t('submit')}
           </Button>
           <Button
             variant="outline"
             onClick={() => onResume({ type: 'clarify_slots', action: 'cancel' })}
             className={workspaceSecondaryActionButtonClassName}
           >
-            取消
+            {t('cancel')}
           </Button>
         </div>
       )
@@ -1007,14 +1014,14 @@ export function WorkspaceRunPanel({
             className={workspacePrimaryActionButtonClassName}
           >
             <Check data-icon="inline-start" />
-            确认并执行
+            {t('confirmAndExecute')}
           </Button>
           <Button
             variant="outline"
             onClick={() => onResume({ type: 'confirm_plan', action: 'cancel' })}
             className={workspaceSecondaryActionButtonClassName}
           >
-            取消
+            {t('cancel')}
           </Button>
         </div>
       )
@@ -1029,21 +1036,21 @@ export function WorkspaceRunPanel({
             className={workspacePrimaryActionButtonClassName}
           >
             <Check data-icon="inline-start" />
-            仍然创建
+            {t('createAnyway')}
           </Button>
           <Button
             variant="outline"
             onClick={() => onResume({ type: 'confirm_duplicate', action: 'skip' })}
             className={workspaceSecondaryActionButtonClassName}
           >
-            跳过这项
+            {t('skipThis')}
           </Button>
           <Button
             variant="ghost"
             onClick={() => onResume({ type: 'confirm_duplicate', action: 'cancel' })}
             className={workspaceSecondaryActionButtonClassName}
           >
-            取消
+            {t('cancel')}
           </Button>
         </div>
       )
@@ -1138,33 +1145,33 @@ export function WorkspaceRunPanel({
             aria-expanded={detailsExpanded}
             className="rounded-full px-3 text-xs text-on-surface-variant/60 hover:text-on-surface"
           >
-            {detailsExpanded ? '收起详情' : '展开详情'}
+            {detailsExpanded ? t('collapseDetails') : t('expandDetails')}
           </Button>
 
           {detailsExpanded ? (
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {resolvedUnderstandingPreview ? (
                 <div className="space-y-2 rounded-[0.85rem] bg-amber-50/50 px-3.5 py-3 dark:bg-amber-900/8">
-                  <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/50 uppercase">原始输入</p>
+                  <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/50 uppercase">{t('rawInput')}</p>
                   <p className="text-sm leading-6 text-on-surface">{resolvedUnderstandingPreview.rawInput}</p>
 
                   {resolvedUnderstandingPreview.normalizedInput !== resolvedUnderstandingPreview.rawInput ? (
                     <div className="space-y-1 pt-1">
-                      <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/50 uppercase">标准化后</p>
+                      <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/50 uppercase">{t('normalized')}</p>
                       <p className="text-sm leading-6 text-on-surface">{resolvedUnderstandingPreview.normalizedInput}</p>
                     </div>
                   ) : null}
 
                   {resolvedUnderstandingPreview.corrections.length > 0 ? (
                     <div className="space-y-1 pt-1">
-                      <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/50 uppercase">修正</p>
+                      <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/50 uppercase">{t('correction')}</p>
                       <p className="text-sm leading-6 text-on-surface">{resolvedUnderstandingPreview.corrections.join('、')}</p>
                     </div>
                   ) : null}
 
                   {resolvedUnderstandingPreview.draftTasks.length > 0 ? (
                     <div className="space-y-1 pt-1">
-                      <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/50 uppercase">识别任务 ({resolvedUnderstandingPreview.draftTasks.length})</p>
+                      <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/50 uppercase">{t('identifyTasks')} ({resolvedUnderstandingPreview.draftTasks.length})</p>
                       <ol className="space-y-1">
                         {resolvedUnderstandingPreview.draftTasks.map((task) => (
                           <li key={task.id} className="text-sm text-on-surface">{task.title}</li>
@@ -1177,7 +1184,7 @@ export function WorkspaceRunPanel({
 
               {resolvedPlanPreview ? (
                 <div className="space-y-2 rounded-[0.85rem] bg-emerald-50/50 px-3.5 py-3 dark:bg-emerald-900/8">
-                  <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/50 uppercase">执行步骤 ({resolvedPlanPreview.steps.length})</p>
+                  <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant/50 uppercase">{t('executionSteps')} ({resolvedPlanPreview.steps.length})</p>
                   <ol className="space-y-1">
                     {resolvedPlanPreview.steps.map((step) => (
                       <li key={step.id} className="flex items-start gap-2 text-sm text-on-surface">

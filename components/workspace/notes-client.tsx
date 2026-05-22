@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from '@/hooks/use-locale'
+
 import { NotepadText } from 'lucide-react'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 
@@ -77,10 +79,10 @@ function NoteCardContextMenu({
       <DropdownMenuContent align="start" sideOffset={6} className="min-w-[152px]">
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={onArchive} className="text-[12px]">
-            归档
+            Archive
           </DropdownMenuItem>
           <DropdownMenuItem variant="destructive" onClick={onMoveToTrash} className="text-[12px]">
-            移入回收站
+            Move to Trash
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
@@ -107,10 +109,11 @@ function NoteCard({
   onArchive: (note: AssetListItem) => void
   onMoveToTrash: (note: AssetListItem) => void
 }) {
-  const contentText = note.content ?? note.originalText ?? '暂无正文'
+  const t = useTranslations('workspace.notes')
+  const contentText = note.content ?? note.originalText ?? t('noBody')
   const updatedAt = note.updatedAt ?? note.createdAt
   const { markdown, setMarkdown, status, errorMessage, saveNow, isDirty } = useNoteInlineEdit({
-    initialMarkdown: contentText === '暂无正文' ? '' : contentText,
+    initialMarkdown: contentText === t('noBody') ? '' : contentText,
     onSave: (nextMarkdown) => onSave(note, nextMarkdown),
   })
 
@@ -153,7 +156,7 @@ function NoteCard({
           <>
             <NoteInlineEditor
               markdown={markdown}
-              ariaLabel="编辑笔记"
+              ariaLabel={t('editNote')}
               onMarkdownChange={setMarkdown}
               onBlur={() => {
                 void handleBlur()
@@ -172,9 +175,9 @@ function NoteCard({
                 )}
               >
                 {status === 'saving'
-                  ? '正在保存...'
+                  ? t('saving')
                   : status === 'saved'
-                    ? '已保存'
+                    ? t('saved')
                     : errorMessage}
               </span>
             ) : null}
@@ -185,7 +188,7 @@ function NoteCard({
 
           {!isEditing ? (
             <div className={`${workspaceMetaTextClassName} mt-4 text-on-surface-variant`}>
-              <span>更新于 {formatAssetRelativeTime(updatedAt)}</span>
+              <span>Updated  {formatAssetRelativeTime(updatedAt)}</span>
             </div>
           ) : null}
         </div>
@@ -197,8 +200,8 @@ function NoteCard({
 function EmptyState() {
   return (
     <WorkspaceEmptyState
-      title="暂无笔记"
-      description="从启动台/统一入口保存一条文本记录"
+      title="No notes yet"
+      description="Save an idea or text first."
       icon={NotepadText}
       className="mt-20 py-16"
     />
@@ -206,6 +209,7 @@ function EmptyState() {
 }
 
 export function NotesClient({ initialPage }: { initialPage: PaginatedResult<AssetListItem> }) {
+  const t = useTranslations('workspace.notes')
   const { items, setItems, pageInfo, loadingMore, loadMore } = useWorkspaceAssetsPage({
     initialPage,
     initialQuery: { type: 'note' },
@@ -218,7 +222,7 @@ export function NotesClient({ initialPage }: { initialPage: PaginatedResult<Asse
     const nextContent = markdown
 
     if (!nextContent.trim()) {
-      throw new Error('请至少填写一点内容。')
+      throw new Error(t('requireContent'))
     }
 
     if (nextContent === (note.content ?? note.originalText)) {
@@ -236,7 +240,7 @@ export function NotesClient({ initialPage }: { initialPage: PaginatedResult<Asse
     )
 
     if (!updated) {
-      throw new Error('保存失败，请重试。')
+      throw new Error(t('saveFailed'))
     }
 
     setItems((current) => current.map((item) => (item.id === updated.id ? updated : item)))
@@ -272,18 +276,18 @@ export function NotesClient({ initialPage }: { initialPage: PaginatedResult<Asse
   return (
     <div className="mx-auto w-full max-w-7xl px-1 sm:px-2">
       <WorkspacePageHeader
-        title="笔记"
-        eyebrow="手稿"
-        description="从统一入口留下的想法、碎片和草稿，会被整理成更适合扫读的手稿版面。"
+        title={t('note')}
+        eyebrow={t('eyebrow')}
+        description={t('description')}
       />
 
       <div className="mb-7 flex flex-wrap items-center gap-3 md:mb-8">
-        <span className={workspacePillClassName}>已加载 {noteCount} 条</span>
+        <span className={workspacePillClassName}>Loaded {noteCount} items</span>
         <span className={workspacePillClassName}>
-          {pageInfo.hasNextPage ? '还有更多' : '已加载全部'}
+          {pageInfo.hasNextPage ? t('moreToLoad') : t('allLoaded')}
         </span>
         <p className={`${workspaceMetaTextClassName} text-on-surface-variant`}>
-          最近记录会优先展示，内容采用瀑布流排布并随长度自动增高。
+          Recent items appear first, arranged in a waterfall layout that auto-expands.
         </p>
       </div>
 
@@ -316,7 +320,7 @@ export function NotesClient({ initialPage }: { initialPage: PaginatedResult<Asse
             disabled={!pageInfo.hasNextPage || loadingMore}
             onClick={() => void loadMore()}
           >
-            {pageInfo.hasNextPage ? (loadingMore ? '加载中...' : '加载更多') : '已加载全部'}
+            {pageInfo.hasNextPage ? (loadingMore ? t('loading') : t('loadMore')) : t('allLoaded')}
           </Button>
         </div>
       ) : null}

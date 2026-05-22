@@ -1,7 +1,9 @@
 'use client'
 
+import { useTranslations } from '@/hooks/use-locale'
+
 import { format } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
+import { enUS } from 'date-fns/locale'
 import { ChevronDownIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -55,9 +57,9 @@ export type LinkEditValues = {
 export type AssetEditValues = NoteEditValues | TodoEditValues | LinkEditValues
 
 function getTitle(asset: AssetListItem) {
-  if (asset.type === 'note') return '编辑笔记'
-  if (asset.type === 'todo') return '编辑待办'
-  return '编辑书签'
+  if (asset.type === 'note') return 'Edit Note'
+  if (asset.type === 'todo') return 'Edit Todo'
+  return 'Edit Bookmark'
 }
 
 function normalizeEditableValue(value: string | null | undefined): string {
@@ -70,10 +72,9 @@ function getDateTimestamp(value: Date | null): number | null {
 
 function formatDateButtonLabel(value: Date | null): string {
   if (!value) {
-    return '选择日期'
+    return 'Select date'
   }
-
-  return format(value, 'PPP', { locale: zhCN })
+  return format(value, 'PPP', { locale: enUS })
 }
 
 function formatTimeInputValue(value: Date | null): string {
@@ -235,6 +236,7 @@ export function AssetEditDialog({
   onOpenChange: (open: boolean) => void
   onSubmit: (asset: AssetListItem, values: AssetEditValues) => Promise<boolean>
 }) {
+  const t = useTranslations('workspace.editDialog')
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [url, setUrl] = useState('')
@@ -269,12 +271,12 @@ export function AssetEditDialog({
     const values = buildAssetEditValues(asset, { title, content, url, timeText, dueAt })
 
     if (!nextTitle && !nextContent) {
-      setError(asset.type === 'link' ? '请至少填写标题或备注' : '请至少填写标题或正文')
+      setError(asset.type === 'link' ? t('requireTitleOrNote') : t('requireTitleOrBody'))
       return
     }
 
     if (asset.type === 'link' && !nextUrl) {
-      setError('请输入链接 URL')
+      setError(t('requireUrl'))
       return
     }
 
@@ -302,13 +304,13 @@ export function AssetEditDialog({
       <DialogContent className="sm:max-w-lg">
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{asset ? getTitle(asset) : '编辑内容'}</DialogTitle>
-            <DialogDescription>保存后会更新当前工作区里的这条内容。</DialogDescription>
+            <DialogTitle>{asset ? getTitle(asset) : t('editContent')}</DialogTitle>
+            <DialogDescription>Saving updates this item in the workspace.</DialogDescription>
           </DialogHeader>
 
           <FieldGroup>
             <Field data-invalid={!!error}>
-              <FieldLabel htmlFor="asset-edit-title">标题</FieldLabel>
+              <FieldLabel htmlFor="asset-edit-title">Title</FieldLabel>
               <Input
                 id="asset-edit-title"
                 aria-invalid={!!error}
@@ -322,7 +324,7 @@ export function AssetEditDialog({
               <>
                 <FieldGroup className="flex-row items-end">
                   <Field className="flex-1">
-                    <FieldLabel htmlFor="asset-edit-date">日期</FieldLabel>
+                    <FieldLabel htmlFor="asset-edit-date">Date</FieldLabel>
                     <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                       <PopoverTrigger
                         render={
@@ -342,7 +344,7 @@ export function AssetEditDialog({
                           selected={dueAt ?? undefined}
                           captionLayout="dropdown"
                           defaultMonth={dueAt ?? undefined}
-                          locale={zhCN}
+                          locale={enUS}
                           onSelect={(nextDate) => {
                             setDueAt((current) => mergeDatePart(current, nextDate))
                             setCalendarOpen(false)
@@ -353,7 +355,7 @@ export function AssetEditDialog({
                   </Field>
 
                   <Field className="w-32">
-                    <FieldLabel htmlFor="asset-edit-due-time">时间</FieldLabel>
+                    <FieldLabel htmlFor="asset-edit-due-time">Time</FieldLabel>
                     <Input
                       id="asset-edit-due-time"
                       type="time"
@@ -370,7 +372,7 @@ export function AssetEditDialog({
                   {dueAt ? (
                     <Field className="w-auto shrink-0">
                       <FieldLabel className="sr-only" htmlFor="asset-edit-clear-date">
-                        清空日期时间
+                        ClearDateTime
                       </FieldLabel>
                       <Button
                         id="asset-edit-clear-date"
@@ -380,17 +382,17 @@ export function AssetEditDialog({
                           setDueAt(null)
                         }}
                       >
-                        清空
+                        Clear
                       </Button>
                     </Field>
                   ) : null}
                 </FieldGroup>
 
                 <Field>
-                  <FieldLabel htmlFor="asset-edit-time">时间说明（可选）</FieldLabel>
+                  <FieldLabel htmlFor="asset-edit-time">Time（Optional）</FieldLabel>
                   <Input
                     id="asset-edit-time"
-                    placeholder="例如：明早 9:30"
+                    placeholder={t('timePlaceholder')}
                     value={timeText}
                     onChange={(event) => setTimeText(event.target.value)}
                   />
@@ -400,7 +402,7 @@ export function AssetEditDialog({
 
             {asset?.type === 'link' ? (
               <Field>
-                <FieldLabel htmlFor="asset-edit-url">链接</FieldLabel>
+                <FieldLabel htmlFor="asset-edit-url">Link</FieldLabel>
                 <Input
                   id="asset-edit-url"
                   type="url"
@@ -412,7 +414,7 @@ export function AssetEditDialog({
 
             <Field>
               <FieldLabel htmlFor="asset-edit-content">
-                {asset?.type === 'note' ? '正文' : asset?.type === 'todo' ? '备注' : '备注'}
+                {asset?.type === 'note' ? t('body') : asset?.type === 'todo' ? t('note') : t('note')}
               </FieldLabel>
               <Textarea
                 id="asset-edit-content"
@@ -425,9 +427,9 @@ export function AssetEditDialog({
           </FieldGroup>
 
           <DialogFooter>
-            <DialogClose render={<Button type="button" variant="outline" />}>取消</DialogClose>
+            <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
             <Button type="submit" disabled={submitting}>
-              {submitting ? '保存中...' : '保存'}
+              {submitting ? t('saving') : t('save')}
             </Button>
           </DialogFooter>
         </form>

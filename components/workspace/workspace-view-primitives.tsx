@@ -119,7 +119,7 @@ function WorkspaceFilterTabs<TValue extends string>({
         className
       )}
       role="tablist"
-      aria-label="内容筛选"
+      aria-label="Filter content"
     >
       {tabs.map((tab) => (
         <ToggleGroupItem

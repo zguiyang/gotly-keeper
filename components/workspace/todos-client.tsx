@@ -1,7 +1,9 @@
 'use client'
 
+import { useTranslations } from '@/hooks/use-locale'
+
 import { addMonths, format, isSameDay, isValid, startOfDay, startOfMonth } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
+import { enUS } from 'date-fns/locale'
 import { ListTodo, Square, SquareCheck } from 'lucide-react'
 import { useMemo, useState, type ComponentProps } from 'react'
 
@@ -58,8 +60,8 @@ function getTodoDate(item: AssetListItem) {
 }
 
 function getSelectedDateLabel(date: Date, today: Date) {
-  if (isSameDay(date, today)) return '今天'
-  return format(date, 'M月d日 EEEE', { locale: zhCN })
+  if (isSameDay(date, today)) return 'Today'
+  return format(date, 'MMM d, EEEE', { locale: enUS })
 }
 
 function isOverdueTodo(item: AssetListItem, todayDate: string) {
@@ -106,31 +108,32 @@ function TodoDateHeader({
   promotedUnscheduled: boolean
   todayDate: Date
 }) {
+  const t = useTranslations('workspace.todos')
   const label = getSelectedDateLabel(selectedDate, todayDate)
 
   return (
     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        <p className="text-[12px] font-semibold tracking-normal text-on-surface-variant/80">任务日</p>
+        <p className="text-[12px] font-semibold tracking-normal text-on-surface-variant/80">{t('dayLabel')}</p>
         <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <h2 className="font-headline text-2xl font-semibold text-on-surface">{label}</h2>
-          <span className={workspaceMetaTextClassName}>{selectedCount} 项</span>
+          <span className={workspaceMetaTextClassName}>{selectedCount} </span>
         </div>
         <p className="mt-1 max-w-2xl text-sm leading-6 text-on-surface-variant/75">
           {promotedUnscheduled
-            ? '这一天没有排期，先把未排期事项处理掉。'
-            : '只显示有明确日期时间的待办，未排期事项会单独收纳。'}
+            ? t('noScheduledForToday')
+            : t('scheduledHint')}
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/10 bg-surface-container-lowest/75 px-3 py-2 text-[12px] text-on-surface-variant">
         <span className="inline-flex items-center gap-1.5">
           <span className="size-2 rounded-full bg-primary" />
-          当前 {selectedCount} 项
+          Current  {selectedCount} 
         </span>
         <span className="size-1 rounded-full bg-border/40" aria-hidden="true" />
-        <span>已排期日期 {scheduledCount} 天</span>
+        <span>Scheduled Dates  {scheduledCount}d</span>
         <span className="size-1 rounded-full bg-border/40" aria-hidden="true" />
-        <span>未排期 {unscheduledCount} 项</span>
+        <span>Unscheduled  {unscheduledCount} </span>
       </div>
     </div>
   )
@@ -151,6 +154,7 @@ function TodoItemComponent({
   onArchive: (item: AssetListItem) => void
   onMoveToTrash: (item: AssetListItem) => void
 }) {
+  const t = useTranslations('workspace.todos')
   const note = item.excerpt !== item.title ? item.excerpt : null
 
   return (
@@ -175,8 +179,8 @@ function TodoItemComponent({
               ? 'bg-primary/8 text-primary hover:bg-primary/10 hover:text-primary'
               : 'bg-muted/55 text-on-surface-variant/75 hover:bg-primary/8 hover:text-primary'
           )}
-          aria-label={item.completed ? '标记为未完成' : '标记为已完成'}
-          title={item.completed ? '标记为未完成' : '标记为已完成'}
+          aria-label={item.completed ? t('markIncomplete') : t('markComplete')}
+          title={item.completed ? t('markIncomplete') : t('markComplete')}
         >
           {item.completed ? (
             <SquareCheck className="text-primary" />
@@ -208,9 +212,9 @@ function TodoItemComponent({
       <div className="pt-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
         <AssetActionMenu
           actions={[
-            { label: '编辑', onClick: () => onEdit(item), disabled: pending },
-            { label: '归档', onClick: () => onArchive(item), disabled: pending },
-            { label: '移入回收站', onClick: () => onMoveToTrash(item), disabled: pending, danger: true },
+            { label: t('edit'), onClick: () => onEdit(item), disabled: pending },
+            { label: t('archive'), onClick: () => onArchive(item), disabled: pending },
+            { label: t('moveToTrash'), onClick: () => onMoveToTrash(item), disabled: pending, danger: true },
           ]}
         />
       </div>
@@ -260,7 +264,7 @@ function TodoDateList({
             'shrink-0 rounded-full border border-border/10 bg-muted/35 px-2.5 py-1'
           )}
         >
-          {items.length} 项
+          {items.length} 
         </span>
       </div>
 
@@ -335,6 +339,7 @@ function TodoCalendarPanel({
   onMonthChange: (month: Date) => void
   todayDate: Date
 }) {
+  const t = useTranslations('workspace.todos')
   function DayButtonWithTodoMarker(props: ComponentProps<typeof CalendarDayButton>) {
     const hasTodo = scheduledDateKeys.has(getDateKey(props.day.date))
 
@@ -349,9 +354,9 @@ function TodoCalendarPanel({
   return (
     <aside className={cn(workspacePanelSurfaceClassName, 'p-4 sm:p-5 xl:sticky xl:top-24')}>
       <div className="mb-4">
-        <p className="text-[12px] font-semibold tracking-normal text-on-surface-variant/80">日历</p>
-        <h2 className="mt-2 font-headline text-xl font-semibold text-on-surface">按日期查看</h2>
-        <p className="mt-1 text-sm leading-6 text-on-surface-variant/75">有圆点的日期表示当天存在待办。</p>
+        <p className="text-[12px] font-semibold tracking-normal text-on-surface-variant/80">{t('calendar')}</p>
+        <h2 className="mt-2 font-headline text-xl font-semibold text-on-surface">{t('viewByDate')}</h2>
+        <p className="mt-1 text-sm leading-6 text-on-surface-variant/75">{t('dotHint')}</p>
       </div>
 
       <Calendar
@@ -363,26 +368,26 @@ function TodoCalendarPanel({
           if (date) onSelectDate(date)
         }}
         onMonthChange={onMonthChange}
-        locale={zhCN}
+        locale={enUS}
         className="mx-auto w-full max-w-[20rem] bg-transparent p-0 [--cell-size:--spacing(9)] sm:[--cell-size:--spacing(10)] xl:[--cell-size:--spacing(8)]"
         components={{ DayButton: DayButtonWithTodoMarker }}
       />
 
       <div className="mt-5 grid grid-cols-3 gap-2">
         <div className="rounded-xl border border-border/10 bg-muted/35 px-3 py-2.5">
-          <p className={workspaceMetaTextClassName}>当前</p>
+          <p className={workspaceMetaTextClassName}>Current </p>
           <p className="mt-1 font-mono text-lg font-semibold leading-none text-on-surface tabular-nums">
             {selectedCount}
           </p>
         </div>
         <div className="rounded-xl border border-border/10 bg-muted/35 px-3 py-2.5">
-          <p className={workspaceMetaTextClassName}>已排期日期</p>
+          <p className={workspaceMetaTextClassName}>Scheduled Dates </p>
           <p className="mt-1 font-mono text-lg font-semibold leading-none text-on-surface tabular-nums">
             {scheduledCount}
           </p>
         </div>
         <div className="rounded-xl border border-border/10 bg-muted/35 px-3 py-2.5">
-          <p className={workspaceMetaTextClassName}>未排期</p>
+          <p className={workspaceMetaTextClassName}>Unscheduled </p>
           <p className="mt-1 font-mono text-lg font-semibold leading-none text-on-surface tabular-nums">
             {unscheduledCount}
           </p>
@@ -409,6 +414,7 @@ export function TodosClient({
   initialDateMarkers?: string[]
   initialUnscheduledTodos?: AssetListItem[]
 }) {
+  const t = useTranslations('workspace.todos')
   const [completedTodos, setCompletedTodos] = useState(initialCompletedTodos)
   const [overdueTodos, setOverdueTodos] = useState(initialOverdueTodos)
   const [selectedDateTodos, setSelectedDateTodos] = useState(initialSelectedDateTodos)
@@ -574,9 +580,9 @@ export function TodosClient({
   return (
     <>
       <WorkspacePageHeader
-        title="待办"
-        description="从统一入口留下的待处理事项，会按时间线索整理成清晰、可回看的任务流。"
-        eyebrow="任务计划"
+        title={t('todo')}
+        description={t('description')}
+        eyebrow={t('eyebrow')}
       />
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
@@ -594,14 +600,13 @@ export function TodosClient({
               <WorkspaceTodosDateLoading />
             ) : (
               <TodoDateList
-                title={shouldPromoteUnscheduled ? '未排期待办' : '当天待办'}
+                title={shouldPromoteUnscheduled ? t('unscheduled') : t('todayTodo')}
                 description={
                   shouldPromoteUnscheduled
-                    ? '这一天没有排期，先处理这些未排期事项。'
-                    : '只显示当前选中日期的待办。'
-                }
+                    ? t('noScheduledUnscheduled')
+                    : t('selectedDateHint')}
                 items={visibleSelectedItems}
-                emptyMessage="这个日期没有已排期待办。可以点选右侧日期，或先处理下面的逾期待办与已完成事项。"
+                emptyMessage={t('noScheduledHelp')}
                 pendingIds={pendingIds}
                 onToggleTodo={handleToggleTodo}
                 onEdit={setEditingTodo}
@@ -615,10 +620,10 @@ export function TodosClient({
           {unscheduledItems.length > 0 && !shouldPromoteUnscheduled ? (
             <section>
               <TodoDateList
-                title="未排期待办"
-                description="暂时没有具体日期时间的待办。"
+                title={t('unscheduled')}
+                description={t('noUnscheduledDescription')}
                 items={unscheduledItems}
-                emptyMessage="没有未排期待办"
+                emptyMessage={t('noUnscheduled')}
                 pendingIds={pendingIds}
                 onToggleTodo={handleToggleTodo}
                 onEdit={setEditingTodo}
@@ -632,10 +637,10 @@ export function TodosClient({
           {overdueItems.length > 0 ? (
             <section>
               <TodoDateList
-                title="已过期待办"
-                description="已经超过计划时间、但仍未完成的事项。"
+                title={t('overdue')}
+                description={t('overdueDescription')}
                 items={overdueItems}
-                emptyMessage="没有已过期待办"
+                emptyMessage={t('noOverdue')}
                 pendingIds={pendingIds}
                 onToggleTodo={handleToggleTodo}
                 onEdit={setEditingTodo}
@@ -649,10 +654,10 @@ export function TodosClient({
           {completedItems.length > 0 ? (
             <section>
               <TodoDateList
-                title="已完成"
-                description="最近完成的事项会暂时保留在这里，方便回看。"
+                title={t('completed')}
+                description={t('completedDescription')}
                 items={completedItems}
-                emptyMessage="还没有已完成事项"
+                emptyMessage={t('noCompleted')}
                 pendingIds={pendingIds}
                 onToggleTodo={handleToggleTodo}
                 onEdit={setEditingTodo}
@@ -665,8 +670,8 @@ export function TodosClient({
 
           {showEmptyState ? (
             <WorkspaceEmptyState
-              title="暂无待办"
-              description="从统一入口保存新的待办后会出现在这里。右侧日期面板也会在有排期后显示圆点。"
+              title={t('empty')}
+              description={t('emptyHint')}
               icon={ListTodo}
               className="py-16"
             />

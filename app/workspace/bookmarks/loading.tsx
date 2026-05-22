@@ -31,12 +31,12 @@ function BookmarkSkeleton({ widthClassName }: { widthClassName: string }) {
 export default function Loading() {
   return (
     <div className="mx-auto w-full max-w-7xl px-1 sm:px-2">
-      <WorkspacePageHeader title="我的收藏" eyebrow="阅读队列" description="正在加载你的链接收藏与解析状态…" />
+      <WorkspacePageHeader title="Bookmarks" eyebrow="Reading Queue" description="Loading your bookmarks and link analysis status…" />
 
       <div className="mb-7 flex flex-wrap items-center gap-3 md:mb-8">
-        <span className={workspacePillClassName}>加载中</span>
-        <span className={workspacePillClassName}>解析状态同步中</span>
-        <p className={`${workspaceMetaTextClassName} text-on-surface-variant`}>稍等片刻，卡片内容马上出现。</p>
+        <span className={workspacePillClassName}>Loading</span>
+        <span className={workspacePillClassName}>Syncing</span>
+        <p className={`${workspaceMetaTextClassName} text-on-surface-variant`}>Cards will appear shortly.</p>
       </div>
 
       <div className="max-w-6xl space-y-3">

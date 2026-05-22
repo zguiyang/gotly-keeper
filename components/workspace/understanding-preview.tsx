@@ -13,18 +13,18 @@ type UnderstandingPreviewProps = {
 
 export function UnderstandingPreview({ understandingPreview }: UnderstandingPreviewProps) {
   const getIntentLabel = (intent: string) => {
-    if (intent === 'create') return '创建'
-    if (intent === 'update') return '更新'
-    if (intent === 'query') return '查询'
-    if (intent === 'summarize') return '总结'
+    if (intent === 'create') return 'Create'
+    if (intent === 'update') return 'Update'
+    if (intent === 'query') return 'Query'
+    if (intent === 'summarize') return 'Summarize'
     return intent
   }
 
   const getTargetLabel = (target: string) => {
-    if (target === 'todos') return '待办'
-    if (target === 'notes') return '笔记'
-    if (target === 'bookmarks') return '书签'
-    if (target === 'mixed') return '混合'
+    if (target === 'todos') return 'Tasks'
+    if (target === 'notes') return 'Notes'
+    if (target === 'bookmarks') return 'Bookmarks'
+    if (target === 'mixed') return 'Mixed'
     return target
   }
 
@@ -32,25 +32,25 @@ export function UnderstandingPreview({ understandingPreview }: UnderstandingPrev
     <Card className={workspaceSurfaceClassName}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">理解预览</CardTitle>
+          <CardTitle className="text-base">Understanding Preview</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <span className="text-xs text-on-surface-variant/60">原始输入</span>
+          <span className="text-xs text-on-surface-variant/60">Raw Input</span>
           <p className="text-sm text-on-surface">{understandingPreview.rawInput}</p>
         </div>
 
         {understandingPreview.normalizedInput !== understandingPreview.rawInput && (
           <div className="space-y-2">
-            <span className="text-xs text-on-surface-variant/60">标准化后</span>
+            <span className="text-xs text-on-surface-variant/60">Normalized</span>
             <p className="text-sm text-on-surface">{understandingPreview.normalizedInput}</p>
           </div>
         )}
 
         {understandingPreview.corrections.length > 0 && (
           <div className="space-y-2">
-            <span className="text-xs text-on-surface-variant/60">修正</span>
+            <span className="text-xs text-on-surface-variant/60">Correction</span>
             <div className="flex flex-wrap gap-1">
               {understandingPreview.corrections.map((correction, index) => (
                 <Badge key={index} variant="secondary" className="text-xs">
@@ -63,7 +63,7 @@ export function UnderstandingPreview({ understandingPreview }: UnderstandingPrev
 
         <div className="space-y-2">
           <span className="text-xs text-on-surface-variant/60">
-            识别任务 ({understandingPreview.draftTasks.length})
+            Identified Tasks ({understandingPreview.draftTasks.length})
           </span>
           <div className="space-y-3">
             {understandingPreview.draftTasks.map((task) => (
@@ -79,7 +79,7 @@ export function UnderstandingPreview({ understandingPreview }: UnderstandingPrev
                     {getTargetLabel(task.target)}
                   </Badge>
                   <span className="text-xs text-on-surface-variant/60">
-                    置信度: {Math.round(task.confidence * 100)}%
+                    Confidence: {Math.round(task.confidence * 100)}%
                   </span>
                 </div>
                 <p className="text-sm font-medium text-on-surface">{task.title}</p>
@@ -87,7 +87,7 @@ export function UnderstandingPreview({ understandingPreview }: UnderstandingPrev
                 {task.ambiguities.length > 0 && (
                   <div className="space-y-1">
                     <span className="text-xs text-amber-600 dark:text-amber-400">
-                      歧义项
+                      Ambiguities
                     </span>
                     <div className="flex flex-wrap gap-1">
                       {task.ambiguities.map((ambiguity, index) => (
@@ -101,7 +101,7 @@ export function UnderstandingPreview({ understandingPreview }: UnderstandingPrev
 
                 {Object.keys(task.slots).length > 0 && (
                   <div className="space-y-1">
-                    <span className="text-xs text-on-surface-variant/60">附加信息</span>
+                    <span className="text-xs text-on-surface-variant/60">Additional Info</span>
                     <div className="flex flex-wrap gap-x-3 gap-y-1">
                       {Object.entries(task.slots).map(([key, value]) => (
                         <span key={key} className="text-xs text-on-surface-variant">

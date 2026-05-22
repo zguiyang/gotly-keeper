@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from '@/hooks/use-locale'
+
 import { AlertTriangle, Archive, ArchiveRestore, Clock3, RotateCcw, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -25,7 +27,7 @@ import {
   workspacePanelSurfaceClassName,
   WorkspaceTypeBadge,
 } from '@/components/workspace/workspace-view-primitives'
-import { assetTypePresentation } from '@/config/ui/asset-presentation'
+import { assetTypePresentation, getAssetLocaleKey } from '@/config/ui/asset-presentation'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
 import { cn } from '@/lib/utils'
@@ -40,10 +42,10 @@ type AssetFilter = 'all' | 'note' | 'todo' | 'link'
 type LifecycleViewMode = 'archive' | 'trash'
 
 const FILTERS: Array<{ key: AssetFilter; label: string }> = [
-  { key: 'all', label: '全部' },
-  { key: 'note', label: '笔记' },
-  { key: 'todo', label: '待办' },
-  { key: 'link', label: '书签' },
+  { key: 'all', label: 'All', },
+  { key: 'note', label: 'Note', },
+  { key: 'todo', label: 'Todo', },
+  { key: 'link', label: 'Bookmark', },
 ]
 
 type LifecycleModeContent = {
@@ -62,36 +64,36 @@ type LifecycleModeContent = {
 
 const MODE_CONTENT: Record<LifecycleViewMode, LifecycleModeContent> = {
   archive: {
-    eyebrow: '已收起',
-    title: '归档',
-    description: '把暂时不需要出现在工作台里的内容收起来，保留上下文、来源和恢复入口。',
-    emptyTitle: '暂无归档内容',
-    emptyDescription: '当一条内容还值得保留、但不该继续打扰当前工作时，可以先归档。',
-    emptyFilteredDescription: '这个类型暂时没有归档内容。切换到「全部」可以查看其他已收起的内容。',
-    lifecycleLabel: '归档于',
+    eyebrow: 'Archived',
+    title: 'Archive',
+    description: "Archive items that don't need to be on your workspace. Context and restore entry are preserved.",
+    emptyTitle: 'No archived items',
+    emptyDescription: "When an item is worth keeping but shouldn't interrupt your flow, archive it.",
+    emptyFilteredDescription: 'No archived items of this type. Switch to "All" to browse other archived content.',
+    lifecycleLabel: 'archivedAt',
     statusClassName: 'border-border/22 bg-muted/55 text-on-surface-variant',
-    countLabel: '安静收纳',
+    countLabel: 'Neat Storage',
     Icon: Archive,
   },
   trash: {
-    eyebrow: '待确认',
-    title: '回收站',
-    description: '这里保留最近移除的内容。确认仍有价值就恢复，确认不再需要再永久删除。',
-    emptyTitle: '回收站为空',
-    emptyDescription: '没有待清理内容，工作区保持干净。',
-    emptyFilteredDescription: '这个类型暂时没有待清理内容。切换到「全部」可以查看其它回收站项目。',
-    lifecycleLabel: '移除于',
+    eyebrow: 'Pending',
+    title: 'Trash',
+    description: 'Recently removed items live here. Restore if still valuable, or permanently delete.',
+    emptyTitle: 'Trash is empty',
+    emptyDescription: 'No items to clean up. The workspace stays tidy.',
+    emptyFilteredDescription: 'No items of this type in trash. Switch to "All" to see other trashed items.',
+    lifecycleLabel: 'removedAt',
     statusClassName: 'border-destructive/24 bg-destructive/10 text-destructive',
-    countLabel: '等待确认',
-    notice: '永久删除后无法恢复。建议先确认内容已经不再需要。',
+    countLabel: 'Awaiting Confirmation',
+    notice: 'Permanent deletion cannot be undone.',
     Icon: Trash2,
   },
 }
 
 function typeLabel(type: AssetListItem['type']): string {
-  if (type === 'note') return '笔记'
-  if (type === 'todo') return '待办'
-  return '书签'
+  if (type === 'note') return 'Note'
+  if (type === 'todo') return 'Todo'
+  return 'Bookmark'
 }
 
 function typeBadgeVariant(type: AssetListItem['type']): 'default' | 'secondary' | 'outline' {
@@ -156,6 +158,7 @@ function PurgeAssetDialog({
   className?: string
   onConfirm: (asset: AssetListItem) => Promise<void>
 }) {
+  const t = useTranslations('workspace.lifecycle')
   const [open, setOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -179,19 +182,19 @@ function PurgeAssetDialog({
         render={<Button variant="destructive" size="sm" className={cn('rounded-full', className)} />}
         disabled={disabled || submitting}
       >
-        永久删除
+        {t('permanentDelete')}
       </DialogTrigger>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>确认永久删除</DialogTitle>
+          <DialogTitle>Confirm permanent delete</DialogTitle>
           <DialogDescription>
-            删除后无法恢复，{asset.title} 将从系统中彻底移除。
+            Deletion cannot be undone, {asset.title} will be permanently removed from the system.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <DialogClose render={<Button type="button" variant="outline" />}>取消</DialogClose>
+          <DialogClose render={<Button type="button" variant="outline" />}>{t('cancel')}</DialogClose>
           <Button type="button" variant="destructive" disabled={submitting} onClick={() => void handleConfirm()}>
-            {submitting ? '删除中...' : '永久删除'}
+            {submitting ? t('deleting') : t('permanentDelete')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -216,6 +219,7 @@ function LifecycleAssetItem({
   onRestore: (item: AssetListItem) => void
   onPurge: (item: AssetListItem) => Promise<void>
 }) {
+  const t = useTranslations('workspace.lifecycle')
   const content = MODE_CONTENT[mode]
   const lifecycleDate = getLifecycleDate(item, mode)
   const secondaryTime = lifecycleDate ?? item.createdAt
@@ -236,7 +240,7 @@ function LifecycleAssetItem({
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex flex-wrap items-center gap-2.5">
               <WorkspaceTypeBadge label={typeLabel(item.type)} variant={typeBadgeVariant(item.type)} />
-              {isCompletedTodo ? <span className={workspacePillClassName}>已完成</span> : null}
+              {isCompletedTodo ? <span className={workspacePillClassName}>Completed</span> : null}
               <span
                 className={cn(
                   'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium',
@@ -244,7 +248,7 @@ function LifecycleAssetItem({
                 )}
               >
                 <Clock3 className="size-3" />
-                {content.lifecycleLabel} {formatAssetRelativeTime(secondaryTime)}
+                {t(content.lifecycleLabel)} {formatAssetRelativeTime(secondaryTime)}
               </span>
             </div>
 
@@ -262,7 +266,7 @@ function LifecycleAssetItem({
             </p>
 
             <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-on-surface-variant/75">
-              <span>创建于 {formatAssetRelativeTime(item.createdAt)}</span>
+              <span>Created {formatAssetRelativeTime(item.createdAt)}</span>
               {item.url ? (
                 <>
                   <span className="size-1 rounded-full bg-border/40" aria-hidden="true" />
@@ -284,13 +288,13 @@ function LifecycleAssetItem({
               onClick={() => onUnarchive(item)}
             >
               <RotateCcw className="size-3.5" />
-              取消归档
+              {t('unarchive')}
             </Button>
             <AssetActionMenu
-              ariaLabel={`更多操作：${item.title}`}
+              ariaLabel={`More actions: ${item.title}`}
               actions={[
                 {
-                  label: '移入回收站',
+                  label: t('moveToTrash'),
                   onClick: () => onMoveToTrash(item),
                   disabled: pending,
                   danger: true,
@@ -309,7 +313,7 @@ function LifecycleAssetItem({
               onClick={() => onRestore(item)}
             >
               <ArchiveRestore className="size-3.5" />
-              恢复
+              {t('restore')}
             </Button>
             <PurgeAssetDialog asset={item} disabled={pending} onConfirm={onPurge} className="w-full justify-center" />
           </div>
@@ -319,6 +323,7 @@ function LifecycleAssetItem({
   )
 }
 
+
 export function LifecycleAssetsClient({
   initialPage,
   mode,
@@ -326,6 +331,7 @@ export function LifecycleAssetsClient({
   initialPage: PaginatedResult<AssetListItem>
   mode: LifecycleViewMode
 }) {
+  const t = useTranslations('workspace.lifecycle')
   const lifecycleStatus =
     mode === 'archive' ? ASSET_LIFECYCLE_STATUS.ARCHIVED : ASSET_LIFECYCLE_STATUS.TRASHED
   const { items, setItems, pageInfo, loadingMore, refreshing, loadFirstPage, loadMore } =
@@ -402,8 +408,8 @@ export function LifecycleAssetsClient({
                 <SummaryIcon className="size-3.5" />
               </span>
               <span>
-                {content.countLabel}：已加载 {items.length} 条
-                {pageInfo.hasNextPage ? '，还有更多' : '，已加载全部'}
+                {content.countLabel}: Loaded  {items.length}  items
+                {pageInfo.hasNextPage ? t('moreToLoad') : t('allLoaded')}
               </span>
             </p>
             {content.notice ? (
@@ -458,7 +464,7 @@ export function LifecycleAssetsClient({
             disabled={!pageInfo.hasNextPage || loadingMore || refreshing}
             onClick={() => void loadMore()}
           >
-            {pageInfo.hasNextPage ? (loadingMore ? '加载中...' : '加载更多') : '已加载全部'}
+            {pageInfo.hasNextPage ? (loadingMore ? t('loading') : t('loadMore')) : t('allLoaded')}
           </Button>
         </div>
       ) : null}

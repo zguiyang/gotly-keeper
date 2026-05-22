@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 import { workspaceNavGroups, isWorkspaceNavItemActive } from '@/config/workspace/nav'
+import { useTranslations } from '@/hooks/use-locale'
 
 type WorkspaceNavListVariant = 'sidebar' | 'sheet'
 
@@ -12,6 +13,7 @@ type WorkspaceNavListProps = {
 }
 
 export function WorkspaceNavList({ variant }: WorkspaceNavListProps) {
+  const t = useTranslations('workspace.nav')
   const pathname = usePathname()
   const baseItemClassName =
     'flex items-center gap-3 rounded-2xl px-3.5 py-2.5 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
@@ -21,7 +23,7 @@ export function WorkspaceNavList({ variant }: WorkspaceNavListProps) {
       {workspaceNavGroups.map((group) => (
         <div key={group.label} className="space-y-1">
           <p className="px-3.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant/70">
-            {group.label}
+            {t(group.tKey)}
           </p>
           <div className="space-y-0.5">
             {group.items.map((item) => {
@@ -44,7 +46,7 @@ export function WorkspaceNavList({ variant }: WorkspaceNavListProps) {
                     <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r bg-primary" />
                   ) : null}
                   <Icon className="h-4 w-4" />
-                  <span className="text-[15px] leading-6">{item.label}</span>
+                  <span className="text-[15px] leading-6">{t(item.tKey)}</span>
                 </Link>
               )
             })}

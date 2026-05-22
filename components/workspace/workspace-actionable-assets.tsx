@@ -12,11 +12,13 @@ import {
   workspaceMetaTextClassName,
   workspacePillClassName,
 } from '@/components/workspace/workspace-view-primitives'
-import { assetTypePresentation } from '@/config/ui/asset-presentation'
+import { assetTypePresentation, getAssetLocaleKey } from '@/config/ui/asset-presentation'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useTodoCompletion } from '@/hooks/workspace/use-todo-completion'
 import { formatAssetRelativeTime } from '@/shared/assets/asset-time-display'
 import { formatAbsoluteTime } from '@/shared/time/formatters'
+
+import { useTranslations } from '@/hooks/use-locale'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
 
@@ -51,6 +53,7 @@ function ActionableAssetItem({
   onArchive: (asset: AssetListItem) => void
   onMoveToTrash: (asset: AssetListItem) => void
 }) {
+  const tCommon = useTranslations('common')
   const presentation = assetTypePresentation[asset.type]
   const Icon = presentation.icon
   const supportingText = getAssetSupportingText(asset)
@@ -71,8 +74,8 @@ function ActionableAssetItem({
             variant="ghost"
             size="icon-sm"
             className="mt-0.5 shrink-0 text-on-surface-variant/75 hover:text-primary"
-            aria-label={asset.completed ? '标记为未完成' : '标记为已完成'}
-            title={asset.completed ? '标记为未完成' : '标记为已完成'}
+            aria-label={asset.completed ? 'Mark as incomplete' : 'Mark as complete'}
+            title={asset.completed ? 'Mark as incomplete' : 'Mark as complete'}
           >
             {asset.completed ? <SquareCheck className="text-primary" /> : <Square />}
           </Button>
@@ -124,7 +127,7 @@ function ActionableAssetItem({
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <span className={workspacePillClassName}>
-                {presentation.label}
+                {tCommon(`assets.${getAssetLocaleKey(asset.type)}`)}
               </span>
               {asset.type === 'todo' ? (
                 <TodoDueTime item={asset} />
@@ -146,16 +149,16 @@ function ActionableAssetItem({
                   size="sm"
                   className="text-on-surface-variant hover:text-primary"
                 >
-                  打开
+                  Open
                   <ExternalLink />
                 </Button>
               ) : null}
               <AssetActionMenu
                 actions={[
-                  { label: '编辑', onClick: () => onEdit(asset), disabled: pending },
-                  { label: '归档', onClick: () => onArchive(asset), disabled: pending },
+                  { label: 'Edit', onClick: () => onEdit(asset), disabled: pending },
+                  { label: 'Archive', onClick: () => onArchive(asset), disabled: pending },
                   {
-                    label: '移入回收站',
+                    label: 'Move to Trash',
                     onClick: () => onMoveToTrash(asset),
                     disabled: pending,
                     danger: true,

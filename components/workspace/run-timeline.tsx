@@ -5,6 +5,8 @@ import { AlertCircle, CheckCircle2, Circle, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 
+import { useTranslations } from '@/hooks/use-locale'
+
 import { workspaceSurfaceClassName } from './workspace-view-primitives'
 
 import type { WorkspaceRunStreamEvent } from '@/shared/workspace/workspace-run-protocol'
@@ -13,37 +15,40 @@ type RunTimelineProps = {
   timeline: WorkspaceRunStreamEvent[]
 }
 
-const phaseLabels: Record<string, string> = {
-  normalize: '标准化',
-  semantic_split: '语义拆分',
-  understand: '理解',
-  plan: '计划',
-  review: '审查',
-  preview: '预览',
-  execute: '执行',
-  compose: '组合',
+const phaseKeyMap: Record<string, string> = {
+  normalize: 'normalize',
+  semantic_split: 'split',
+  understand: 'understand',
+  plan: 'plan',
+  review: 'review',
+  preview: 'preview',
+  execute: 'execute',
+  compose: 'compose',
 }
 
-const toolLabels: Record<string, string> = {
-  create_todo: '创建待办',
-  update_todo: '更新待办',
-  create_note: '创建笔记',
-  update_note: '更新笔记',
-  create_bookmark: '创建书签',
-  query_assets: '查询资产',
-  summarize_assets: '总结资产',
+const toolKeyMap: Record<string, string> = {
+  create_todo: 'createTodo',
+  update_todo: 'updateTodo',
+  create_note: 'createNote',
+  update_note: 'updateNote',
+  create_bookmark: 'createBookmark',
+  query_assets: 'queryAsset',
+  summarize_assets: 'summarizeAsset',
 }
 
 function getToolLabel(toolName: string): string {
-  return toolLabels[toolName] || toolName.replace(/_/g, ' ')
+  const key = toolKeyMap[toolName]
+  return key || toolName.replace(/_/g, ' ')
 }
 
 function TimelineItem({
   event,
   isLast,
+  t,
 }: {
   event: WorkspaceRunStreamEvent
   isLast: boolean
+  t: (key: string, params?: Record<string, string | number>) => string
 }) {
   const getEventIcon = () => {
     switch (event.type) {
@@ -67,17 +72,17 @@ function TimelineItem({
   const getEventLabel = () => {
     switch (event.type) {
       case 'phase_started':
-        return `开始: ${phaseLabels[event.phase] || event.phase}`
+        return t('start') + ': ' + (phaseKeyMap[event.phase] ? t(phaseKeyMap[event.phase]) : event.phase)
       case 'phase_completed':
-        return `完成: ${phaseLabels[event.phase] || event.phase}`
+        return t('complete') + ': ' + (phaseKeyMap[event.phase] ? t(phaseKeyMap[event.phase]) : event.phase)
       case 'tool_call_started':
-        return `开始: ${getToolLabel(event.toolName)}`
+        return t('start') + ': ' + (toolKeyMap[event.toolName] ? t(toolKeyMap[event.toolName]) : getToolLabel(event.toolName))
       case 'tool_call_completed':
-        return `完成: ${getToolLabel(event.toolName)}`
+        return t('complete') + ': ' + (toolKeyMap[event.toolName] ? t(toolKeyMap[event.toolName]) : getToolLabel(event.toolName))
       case 'run_completed':
-        return '完成: 已生成最终结果'
+        return t('completed')
       case 'run_failed':
-        return '失败: 本次执行未完成'
+        return t('failed')
       default:
         return event.type
     }
@@ -89,7 +94,7 @@ function TimelineItem({
         return event.preview
       case 'tool_call_completed':
         if (typeof event.result === 'object' && event.result !== null && 'ok' in event.result) {
-          return event.result.ok ? '成功' : '失败'
+          return event.result.ok ? t('success') : t('failed')
         }
         return ''
       case 'run_completed':
@@ -120,12 +125,14 @@ function TimelineItem({
 }
 
 export function RunTimeline({ timeline }: RunTimelineProps) {
+  const t = useTranslations('workspace.runTimeline')
+
   if (timeline.length === 0) {
     return (
       <Card className={workspaceSurfaceClassName}>
         <CardContent className="p-4">
           <p className="text-sm text-on-surface-variant text-center py-4">
-            暂无执行记录
+            {t('noRecords')}
           </p>
         </CardContent>
       </Card>
@@ -137,10 +144,10 @@ export function RunTimeline({ timeline }: RunTimelineProps) {
       <CardContent className="p-4">
         <div className="flex items-center gap-2 mb-4">
           <Badge variant="outline" className="text-xs">
-            执行时间线
+            {t('executionTimeline')}
           </Badge>
           <span className="text-xs text-on-surface-variant">
-            {timeline.length} 个事件
+            {t('events', { count: timeline.length })}
           </span>
         </div>
 
@@ -150,6 +157,7 @@ export function RunTimeline({ timeline }: RunTimelineProps) {
               key={`${event.type}-${index}`}
               event={event}
               isLast={index === timeline.length - 1}
+              t={t}
             />
           ))}
         </div>

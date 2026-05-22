@@ -75,7 +75,7 @@ export function SlotClarificationForm({ interaction, formId, onSubmit }: SlotCla
                       onValueChange={(value) => handleChange(field.key, value ?? '')}
                     >
                       <SelectTrigger id={inputId} className={`w-full ${workspaceInteractionInsetFieldClassName}`}>
-                        <SelectValue placeholder={field.placeholder ?? '请选择'}>
+                        <SelectValue placeholder={field.placeholder ?? 'Select'}>
                           {field.options?.find((o) => o.value === values[field.key])?.label}
                         </SelectValue>
                       </SelectTrigger>
