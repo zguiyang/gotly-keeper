@@ -549,9 +549,9 @@ function FinalResult({
       : errorMessage ?? 'Processing failed'
 
     return (
-      <div className="rounded-[1rem] border-l-4 border-l-red-400 border-red-200/20 bg-red-50/60 px-4 py-3 dark:bg-red-950/10"> {/* DESIGN_TOKEN_EXCEPTION: semantic error surface tokens */}
-        <p className="text-sm font-semibold text-red-700 dark:text-red-400">{t('processingFailed')} {/* DESIGN_TOKEN_EXCEPTION: semantic error color for failure states */}</p>
-        <p className="mt-1.5 text-sm leading-6 text-red-600/80 dark:text-red-400/80"> {/* DESIGN_TOKEN_EXCEPTION: semantic error description */}
+      <div className="rounded-[1rem] border-l-4 border-l-red-400 border-red-200/20 bg-red-50/60 px-4 py-3 dark:bg-red-950/10">
+        <p className="text-sm font-semibold text-red-700 dark:text-red-400">{t('processingFailed')}</p>
+        <p className="mt-1.5 text-sm leading-6 text-red-600/80 dark:text-red-400/80">
           {detailMessage}
         </p>
         <p className="mt-3 text-xs text-on-surface-variant/70">{t('retryHint')}</p>
@@ -681,12 +681,12 @@ function FinalResult({
               return (
                 <div
                   key={step.stepId}
-                  className="rounded-[1rem] border-l-4 border-l-red-400 border-red-200/20 bg-red-50/60 px-3 py-2.5 dark:bg-red-950/10" {/* DESIGN_TOKEN_EXCEPTION: step failure surface */}
+                  className="rounded-[1rem] border-l-4 border-l-red-400 border-red-200/20 bg-red-50/60 px-3 py-2.5 dark:bg-red-950/10"
                 >
-                  <p className="text-xs font-medium text-red-600/90 dark:text-red-400"> {/* DESIGN_TOKEN_EXCEPTION: step failure label */}
+                  <p className="text-xs font-medium text-red-600/90 dark:text-red-400">
                     {getToolLabel(step.toolName)}
                   </p>
-                  <p className="mt-1 text-sm font-medium text-red-700 dark:text-red-300"> {/* DESIGN_TOKEN_EXCEPTION: semantic error color for step failure */}
+                  <p className="mt-1 text-sm font-medium text-red-700 dark:text-red-300">
                     {normalized.message}
                   </p>
                 </div>
