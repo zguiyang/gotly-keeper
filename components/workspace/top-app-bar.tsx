@@ -9,8 +9,8 @@ import { ThemeToggle } from "@/components/theme/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { WorkspaceNavList } from "@/components/workspace/workspace-nav-list"
-import { useTranslations } from "@/hooks/use-locale"
 import { appVersion } from "@/config/app-meta"
+import { useTranslations } from "@/hooks/use-locale"
 
 type TopAppBarProps = {
   userName: string

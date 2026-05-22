@@ -1,6 +1,5 @@
 'use client'
 
-import { useTranslations } from '@/hooks/use-locale'
 
 // DESIGN_TOKEN_EXCEPTION: Warm modern accent colors (amber/emerald/red) are intentionally raw for semantic phase states
 
@@ -10,6 +9,7 @@ import { useEffect, useId, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { useTranslations } from '@/hooks/use-locale'
 import {
   workspacePlanPreviewSchema,
   workspacePreviewSchema,

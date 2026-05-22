@@ -5,8 +5,8 @@ import Link from 'next/link'
 
 import { AuthField } from '@/components/auth/auth-field'
 import { Button } from '@/components/ui/button'
-import { useTranslations } from '@/hooks/use-locale'
 import { useAuthSubmit } from '@/hooks/auth/use-auth-submit'
+import { useTranslations } from '@/hooks/use-locale'
 import { authClient } from '@/lib/auth-client'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

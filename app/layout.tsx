@@ -1,7 +1,8 @@
+import { NextIntlClientProvider } from "next-intl";
+
 import { PwaRegister } from "@/components/pwa/pwa-register";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { NextIntlClientProvider } from "next-intl";
 import { getServerLocale, getServerMessages } from "@/hooks/use-locale.server";
 
 import type { Metadata, Viewport } from "next";

@@ -1,8 +1,8 @@
 import 'server-only'
 
 import { runUrlMetadataTask } from '@/server/lib/metadata/run-url-metadata-task'
-import { writeBookmarkUrlMetadataResult } from '@/server/services/bookmark/bookmark-url-metadata.service'
 import { dequeueBookmarkUrlMetadataTask } from '@/server/services/bookmark/bookmark-url-metadata-queue.service'
+import { writeBookmarkUrlMetadataResult } from '@/server/services/bookmark/bookmark-url-metadata.service'
 
 import { BaseWorker } from './base.worker'
 

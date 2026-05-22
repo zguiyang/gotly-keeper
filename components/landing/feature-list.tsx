@@ -1,7 +1,7 @@
 "use client";
 
-import { motion } from "motion/react";
 import { Bookmark, Brain, FileText, Search, type LucideIcon } from "lucide-react";
+import { motion } from "motion/react";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 

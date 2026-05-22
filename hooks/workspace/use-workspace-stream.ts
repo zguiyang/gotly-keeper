@@ -1,6 +1,5 @@
 'use client'
 
-import { useTranslations } from '@/hooks/use-locale'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
@@ -8,6 +7,7 @@ import {
   fetchCurrentWorkspaceRun,
   streamWorkspaceRunEvents,
 } from '@/client/workspace/workspace-run-events.client'
+import { useTranslations } from '@/hooks/use-locale'
 import {
   type WorkspaceInteraction,
   type WorkspaceInteractionResponse,

@@ -1,6 +1,5 @@
 'use client'
 
-import { useTranslations } from '@/hooks/use-locale'
 
 import { AlertTriangle, Archive, ArchiveRestore, Clock3, RotateCcw, Trash2 } from 'lucide-react'
 import { useState } from 'react'
@@ -28,6 +27,7 @@ import {
   WorkspaceTypeBadge,
 } from '@/components/workspace/workspace-view-primitives'
 import { assetTypePresentation, getAssetLocaleKey } from '@/config/ui/asset-presentation'
+import { useTranslations } from '@/hooks/use-locale'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
 import { cn } from '@/lib/utils'

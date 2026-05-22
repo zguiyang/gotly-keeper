@@ -67,6 +67,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     ".agents/**",
     ".worktrees/**",
+    // Generated worker bundles — not source code
+    "dist-workers/**",
   ]),
 ]);
 

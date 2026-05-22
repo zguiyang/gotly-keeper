@@ -2,10 +2,9 @@ import 'server-only'
 
 import { and, eq } from 'drizzle-orm'
 
-import type { UrlMetadataTask } from '@/server/lib/metadata/url-metadata-task.contract'
-import { checkUrlSafety } from '@/server/lib/network/url-safety'
 import { db } from '@/server/lib/db'
 import { bookmarks } from '@/server/lib/db/schema'
+import { checkUrlSafety } from '@/server/lib/network/url-safety'
 import { updateBookmarkEnrichment } from '@/server/services/bookmarks'
 import { BOOKMARK_META_STATUS, type BookmarkMeta } from '@/shared/assets/bookmark-meta.types'
 import { nowIso } from '@/shared/time/dayjs'
@@ -13,6 +12,7 @@ import { nowIso } from '@/shared/time/dayjs'
 import { enqueueBookmarkUrlMetadataTask } from './bookmark-url-metadata-queue.service'
 
 import type { BookmarkUrlMetadataResult, BookmarkUrlMetadataTask } from './bookmark-url-metadata.contract'
+import type { UrlMetadataTask } from '@/server/lib/metadata/url-metadata-task.contract'
 
 function createPendingBookmarkMeta(): BookmarkMeta {
   return {

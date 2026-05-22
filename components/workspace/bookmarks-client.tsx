@@ -1,6 +1,5 @@
 'use client'
 
-import { useTranslations } from '@/hooks/use-locale'
 
 import { Link2, Share2, Bookmark, ExternalLink } from 'lucide-react'
 import { useState } from 'react'
@@ -17,6 +16,7 @@ import {
   WorkspacePageHeader,
   workspacePillClassName,
 } from '@/components/workspace/workspace-view-primitives'
+import { useTranslations } from '@/hooks/use-locale'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
 import { cn } from '@/lib/utils'

@@ -1,6 +1,5 @@
 'use client'
 
-import { useTranslations } from '@/hooks/use-locale'
 
 import { Archive, ArrowRight, Bookmark, Inbox, ListTodo, NotepadText } from 'lucide-react'
 import Link from 'next/link'
@@ -20,6 +19,7 @@ import {
 } from '@/components/workspace/workspace-view-primitives'
 import { assetTypePresentation, getAssetLocaleKey } from '@/config/ui/asset-presentation'
 import { filterTabs, emptyFilterMessages } from '@/config/workspace/filters'
+import { useTranslations } from '@/hooks/use-locale'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
 import {

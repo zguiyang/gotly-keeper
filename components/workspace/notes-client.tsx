@@ -1,6 +1,5 @@
 'use client'
 
-import { useTranslations } from '@/hooks/use-locale'
 
 import { NotepadText } from 'lucide-react'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
@@ -21,6 +20,7 @@ import {
   workspacePillClassName,
   WorkspacePageHeader,
 } from '@/components/workspace/workspace-view-primitives'
+import { useTranslations } from '@/hooks/use-locale'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useNoteInlineEdit } from '@/hooks/workspace/use-note-inline-edit'
 import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'

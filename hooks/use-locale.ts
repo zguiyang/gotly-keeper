@@ -1,8 +1,8 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { useLocale as useNextIntlLocale, useTranslations } from "next-intl"
 import { useCallback } from "react"
-import { useRouter } from "next/navigation"
 
 import { dayjs } from "@/shared/time/dayjs"
 

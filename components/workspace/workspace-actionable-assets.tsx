@@ -13,12 +13,12 @@ import {
   workspacePillClassName,
 } from '@/components/workspace/workspace-view-primitives'
 import { assetTypePresentation, getAssetLocaleKey } from '@/config/ui/asset-presentation'
+import { useTranslations } from '@/hooks/use-locale'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useTodoCompletion } from '@/hooks/workspace/use-todo-completion'
 import { formatAssetRelativeTime } from '@/shared/assets/asset-time-display'
 import { formatAbsoluteTime } from '@/shared/time/formatters'
 
-import { useTranslations } from '@/hooks/use-locale'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
 

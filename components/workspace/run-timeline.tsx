@@ -4,7 +4,6 @@ import { AlertCircle, CheckCircle2, Circle, Loader2 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-
 import { useTranslations } from '@/hooks/use-locale'
 
 import { workspaceSurfaceClassName } from './workspace-view-primitives'

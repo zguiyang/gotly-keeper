@@ -1,7 +1,8 @@
 'use client'
 
-import { useTranslations } from '@/hooks/use-locale'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
+import { useTranslations } from '@/hooks/use-locale'
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 

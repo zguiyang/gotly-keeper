@@ -1,8 +1,9 @@
 import 'server-only'
 
+import { headers } from 'next/headers'
+
 import { getServerTranslationSafe } from '@/server/lib/i18n'
 
-import { headers } from 'next/headers'
 
 import { auth, type AuthSession } from '../../lib/auth'
 import { ModuleActionError, MODULE_ACTION_ERROR_CODES } from '../actions/action-error'
