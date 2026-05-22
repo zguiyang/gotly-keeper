@@ -61,6 +61,10 @@ worktrees
 # worker
 dist-workers
 
+# AI agent skills & config — personal tooling, not project code
+.agents/
+.codex/
+
 # personal deployment files (keep local only)
 deploy.sh
 docker-compose.prod.yml
