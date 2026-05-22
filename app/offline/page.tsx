@@ -1,9 +1,12 @@
 import Link from 'next/link'
 
 import { buttonVariants } from '@/components/ui/button'
+import { getServerTranslation } from '@/hooks/use-locale.server'
 import { cn } from '@/lib/utils'
 
-export default function OfflinePage() {
+export default async function OfflinePage() {
+  const t = await getServerTranslation('offline')
+
   return (
     <main className="flex min-h-screen min-h-dvh items-center justify-center bg-muted/20 px-6 py-16">
       <section className="w-full max-w-lg rounded-[2rem] border border-border/10 bg-background p-8 shadow-[var(--shadow-elevation-3)] sm:p-10">
@@ -11,17 +14,17 @@ export default function OfflinePage() {
           Offline
         </p>
         <h1 className="mt-4 font-headline text-3xl font-semibold tracking-[-0.02em] text-on-surface sm:text-[2.2rem]">
-          当前网络不可用
+          {t('title')}
         </h1>
         <p className="mt-4 text-sm leading-7 text-on-surface-variant sm:text-[15px]">
-          你可以从主屏幕或桌面打开 Gotly Keeper。恢复网络后进入工作区继续记录和检索。
+          {t('description')}
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href="/"
             className={cn(buttonVariants({ size: 'sm' }), 'rounded-full px-5')}
           >
-            返回首页
+            {t('backToHome')}
           </Link>
           <Link
             href="/auth/sign-in"
@@ -30,7 +33,7 @@ export default function OfflinePage() {
               'rounded-full px-5'
             )}
           >
-            网络恢复后登录
+            {t('signInAfterReconnect')}
           </Link>
         </div>
       </section>

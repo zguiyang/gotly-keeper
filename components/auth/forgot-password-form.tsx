@@ -9,12 +9,14 @@ import { AuthCard, AuthHeader, AuthStatusView } from '@/components/auth/auth-car
 import { AuthField } from '@/components/auth/auth-field'
 import { AuthPageScaffold } from '@/components/auth/auth-page-scaffold'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { useTranslations } from '@/hooks/use-locale'
 import { authClient } from '@/lib/auth-client'
 import { cn } from '@/lib/utils'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export function ForgotPasswordForm() {
+  const t = useTranslations('auth.forgotPassword')
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
@@ -29,13 +31,13 @@ export function ForgotPasswordForm() {
     const email = String(formData.get('email') ?? '').trim()
 
     if (!email) {
-      setError('请输入电子邮箱')
+      setError(t('validation.emailRequired'))
       setPending(false)
       return
     }
 
     if (!EMAIL_REGEX.test(email)) {
-      setError('请输入有效的电子邮箱地址')
+      setError(t('validation.emailInvalid'))
       setPending(false)
       return
     }
@@ -47,14 +49,14 @@ export function ForgotPasswordForm() {
       })
 
       if (resultError) {
-        setError(resultError.message ?? '发送失败，请稍后重试')
+        setError(resultError.message ?? t('fallbackError'))
         return
       }
 
       setSent(true)
       router.replace('/auth/reset-link-sent')
     } catch {
-      setError('发送失败，请稍后重试')
+      setError(t('fallbackError'))
     } finally {
       setPending(false)
     }
@@ -67,15 +69,15 @@ export function ForgotPasswordForm() {
         withFooter={false}
       >
         <AuthStatusView
-          title="链接已发送"
-          description="重置密码链接已发送至你的邮箱，请注意查收。"
+          title={t('sentTitle')}
+          description={t('sentDescription')}
           icon={<CheckCircle className="size-7" strokeWidth={1.8} />}
           action={
             <Link
               className={cn(buttonVariants({ size: 'lg' }), 'h-10 w-full rounded-xl text-sm')}
               href="/auth/sign-in"
             >
-              回到登录
+              {t('backToSignIn')}
             </Link>
           }
         />
@@ -90,14 +92,14 @@ export function ForgotPasswordForm() {
       withFooter={false}
     >
       <AuthCard>
-        <AuthHeader title="找回密码" description="输入注册邮箱以接收重置链接。" />
+        <AuthHeader title={t('title')} description={t('description')} />
 
         <form className="space-y-6" onSubmit={handleSubmit}>
           <AuthField
             autoComplete="email"
-            label="邮箱"
+            label={t('emailLabel')}
             name="email"
-            placeholder="your@email.com"
+            placeholder={t('emailPlaceholder')}
             prefixIcon={<Mail className="size-4" />}
             spellCheck={false}
             type="email"
@@ -115,7 +117,7 @@ export function ForgotPasswordForm() {
             type="submit"
           >
             {pending ? <LoaderCircle className="size-4 animate-spin" /> : null}
-            {pending ? '发送中…' : '发送验证链接'}
+            {pending ? t('submittingLabel') : t('submitLabel')}
           </Button>
 
           <div className="flex flex-col items-center pt-1">
@@ -124,7 +126,7 @@ export function ForgotPasswordForm() {
               href="/auth/sign-in"
             >
               <ArrowLeft className="h-4 w-4" />
-              <span>返回登录</span>
+              <span>{t('backToSignIn')}</span>
             </Link>
           </div>
         </form>

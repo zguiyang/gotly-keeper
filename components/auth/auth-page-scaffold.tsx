@@ -9,6 +9,7 @@ interface AuthPageScaffoldProps {
   mainClassName: string;
   contentClassName?: string;
   withFooter?: boolean;
+  helpLabel?: string;
 }
 
 export function AuthPageScaffold({
@@ -16,10 +17,11 @@ export function AuthPageScaffold({
   mainClassName,
   contentClassName,
   withFooter = true,
+  helpLabel,
 }: AuthPageScaffoldProps) {
   return (
     <AuthShell>
-      <AuthNavbar />
+      <AuthNavbar helpLabel={helpLabel} />
 
       <main className={mainClassName}>
         {contentClassName ? <div className={contentClassName}>{children}</div> : children}

@@ -7,7 +7,7 @@ interface AuthDividerProps {
   text?: string;
 }
 
-export function AuthDivider({ className, text = "或" }: AuthDividerProps) {
+export function AuthDivider({ className, text = "or" }: AuthDividerProps) {
   return (
     <div className={cn("flex items-center gap-4", className)}>
       <div className="h-px flex-1 bg-border/20" />
@@ -20,7 +20,7 @@ export function AuthDivider({ className, text = "或" }: AuthDividerProps) {
 }
 
 export function AuthDividerWithText({
-  text = "或",
+  text = "or",
   className,
 }: AuthDividerProps) {
   return <AuthDivider text={text} className={className} />;

@@ -5,6 +5,7 @@ import { XIcon } from "lucide-react"
 import * as React from "react"
 
 import { Button } from "@/components/ui/button"
+import { useTranslations } from "@/hooks/use-locale"
 import { cn } from "@/lib/utils"
 
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
@@ -46,6 +47,7 @@ function SheetContent({
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
 }) {
+  const t = useTranslations('common')
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -70,9 +72,8 @@ function SheetContent({
               />
             }
           >
-            <XIcon
-            />
-            <span className="sr-only">Close</span>
+            <XIcon />
+            <span className="sr-only">{t('close')}</span>
           </SheetPrimitive.Close>
         )}
       </SheetPrimitive.Popup>

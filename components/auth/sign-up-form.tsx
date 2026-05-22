@@ -4,14 +4,17 @@ import { ArrowRight, LoaderCircle } from 'lucide-react'
 
 import { AuthField } from '@/components/auth/auth-field'
 import { Button } from '@/components/ui/button'
+import { useTranslations } from '@/hooks/use-locale'
 import { useAuthSubmit } from '@/hooks/auth/use-auth-submit'
 import { authClient } from '@/lib/auth-client'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export function SignUpForm() {
+  const t = useTranslations('auth.signUp')
+  const tCommon = useTranslations('common.errors.auth')
   const { error, pending, onSubmit } = useAuthSubmit({
-    fallbackErrorMessage: '注册失败，请稍后重试',
+    fallbackErrorMessage: t('fallbackError'),
     parse: (formData) => {
       const name = String(formData.get('name') ?? '').trim()
       const email = String(formData.get('email') ?? '').trim()
@@ -20,35 +23,35 @@ export function SignUpForm() {
       if (!name) {
         return {
           ok: false,
-          error: '请输入昵称',
+          error: t('validation.nameRequired'),
         }
       }
 
       if (!email) {
         return {
           ok: false,
-          error: '请输入电子邮箱',
+          error: t('validation.emailRequired'),
         }
       }
 
       if (!EMAIL_REGEX.test(email)) {
         return {
           ok: false,
-          error: '请输入有效的电子邮箱地址',
+          error: t('validation.emailInvalid'),
         }
       }
 
       if (!password) {
         return {
           ok: false,
-          error: '请输入密码',
+          error: t('validation.passwordRequired'),
         }
       }
 
       if (password.length < 8) {
         return {
           ok: false,
-          error: '密码长度至少为 8 个字符',
+          error: t('validation.passwordMinLength'),
         }
       }
 
@@ -58,32 +61,43 @@ export function SignUpForm() {
       }
     },
     submit: (payload) => authClient.signUp.email(payload),
+    formatError: (code) => {
+      const COMMON_KEY_MAP: Record<string, string> = {
+        USER_ALREADY_EXISTS: 'emailTaken',
+        USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: 'emailTaken',
+        INVALID_EMAIL: 'invalidEmail',
+        PASSWORD_TOO_SHORT: 'passwordMinLength',
+      }
+      const commonKey = COMMON_KEY_MAP[code]
+      if (commonKey) return tCommon(commonKey)
+      return null
+    },
   })
 
   return (
     <form className="space-y-6" onSubmit={onSubmit}>
       <AuthField
         autoComplete="username"
-        label="昵称"
+        label={t('nameLabel')}
         name="name"
-        placeholder="例如：Joy"
+        placeholder={t('namePlaceholder')}
         required
         spellCheck={false}
       />
       <AuthField
         autoComplete="email"
-        label="电子邮箱"
+        label={t('emailLabel')}
         name="email"
-        placeholder="name@example.com"
+        placeholder={t('emailPlaceholder')}
         required
         spellCheck={false}
         type="email"
       />
       <AuthField
         autoComplete="new-password"
-        label="密码"
+        label={t('passwordLabel')}
         name="password"
-        placeholder="••••••••"
+        placeholder={t('passwordPlaceholder')}
         required
         type="password"
       />
@@ -100,7 +114,7 @@ export function SignUpForm() {
         type="submit"
       >
         {pending && <LoaderCircle className="size-4 animate-spin" />}
-        <span>{pending ? '创建中…' : '创建账号'}</span>
+        <span>{pending ? t('submittingLabel') : t('submitLabel')}</span>
         {!pending && <ArrowRight className="size-4" />}
       </Button>
     </form>

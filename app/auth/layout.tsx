@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { getServerTranslation } from "@/hooks/use-locale.server";
 
-export const metadata: Metadata = {
-  title: "认证 - Gotly Keeper",
-  description: "登录或创建账号以继续",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerTranslation("auth.layout");
+  return {
+    title: t("title"),
+    description: t("description"),
+  };
+}
 
 export default function AuthLayout({
   children,

@@ -9,16 +9,18 @@ import { AuthCard, AuthHeader, AuthStatusView } from '@/components/auth/auth-car
 import { AuthField } from '@/components/auth/auth-field'
 import { AuthPageScaffold } from '@/components/auth/auth-page-scaffold'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { useTranslations } from '@/hooks/use-locale'
 import { authClient } from '@/lib/auth-client'
 import { cn } from '@/lib/utils'
 
 export function ResetPasswordForm() {
+  const t = useTranslations('auth.resetPassword')
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
   const errorParam = searchParams.get('error')
 
   const [error, setError] = useState<string | null>(
-    errorParam === 'INVALID_TOKEN' ? '链接已过期，请重新申请' : null
+    errorParam === 'INVALID_TOKEN' ? t('tokenExpired') : null
   )
   const [pending, setPending] = useState(false)
   const [reset, setReset] = useState(false)
@@ -33,19 +35,19 @@ export function ResetPasswordForm() {
     const confirmPassword = String(formData.get('confirmPassword') ?? '')
 
     if (!newPassword) {
-      setError('请输入新密码')
+      setError(t('validation.passwordRequired'))
       setPending(false)
       return
     }
 
     if (newPassword.length < 8) {
-      setError('密码长度至少为 8 个字符')
+      setError(t('validation.passwordMinLength'))
       setPending(false)
       return
     }
 
     if (newPassword !== confirmPassword) {
-      setError('两次输入的密码不一致')
+      setError(t('validation.passwordMismatch'))
       setPending(false)
       return
     }
@@ -57,13 +59,13 @@ export function ResetPasswordForm() {
       })
 
       if (resultError) {
-        setError(resultError.message ?? '重置失败，请稍后重试')
+        setError(resultError.message ?? t('fallbackError'))
         return
       }
 
       setReset(true)
     } catch {
-      setError('重置失败，请稍后重试')
+      setError(t('fallbackError'))
     } finally {
       setPending(false)
     }
@@ -76,15 +78,15 @@ export function ResetPasswordForm() {
         withFooter={false}
       >
         <AuthStatusView
-          title="无效链接"
-          description="重置密码链接无效，请重新申请。"
+          title={t('invalidLink')}
+          description={t('invalidLinkDescription')}
           icon={<TriangleAlert className="size-7" strokeWidth={1.8} />}
           action={
             <Link
               className={cn(buttonVariants({ size: 'lg' }), 'h-10 w-full rounded-xl text-sm')}
               href="/auth/forgot-password"
             >
-              重新申请
+              {t('requestAgain')}
             </Link>
           }
         />
@@ -99,15 +101,15 @@ export function ResetPasswordForm() {
         withFooter={false}
       >
         <AuthStatusView
-          title="密码已重置"
-          description="你的密码已成功重置，请用新密码登录。"
+          title={t('successTitle')}
+          description={t('successDescription')}
           icon={<CheckCircle className="size-7" strokeWidth={1.8} />}
           action={
             <Link
               className={cn(buttonVariants({ size: 'lg' }), 'h-10 w-full rounded-xl text-sm')}
               href="/auth/sign-in"
             >
-              去登录
+              {t('goToSignIn')}
             </Link>
           }
         />
@@ -122,14 +124,14 @@ export function ResetPasswordForm() {
       withFooter={false}
     >
       <AuthCard>
-        <AuthHeader title="设置新密码" description="请输入你的新密码。" />
+        <AuthHeader title={t('title')} description={t('description')} />
 
         <form className="space-y-6" onSubmit={handleSubmit}>
           <AuthField
             autoComplete="new-password"
-            label="新密码"
+            label={t('newPasswordLabel')}
             name="password"
-            placeholder="••••••••"
+            placeholder={t('newPasswordPlaceholder')}
             prefixIcon={<Lock className="size-4" />}
             required
             type="password"
@@ -137,9 +139,9 @@ export function ResetPasswordForm() {
 
           <AuthField
             autoComplete="new-password"
-            label="确认密码"
+            label={t('confirmPasswordLabel')}
             name="confirmPassword"
-            placeholder="再次输入新密码"
+            placeholder={t('confirmPasswordPlaceholder')}
             prefixIcon={<Lock className="size-4" />}
             required
             type="password"
@@ -157,7 +159,7 @@ export function ResetPasswordForm() {
             type="submit"
           >
             {pending ? <LoaderCircle className="size-4 animate-spin" /> : null}
-            {pending ? '重置中…' : '重置密码'}
+            {pending ? t('submittingLabel') : t('submitLabel')}
           </Button>
 
           <div className="flex flex-col items-center pt-1">
@@ -166,7 +168,7 @@ export function ResetPasswordForm() {
               href="/auth/sign-in"
             >
               <ArrowLeft className="h-4 w-4" />
-              <span>返回登录</span>
+              <span>{t('backToSignIn')}</span>
             </Link>
           </div>
         </form>

@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useTranslations } from "@/hooks/use-locale"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
 
@@ -32,6 +33,7 @@ export function AccountMenu({
   signedOutRedirectTo,
   className,
 }: AccountMenuProps) {
+  const t = useTranslations("account.menu")
   const router = useRouter()
   const [pending, setPending] = useState(false)
   const fallbackInitial = userName.trim().slice(0, 1).toUpperCase() || "G"
@@ -59,7 +61,7 @@ export function AccountMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label="打开账号菜单"
+        aria-label={t("signedInStatus")}
         render={
           <Button
             type="button"
@@ -75,7 +77,7 @@ export function AccountMenu({
         <span className="flex size-9 items-center justify-center overflow-hidden rounded-full border border-border/10 bg-muted shadow-[var(--shadow-elevation-2)]">
           {userImage ? (
             <Image
-              alt={`${userName} 的头像`}
+              alt={t("avatarAlt", { name: userName })}
               className="size-full object-cover"
               height={36}
               sizes="36px"
@@ -92,7 +94,7 @@ export function AccountMenu({
           <div className="flex size-10 items-center justify-center overflow-hidden rounded-full border border-border/10 bg-muted">
             {userImage ? (
               <Image
-                alt={`${userName} 的头像`}
+                alt={t("avatarAlt", { name: userName })}
                 className="size-full object-cover"
                 height={40}
                 sizes="40px"
@@ -106,7 +108,7 @@ export function AccountMenu({
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-on-surface">{userName}</p>
             <p className="truncate text-xs text-on-surface-variant">
-              {userEmail ?? "已登录 Gotly Keeper"}
+              {userEmail ?? t("signedInStatus")}
             </p>
           </div>
         </div>
@@ -121,7 +123,7 @@ export function AccountMenu({
             variant="destructive"
           >
             <LogOut className="size-3.5" />
-            {pending ? "退出中..." : "退出登录"}
+            {pending ? t("signingOut") : t("signOut")}
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>

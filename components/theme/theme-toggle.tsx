@@ -5,19 +5,21 @@ import { useTheme } from "next-themes"
 import * as React from "react"
 
 import { Button } from "@/components/ui/button"
+import { useTranslations } from "@/hooks/use-locale"
 import { cn } from "@/lib/utils"
-
-const themeOptions = [
-  { value: "system", label: "跟随系统", icon: Monitor },
-  { value: "light", label: "浅色", icon: Sun },
-  { value: "dark", label: "深色", icon: Moon },
-] as const
 
 type ThemeToggleProps = {
   className?: string
 }
 
+const themeOptions = [
+  { value: "system", icon: Monitor },
+  { value: "light", icon: Sun },
+  { value: "dark", icon: Moon },
+] as const
+
 function ThemeToggle({ className }: ThemeToggleProps) {
+  const t = useTranslations("theme")
   const { theme, setTheme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
 
@@ -27,7 +29,7 @@ function ThemeToggle({ className }: ThemeToggleProps) {
 
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" aria-label="切换主题" disabled>
+      <Button variant="ghost" size="icon" aria-label={t("toggleLabel")} disabled>
         <Sun />
       </Button>
     )
@@ -47,7 +49,7 @@ function ThemeToggle({ className }: ThemeToggleProps) {
       type="button"
       variant="ghost"
       size="icon-lg"
-      aria-label="切换主题"
+      aria-label={t("toggleLabel")}
       onClick={cycle}
       className={cn(
         "rounded-full text-on-surface-variant transition-[background-color,color,transform] duration-200 hover:bg-muted hover:text-on-surface active:scale-[0.98]",
