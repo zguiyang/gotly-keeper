@@ -15,7 +15,6 @@ export {
   listUnscheduledTodos,
   listIncompleteTodos,
   getTodoById,
-  type TodoListItem as TodoListItemExport,
 } from './todos.query'
 export {
   setTodoCompletion,

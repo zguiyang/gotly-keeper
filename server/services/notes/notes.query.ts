@@ -1,9 +1,16 @@
 import 'server-only'
 
-import { and, desc, eq, inArray, lt, or } from 'drizzle-orm'
+import { and, desc, eq, or } from 'drizzle-orm'
 
 import { NOTE_LIST_LIMIT_DEFAULT, NOTE_LIST_LIMIT_MAX } from '@/server/lib/config/constants'
 import { db } from '@/server/lib/db'
+import {
+  buildDescendingCursorCondition,
+  buildLifecycleFilter,
+  clampListLimit,
+  resolveLifecycleStatuses,
+  type CursorPayload,
+} from '@/server/services/assets/asset-query-utils'
 import { createCursorPage, clampPageSize, decodeCursor } from '@/server/services/pagination'
 import {
   ASSET_LIFECYCLE_STATUS,
@@ -36,62 +43,18 @@ type GetNoteByIdOptions = {
   includeLifecycleStatuses?: AssetLifecycleStatus[]
 }
 
-type NoteCursorPayload = {
-  createdAt: string
-  id: string
-}
-
-function resolveLifecycleStatuses(input: {
-  lifecycleStatus?: AssetLifecycleStatus
-  includeLifecycleStatuses?: AssetLifecycleStatus[]
-}): AssetLifecycleStatus[] {
-  if (input.includeLifecycleStatuses?.length) {
-    return input.includeLifecycleStatuses
-  }
-
-  if (input.lifecycleStatus) {
-    return [input.lifecycleStatus]
-  }
-
-  return [ASSET_LIFECYCLE_STATUS.ACTIVE]
-}
-
-function clampNoteListLimit(limit = NOTE_LIST_LIMIT_DEFAULT) {
-  return Math.min(limit, NOTE_LIST_LIMIT_MAX)
-}
-
-function buildDescendingCursorCondition(
-  cursor: NoteCursorPayload | null
-) {
-  if (!cursor) {
-    return null
-  }
-
-  const cursorCreatedAt = new Date(cursor.createdAt)
-  if (Number.isNaN(cursorCreatedAt.getTime())) {
-    throw new Error('INVALID_CURSOR')
-  }
-
-  return or(
-    lt(notes.createdAt, cursorCreatedAt),
-    and(eq(notes.createdAt, cursorCreatedAt), lt(notes.id, cursor.id))
-  )
-}
-
 export async function listNotes({
   userId,
   limit = NOTE_LIST_LIMIT_DEFAULT,
   lifecycleStatus,
   includeLifecycleStatuses,
 }: ListNotesOptions): Promise<NoteListItem[]> {
-  const clampedLimit = clampNoteListLimit(limit)
+  const clampedLimit = clampListLimit(limit, NOTE_LIST_LIMIT_MAX)
   const lifecycleStatuses = resolveLifecycleStatuses({ lifecycleStatus, includeLifecycleStatuses })
 
   const conditions = and(
     eq(notes.userId, userId),
-    lifecycleStatuses.length === 1
-      ? eq(notes.lifecycleStatus, lifecycleStatuses[0])
-      : inArray(notes.lifecycleStatus, lifecycleStatuses)
+    buildLifecycleFilter(lifecycleStatuses, notes) ?? undefined
   )
 
   const rows = await db
@@ -120,14 +83,12 @@ export async function listNotesPage({
 }> {
   const clampedPageSize = clampPageSize(pageSize, 1, NOTE_LIST_LIMIT_MAX)
   const lifecycleStatuses = resolveLifecycleStatuses({ lifecycleStatus, includeLifecycleStatuses })
-  const cursorPayload = decodeCursor<NoteCursorPayload>(cursor)
+  const cursorPayload = decodeCursor<CursorPayload>(cursor)
 
   const conditions = and(
     eq(notes.userId, userId),
-    lifecycleStatuses.length === 1
-      ? eq(notes.lifecycleStatus, lifecycleStatuses[0])
-      : inArray(notes.lifecycleStatus, lifecycleStatuses),
-    buildDescendingCursorCondition(cursorPayload) ?? undefined
+    buildLifecycleFilter(lifecycleStatuses, notes) ?? undefined,
+    buildDescendingCursorCondition(notes.createdAt, notes.id, cursorPayload) ?? undefined
   )
 
   const rows = await db
@@ -163,9 +124,7 @@ export async function getNoteById(
       and(
         eq(notes.id, noteId),
         eq(notes.userId, userId),
-        lifecycleStatuses.length === 1
-          ? eq(notes.lifecycleStatus, lifecycleStatuses[0])
-          : inArray(notes.lifecycleStatus, lifecycleStatuses)
+        buildLifecycleFilter(lifecycleStatuses, notes) ?? undefined
       )
     )
     .limit(1)

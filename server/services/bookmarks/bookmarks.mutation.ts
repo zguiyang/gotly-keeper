@@ -3,10 +3,8 @@ import 'server-only'
 import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/server/lib/db'
-import {
-  ASSET_LIFECYCLE_STATUS,
-  type AssetLifecycleStatus,
-} from '@/shared/assets/asset-lifecycle.types'
+import { updateAssetLifecycle, purgeAsset } from '@/server/services/assets/asset-mutation-utils'
+import { ASSET_LIFECYCLE_STATUS } from '@/shared/assets/asset-lifecycle.types'
 import { BOOKMARK_META_STATUS, type BookmarkMeta } from '@/shared/assets/bookmark-meta.types'
 import { now , nowIso } from '@/shared/time/dayjs'
 
@@ -84,39 +82,7 @@ function createPendingBookmarkMeta(): BookmarkMeta {
   }
 }
 
-async function updateLifecycle(input: {
-  userId: string
-  bookmarkId: string
-  fromStatuses: AssetLifecycleStatus[]
-  toStatus: AssetLifecycleStatus
-  archivedAt: Date | null
-  trashedAt: Date | null
-}): Promise<BookmarkListItem | null> {
-  for (const fromStatus of input.fromStatuses) {
-    const [updated] = await db
-      .update(bookmarks)
-      .set({
-        lifecycleStatus: input.toStatus,
-        archivedAt: input.archivedAt,
-        trashedAt: input.trashedAt,
-        updatedAt: now(),
-      })
-      .where(
-        and(
-          eq(bookmarks.id, input.bookmarkId),
-          eq(bookmarks.userId, input.userId),
-          eq(bookmarks.lifecycleStatus, fromStatus)
-        )
-      )
-      .returning()
 
-    if (updated) {
-      return toBookmarkListItem(updated)
-    }
-  }
-
-  return null
-}
 
 export async function updateBookmark(input: {
   userId: string
@@ -209,72 +175,45 @@ export async function archiveBookmark(input: {
   userId: string
   bookmarkId: string
 }): Promise<BookmarkListItem | null> {
-  return updateLifecycle({
-    userId: input.userId,
-    bookmarkId: input.bookmarkId,
-    fromStatuses: [ASSET_LIFECYCLE_STATUS.ACTIVE],
-    toStatus: ASSET_LIFECYCLE_STATUS.ARCHIVED,
-    archivedAt: now(),
-    trashedAt: null,
-  })
+  return updateAssetLifecycle(
+    { assetId: input.bookmarkId, userId: input.userId, fromStatuses: [ASSET_LIFECYCLE_STATUS.ACTIVE], toStatus: ASSET_LIFECYCLE_STATUS.ARCHIVED, archivedAt: now(), trashedAt: null },
+    { table: bookmarks, toListItem: toBookmarkListItem }
+  )
 }
 
 export async function unarchiveBookmark(input: {
   userId: string
   bookmarkId: string
 }): Promise<BookmarkListItem | null> {
-  return updateLifecycle({
-    userId: input.userId,
-    bookmarkId: input.bookmarkId,
-    fromStatuses: [ASSET_LIFECYCLE_STATUS.ARCHIVED],
-    toStatus: ASSET_LIFECYCLE_STATUS.ACTIVE,
-    archivedAt: null,
-    trashedAt: null,
-  })
+  return updateAssetLifecycle(
+    { assetId: input.bookmarkId, userId: input.userId, fromStatuses: [ASSET_LIFECYCLE_STATUS.ARCHIVED], toStatus: ASSET_LIFECYCLE_STATUS.ACTIVE, archivedAt: null, trashedAt: null },
+    { table: bookmarks, toListItem: toBookmarkListItem }
+  )
 }
 
 export async function moveBookmarkToTrash(input: {
   userId: string
   bookmarkId: string
 }): Promise<BookmarkListItem | null> {
-  return updateLifecycle({
-    userId: input.userId,
-    bookmarkId: input.bookmarkId,
-    fromStatuses: [ASSET_LIFECYCLE_STATUS.ACTIVE, ASSET_LIFECYCLE_STATUS.ARCHIVED],
-    toStatus: ASSET_LIFECYCLE_STATUS.TRASHED,
-    archivedAt: null,
-    trashedAt: now(),
-  })
+  return updateAssetLifecycle(
+    { assetId: input.bookmarkId, userId: input.userId, fromStatuses: [ASSET_LIFECYCLE_STATUS.ACTIVE, ASSET_LIFECYCLE_STATUS.ARCHIVED], toStatus: ASSET_LIFECYCLE_STATUS.TRASHED, archivedAt: null, trashedAt: now() },
+    { table: bookmarks, toListItem: toBookmarkListItem }
+  )
 }
 
 export async function restoreBookmarkFromTrash(input: {
   userId: string
   bookmarkId: string
 }): Promise<BookmarkListItem | null> {
-  return updateLifecycle({
-    userId: input.userId,
-    bookmarkId: input.bookmarkId,
-    fromStatuses: [ASSET_LIFECYCLE_STATUS.TRASHED],
-    toStatus: ASSET_LIFECYCLE_STATUS.ACTIVE,
-    archivedAt: null,
-    trashedAt: null,
-  })
+  return updateAssetLifecycle(
+    { assetId: input.bookmarkId, userId: input.userId, fromStatuses: [ASSET_LIFECYCLE_STATUS.TRASHED], toStatus: ASSET_LIFECYCLE_STATUS.ACTIVE, archivedAt: null, trashedAt: null },
+    { table: bookmarks, toListItem: toBookmarkListItem }
+  )
 }
 
 export async function purgeBookmark(input: {
   userId: string
   bookmarkId: string
 }): Promise<boolean> {
-  const deleted = await db
-    .delete(bookmarks)
-    .where(
-      and(
-        eq(bookmarks.id, input.bookmarkId),
-        eq(bookmarks.userId, input.userId),
-        eq(bookmarks.lifecycleStatus, ASSET_LIFECYCLE_STATUS.TRASHED)
-      )
-    )
-    .returning({ id: bookmarks.id })
-
-  return deleted.length > 0
+  return purgeAsset(input.bookmarkId, input.userId, bookmarks)
 }

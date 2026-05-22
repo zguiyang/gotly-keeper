@@ -1,14 +1,18 @@
 import 'server-only'
 
-import { and, desc, eq, inArray, lt, or } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 
 import { BOOKMARK_LIST_LIMIT_DEFAULT, BOOKMARK_LIST_LIMIT_MAX } from '@/server/lib/config/constants'
 import { db } from '@/server/lib/db'
-import { createCursorPage, clampPageSize, decodeCursor } from '@/server/services/pagination'
 import {
-  ASSET_LIFECYCLE_STATUS,
-  type AssetLifecycleStatus,
-} from '@/shared/assets/asset-lifecycle.types'
+  buildDescendingCursorCondition,
+  buildLifecycleFilter,
+  clampListLimit,
+  resolveLifecycleStatuses,
+  type CursorPayload,
+} from '@/server/services/assets/asset-query-utils'
+import { createCursorPage, clampPageSize, decodeCursor } from '@/server/services/pagination'
+import { ASSET_LIFECYCLE_STATUS, type AssetLifecycleStatus } from '@/shared/assets/asset-lifecycle.types'
 
 import { toBookmarkListItem } from './bookmarks.mapper'
 import { bookmarks } from './bookmarks.schema'
@@ -36,60 +40,18 @@ type GetBookmarkByIdOptions = {
   includeLifecycleStatuses?: AssetLifecycleStatus[]
 }
 
-type BookmarkCursorPayload = {
-  createdAt: string
-  id: string
-}
-
-function resolveLifecycleStatuses(input: {
-  lifecycleStatus?: AssetLifecycleStatus
-  includeLifecycleStatuses?: AssetLifecycleStatus[]
-}): AssetLifecycleStatus[] {
-  if (input.includeLifecycleStatuses?.length) {
-    return input.includeLifecycleStatuses
-  }
-
-  if (input.lifecycleStatus) {
-    return [input.lifecycleStatus]
-  }
-
-  return [ASSET_LIFECYCLE_STATUS.ACTIVE]
-}
-
-function clampBookmarkListLimit(limit = BOOKMARK_LIST_LIMIT_DEFAULT) {
-  return Math.min(limit, BOOKMARK_LIST_LIMIT_MAX)
-}
-
-function buildDescendingCursorCondition(cursor: BookmarkCursorPayload | null) {
-  if (!cursor) {
-    return null
-  }
-
-  const cursorCreatedAt = new Date(cursor.createdAt)
-  if (Number.isNaN(cursorCreatedAt.getTime())) {
-    throw new Error('INVALID_CURSOR')
-  }
-
-  return or(
-    lt(bookmarks.createdAt, cursorCreatedAt),
-    and(eq(bookmarks.createdAt, cursorCreatedAt), lt(bookmarks.id, cursor.id))
-  )
-}
-
 export async function listBookmarks({
   userId,
   limit = BOOKMARK_LIST_LIMIT_DEFAULT,
   lifecycleStatus,
   includeLifecycleStatuses,
 }: ListBookmarksOptions): Promise<BookmarkListItem[]> {
-  const clampedLimit = clampBookmarkListLimit(limit)
+  const clampedLimit = clampListLimit(limit, BOOKMARK_LIST_LIMIT_MAX)
   const lifecycleStatuses = resolveLifecycleStatuses({ lifecycleStatus, includeLifecycleStatuses })
 
   const conditions = and(
     eq(bookmarks.userId, userId),
-    lifecycleStatuses.length === 1
-      ? eq(bookmarks.lifecycleStatus, lifecycleStatuses[0])
-      : inArray(bookmarks.lifecycleStatus, lifecycleStatuses)
+    buildLifecycleFilter(lifecycleStatuses, bookmarks) ?? undefined
   )
 
   const rows = await db
@@ -118,14 +80,12 @@ export async function listBookmarksPage({
 }> {
   const clampedPageSize = clampPageSize(pageSize, 1, BOOKMARK_LIST_LIMIT_MAX)
   const lifecycleStatuses = resolveLifecycleStatuses({ lifecycleStatus, includeLifecycleStatuses })
-  const cursorPayload = decodeCursor<BookmarkCursorPayload>(cursor)
+  const cursorPayload = decodeCursor<CursorPayload>(cursor)
 
   const conditions = and(
     eq(bookmarks.userId, userId),
-    lifecycleStatuses.length === 1
-      ? eq(bookmarks.lifecycleStatus, lifecycleStatuses[0])
-      : inArray(bookmarks.lifecycleStatus, lifecycleStatuses),
-    buildDescendingCursorCondition(cursorPayload) ?? undefined
+    buildLifecycleFilter(lifecycleStatuses, bookmarks) ?? undefined,
+    buildDescendingCursorCondition(bookmarks.createdAt, bookmarks.id, cursorPayload) ?? undefined
   )
 
   const rows = await db
@@ -161,9 +121,7 @@ export async function getBookmarkById(
       and(
         eq(bookmarks.id, bookmarkId),
         eq(bookmarks.userId, userId),
-        lifecycleStatuses.length === 1
-          ? eq(bookmarks.lifecycleStatus, lifecycleStatuses[0])
-          : inArray(bookmarks.lifecycleStatus, lifecycleStatuses)
+        buildLifecycleFilter(lifecycleStatuses, bookmarks) ?? undefined
       )
     )
     .limit(1)

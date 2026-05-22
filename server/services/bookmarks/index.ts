@@ -9,7 +9,6 @@ export {
   listBookmarks,
   listBookmarksPage,
   getBookmarkById,
-  type BookmarkListItem as BookmarkListItemExport,
 } from './bookmarks.query'
 export {
   updateBookmarkEnrichment,

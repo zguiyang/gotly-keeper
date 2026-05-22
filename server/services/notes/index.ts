@@ -9,7 +9,6 @@ export {
   listNotes,
   listNotesPage,
   getNoteById,
-  type NoteListItem as NoteListItemExport,
 } from './notes.query'
 export {
   updateNote,

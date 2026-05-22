@@ -3,10 +3,8 @@ import 'server-only'
 import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/server/lib/db'
-import {
-  ASSET_LIFECYCLE_STATUS,
-  type AssetLifecycleStatus,
-} from '@/shared/assets/asset-lifecycle.types'
+import { updateAssetLifecycle, purgeAsset } from '@/server/services/assets/asset-mutation-utils'
+import { ASSET_LIFECYCLE_STATUS } from '@/shared/assets/asset-lifecycle.types'
 import { now } from '@/shared/time/dayjs'
 
 import { toTodoListItem } from './todos.mapper'
@@ -40,40 +38,6 @@ function normalizeStructuredField(value: string | null | undefined): string | nu
 
   const trimmed = value.trim()
   return trimmed ? trimmed : null
-}
-
-async function updateLifecycle(input: {
-  userId: string
-  todoId: string
-  fromStatuses: AssetLifecycleStatus[]
-  toStatus: AssetLifecycleStatus
-  archivedAt: Date | null
-  trashedAt: Date | null
-}): Promise<TodoListItem | null> {
-  for (const fromStatus of input.fromStatuses) {
-    const [updated] = await db
-      .update(todos)
-      .set({
-        lifecycleStatus: input.toStatus,
-        archivedAt: input.archivedAt,
-        trashedAt: input.trashedAt,
-        updatedAt: now(),
-      })
-      .where(
-        and(
-          eq(todos.id, input.todoId),
-          eq(todos.userId, input.userId),
-          eq(todos.lifecycleStatus, fromStatus)
-        )
-      )
-      .returning()
-
-    if (updated) {
-      return toTodoListItem(updated)
-    }
-  }
-
-  return null
 }
 
 export async function updateTodo(input: {
@@ -139,72 +103,45 @@ export async function archiveTodo(input: {
   userId: string
   todoId: string
 }): Promise<TodoListItem | null> {
-  return updateLifecycle({
-    userId: input.userId,
-    todoId: input.todoId,
-    fromStatuses: [ASSET_LIFECYCLE_STATUS.ACTIVE],
-    toStatus: ASSET_LIFECYCLE_STATUS.ARCHIVED,
-    archivedAt: now(),
-    trashedAt: null,
-  })
+  return updateAssetLifecycle(
+    { assetId: input.todoId, userId: input.userId, fromStatuses: [ASSET_LIFECYCLE_STATUS.ACTIVE], toStatus: ASSET_LIFECYCLE_STATUS.ARCHIVED, archivedAt: now(), trashedAt: null },
+    { table: todos, toListItem: toTodoListItem }
+  )
 }
 
 export async function unarchiveTodo(input: {
   userId: string
   todoId: string
 }): Promise<TodoListItem | null> {
-  return updateLifecycle({
-    userId: input.userId,
-    todoId: input.todoId,
-    fromStatuses: [ASSET_LIFECYCLE_STATUS.ARCHIVED],
-    toStatus: ASSET_LIFECYCLE_STATUS.ACTIVE,
-    archivedAt: null,
-    trashedAt: null,
-  })
+  return updateAssetLifecycle(
+    { assetId: input.todoId, userId: input.userId, fromStatuses: [ASSET_LIFECYCLE_STATUS.ARCHIVED], toStatus: ASSET_LIFECYCLE_STATUS.ACTIVE, archivedAt: null, trashedAt: null },
+    { table: todos, toListItem: toTodoListItem }
+  )
 }
 
 export async function moveTodoToTrash(input: {
   userId: string
   todoId: string
 }): Promise<TodoListItem | null> {
-  return updateLifecycle({
-    userId: input.userId,
-    todoId: input.todoId,
-    fromStatuses: [ASSET_LIFECYCLE_STATUS.ACTIVE, ASSET_LIFECYCLE_STATUS.ARCHIVED],
-    toStatus: ASSET_LIFECYCLE_STATUS.TRASHED,
-    archivedAt: null,
-    trashedAt: now(),
-  })
+  return updateAssetLifecycle(
+    { assetId: input.todoId, userId: input.userId, fromStatuses: [ASSET_LIFECYCLE_STATUS.ACTIVE, ASSET_LIFECYCLE_STATUS.ARCHIVED], toStatus: ASSET_LIFECYCLE_STATUS.TRASHED, archivedAt: null, trashedAt: now() },
+    { table: todos, toListItem: toTodoListItem }
+  )
 }
 
 export async function restoreTodoFromTrash(input: {
   userId: string
   todoId: string
 }): Promise<TodoListItem | null> {
-  return updateLifecycle({
-    userId: input.userId,
-    todoId: input.todoId,
-    fromStatuses: [ASSET_LIFECYCLE_STATUS.TRASHED],
-    toStatus: ASSET_LIFECYCLE_STATUS.ACTIVE,
-    archivedAt: null,
-    trashedAt: null,
-  })
+  return updateAssetLifecycle(
+    { assetId: input.todoId, userId: input.userId, fromStatuses: [ASSET_LIFECYCLE_STATUS.TRASHED], toStatus: ASSET_LIFECYCLE_STATUS.ACTIVE, archivedAt: null, trashedAt: null },
+    { table: todos, toListItem: toTodoListItem }
+  )
 }
 
 export async function purgeTodo(input: {
   userId: string
   todoId: string
 }): Promise<boolean> {
-  const deleted = await db
-    .delete(todos)
-    .where(
-      and(
-        eq(todos.id, input.todoId),
-        eq(todos.userId, input.userId),
-        eq(todos.lifecycleStatus, ASSET_LIFECYCLE_STATUS.TRASHED)
-      )
-    )
-    .returning({ id: todos.id })
-
-  return deleted.length > 0
+  return purgeAsset(input.todoId, input.userId, todos)
 }
