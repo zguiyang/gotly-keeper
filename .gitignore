@@ -53,6 +53,11 @@ docs
 .worktrees
 worktrees
 
+# test screenshots
+/landing-page*.png
+/notes-page*.png
+/sign-up-page*.png
+
 # worker
 dist-workers
 
