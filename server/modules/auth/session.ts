@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { getServerTranslationSafe } from '@/server/lib/i18n'
+
 import { headers } from 'next/headers'
 
 import { auth, type AuthSession } from '../../lib/auth'
@@ -19,7 +21,8 @@ export async function requireSignedInUser(): Promise<CurrentUser> {
   const user = await getSignedInUser()
 
   if (!user) {
-    throw new ModuleActionError('请先登录。', MODULE_ACTION_ERROR_CODES.UNAUTHENTICATED)
+    const t = await getServerTranslationSafe('common.errors')
+    throw new ModuleActionError(t('sessionRequired'), MODULE_ACTION_ERROR_CODES.UNAUTHENTICATED)
   }
 
   return user

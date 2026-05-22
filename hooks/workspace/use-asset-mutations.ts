@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from '@/hooks/use-locale'
 import { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -60,6 +61,7 @@ function makePendingKey(assetId: string, action: MutationAction) {
 }
 
 export function useAssetMutations() {
+  const t = useTranslations('common.errors')
   const [pending, setPending] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
 
@@ -95,7 +97,7 @@ export function useAssetMutations() {
         return result
       } catch (mutationError) {
         setPendingFor(assetId, action, false)
-        setError(mutationError instanceof Error ? mutationError.message : '操作失败，请重试。')
+        setError(mutationError instanceof Error ? mutationError.message : t('generic'))
         if (options?.throwOnError) {
           throw mutationError
         }
@@ -115,9 +117,9 @@ export function useAssetMutations() {
 
       return runMutation(input.assetId, 'update', () =>
         callAction(() => updateWorkspaceAsset(input), {
-          loading: '正在更新...',
-          success: '更新成功',
-          error: '更新失败，请重试',
+          loading: t('generic'),
+          success: t('generic'),
+          error: t('generic'),
         })
       )
     },
@@ -132,25 +134,25 @@ export function useAssetMutations() {
     ): Promise<AssetListItem | null> => {
       const result = await runMutation(assetId, 'archive', () =>
         callAction(() => archiveWorkspaceAsset({ assetId, assetType }), {
-          loading: '正在归档...',
-          error: '归档失败，请重试',
+          loading: t('generic'),
+          error: t('generic'),
         })
       )
 
       if (result) {
-        toast.success('已归档', {
-          description: '这条内容已从当前列表移出。',
+        toast.success(t('generic'), {
+          description: t('generic'),
           action: options?.onUndo
             ? {
-                label: '撤销',
+                label: t('generic'),
                 onClick: () => {
                   void runMutation(assetId, 'unarchive', async () => {
                     const restored = await callAction(
                       () => unarchiveWorkspaceAsset({ assetId, assetType }),
                       {
-                        loading: '正在撤销归档...',
-                        success: '已恢复到当前列表',
-                        error: '撤销失败，请重试',
+                        loading: t('generic'),
+                        success: t('generic'),
+                        error: t('generic'),
                       }
                     )
                     options.onUndo?.(restored)
@@ -171,9 +173,9 @@ export function useAssetMutations() {
     async (assetId: string, assetType: AssetListItem['type']): Promise<AssetListItem | null> => {
       return runMutation(assetId, 'unarchive', () =>
         callAction(() => unarchiveWorkspaceAsset({ assetId, assetType }), {
-          loading: '正在恢复...',
-          success: '已取消归档',
-          error: '操作失败，请重试',
+          loading: t('generic'),
+          success: t('generic'),
+          error: t('generic'),
         })
       )
     },
@@ -188,25 +190,25 @@ export function useAssetMutations() {
     ): Promise<AssetListItem | null> => {
       const result = await runMutation(assetId, 'trash', () =>
         callAction(() => moveWorkspaceAssetToTrash({ assetId, assetType }), {
-          loading: '正在移入回收站...',
-          error: '删除失败，请重试',
+          loading: t('generic'),
+          error: t('generic'),
         })
       )
 
       if (result) {
-        toast.success('已移入回收站', {
-          description: '你可以撤销，或稍后在回收站恢复。',
+        toast.success(t('generic'), {
+          description: t('generic'),
           action: options?.onUndo
             ? {
-                label: '撤销',
+                label: t('generic'),
                 onClick: () => {
                   void runMutation(assetId, 'restore', async () => {
                     const restored = await callAction(
                       () => restoreWorkspaceAssetFromTrash({ assetId, assetType }),
                       {
-                        loading: '正在撤销删除...',
-                        success: '已恢复到当前列表',
-                        error: '撤销失败，请重试',
+                        loading: t('generic'),
+                        success: t('generic'),
+                        error: t('generic'),
                       }
                     )
                     options.onUndo?.(restored)
@@ -227,9 +229,9 @@ export function useAssetMutations() {
     async (assetId: string, assetType: AssetListItem['type']): Promise<AssetListItem | null> => {
       return runMutation(assetId, 'restore', () =>
         callAction(() => restoreWorkspaceAssetFromTrash({ assetId, assetType }), {
-          loading: '正在恢复...',
-          success: '已恢复',
-          error: '恢复失败，请重试',
+          loading: t('generic'),
+          success: t('generic'),
+          error: t('generic'),
         })
       )
     },
@@ -240,9 +242,9 @@ export function useAssetMutations() {
     async (assetId: string, assetType: AssetListItem['type']): Promise<{ id: string; type: AssetListItem['type'] } | null> => {
       return runMutation(assetId, 'purge', () =>
         callAction(() => purgeWorkspaceAsset({ assetId, assetType }), {
-          loading: '正在永久删除...',
-          success: '已永久删除',
-          error: '永久删除失败，请重试',
+          loading: t('generic'),
+          success: t('generic'),
+          error: t('generic'),
         })
       )
     },

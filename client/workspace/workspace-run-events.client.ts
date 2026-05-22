@@ -102,11 +102,11 @@ export async function streamWorkspaceRunEvents(
 
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as { error?: string } | null
-    throw new Error(payload?.error ?? '处理失败，请重试。')
+    throw new Error(payload?.error ?? 'Processing failed, please try again.')
   }
 
   if (!response.body) {
-    throw new Error('服务端没有返回处理流，请重试。')
+    throw new Error('Server did not return a processing stream. Please try again.')
   }
 
   await readSseStream(response.body, handlers)
@@ -127,7 +127,7 @@ export async function fetchCurrentWorkspaceRun(): Promise<FetchCurrentWorkspaceR
   })
 
   if (!response.ok) {
-    throw new Error('获取当前运行状态失败。')
+    throw new Error('Failed to get current run status.')
   }
 
   return response.json() as Promise<FetchCurrentWorkspaceRunResult>
@@ -143,6 +143,6 @@ export async function dismissCurrentWorkspaceRun(): Promise<void> {
 
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as { error?: string } | null
-    throw new Error(payload?.error ?? '忽略未完成内容失败。')
+    throw new Error(payload?.error ?? 'Failed to dismiss incomplete content.')
   }
 }

@@ -1,3 +1,4 @@
+import { getServerTranslation } from '@/hooks/use-locale.server'
 import { requireWorkspaceUserAccess } from '@/server/modules/auth/workspace-session'
 import { createWorkspaceRunRuntime } from '@/server/modules/workspace-agent'
 import { orchestrateWorkspaceRun } from '@/server/modules/workspace-agent/workspace-run-orchestrator'
@@ -17,6 +18,7 @@ export async function POST(
   { params }: { params: Promise<{ runId: string }> | { runId: string } }
 ) {
   const user = await requireWorkspaceUserAccess()
+  const t = await getServerTranslation('common.errors')
   const { runId } = await params
 
   let body: unknown
@@ -24,18 +26,18 @@ export async function POST(
   try {
     body = await req.json()
   } catch {
-    return Response.json({ error: '请求体格式不正确。' }, { status: 400 })
+    return Response.json({ error: t('invalidRequest') }, { status: 400 })
   }
 
   const parsed = workspaceRunRequestSchema.safeParse(body)
   if (!parsed.success) {
-    return Response.json({ error: '请求参数无效。' }, { status: 400 })
+    return Response.json({ error: t('invalidParams') }, { status: 400 })
   }
 
   const request: WorkspaceRunRequest = parsed.data
 
   if (request.kind !== 'resume' || request.runId !== runId) {
-    return Response.json({ error: '请求参数无效。' }, { status: 400 })
+    return Response.json({ error: t('invalidParams') }, { status: 400 })
   }
 
   const { store, runModel, searchCandidates } = createWorkspaceRunRuntime()
@@ -89,7 +91,7 @@ export async function POST(
           type: 'run_failed',
           error: {
             code: 'INTERNAL_ERROR',
-            message: '处理失败，请重试。',
+            message: t('generic'),
             retryable: true,
           },
         })

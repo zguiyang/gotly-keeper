@@ -4,7 +4,7 @@ export function formatAbsoluteTime(
   date: Date | string | number,
   timezone: string = ASIA_SHANGHAI_TIME_ZONE
 ): string {
-  return dayjs(date).tz(timezone).format('M月D日 HH:mm')
+  return dayjs(date).tz(timezone).format('MMM D HH:mm')
 }
 
 export function formatAbsoluteDateTime(
@@ -22,8 +22,8 @@ export function formatBookmarkTime(
   const base = dayjs(baseDate)
   const days = base.diff(d, 'day')
 
-  if (days === 0) return '今天收藏'
-  if (days === 1) return '昨天收藏'
-  if (days < 7) return `${days}天前收藏`
-  return d.format('M月D日') + '收藏'
+  if (days === 0) return 'Saved today'
+  if (days === 1) return 'Saved yesterday'
+  if (days < 7) return `Saved ${days} days ago`
+  return d.format('MMM D') + ' saved'
 }

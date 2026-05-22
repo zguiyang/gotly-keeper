@@ -300,7 +300,7 @@ export async function archiveWorkspaceAsset(input: {
     assetId: input.assetId,
     assetType: input.assetType,
     canTransition: canArchive,
-    invalidMessage: '当前状态不允许归档。',
+    invalidMessage: 'Lifecycle transition rejected: cannot archive from current status.',
     invalidCode: WORKSPACE_MODULE_ERROR_CODES.INVALID_LIFECYCLE_TRANSITION,
     run: (adapter) => adapter.archive(input.assetId, input.userId),
   })
@@ -317,7 +317,7 @@ export async function unarchiveWorkspaceAsset(input: {
     assetId: input.assetId,
     assetType: input.assetType,
     canTransition: canUnarchive,
-    invalidMessage: '当前状态不允许取消归档。',
+    invalidMessage: 'Cannot unarchive from current status.',
     invalidCode: WORKSPACE_MODULE_ERROR_CODES.INVALID_LIFECYCLE_TRANSITION,
     run: (adapter) => adapter.unarchive(input.assetId, input.userId),
   })
@@ -334,7 +334,7 @@ export async function moveWorkspaceAssetToTrash(input: {
     assetId: input.assetId,
     assetType: input.assetType,
     canTransition: canMoveToTrash,
-    invalidMessage: '当前状态不允许移动到回收站。',
+    invalidMessage: 'Cannot move to trash from current status.',
     invalidCode: WORKSPACE_MODULE_ERROR_CODES.INVALID_LIFECYCLE_TRANSITION,
     run: (adapter) => adapter.moveToTrash(input.assetId, input.userId),
   })
@@ -351,7 +351,7 @@ export async function restoreWorkspaceAssetFromTrash(input: {
     assetId: input.assetId,
     assetType: input.assetType,
     canTransition: canRestoreFromTrash,
-    invalidMessage: '当前状态不允许恢复。',
+    invalidMessage: 'Cannot restore from current status.',
     invalidCode: WORKSPACE_MODULE_ERROR_CODES.INVALID_LIFECYCLE_TRANSITION,
     run: (adapter) => adapter.restoreFromTrash(input.assetId, input.userId),
   })
@@ -373,7 +373,7 @@ export async function purgeWorkspaceAsset(input: {
 
   if (!canPurge(existing.lifecycleStatus ?? ASSET_LIFECYCLE_STATUS.ACTIVE)) {
     throw new WorkspaceModuleError(
-      '永久删除只允许在回收站中执行。',
+      'Permanent delete is only allowed in trash.',
       WORKSPACE_MODULE_ERROR_CODES.PURGE_REQUIRES_TRASHED_ASSET
     )
   }
@@ -382,7 +382,7 @@ export async function purgeWorkspaceAsset(input: {
 
   if (!deleted) {
     throw new WorkspaceModuleError(
-      '没有找到这条资产，或你没有权限操作它。',
+      'Asset not found or no permission.',
       WORKSPACE_MODULE_ERROR_CODES.ASSET_NOT_FOUND
     )
   }
@@ -476,7 +476,7 @@ function buildWorkspaceAssetAdapter<TAsset>(
 function assertAssetType(type: string): asserts type is WorkspaceAssetType {
   if (type !== 'note' && type !== 'todo' && type !== 'link') {
     throw new WorkspaceModuleError(
-      '不支持的资产类型。',
+      'Unsupported asset type.',
       WORKSPACE_MODULE_ERROR_CODES.INVALID_ASSET_TYPE
     )
   }
@@ -563,7 +563,7 @@ async function getWorkspaceAssetByType(input: {
 function requireExistingAsset(asset: AssetListItem | null): AssetListItem {
   if (!asset) {
     throw new WorkspaceModuleError(
-      '没有找到这条资产，或你没有权限操作它。',
+      'Asset not found or no permission.',
       WORKSPACE_MODULE_ERROR_CODES.ASSET_NOT_FOUND
     )
   }

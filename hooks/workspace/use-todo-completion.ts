@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from '@/hooks/use-locale'
 import { useCallback, useState } from 'react'
 
 import { setTodoCompletion } from '@/client/actions/workspace-actions.client'
@@ -13,6 +14,7 @@ export type TodoCompletionState = {
 }
 
 export function useTodoCompletion() {
+  const t = useTranslations('common.errors')
   const [state, setState] = useState<TodoCompletionState>({
     pendingId: null,
     error: null,
@@ -26,16 +28,16 @@ export function useTodoCompletion() {
         const result = await callAction<AssetListItem>(
           () => setTodoCompletion({ assetId, completed }),
           {
-            loading: '正在更新...',
-            success: completed ? '已标记为完成' : '已取消完成',
-            error: '更新失败，请重试',
+            loading: t('generic'),
+            success: completed ? t('generic') : t('generic'),
+            error: t('generic'),
           }
         )
 
         setState({ pendingId: null, error: null })
         return result
       } catch (error) {
-        const message = error instanceof Error ? error.message : '更新失败，请重试。'
+        const message = error instanceof Error ? error.message : t('generic')
         setState({ pendingId: null, error: message })
         return null
       }

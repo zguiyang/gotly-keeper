@@ -9,7 +9,7 @@ function resolveErrorMessage(error: unknown, fallbackMessage?: string): string {
   if (error instanceof Error && error.message) {
     return error.message
   }
-  return '操作失败，请重试。'
+  return 'Operation failed, please try again.'
 }
 
 export async function callAction<T>(

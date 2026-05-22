@@ -307,7 +307,7 @@ export async function updateWorkspaceNoteAsset(input: {
 
   if (!updated) {
     throw new WorkspaceAssetsError(
-      '没有找到这条笔记，或你没有权限更新它。',
+      'Note not found or you do not have permission to update it.',
       WORKSPACE_ASSETS_ERROR_CODES.ASSET_NOT_FOUND
     )
   }
@@ -337,7 +337,7 @@ export async function updateWorkspaceTodoAsset(input: {
 
   if (!updated) {
     throw new WorkspaceAssetsError(
-      '没有找到这条待办，或你没有权限更新它。',
+      'Todo not found or you do not have permission to update it.',
       WORKSPACE_ASSETS_ERROR_CODES.ASSET_NOT_FOUND
     )
   }
@@ -367,7 +367,7 @@ export async function updateWorkspaceLinkAsset(input: {
 
   if (!updated) {
     throw new WorkspaceAssetsError(
-      '没有找到这条书签，或你没有权限更新它。',
+      'Bookmark not found or you do not have permission to update it.',
       WORKSPACE_ASSETS_ERROR_CODES.ASSET_NOT_FOUND
     )
   }
@@ -398,7 +398,7 @@ export async function setWorkspaceTodoAssetCompletion(input: {
 
   if (!updated) {
     throw new WorkspaceAssetsError(
-      '没有找到这条待办，或你没有权限更新它。',
+      'Todo not found or you do not have permission to update it.',
       WORKSPACE_ASSETS_ERROR_CODES.TODO_NOT_FOUND
     )
   }

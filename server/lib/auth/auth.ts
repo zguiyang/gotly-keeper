@@ -47,8 +47,8 @@ export const auth = betterAuth({
       void resend.emails.send({
         from: 'Gotly Keeper <noreply@mail.zhaoguiyang.com>',
         to: user.email,
-        subject: '重置密码',
-        text: `点击以下链接重置你的密码：${url}`,
+        subject: 'Reset your password',
+        text: `Click the link below to reset your password: ${url}`,
       })
     },
   },

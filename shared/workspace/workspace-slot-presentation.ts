@@ -1,11 +1,11 @@
 import { formatAbsoluteDateTime } from '@/shared/time/formatters'
 
 const SLOT_LABELS: Record<string, string> = {
-  dueAt: '截止日期',
-  timeText: '时间说明',
-  url: '链接',
-  details: '补充说明',
-  content: '备注',
+  dueAt: 'Due date',
+  timeText: 'Time description',
+  url: 'Link',
+  details: 'Details',
+  content: 'Notes',
 }
 
 const SLOT_ORDER = ['dueAt', 'timeText', 'url', 'details', 'content'] as const

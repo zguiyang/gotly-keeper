@@ -22,16 +22,16 @@ export function formatAssetRelativeTime(date: Date, locale?: string, now?: Date)
 
   const days = current.diff(d, 'day')
   if (days > 7) {
-    return d.locale(locale ?? 'zh-CN').format('M月D日')
+    return d.locale(locale ?? 'en').format('MMM D')
   }
-  if (days > 1) return `${days}天前`
-  if (days === 1) return '昨天'
+  if (days > 1) return `${days}d ago`
+  if (days === 1) return 'yesterday'
   const hours = current.diff(d, 'hour')
-  if (hours > 1) return `${hours}小时前`
-  if (hours === 1) return '1小时前'
+  if (hours > 1) return `${hours}h ago`
+  if (hours === 1) return '1h ago'
   const minutes = current.diff(d, 'minute')
-  if (minutes > 1) return `${minutes}分钟前`
-  return '刚刚'
+  if (minutes > 1) return `${minutes}min ago`
+  return 'just now'
 }
 
 export type TodoGroupKey = 'today' | 'thisWeek' | 'noDate' | 'completed'

@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from '@/hooks/use-locale'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
@@ -116,6 +117,7 @@ function extractEventPreviewState(
 export function useWorkspaceStream(options: {
   onResult?: (result: WorkspaceRunResult) => void
 } = {}) {
+  const t = useTranslations('common.errors')
   const [state, setState] = useState<WorkspaceRunUiState>({
     ...INITIAL_RUN_STATE,
   })
@@ -298,7 +300,7 @@ export function useWorkspaceStream(options: {
           timeline: [],
           result: null,
           errorMessage:
-            error instanceof Error ? error.message : '处理失败，请重试。',
+            error instanceof Error ? error.message : t('generic'),
           endedAt: Date.now(),
         }))
       } finally {
@@ -323,7 +325,7 @@ export function useWorkspaceStream(options: {
         setState((current) => ({
           ...current,
           status: 'error',
-          errorMessage: '没有可继续的运行。',
+          errorMessage: t('notFound'),
         }))
         return
       }
@@ -344,7 +346,7 @@ export function useWorkspaceStream(options: {
     setState((current) => ({
       ...current,
       status: 'error',
-      errorMessage: '处理已取消',
+      errorMessage: t('generic'),
       endedAt: Date.now(),
     }))
   }, [])

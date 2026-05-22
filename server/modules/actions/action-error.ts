@@ -36,7 +36,7 @@ export function isModuleActionError(error: unknown): error is ModuleActionError 
 
 export function normalizeModuleActionError(
   error: unknown,
-  fallbackMessage = '操作失败，请重试。'
+  fallbackMessage = 'Operation failed, please try again.'
 ): NormalizedModuleActionError {
   if (isModuleActionError(error)) {
     return {
@@ -52,6 +52,6 @@ export function normalizeModuleActionError(
   }
 }
 
-export function getModuleActionErrorMessage(error: unknown, fallback = '操作失败，请重试。') {
+export function getModuleActionErrorMessage(error: unknown, fallback = 'Operation failed, please try again.') {
   return normalizeModuleActionError(error, fallback).publicMessage
 }

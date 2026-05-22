@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from '@/hooks/use-locale'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
@@ -13,6 +14,7 @@ export function useNoteInlineEdit({
   onSave: (markdown: string) => Promise<boolean>
   debounceMs?: number
 }) {
+  const t = useTranslations('common.errors')
   const [markdown, setMarkdownState] = useState(initialMarkdown)
   const [status, setStatus] = useState<SaveStatus>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -76,7 +78,7 @@ export function useNoteInlineEdit({
         saved = await onSave(snapshot)
         if (!saved) {
           setStatus('error')
-          setErrorMessage('保存失败，请重试。')
+          setErrorMessage(t('generic'))
           return false
         }
 
@@ -85,7 +87,7 @@ export function useNoteInlineEdit({
         return true
       } catch (error) {
         setStatus('error')
-        setErrorMessage(error instanceof Error ? error.message : '保存失败，请重试。')
+        setErrorMessage(error instanceof Error ? error.message : t('generic'))
         return false
       } finally {
         inflightSaveRef.current = null

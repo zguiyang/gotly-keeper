@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 
 import { ModuleActionError, MODULE_ACTION_ERROR_CODES } from '@/server/modules/actions/action-error'
+import { getServerTranslation } from '@/hooks/use-locale.server'
 import { executeModuleAction } from '@/server/modules/actions/run-server-action'
 import { requireSignedInUser } from '@/server/modules/auth/session'
 import {
@@ -55,7 +56,7 @@ function parseAssetType(value: unknown): WorkspaceAssetType {
     return value
   }
 
-  throw new ModuleActionError('资产参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+  throw new ModuleActionError('Invalid asset parameters.', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
 }
 
 function parseOptionalAssetType(value: unknown): WorkspaceAssetType | undefined {
@@ -79,7 +80,7 @@ function parseLifecycleStatus(value: unknown): AssetLifecycleStatus | undefined 
     return value
   }
 
-  throw new ModuleActionError('列表状态参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+  throw new ModuleActionError('Invalid parameters.', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
 }
 
 function parsePageSize(value: unknown): number | undefined {
@@ -88,7 +89,7 @@ function parsePageSize(value: unknown): number | undefined {
   }
 
   if (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > 100) {
-    throw new ModuleActionError('分页参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+    throw new ModuleActionError('Invalid pagination parameters.', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
   }
 
   return value
@@ -104,7 +105,7 @@ function parseCursor(value: unknown): string | null | undefined {
   }
 
   if (typeof value !== 'string') {
-    throw new ModuleActionError('分页参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+    throw new ModuleActionError('Invalid pagination parameters.', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
   }
 
   return value
@@ -121,7 +122,7 @@ function parseWorkspaceAssetsPageInput(input: unknown): {
   }
 
   if (typeof input !== 'object') {
-    throw new ModuleActionError('分页参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+    throw new ModuleActionError('Invalid pagination parameters.', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
   }
 
   return {
@@ -134,7 +135,7 @@ function parseWorkspaceAssetsPageInput(input: unknown): {
   }
 }
 
-function parseDateInput(value: unknown, message = '日期参数错误，请重试。'): Date {
+function parseDateInput(value: unknown, message?: string): Date {
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
     return value
   }
@@ -146,12 +147,12 @@ function parseDateInput(value: unknown, message = '日期参数错误，请重�
     }
   }
 
-  throw new ModuleActionError(message, MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+  throw new ModuleActionError(message ?? 'invalidDate', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
 }
 
 function parseDateKeyInput(value: unknown): { startsAt: Date; endsAt: Date } {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    throw new ModuleActionError('日期参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+    throw new ModuleActionError('Invalid date parameters.', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
   }
 
   const startsAt = new Date(`${value}T00:00:00+08:00`)
@@ -161,7 +162,7 @@ function parseDateKeyInput(value: unknown): { startsAt: Date; endsAt: Date } {
 
 function parseTodoDateInput(input: unknown): { startsAt: Date; endsAt: Date } {
   if (!input || typeof input !== 'object' || !('date' in input)) {
-    throw new ModuleActionError('日期参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+    throw new ModuleActionError('Invalid date parameters.', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
   }
 
   return parseDateKeyInput(input.date)
@@ -169,14 +170,14 @@ function parseTodoDateInput(input: unknown): { startsAt: Date; endsAt: Date } {
 
 function parseTodoDateMarkersInput(input: unknown): { startsAt: Date; endsAt: Date } {
   if (!input || typeof input !== 'object' || !('startsAt' in input) || !('endsAt' in input)) {
-    throw new ModuleActionError('日期范围参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+    throw new ModuleActionError('Invalid date parameters.', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
   }
 
-  const startsAt = parseDateInput(input.startsAt, '日期范围参数错误，请重试。')
-  const endsAt = parseDateInput(input.endsAt, '日期范围参数错误，请重试。')
+  const startsAt = parseDateInput(input.startsAt, 'Invalid date parameters.')
+  const endsAt = parseDateInput(input.endsAt, 'Invalid date parameters.')
 
   if (startsAt >= endsAt) {
-    throw new ModuleActionError('日期范围参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+    throw new ModuleActionError('Invalid date parameters.', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
   }
 
   return { startsAt, endsAt }
@@ -187,12 +188,12 @@ function parseAssetRefInput(input: unknown): {
   assetType: WorkspaceAssetType
 } {
   if (!input || typeof input !== 'object' || !('assetId' in input) || !('assetType' in input)) {
-    throw new ModuleActionError('资产参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+    throw new ModuleActionError('Invalid asset parameters.', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
   }
 
   const { assetId, assetType } = input
   if (typeof assetId !== 'string' || !assetId.trim()) {
-    throw new ModuleActionError('资产参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+    throw new ModuleActionError('Invalid asset parameters.', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
   }
 
   return {
@@ -217,7 +218,7 @@ function parseDueAt(raw: unknown): Date | null {
     }
   }
 
-  throw new ModuleActionError('待办时间参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+  throw new ModuleActionError('Invalid asset parameters.', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
 }
 
 function parseUpdateAssetInput(input: unknown):
@@ -249,12 +250,12 @@ function parseUpdateAssetInput(input: unknown):
     } {
   const base = parseAssetRefInput(input)
   if (!input || typeof input !== 'object' || !('rawInput' in input)) {
-    throw new ModuleActionError('资产更新参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+    throw new ModuleActionError('Invalid asset parameters.', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
   }
 
   const { rawInput } = input
   if (typeof rawInput !== 'string' || !rawInput.trim()) {
-    throw new ModuleActionError('请输入有效内容。', MODULE_ACTION_ERROR_CODES.EMPTY_INPUT)
+    throw new ModuleActionError('Please enter some content first.', MODULE_ACTION_ERROR_CODES.EMPTY_INPUT)
   }
 
   const title =
@@ -291,7 +292,7 @@ function parseUpdateAssetInput(input: unknown):
   }
 
   if (!('url' in input) || typeof input.url !== 'string' || !input.url.trim()) {
-    throw new ModuleActionError('书签链接不能为空。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+    throw new ModuleActionError('Bookmark link is required.', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
   }
 
   return {
@@ -316,7 +317,7 @@ function mapWorkspaceModuleError(error: unknown): never {
       error.message === 'UNSUPPORTED_PROTOCOL'
     ) {
       throw new ModuleActionError(
-        '请输入有效的 http/https 链接。',
+        'Please enter a valid http/https link.',
         MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT
       )
     }
@@ -362,12 +363,12 @@ export async function createWorkspaceAssetAction(
     const user = await requireSignedInUser()
 
     if (typeof input !== 'string') {
-      throw new ModuleActionError('先输入一句内容。', MODULE_ACTION_ERROR_CODES.EMPTY_INPUT)
+      throw new ModuleActionError('Please enter some content first.', MODULE_ACTION_ERROR_CODES.EMPTY_INPUT)
     }
 
     const trimmed = input.trim()
     if (!trimmed) {
-      throw new ModuleActionError('先输入一句内容。', MODULE_ACTION_ERROR_CODES.EMPTY_INPUT)
+      throw new ModuleActionError('Please enter some content first.', MODULE_ACTION_ERROR_CODES.EMPTY_INPUT)
     }
 
     const result = await createWorkspaceAsset({ userId: user.id, text: trimmed })
@@ -394,7 +395,7 @@ export async function loadWorkspaceAssetsPageAction(
       })
     } catch (error) {
       if (error instanceof Error && error.message === 'INVALID_CURSOR') {
-        throw new ModuleActionError('分页参数错误，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
+        throw new ModuleActionError('Invalid pagination parameters.', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
       }
       mapWorkspaceModuleError(error)
     }
@@ -437,13 +438,13 @@ function parseTodoCompletionInput(input: unknown): {
     !('assetId' in input) ||
     !('completed' in input)
   ) {
-    throw new ModuleActionError('待办状态更新失败，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_TODO_COMPLETION_INPUT)
+    throw new ModuleActionError('Operation failed.', MODULE_ACTION_ERROR_CODES.INVALID_TODO_COMPLETION_INPUT)
   }
 
   const { assetId, completed } = input
 
   if (typeof assetId !== 'string' || !assetId.trim() || typeof completed !== 'boolean') {
-    throw new ModuleActionError('待办状态更新失败，请重试。', MODULE_ACTION_ERROR_CODES.INVALID_TODO_COMPLETION_INPUT)
+    throw new ModuleActionError('Operation failed.', MODULE_ACTION_ERROR_CODES.INVALID_TODO_COMPLETION_INPUT)
   }
 
   return { assetId: assetId.trim(), completed }

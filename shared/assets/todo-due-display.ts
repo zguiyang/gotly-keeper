@@ -23,14 +23,14 @@ function formatDueLabel(dueAt: dayjs.Dayjs, now: Date) {
   const current = dayjs(now).tz(ASIA_SHANGHAI_TIME_ZONE)
 
   if (dueAt.isSame(current, 'day')) {
-    return `今天 ${dueAt.format('HH:mm')}`
+    return `today ${dueAt.format('HH:mm')}`
   }
 
   if (dueAt.isSame(current, 'year')) {
-    return dueAt.format('M月D日 HH:mm')
+    return dueAt.format('MMM D HH:mm')
   }
 
-  return dueAt.format('YYYY年M月D日 HH:mm')
+  return dueAt.format('YYYY MMM D HH:mm')
 }
 
 export function getTodoDueDisplay(input: TodoDueInput, now: Date = new Date()): TodoDueDisplay {
@@ -46,12 +46,12 @@ export function getTodoDueDisplay(input: TodoDueInput, now: Date = new Date()): 
   if (input.timeText) {
     return {
       kind: 'time_recorded',
-      label: `已记录时间描述：${input.timeText}`,
+      label: `Scheduled: ${input.timeText}`,
     }
   }
 
   return {
     kind: 'unscheduled',
-    label: '暂无截止日期',
+    label: 'No due date',
   }
 }
