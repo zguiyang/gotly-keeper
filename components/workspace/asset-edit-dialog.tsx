@@ -1,8 +1,5 @@
 'use client'
 
-import { useTranslations } from '@/hooks/use-locale'
-
-import { format } from 'date-fns'
 import { enUS } from 'date-fns/locale'
 import { ChevronDownIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -22,6 +19,8 @@ import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Textarea } from '@/components/ui/textarea'
+import { useTranslations } from '@/hooks/use-locale'
+import { formatDate } from '@/shared/time/dayjs'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
 
@@ -74,7 +73,7 @@ function formatDateButtonLabel(value: Date | null): string {
   if (!value) {
     return 'Select date'
   }
-  return format(value, 'PPP', { locale: enUS })
+  return formatDate(value, 'MMMM Do, YYYY')
 }
 
 function formatTimeInputValue(value: Date | null): string {

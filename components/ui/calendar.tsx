@@ -1,6 +1,5 @@
 "use client"
 
-import { format as formatDate } from "date-fns"
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 import * as React from "react"
 import {
@@ -11,6 +10,7 @@ import {
 
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { formatDate } from "@/shared/time/dayjs"
 
 function Calendar({
   className,
@@ -195,7 +195,7 @@ function CalendarDayButton({
     <Button
       variant="ghost"
       size="icon"
-      data-day={formatDate(day.date, "yyyy/M/d")}
+      data-day={formatDate(day.date, "YYYY/M/D")}
       data-selected-single={
         modifiers.selected &&
         !modifiers.range_start &&

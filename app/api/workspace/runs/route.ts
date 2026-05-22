@@ -4,14 +4,9 @@ import { createWorkspaceRunRuntime } from '@/server/modules/workspace-agent'
 import { orchestrateWorkspaceRun } from '@/server/modules/workspace-agent/workspace-run-orchestrator'
 import { workspaceRunRequestSchema } from '@/shared/workspace/workspace-run-protocol'
 
-import type {
-  WorkspaceRunRequest,
-  WorkspaceRunStreamEvent,
-} from '@/shared/workspace/workspace-run-protocol'
+import { encodeSseEvent, SSE_RESPONSE_HEADERS } from './sse-utils'
 
-function encodeSseEvent(event: WorkspaceRunStreamEvent) {
-  return `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`
-}
+import type { WorkspaceRunRequest } from '@/shared/workspace/workspace-run-protocol'
 
 export async function POST(req: Request) {
   const user = await requireWorkspaceUserAccess()
@@ -40,23 +35,16 @@ export async function POST(req: Request) {
       let closed = false
 
       const closeController = () => {
-        if (closed) {
-          return
-        }
+        if (closed) return
         closed = true
         controller.close()
       }
 
-      const handleAbort = () => {
-        closeController()
-      }
-
+      const handleAbort = () => closeController()
       req.signal.addEventListener('abort', handleAbort, { once: true })
 
-      const writeEvent = (event: WorkspaceRunStreamEvent) => {
-        if (closed || req.signal.aborted) {
-          return
-        }
+      const writeEvent = (event: Parameters<typeof encodeSseEvent>[0]) => {
+        if (closed || req.signal.aborted) return
         controller.enqueue(encoder.encode(encodeSseEvent(event)))
       }
 
@@ -71,21 +59,13 @@ export async function POST(req: Request) {
           signal: req.signal,
         })
 
-        if (req.signal.aborted) {
-          return
-        }
+        if (req.signal.aborted) return
       } catch {
-        if (req.signal.aborted) {
-          return
-        }
+        if (req.signal.aborted) return
 
         writeEvent({
           type: 'run_failed',
-          error: {
-            code: 'INTERNAL_ERROR',
-            message: t('generic'),
-            retryable: true,
-          },
+          error: { code: 'INTERNAL_ERROR', message: t('generic'), retryable: true },
         })
       } finally {
         req.signal.removeEventListener('abort', handleAbort)
@@ -94,12 +74,5 @@ export async function POST(req: Request) {
     },
   })
 
-  return new Response(stream, {
-    headers: {
-      'cache-control': 'no-cache, no-transform',
-      connection: 'keep-alive',
-      'content-type': 'text/event-stream; charset=utf-8',
-      'x-accel-buffering': 'no',
-    },
-  })
+  return new Response(stream, { headers: SSE_RESPONSE_HEADERS })
 }

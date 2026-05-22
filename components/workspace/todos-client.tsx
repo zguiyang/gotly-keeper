@@ -1,8 +1,5 @@
 'use client'
 
-import { useTranslations } from '@/hooks/use-locale'
-
-import { addMonths, format, isSameDay, isValid, startOfDay, startOfMonth } from 'date-fns'
 import { enUS } from 'date-fns/locale'
 import { ListTodo, Square, SquareCheck } from 'lucide-react'
 import { useMemo, useState, type ComponentProps } from 'react'
@@ -25,14 +22,24 @@ import {
   workspacePanelSurfaceClassName,
   workspaceSurfaceClassName,
 } from '@/components/workspace/workspace-view-primitives'
+import { useTranslations } from '@/hooks/use-locale'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useTodoCompletion } from '@/hooks/workspace/use-todo-completion'
 import { cn } from '@/lib/utils'
 import { type AssetListItem } from '@/shared/assets/assets.types'
-import { ASIA_SHANGHAI_TIME_ZONE, dayjs } from '@/shared/time/dayjs'
+import {
+  addMonths,
+  ASIA_SHANGHAI_TIME_ZONE,
+  dayjs,
+  formatDate,
+  isSameDay,
+  isValidDate,
+  startOfDay,
+  startOfMonth,
+} from '@/shared/time/dayjs'
 
 function getDateKey(date: Date) {
-  return format(startOfDay(date), 'yyyy-MM-dd')
+  return formatDate(startOfDay(date), 'YYYY-MM-DD')
 }
 
 function parseDateKeyAsLocalDate(dateKey: string) {
@@ -43,7 +50,7 @@ function parseDateKeyAsLocalDate(dateKey: string) {
   }
 
   const date = new Date(year, month - 1, day)
-  if (!isValid(date) || date.getMonth() !== month - 1 || date.getDate() !== day) {
+  if (!isValidDate(date) || date.getMonth() !== month - 1 || date.getDate() !== day) {
     return startOfDay(new Date())
   }
 
@@ -61,7 +68,7 @@ function getTodoDate(item: AssetListItem) {
 
 function getSelectedDateLabel(date: Date, today: Date) {
   if (isSameDay(date, today)) return 'Today'
-  return format(date, 'MMM d, EEEE', { locale: enUS })
+  return formatDate(date, 'MMM d, dddd')
 }
 
 function isOverdueTodo(item: AssetListItem, todayDate: string) {
