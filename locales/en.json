@@ -1,0 +1,629 @@
+{
+  "common": {
+    "appName": "Gotly Keeper",
+    "version": "Version",
+    "close": "Close",
+    "appDescription": "A lightweight AI content collector for recording, organizing, and retrieving ideas.",
+    "openSource": "Open Source",
+    "selfHosted": "Self-hosted",
+    "yourData": "Your Data",
+    "assets": {
+      "note": "Note",
+      "bookmark": "Bookmark",
+      "todo": "Todo",
+      "completed": "Completed"
+    },
+    "errors": {
+      "generic": "Operation failed. Please try again.",
+      "invalidRequest": "Invalid request.",
+      "invalidParams": "Invalid parameters.",
+      "invalidAsset": "Invalid asset parameters.",
+      "invalidPagination": "Invalid pagination parameters.",
+      "invalidDate": "Invalid date parameters.",
+      "invalidLink": "Please enter a valid http/https link.",
+      "linkRequired": "Bookmark link is required.",
+      "emptyInput": "Please enter some content first.",
+      "notFound": "Not found.",
+      "noPermission": "You don't have permission.",
+      "sessionRequired": "Please sign in first.",
+      "auth": {
+        "userNotFound": "User not found",
+        "wrongPassword": "Wrong password",
+        "invalidEmail": "Invalid email format",
+        "emailTaken": "Email already registered",
+        "createFailed": "Account creation failed. Please try again later.",
+        "passwordMinLength": "Password must be at least 8 characters"
+      }
+    }
+  },
+  "landing": {
+    "nav": {
+      "features": "Features",
+      "scenarios": "Scenarios",
+      "roadmap": "Roadmap",
+      "signIn": "Sign In",
+      "signUp": "Sign Up Free"
+    },
+    "hero": {
+      "tagline": "Say it, and it's saved. Ask for it, and it's found.",
+      "subtitle": "Notes, bookmarks, todos — no organizing, no categorizing.",
+      "cta": "Get Started",
+      "githubLink": "Open Source on GitHub",
+      "viewSource": "View Source",
+      "enterWorkspace": "Go to Workspace",
+      "tryNow": "Try Now",
+      "demoCaption": "A lightweight personal info assistant. Take notes, save bookmarks, manage todos.",
+      "badges": [
+        "Open Source",
+        "Self-hosted",
+        "Your Data"
+      ]
+    },
+    "painPoints": {
+      "eyebrow": "Does this sound familiar?",
+      "title": "More information,<br />harder to find.",
+      "items": {
+        "savedButLost": {
+          "title": "Saved but lost",
+          "desc": "Bookmarks, WeChat favorites, note apps — scattered everywhere, impossible to find when needed."
+        },
+        "notedButUnorganized": {
+          "title": "Noted but unorganized",
+          "desc": "Random notes pile up, turning into an information dump over time."
+        },
+        "organizedButTimeConsuming": {
+          "title": "Organized but time-consuming",
+          "desc": "Sorting, tagging, summarizing — organizing takes more effort than capturing."
+        }
+      }
+    },
+    "features": {
+      "eyebrow": "Core Features",
+      "title": "Four things, all covered.",
+      "items": {
+        "quickCapture": {
+          "title": "Quick Capture",
+          "desc": "One sentence input, automatically recognizes notes, todos, or bookmarks."
+        },
+        "saveLinks": {
+          "title": "Save Links",
+          "desc": "Paste a link, title and summary auto-fetched, searchable later."
+        },
+        "timeReminders": {
+          "title": "Time Reminders",
+          "desc": "Say 'follow up next Wednesday' — time auto-extracted, no manual task creation."
+        },
+        "naturalSearch": {
+          "title": "Natural Language Search",
+          "desc": "Can't remember where you put it? Just describe it and find it."
+        }
+      }
+    },
+    "scenarios": {
+      "eyebrow": "Use Cases",
+      "title": "No need to categorize,<br />just leave it to Gotly.",
+      "items": {
+        "productManager": {
+          "role": "Product Manager",
+          "desc": "Meeting ends, jot down a conclusion. No new doc, no title needed.",
+          "example": "\"Just note down the pricing plan we discussed\""
+        },
+        "researcher": {
+          "role": "Researcher",
+          "desc": "Save interesting papers first, find them later with natural language.",
+          "example": "\"Do I have any articles about RAG saved?\""
+        },
+        "freelancer": {
+          "role": "Freelancer",
+          "desc": "Log client follow-ups, time auto-detected, no manual task creation.",
+          "example": "\"Remember to confirm the quote with Mr. Li next Wednesday\""
+        },
+        "powerCollector": {
+          "role": "Power Collector",
+          "desc": "Find everything you've saved just by asking. Never 'can't find it' again.",
+          "example": "\"Summarize my recent saved content\""
+        }
+      }
+    },
+    "roadmap": {
+      "eyebrow": "Always Improving",
+      "title": "Getting better<br />since day one.",
+      "shipped": "Shipped",
+      "building": "In Progress",
+      "planned": "Planned",
+      "items": [
+        {
+          "label": "Notes / Bookmarks / Todos",
+          "status": "shipped"
+        },
+        {
+          "label": "AI Unified Entry",
+          "status": "shipped"
+        },
+        {
+          "label": "Natural Language Search",
+          "status": "shipped"
+        },
+        {
+          "label": "AI Content Summary",
+          "status": "shipped"
+        },
+        {
+          "label": "PWA Support",
+          "status": "shipped"
+        },
+        {
+          "label": "Link Content Extraction + AI Summary",
+          "status": "building"
+        },
+        {
+          "label": "Markdown Editor",
+          "status": "building"
+        },
+        {
+          "label": "Data Export (Markdown / JSON)",
+          "status": "building"
+        },
+        {
+          "label": "Browser Extension",
+          "status": "planned"
+        },
+        {
+          "label": "Mobile Push Notifications",
+          "status": "planned"
+        },
+        {
+          "label": "Email-to-Asset",
+          "status": "planned"
+        },
+        {
+          "label": "iOS Shortcuts",
+          "status": "planned"
+        }
+      ]
+    },
+    "ctaSection": {
+      "eyebrow": "Lightweight · Open Source · Your Data",
+      "title": "Start Using Gotly Keeper"
+    },
+    "footer": {
+      "tagline": "Quietly keeping everything for you.",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "contact": "Contact Us",
+      "github": "GitHub"
+    },
+    "demo": {
+      "inputPlaceholder": "Jot down a note…",
+      "messages": [
+        {
+          "role": "user",
+          "text": "Send the quote to Mr. Li tomorrow afternoon"
+        },
+        {
+          "role": "ai",
+          "text": "Saved as a todo. Due: tomorrow afternoon."
+        },
+        {
+          "role": "user",
+          "text": "https://example.com/ai-paper check this out later"
+        },
+        {
+          "role": "ai",
+          "text": "Bookmarked."
+        },
+        {
+          "role": "user",
+          "text": "Did I save anything about pricing recently?"
+        },
+        {
+          "role": "ai",
+          "text": "Found 3 related records: pricing notes, a quote todo, and a competitor pricing bookmark."
+        }
+      ]
+    },
+    "socialProof": {
+      "items": {
+        "earlyUsers": {
+          "label": "Early Users"
+        },
+        "retrievalTime": {
+          "label": "Avg. Retrieval Time"
+        },
+        "noCategorization": {
+          "label": "Manual Categorization"
+        }
+      }
+    }
+  },
+  "theme": {
+    "toggleLabel": "Toggle theme",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "offline": {
+    "title": "You're offline",
+    "description": "Open Gotly Keeper from your home screen or desktop. Come back when you're connected.",
+    "backToHome": "Back to Home",
+    "signInAfterReconnect": "Sign in after reconnecting"
+  },
+  "auth": {
+    "layout": {
+      "title": "Auth - Gotly Keeper",
+      "description": "Sign in or create an account to continue."
+    },
+    "navbar": {
+      "helpLabel": "Help & Feedback"
+    },
+    "signIn": {
+      "title": "Welcome Back",
+      "description": "Sign in to Gotly Keeper and continue capturing your ideas.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "name@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Forgot password?",
+      "submitLabel": "Sign In",
+      "submittingLabel": "Signing in…",
+      "fallbackError": "Sign in failed. Please check your email and password.",
+      "validation": {
+        "emailRequired": "Please enter your email",
+        "emailInvalid": "Please enter a valid email address",
+        "passwordRequired": "Please enter your password"
+      },
+      "noAccount": "Don't have an account?",
+      "signUpLink": "Sign up now",
+      "divider": "or",
+      "githubSignIn": "Sign in with GitHub"
+    },
+    "signUp": {
+      "title": "Start Your Journey",
+      "description": "Create an account and start capturing efficiently.",
+      "nameLabel": "Nickname",
+      "namePlaceholder": "e.g. Joy",
+      "emailLabel": "Email",
+      "emailPlaceholder": "name@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "submitLabel": "Create Account",
+      "submittingLabel": "Creating…",
+      "fallbackError": "Registration failed. Please try again later.",
+      "validation": {
+        "nameRequired": "Please enter your nickname",
+        "emailRequired": "Please enter your email",
+        "emailInvalid": "Please enter a valid email address",
+        "passwordRequired": "Please enter your password",
+        "passwordMinLength": "Password must be at least 8 characters"
+      },
+      "hasAccount": "Already have an account?",
+      "signInLink": "Sign in now",
+      "divider": "or",
+      "githubSignUp": "Sign up with GitHub"
+    },
+    "forgotPassword": {
+      "title": "Reset Password",
+      "description": "Enter your registered email to receive a reset link.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email.com",
+      "submitLabel": "Send Reset Link",
+      "submittingLabel": "Sending…",
+      "fallbackError": "Failed to send. Please try again later.",
+      "validation": {
+        "emailRequired": "Please enter your email",
+        "emailInvalid": "Please enter a valid email address"
+      },
+      "backToSignIn": "Back to Sign In",
+      "sentTitle": "Link Sent",
+      "sentDescription": "A password reset link has been sent to your email."
+    },
+    "resetPassword": {
+      "title": "Set New Password",
+      "description": "Please enter your new password.",
+      "newPasswordLabel": "New Password",
+      "newPasswordPlaceholder": "••••••••",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Enter new password again",
+      "submitLabel": "Reset Password",
+      "submittingLabel": "Resetting…",
+      "fallbackError": "Reset failed. Please try again later.",
+      "validation": {
+        "passwordRequired": "Please enter your new password",
+        "passwordMinLength": "Password must be at least 8 characters",
+        "passwordMismatch": "Passwords do not match"
+      },
+      "tokenExpired": "Link expired. Please request again.",
+      "invalidLink": "Invalid Link",
+      "invalidLinkDescription": "The password reset link is invalid. Please request a new one.",
+      "requestAgain": "Request Again",
+      "backToSignIn": "Back to Sign In",
+      "successTitle": "Password Reset",
+      "successDescription": "Your password has been reset. Please sign in with your new password.",
+      "goToSignIn": "Go to Sign In"
+    },
+    "resetLinkSent": {
+      "title": "Link Sent",
+      "description": "A password reset link has been sent to your email.",
+      "backToSignIn": "Back to Sign In",
+      "resendPrompt": "Didn't receive the email?",
+      "resendButton": "Resend"
+    }
+  },
+  "workspace": {
+    "nav": {
+      "groups": {
+        "workspace": "Workspace",
+        "contentType": "Content Type",
+        "manage": "Management"
+      },
+      "mobileNavLabel": "Main content categories",
+      "items": {
+        "launchpad": "Launchpad",
+        "knowledgeBase": "Knowledge Base",
+        "notes": "Notes",
+        "todos": "Todos",
+        "bookmarks": "Bookmarks",
+        "archive": "Archive",
+        "trash": "Trash"
+      }
+    },
+    "client": {
+      "instruction": "Command",
+      "title": "Capture first, let Gotly Keeper organize later",
+      "description": "Write thoughts, paste links, schedule todos, or ask the knowledge base directly. This is the only entry point — no need to decide where things go first.",
+      "inputPlaceholder": "Jot it down, paste a link, or just ask…",
+      "inputLabel": "Enter content or search knowledge base",
+      "sending": "Send",
+      "sendingHint": "Enter for new line, Cmd/Ctrl + Enter to send. Gotly Keeper figures out if it's new content or a query — results appear below.",
+      "processing": "Processing",
+      "cancel": "Cancel",
+      "suggestionsLabel": "Try",
+      "suggestions": {
+        "pomodoro": "Jot this down: use the Pomodoro technique at work from now on",
+        "report": "Add a todo: send the report next week",
+        "saveLink": "Save this link for me"
+      },
+      "pendingRunTitle": "You have an unfinished task",
+      "pendingRunDismiss": "Dismiss",
+      "pendingRunDismissing": "Dismissing…",
+      "pendingRunResume": "Resume",
+      "recentCaptures": "Recent Captures",
+      "emptyRecent": "Nothing saved yet. Start by jotting something down.",
+      "collapseResults": "Collapse results & view recent captures",
+      "noContentYet": "Nothing saved yet. Start by jotting something down."
+    },
+    "topBar": {
+      "description": "One line to capture notes, links, and todos — find them anytime.",
+      "sheetNavTitle": "Workspace Navigation",
+      "sheetOpenLabel": "Open workspace navigation",
+      "version": "Version"
+    },
+    "filters": {
+      "tabs": {
+        "all": "Knowledge Base",
+        "note": "Notes",
+        "link": "Bookmarks",
+        "todo": "Todos"
+      },
+      "empty": {
+        "all": "No content yet. Start by saving something from the launchpad.",
+        "note": "No notes yet. Save an idea or text first.",
+        "link": "No bookmarks yet. Paste a link to get started.",
+        "todo": "No todos yet. Todo items will appear here."
+      }
+    },
+    "todos": {
+      "today": "Today",
+      "noScheduledForToday": "No items scheduled for today. Handle the unscheduled items first.",
+      "scheduledHint": "Only items with explicit dates shown. Unscheduled items are grouped separately.",
+      "markIncomplete": "Mark as incomplete",
+      "markComplete": "Mark as complete",
+      "edit": "Edit",
+      "archive": "Archive",
+      "moveToTrash": "Move to Trash",
+      "todo": "Todo",
+      "description": "Tasks from the unified entry point, organized by time into a clear, reviewable workflow.",
+      "eyebrow": "Task Plan",
+      "unscheduled": "Unscheduled",
+      "todayTodo": "Today",
+      "noScheduledUnscheduled": "No items scheduled for today. Handle these unscheduled items first.",
+      "selectedDateHint": "Showing todos for the selected date only.",
+      "noScheduledHelp": "No scheduled items for this date. Pick a date on the right, or check overdue and completed items below.",
+      "noUnscheduledDescription": "No items without a specific date or time.",
+      "noUnscheduled": "No unscheduled items",
+      "overdue": "Overdue",
+      "overdueDescription": "Past due and still incomplete.",
+      "noOverdue": "No overdue items",
+      "completed": "Completed",
+      "completedDescription": "Recently completed items are kept here for review.",
+      "noCompleted": "No completed items yet",
+      "empty": "No todos yet",
+      "emptyHint": "New todos will appear here after you save from the launchpad. The date panel on the right shows dots on scheduled days.",
+      "noScheduledEmpty": "No scheduled items for today. Pick a date to the right.",
+      "overdueItemsHelp": "or check overdue items below.",
+      "hasScheduledItems": "has scheduled items",
+      "dayLabel": "Task day",
+      "calendar": "Calendar",
+      "viewByDate": "View by date",
+      "dotHint": "Dots on dates indicate items scheduled."
+    },
+    "all": {
+      "note": "Note",
+      "bookmark": "Bookmark",
+      "todo": "Todo",
+      "moreToLoad": ", more to load",
+      "allLoaded": "All loaded",
+      "edit": "Edit",
+      "archive": "Archive",
+      "moveToTrash": "Move to Trash",
+      "todayCapture": "Today",
+      "yesterdayCapture": "Yesterday",
+      "olderCapture": "Earlier",
+      "title": "Knowledge Base",
+      "eyebrow": "All Items",
+      "description": "Recent notes, bookmarks, and todos arranged in a timeline. Browse the big picture, narrow by type, and find what needs attention.",
+      "emptyHint1": "Open the launchpad and type something. Gotly Keeper will figure out if it's a note, bookmark, or todo.",
+      "emptyHint2": "Switch to Knowledge Base to browse by type, or keep capturing from the launchpad.",
+      "loading": "Loading...",
+      "loadMore": "Load more",
+      "openLaunchpad": "Open Launchpad"
+    },
+    "lifecycle": {
+      "all": "All",
+      "note": "Note",
+      "todo": "Todo",
+      "bookmark": "Bookmark",
+      "archived": "Archived",
+      "archiveLabel": "Archive",
+      "archiveDescription": "Put content away that's worth keeping but doesn't need to be on your workspace. Context and restore entry are preserved.",
+      "noArchived": "No archived items",
+      "noArchivedHint": "When an item is worth keeping but shouldn't interrupt your current flow, archive it.",
+      "noArchivedSwitchTab": "No archived items of this type. Switch to \"All\" to browse other archived content.",
+      "archivedAt": "Archived at",
+      "unarchive": "Unarchive",
+      "restore": "Restore",
+      "archiveEyebrow": "Neat Storage",
+      "pending": "Pending",
+      "trash": "Trash",
+      "trashDescription": "Recently removed items live here. Restore if still valuable, or permanently delete.",
+      "trashEmpty": "Trash is empty",
+      "trashEmptyDetail": "No items to clean up. The workspace stays tidy.",
+      "trashSwitchTab": "No items of this type in trash. Switch to \"All\" to see other trashed items.",
+      "removedAt": "Removed at",
+      "trashEyebrow": "Awaiting Confirmation",
+      "cancel": "Cancel",
+      "permanentDeleteWarning": "Permanent deletion cannot be undone. Make sure the content is no longer needed.",
+      "noteAsset": "Note",
+      "todoAsset": "Todo",
+      "bookmarkAsset": "Bookmark",
+      "deleting": "Deleting...",
+      "permanentDelete": "Delete permanently",
+      "moveToTrash": "Move to Trash",
+      "moreToLoad": ", more to load",
+      "allLoaded": ", all loaded",
+      "loading": "Loading...",
+      "loadMore": "Load more"
+    },
+    "editDialog": {
+      "editNote": "Edit Note",
+      "editTodo": "Edit Todo",
+      "editBookmark": "Edit Bookmark",
+      "selectDate": "Select date",
+      "requireTitleOrNote": "Please enter a title or note",
+      "requireTitleOrBody": "Please enter a title or body",
+      "requireUrl": "Please enter a link URL",
+      "editContent": "Edit Content",
+      "timePlaceholder": "e.g. tomorrow 9:30",
+      "body": "Body",
+      "note": "Note",
+      "saving": "Saving...",
+      "save": "Save"
+    },
+    "runTimeline": {
+      "normalize": "Normalize",
+      "split": "Split",
+      "understand": "Understand",
+      "plan": "Plan",
+      "review": "Review",
+      "preview": "Preview",
+      "execute": "Execute",
+      "compose": "Compose",
+      "createTodo": "Create Todo",
+      "updateTodo": "Update Todo",
+      "createNote": "Create Note",
+      "updateNote": "Update Note",
+      "createBookmark": "Create Bookmark",
+      "queryAsset": "Query Asset",
+      "summarizeAsset": "Summarize Asset",
+      "completedLabel": "Completed: result ready",
+      "failedLabel": "Failed: execution incomplete",
+      "start": "Start",
+      "complete": "Complete",
+      "completed": "Completed",
+      "failed": "Failed",
+      "success": "Success",
+      "noRecords": "No execution records",
+      "executionTimeline": "Execution Timeline",
+      "events": "{count} events"
+    },
+    "notes": {
+      "noBody": "No body",
+      "editNote": "Edit Note",
+      "saving": "Saving...",
+      "saved": "Saved",
+      "empty": "No notes yet",
+      "emptyHint": "Save a text record from the launchpad",
+      "requireContent": "Please enter some content.",
+      "saveFailed": "Save failed. Please try again.",
+      "note": "Notes",
+      "eyebrow": "Drafts",
+      "description": "Ideas, fragments, and drafts from the launchpad are organized into a scannable manuscript layout.",
+      "moreToLoad": ", more to load",
+      "allLoaded": ", all loaded",
+      "loading": "Loading...",
+      "loadMore": "Load more"
+    },
+    "bookmarks": {
+      "share": "Share",
+      "edit": "Edit",
+      "archive": "Archive",
+      "moveToTrash": "Move to Trash",
+      "noShareLink": "This bookmark has no shareable link",
+      "unshared": "Share cancelled",
+      "linkCopied": "Link copied, ready to paste",
+      "shareNotSupported": "Browser sharing is not supported and the link could not be copied.",
+      "clipboardError": "Cannot access the clipboard. Please check your browser copy permissions.",
+      "copyFailed": "Failed to copy link. Please try again.",
+      "title": "My Bookmarks",
+      "eyebrow": "Reading Queue",
+      "description": "Link collections organized by source and content, with quick review, secondary filtering, and deep reading.",
+      "moreToLoad": ", more to load",
+      "allLoaded": ", all loaded",
+      "empty": "No bookmarks yet",
+      "emptyHint": "Collect links from the browser extension, quick entry, or paste. Your reading queue will form here.",
+      "loading": "Loading...",
+      "loadMore": "Load more"
+    },
+    "runPanel": {
+      "cancel": "Cancel",
+      "collapseDetails": "Collapse details",
+      "completed": "Complete.",
+      "confirmAndExecute": "Confirm & Execute",
+      "confirmSteps": "Review the steps before execution; they will be processed in order once confirmed.",
+      "correction": "Correction",
+      "createAnyway": "Create Anyway",
+      "created": "Created",
+      "duplicateBookmarkHint": "Bookmark precheck found a duplicate. If it's the same domain but different content, you can still create it.",
+      "duplicateContentHint": "This appears to be a duplicate of an existing item. You can still create it or skip this one.",
+      "executionSteps": "Execution Steps",
+      "existingContent": "Existing Content",
+      "expandDetails": "Expand details",
+      "fillMissingInfo": "Provide the missing information to continue.",
+      "found": "Found",
+      "identifyTasks": "Identify Tasks",
+      "linkPreflightDescription": "Link preflight completed. If this is a different bookmark, you can still create it.",
+      "linkPreflightHit": "Link Preflight Hit",
+      "noResults": "No matching content found.",
+      "normalized": "Normalized",
+      "possibleDuplicate": "Possible duplicate ",
+      "processing": "Processing",
+      "processingFailed": "Processing failed",
+      "rawInput": "Raw Input",
+      "retryHint": "Try a clearer description to help the AI assistant understand your needs.",
+      "selectCandidate": "Select the best match, or skip this step.",
+      "skip": "Skip",
+      "skipThis": "Skip This",
+      "submit": "Submit",
+      "updated": "Updated",
+      "useCandidate": "Use This Candidate"
+    }
+  },
+  "account": {
+    "menu": {
+      "signedInStatus": "Signed in to Gotly Keeper",
+      "signOut": "Sign Out",
+      "signingOut": "Signing out…",
+      "avatarAlt": "Avatar of {name}"
+    }
+  }
+}
