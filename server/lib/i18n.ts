@@ -1,13 +1,14 @@
 import { getTranslations } from "next-intl/server"
+
 import en from "@/locales/en.json"
 
 // 递归取深层路径：resolveKey({ a: { b: "c" } }, "a.b") → "c"
 function resolveKey(obj: Record<string, unknown>, path: string): string {
   const keys = path.split(".")
-  let current: any = obj
+  let current: Record<string, unknown> | null | undefined = obj
   for (const key of keys) {
     if (current == null || typeof current !== "object") return path
-    current = current[key]
+    current = current[key] as Record<string, unknown> | undefined
   }
   return typeof current === "string" ? current : path
 }

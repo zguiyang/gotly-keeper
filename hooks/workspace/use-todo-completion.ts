@@ -1,10 +1,10 @@
 'use client'
 
-import { useTranslations } from '@/hooks/use-locale'
 import { useCallback, useState } from 'react'
 
 import { setTodoCompletion } from '@/client/actions/workspace-actions.client'
 import { callAction } from '@/client/feedback/toast-action'
+import { useTranslations } from '@/hooks/use-locale'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
 
@@ -42,7 +42,7 @@ export function useTodoCompletion() {
         return null
       }
     },
-    []
+    [t]
   )
 
   const clearError = useCallback(() => {

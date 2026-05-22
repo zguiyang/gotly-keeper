@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { metadata, viewport } from '@/app/layout'
+import { generateMetadata, viewport } from '@/app/layout'
 import manifest from '@/app/manifest'
 
 describe('pwa metadata', () => {
@@ -28,7 +28,9 @@ describe('pwa metadata', () => {
     )
   })
 
-  it('exposes root metadata and viewport for app installation surfaces', () => {
+  it('exposes root metadata and viewport for app installation surfaces', async () => {
+    const metadata = await generateMetadata()
+
     expect(metadata.applicationName).toBe('Gotly Keeper')
     expect(metadata.manifest).toBe('/manifest.webmanifest')
 

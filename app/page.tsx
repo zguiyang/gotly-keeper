@@ -1,12 +1,12 @@
-import * as React from "react";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import * as React from "react";
 
 import { AccountMenu } from "@/components/account-menu";
 import { BrandLogo } from "@/components/brand-logo";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { FeatureList } from "@/components/landing/feature-list";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { painPointKeys, roadmapItems, scenarioKeys, socialProofData } from "@/config/landing-page-content";
 import { getServerTranslation } from "@/hooks/use-locale.server";
@@ -176,6 +176,7 @@ export default async function LandingPage() {
           <ScrollReveal variant="fade-in">
             <div className="flex flex-col gap-2.5 mb-12">
               <p className={eyebrowCls}>{tPain("eyebrow")}</p>
+              {/** Trust: tPain("title") is a compile-time i18n string containing <br> for rich-text formatting — not user/AI-controlled content. */}
               <h2 className={sectionTitleCls} dangerouslySetInnerHTML={{ __html: tPain("title") }} />
             </div>
           </ScrollReveal>
@@ -209,6 +210,7 @@ export default async function LandingPage() {
           <ScrollReveal variant="fade-in">
             <div className="flex flex-col gap-2.5 mb-12">
               <p className={eyebrowCls}>{tScenarios("eyebrow")}</p>
+              {/** Trust: see pain-points section — same compile-time i18n pattern. */}
               <h2 className={sectionTitleCls} dangerouslySetInnerHTML={{ __html: tScenarios("title") }} />
             </div>
           </ScrollReveal>
@@ -234,7 +236,8 @@ export default async function LandingPage() {
             <ScrollReveal variant="fade-in">
               <div className="flex flex-col gap-2.5 mb-12">
                 <p className={eyebrowCls}>{tRoadmap("eyebrow")}</p>
-                <h2 className={sectionTitleCls} dangerouslySetInnerHTML={{ __html: tRoadmap("title") }} />
+                {/** Trust: see pain-points section — same compile-time i18n pattern. */}
+              <h2 className={sectionTitleCls} dangerouslySetInnerHTML={{ __html: tRoadmap("title") }} />
               </div>
             </ScrollReveal>
             <ScrollReveal variant="fade-up" delay={80}>

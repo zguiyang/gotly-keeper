@@ -1,6 +1,5 @@
 'use client'
 
-import { useTranslations } from '@/hooks/use-locale'
 import { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -13,6 +12,7 @@ import {
   updateWorkspaceAsset,
 } from '@/client/actions/workspace-actions.client'
 import { callAction } from '@/client/feedback/toast-action'
+import { useTranslations } from '@/hooks/use-locale'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
 
@@ -104,7 +104,7 @@ export function useAssetMutations() {
         return null
       }
     },
-    [setPendingFor]
+    [setPendingFor, t]
   )
 
   const updateAsset = useCallback(
@@ -123,7 +123,7 @@ export function useAssetMutations() {
         })
       )
     },
-    [runMutation]
+    [runMutation, t]
   )
 
   const archiveAsset = useCallback(
@@ -166,7 +166,7 @@ export function useAssetMutations() {
 
       return result
     },
-    [runMutation]
+    [runMutation, t]
   )
 
   const unarchiveAsset = useCallback(
@@ -179,7 +179,7 @@ export function useAssetMutations() {
         })
       )
     },
-    [runMutation]
+    [runMutation, t]
   )
 
   const moveToTrash = useCallback(
@@ -222,7 +222,7 @@ export function useAssetMutations() {
 
       return result
     },
-    [runMutation]
+    [runMutation, t]
   )
 
   const restoreFromTrash = useCallback(
@@ -235,7 +235,7 @@ export function useAssetMutations() {
         })
       )
     },
-    [runMutation]
+    [runMutation, t]
   )
 
   const purgeAsset = useCallback(
@@ -248,7 +248,7 @@ export function useAssetMutations() {
         })
       )
     },
-    [runMutation]
+    [runMutation, t]
   )
 
   const isPending = useCallback(

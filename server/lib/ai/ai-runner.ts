@@ -113,4 +113,4 @@ export async function runAiGeneration<T>({
   return firstResult
 }
 
-export { stripMarkdownWrapper }
+
