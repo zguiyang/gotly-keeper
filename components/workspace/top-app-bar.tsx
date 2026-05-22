@@ -1,6 +1,6 @@
 "use client"
 
-import { Menu, XIcon } from "lucide-react"
+import { CircleHelp, Menu, XIcon } from "lucide-react"
 
 import { AccountMenu } from "@/components/account-menu"
 import { BrandLogo } from "@/components/brand-logo"
@@ -58,8 +58,16 @@ export function TopAppBar({ userName, userEmail, userImage }: TopAppBarProps) {
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
-        <LanguageSwitcher />
         <ThemeToggle />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="rounded-full text-on-surface-variant hover:text-on-surface"
+          aria-label="Help & Feedback"
+        >
+          <CircleHelp strokeWidth={2} />
+        </Button>
         <AccountMenu
           className="ml-1"
           signedOutRedirectTo="/auth/sign-in"
@@ -67,6 +75,7 @@ export function TopAppBar({ userName, userEmail, userImage }: TopAppBarProps) {
           userImage={userImage}
           userName={userName}
         />
+        <LanguageSwitcher />
       </div>
     </header>
   )

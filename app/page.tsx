@@ -96,7 +96,6 @@ export default async function LandingPage() {
               <a href={ANCHORS.roadmap} className={navLinkCls}>{tNav("roadmap")}</a>
             </nav>
             <div className="flex items-center gap-2">
-              <LanguageSwitcher />
               <ThemeToggle />
               <Link href="https://github.com/zguiyang/gotly-keeper" target="_blank" rel="noopener noreferrer" className={navLinkCls}>
                 <GithubIcon className="h-4 w-4" />
@@ -111,6 +110,7 @@ export default async function LandingPage() {
                   <Link href="/auth/sign-up" className={cn(navLinkCls, "max-[900px]:hidden")}>{tNav("signUp")}</Link>
                 </>
               )}
+              <LanguageSwitcher />
             </div>
           </div>
         </div>

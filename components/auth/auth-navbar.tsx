@@ -19,7 +19,6 @@ export function AuthNavbar({ className, helpLabel }: AuthNavbarProps) {
         <BrandLogo className="h-10" />
       </div>
       <div className="flex items-center gap-1">
-        <LanguageSwitcher />
         <ThemeToggle />
         <Button
           type="button"
@@ -30,6 +29,7 @@ export function AuthNavbar({ className, helpLabel }: AuthNavbarProps) {
         >
           <CircleHelp strokeWidth={2} />
         </Button>
+        <LanguageSwitcher />
       </div>
     </header>
   );
