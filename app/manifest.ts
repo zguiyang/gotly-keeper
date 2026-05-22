@@ -6,14 +6,14 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'Gotly Keeper',
     short_name: 'Gotly Keeper',
     description:
-      'Gotly Keeper 是一款轻量级 AI 内容收集工具，用于记录、整理和检索灵感。',
+      'A lightweight AI content collector for recording, organizing, and retrieving ideas.',
     start_url: '/',
     scope: '/',
     display: 'standalone',
     display_override: ['window-controls-overlay', 'standalone'],
     background_color: '#f7f9fb',
     theme_color: '#f7f9fb',
-    lang: 'zh-CN',
+    lang: 'en',
     categories: ['productivity', 'utilities'],
     icons: [
       {

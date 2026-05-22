@@ -1,6 +1,8 @@
 import { PwaRegister } from "@/components/pwa/pwa-register";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { NextIntlClientProvider } from "next-intl";
+import { getServerLocale, getServerMessages } from "@/hooks/use-locale.server";
 
 import type { Metadata, Viewport } from "next";
 import "@fontsource/inter/400.css";
@@ -12,36 +14,6 @@ import "@fontsource/manrope/600.css";
 import "@fontsource/manrope/700.css";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Gotly Keeper",
-  applicationName: "Gotly Keeper",
-  description:
-    "Gotly Keeper 是一款轻量级 AI 内容收集工具，用于记录、整理和检索灵感。",
-  manifest: "/manifest.webmanifest",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Gotly Keeper",
-  },
-  formatDetection: {
-    telephone: false,
-  },
-  icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
-      { url: "/icons/icon-512.png", type: "image/png", sizes: "512x512" },
-    ],
-    apple: [
-      {
-        url: "/icons/apple-touch-icon.png",
-        type: "image/png",
-        sizes: "180x180",
-      },
-    ],
-  },
-};
-
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f7f9fb" },
@@ -49,23 +21,64 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getServerLocale();
+
+  return {
+    title: "Gotly Keeper",
+    applicationName: "Gotly Keeper",
+    description:
+      locale === "zh-CN"
+        ? "Gotly Keeper 是一款轻量级 AI 内容收集工具，用于记录、整理和检索灵感。"
+        : "A lightweight AI content collector for recording, organizing, and retrieving ideas.",
+    manifest: "/manifest.webmanifest",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: "Gotly Keeper",
+    },
+    formatDetection: {
+      telephone: false,
+    },
+    icons: {
+      icon: [
+        { url: "/favicon.ico", sizes: "any" },
+        { url: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
+        { url: "/icons/icon-512.png", type: "image/png", sizes: "512x512" },
+      ],
+      apple: [
+        {
+          url: "/icons/apple-touch-icon.png",
+          type: "image/png",
+          sizes: "180x180",
+        },
+      ],
+    },
+  };
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getServerLocale();
+  const messages = await getServerMessages();
+
   return (
-    <html lang="zh-CN" suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang={locale} suppressHydrationWarning data-scroll-behavior="smooth">
       <body className="font-inter font-manrope min-h-full flex flex-col antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-        >
-          <PwaRegister />
-          {children}
-          <Toaster />
-        </ThemeProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+          >
+            <PwaRegister />
+            {children}
+            <Toaster />
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

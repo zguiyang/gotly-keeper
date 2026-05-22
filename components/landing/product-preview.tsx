@@ -2,18 +2,13 @@
 
 import { motion } from "motion/react";
 
-const MESSAGES = [
-  { role: "user", text: "明天下午记得发报价给李总" },
-  { role: "ai",   text: "已记录为待办，时间：明天下午。" },
-  { role: "user", text: "https://example.com/ai-paper 这个后面看" },
-  { role: "ai",   text: "已收藏为书签。" },
-  { role: "user", text: "我最近记过关于定价的内容吗" },
-  { role: "ai",   text: "找到 3 条相关记录：定价策略笔记、报价待办、竞品定价书签。" },
-];
+import { useTranslations } from "@/hooks/use-locale";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function ProductPreview() {
+  const t = useTranslations("landing.demo");
+  const messages = t("messages") as unknown as { role: string; text: string }[];
   return (
     <div className="relative rounded-2xl border border-border/9 bg-surface-container-lowest overflow-hidden shadow-[var(--shadow-elevation-1)]">
       {/* Window chrome */}
@@ -26,7 +21,7 @@ export function ProductPreview() {
 
       {/* Messages */}
       <div className="flex flex-col gap-3 p-5">
-        {MESSAGES.map((msg, i) => (
+        {messages.map((msg, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 8 }}
@@ -54,7 +49,7 @@ export function ProductPreview() {
       {/* Input bar */}
       <div className="border-t border-border/7 px-4 py-3">
         <div className="flex items-center gap-2 rounded-lg bg-muted/30 px-3.5 py-2.5">
-          <span className="flex-1 text-[0.8125rem] text-on-surface-variant/50">随手记一句话…</span>
+          <span className="flex-1 text-[0.8125rem] text-on-surface-variant/50">{t("inputPlaceholder")}</span>
           <span className="h-5 w-5 rounded-md bg-primary opacity-80" />
         </div>
       </div>

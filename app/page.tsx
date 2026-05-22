@@ -1,12 +1,15 @@
+import * as React from "react";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 import { AccountMenu } from "@/components/account-menu";
 import { BrandLogo } from "@/components/brand-logo";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { FeatureList } from "@/components/landing/feature-list";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { painPoints, roadmapItems, scenarios } from "@/config/landing-page-content";
+import { painPointKeys, roadmapItems, scenarioKeys, socialProofData } from "@/config/landing-page-content";
+import { getServerTranslation } from "@/hooks/use-locale.server";
 import { cn } from "@/lib/utils";
 import { getSignedInUser } from "@/server/modules/auth/session";
 
@@ -17,12 +20,6 @@ function GithubIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-
-const ROADMAP_LABELS = {
-  shipped: "已上线",
-  building: "进行中",
-  planned: "计划中",
-} as const;
 
 const ANCHORS = {
   features: "#features", // DESIGN_TOKEN_EXCEPTION: anchor href string, not a color value
@@ -43,7 +40,42 @@ const sectionTitleCls = "text-[clamp(1.875rem,3.2vw,2.625rem)] font-bold leading
 export default async function LandingPage() {
   const user = await getSignedInUser();
   const workspaceHref = user ? "/workspace" : "/auth/sign-in";
-  const workspaceLabel = user ? "进入工作区" : "立即体验";
+
+  // i18n
+  const tNav = await getServerTranslation("landing.nav");
+  const tHero = await getServerTranslation("landing.hero");
+  const tPain = await getServerTranslation("landing.painPoints");
+  const tFeatures = await getServerTranslation("landing.features");
+  const tScenarios = await getServerTranslation("landing.scenarios");
+  const tRoadmap = await getServerTranslation("landing.roadmap");
+  const tCta = await getServerTranslation("landing.ctaSection");
+  const tFooter = await getServerTranslation("landing.footer");
+  const tSocial = await getServerTranslation("landing.socialProof");
+
+  const workspaceLabel = user ? tHero("enterWorkspace") : tHero("tryNow");
+
+  const features = [
+    { icon: "quickCapture", title: tFeatures("items.quickCapture.title"), desc: tFeatures("items.quickCapture.desc") },
+    { icon: "saveLinks", title: tFeatures("items.saveLinks.title"), desc: tFeatures("items.saveLinks.desc") },
+    { icon: "timeReminders", title: tFeatures("items.timeReminders.title"), desc: tFeatures("items.timeReminders.desc") },
+    { icon: "naturalSearch", title: tFeatures("items.naturalSearch.title"), desc: tFeatures("items.naturalSearch.desc") },
+  ];
+
+  const translatedPainPoints = painPointKeys.map((key) => ({
+    title: tPain(`items.${key}.title`),
+    desc: tPain(`items.${key}.desc`),
+  }));
+
+  const translatedScenarios = scenarioKeys.map((key) => ({
+    role: tScenarios(`items.${key}.role`),
+    desc: tScenarios(`items.${key}.desc`),
+    example: tScenarios(`items.${key}.example`),
+  }));
+
+  const socialItems = socialProofData.map((item) => ({
+    value: item.value,
+    label: tSocial(`items.${item.key}.label`),
+  }));
 
   const shipped = roadmapItems.filter((i) => i.status === "shipped");
   const building = roadmapItems.filter((i) => i.status === "building");
@@ -58,12 +90,13 @@ export default async function LandingPage() {
             <Link href="/" className="flex items-center shrink-0">
               <BrandLogo className="h-8 w-auto" priority />
             </Link>
-            <nav className="flex items-center gap-0.5 max-[900px]:hidden" aria-label="主导航">
-              <a href={ANCHORS.features} className={navLinkCls}>功能</a>
-              <a href={ANCHORS.scenarios} className={navLinkCls}>场景</a>
-              <a href={ANCHORS.roadmap} className={navLinkCls}>路线图</a>
+            <nav className="flex items-center gap-0.5 max-[900px]:hidden" aria-label={tNav("features")}>
+              <a href={ANCHORS.features} className={navLinkCls}>{tNav("features")}</a>
+              <a href={ANCHORS.scenarios} className={navLinkCls}>{tNav("scenarios")}</a>
+              <a href={ANCHORS.roadmap} className={navLinkCls}>{tNav("roadmap")}</a>
             </nav>
             <div className="flex items-center gap-2">
+              <LanguageSwitcher />
               <ThemeToggle />
               <Link href="https://github.com/zguiyang/gotly-keeper" target="_blank" rel="noopener noreferrer" className={navLinkCls}>
                 <GithubIcon className="h-4 w-4" />
@@ -74,8 +107,8 @@ export default async function LandingPage() {
                 </>
               ) : (
                 <>
-                  <Link href="/auth/sign-in" className={cn(navLinkCls, "max-[900px]:hidden")}>登录</Link>
-                  <Link href="/auth/sign-up" className={cn(navLinkCls, "max-[900px]:hidden")}>免费注册</Link>
+                  <Link href="/auth/sign-in" className={cn(navLinkCls, "max-[900px]:hidden")}>{tNav("signIn")}</Link>
+                  <Link href="/auth/sign-up" className={cn(navLinkCls, "max-[900px]:hidden")}>{tNav("signUp")}</Link>
                 </>
               )}
             </div>
@@ -89,11 +122,12 @@ export default async function LandingPage() {
           <div className={container}>
             <ScrollReveal variant="fade-up" delay={0}>
               <div className="inline-flex items-center gap-2 text-[0.72rem] font-medium tracking-[0.06em] text-on-surface-variant mb-6 opacity-70">
-                <span>开源</span>
-                <span className="w-[3px] h-[3px] rounded-full bg-current opacity-40" />
-                <span>自托管</span>
-                <span className="w-[3px] h-[3px] rounded-full bg-current opacity-40" />
-                <span>数据归你</span>
+                {(tHero.raw("badges") as string[]).map((badge, i) => (
+                  <React.Fragment key={badge}>
+                    {i > 0 && <span className="w-[3px] h-[3px] rounded-full bg-current opacity-40" />}
+                    <span>{badge}</span>
+                  </React.Fragment>
+                ))}
               </div>
             </ScrollReveal>
 
@@ -102,8 +136,8 @@ export default async function LandingPage() {
             </ScrollReveal>
 
             <ScrollReveal variant="fade-up" delay={160}>
-              <p className="text-[clamp(1.125rem,2vw,1.375rem)] font-medium text-on-surface tracking-[-0.01em] mb-2">说一句，收好。再问一句，找出来。</p>
-              <p className="text-[clamp(0.9375rem,1.1vw,1.0625rem)] text-on-surface-variant leading-[1.7] mb-9">笔记、书签、待办，不用整理，不用分类。</p>
+              <p className="text-[clamp(1.125rem,2vw,1.375rem)] font-medium text-on-surface tracking-[-0.01em] mb-2">{tHero("tagline")}</p>
+              <p className="text-[clamp(0.9375rem,1.1vw,1.0625rem)] text-on-surface-variant leading-[1.7] mb-9">{tHero("subtitle")}</p>
             </ScrollReveal>
 
             <ScrollReveal variant="fade-up" delay={240}>
@@ -114,7 +148,7 @@ export default async function LandingPage() {
                 </Link>
                 <Link href="https://github.com/zguiyang/gotly-keeper" target="_blank" rel="noopener noreferrer" className={githubCtaCls}>
                   <GithubIcon className="h-4 w-4" />
-                  GitHub 开源
+                  {tHero("githubLink")}
                 </Link>
               </div>
             </ScrollReveal>
@@ -133,7 +167,7 @@ export default async function LandingPage() {
                 controls
               />
             </div>
-            <p className="text-sm text-on-surface-variant opacity-70 text-center">轻量的个人信息助理。能记笔记，能存书签，能管待办。</p>
+            <p className="text-sm text-on-surface-variant opacity-70 text-center">{tHero("demoCaption")}</p>
           </ScrollReveal>
         </section>
 
@@ -141,13 +175,13 @@ export default async function LandingPage() {
         <section className={cn(container, sectionPy)}>
           <ScrollReveal variant="fade-in">
             <div className="flex flex-col gap-2.5 mb-12">
-              <p className={eyebrowCls}>你是不是也这样</p>
-              <h2 className={sectionTitleCls}>信息越来越多，<br />却越来越难找到。</h2>
+              <p className={eyebrowCls}>{tPain("eyebrow")}</p>
+              <h2 className={sectionTitleCls} dangerouslySetInnerHTML={{ __html: tPain("title") }} />
             </div>
           </ScrollReveal>
           <ScrollReveal variant="fade-up" delay={80}>
             <div className="grid grid-cols-3 gap-5 max-[900px]:grid-cols-1">
-              {painPoints.map((p) => (
+              {translatedPainPoints.map((p) => (
                 <div key={p.title} className="p-[1.625rem] border border-foreground/7 rounded-lg flex flex-col gap-2">
                   <p className="text-[0.9375rem] font-semibold text-on-surface tracking-[-0.01em]">{p.title}</p>
                   <p className="text-sm leading-[1.7] text-on-surface-variant">{p.desc}</p>
@@ -162,11 +196,11 @@ export default async function LandingPage() {
           <div className={container}>
             <ScrollReveal variant="fade-in">
               <div className="flex flex-col gap-2.5 mb-12">
-                <p className={eyebrowCls}>核心功能</p>
-                <h2 className={sectionTitleCls}>四件事，全部搞定。</h2>
+                <p className={eyebrowCls}>{tFeatures("eyebrow")}</p>
+                <h2 className={sectionTitleCls}>{tFeatures("title")}</h2>
               </div>
             </ScrollReveal>
-            <FeatureList />
+            <FeatureList features={features} />
           </div>
         </section>
 
@@ -174,13 +208,13 @@ export default async function LandingPage() {
         <section id="scenarios" className={cn(container, sectionPy, "scroll-mt-16")}>
           <ScrollReveal variant="fade-in">
             <div className="flex flex-col gap-2.5 mb-12">
-              <p className={eyebrowCls}>使用场景</p>
-              <h2 className={sectionTitleCls}>不需要分类整理，<br />先交给它就好。</h2>
+              <p className={eyebrowCls}>{tScenarios("eyebrow")}</p>
+              <h2 className={sectionTitleCls} dangerouslySetInnerHTML={{ __html: tScenarios("title") }} />
             </div>
           </ScrollReveal>
           <ScrollReveal variant="fade-in" delay={80}>
             <div className="flex flex-col border-t border-foreground/8">
-              {scenarios.map((s, i) => (
+              {translatedScenarios.map((s, i) => (
                 <article key={s.role} className="grid grid-cols-[3rem_1fr_auto] max-[900px]:grid-cols-[2.5rem_1fr] items-start gap-8 max-[900px]:gap-4 py-[1.875rem] border-b border-foreground/8 transition-colors duration-200 hover:bg-foreground/2">
                   <span className="text-[0.72rem] font-semibold tracking-[0.1em] text-on-surface-variant/45 pt-[0.15rem] tabular-nums">0{i + 1}</span>
                   <div className="flex flex-col gap-[0.3rem]">
@@ -199,8 +233,8 @@ export default async function LandingPage() {
           <div className={container}>
             <ScrollReveal variant="fade-in">
               <div className="flex flex-col gap-2.5 mb-12">
-                <p className={eyebrowCls}>持续在做的事</p>
-                <h2 className={sectionTitleCls}>从第一个版本开始，<br />一直在变好。</h2>
+                <p className={eyebrowCls}>{tRoadmap("eyebrow")}</p>
+                <h2 className={sectionTitleCls} dangerouslySetInnerHTML={{ __html: tRoadmap("title") }} />
               </div>
             </ScrollReveal>
             <ScrollReveal variant="fade-up" delay={80}>
@@ -213,7 +247,7 @@ export default async function LandingPage() {
                       status === "building" && "bg-primary/10 text-primary",
                       status === "planned" && "bg-foreground/5 text-on-surface-variant",
                     )}>
-                      {ROADMAP_LABELS[status]}
+                      {tRoadmap(status)}
                     </div>
                     <ul className="py-3 m-0 list-none flex flex-col">
                       {items.map((item) => (
@@ -231,8 +265,8 @@ export default async function LandingPage() {
         <section className="py-[clamp(5rem,9vw,9rem)] text-center">
           <div className={cn(container, "flex flex-col items-center gap-6")}>
             <ScrollReveal variant="fade-up">
-              <p className={eyebrowCls}>轻量 · 开源 · 数据归你</p>
-              <h2 className="text-[clamp(2rem,4vw,3rem)] font-bold tracking-[-0.04em] text-on-surface leading-[1.1] mt-2">开始用 Gotly Keeper</h2>
+              <p className={eyebrowCls}>{tCta("eyebrow")}</p>
+              <h2 className="text-[clamp(2rem,4vw,3rem)] font-bold tracking-[-0.04em] text-on-surface leading-[1.1] mt-2">{tCta("title")}</h2>
               <div className="flex flex-wrap items-center justify-center gap-3.5 mt-6 max-sm:flex-col max-sm:items-stretch">
                 <Link href={workspaceHref} className={primaryCtaLargeCls}>
                   {workspaceLabel}
@@ -240,7 +274,7 @@ export default async function LandingPage() {
                 </Link>
                 <Link href="https://github.com/zguiyang/gotly-keeper" target="_blank" rel="noopener noreferrer" className={githubCtaCls}>
                   <GithubIcon className="h-4 w-4" />
-                  查看源码
+                  {tHero("viewSource")}
                 </Link>
               </div>
             </ScrollReveal>
@@ -251,12 +285,12 @@ export default async function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-foreground/7">
         <div className={cn(container, "py-[1.625rem] flex items-center justify-between gap-6 max-sm:flex-col max-sm:items-start max-sm:gap-4")}>
-          <p className="text-[0.8125rem] text-on-surface-variant/65">© 2026 Gotly Keeper. 安静地保管你的一切。</p>
+          <p className="text-[0.8125rem] text-on-surface-variant/65">© 2026 Gotly Keeper. {tFooter("tagline")}</p>
           <div className="flex items-center gap-6">
-            <Link href="/privacy" className="text-[0.8125rem] text-on-surface-variant/55 no-underline transition-colors duration-150 hover:text-on-surface">隐私政策</Link>
-            <Link href="/terms" className="text-[0.8125rem] text-on-surface-variant/55 no-underline transition-colors duration-150 hover:text-on-surface">使用条款</Link>
-            <Link href="mailto:hi@gotly.app" className="text-[0.8125rem] text-on-surface-variant/55 no-underline transition-colors duration-150 hover:text-on-surface">联系我们</Link>
-            <Link href="https://github.com/zguiyang/gotly-keeper" target="_blank" rel="noopener noreferrer" className="text-[0.8125rem] text-on-surface-variant/55 no-underline transition-colors duration-150 hover:text-on-surface">GitHub</Link>
+            <Link href="/privacy" className="text-[0.8125rem] text-on-surface-variant/55 no-underline transition-colors duration-150 hover:text-on-surface">{tFooter("privacy")}</Link>
+            <Link href="/terms" className="text-[0.8125rem] text-on-surface-variant/55 no-underline transition-colors duration-150 hover:text-on-surface">{tFooter("terms")}</Link>
+            <Link href="mailto:hi@gotly.app" className="text-[0.8125rem] text-on-surface-variant/55 no-underline transition-colors duration-150 hover:text-on-surface">{tFooter("contact")}</Link>
+            <Link href="https://github.com/zguiyang/gotly-keeper" target="_blank" rel="noopener noreferrer" className="text-[0.8125rem] text-on-surface-variant/55 no-underline transition-colors duration-150 hover:text-on-surface">{tFooter("github")}</Link>
           </div>
         </div>
       </footer>
