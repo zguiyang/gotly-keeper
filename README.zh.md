@@ -395,7 +395,6 @@ pnpm db:migrate
 
 我一个人在公开构建这个项目。反馈、bug 报告、功能想法都非常欢迎——每条我都会看。
 
-- 🗺 **[Roadmap](https://gotly-keeper.vercel.app)** — 接下来在做什么
 - 🐛 **[Issues](https://github.com/zguiyang/gotly-keeper/issues)** — bug、想法、功能请求
 - ⭐ **Star 一下** 如果对你有用——真的很有帮助
 - 📧 **邮箱** — `hi [at] zgyk.cc`

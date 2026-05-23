@@ -407,7 +407,6 @@ Or run them inside the worker container with a one-off command.
 I'm building this in public as a solo developer. Feedback, bug reports, and
 feature ideas are all welcome — I read everything.
 
-- 🗺 **[Roadmap](https://gotly-keeper.vercel.app)** — what I'm working on next
 - 🐛 **[Issues](https://github.com/zguiyang/gotly-keeper/issues)** — bugs, ideas, feature requests
 - ⭐ **Star the repo** if you find it useful — it genuinely helps
 - 📧 **Email** — `hi [at] zgyk.cc`
