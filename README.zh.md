@@ -22,15 +22,36 @@ AI 驱动的个人知识工作台 —— 笔记、书签、待办，一个入口
 </p>
 
 <p>
+  <img src="https://img.shields.io/badge/version-0.1.4-0051b1?style=flat" alt="Version">
   <a href="https://github.com/zguiyang/gotly-keeper/stargazers">
-    <img src="https://img.shields.io/github/stars/zguiyang/gotly-keeper?style=flat&label=Stars" alt="Stars">
+    <img src="https://img.shields.io/github/stars/zguiyang/gotly-keeper?style=flat&label=Stars&color=yellow" alt="Stars">
   </a>
   <a href="https://github.com/zguiyang/gotly-keeper/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/zguiyang/gotly-keeper?style=flat&label=License" alt="License">
+    <img src="https://img.shields.io/github/license/zguiyang/gotly-keeper?style=flat&label=License&color=green" alt="License">
   </a>
+  <img src="https://img.shields.io/badge/PRs-welcome-0051b1?style=flat" alt="PRs Welcome">
+  <img src="https://img.shields.io/badge/Made%20with-TypeScript-3178c6?style=flat&logo=typescript" alt="TypeScript">
 </p>
 
 </div>
+
+---
+
+<details open>
+<summary><b>📑 目录</b></summary>
+
+- [演示](#演示)
+- [我为什么做这个](#-我为什么做这个)
+- [怎么用](#怎么用)
+- [为什么不用 Notion / Obsidian？](#-为什么不用-notion--obsidian)
+- [功能特性](#功能特性)
+- [快速开始](#快速开始)
+- [架构](#架构)
+- [部署](#部署)
+- [来聊聊](#-来聊聊)
+- [参与开发](#参与开发)
+
+</details>
 
 ---
 
@@ -42,13 +63,20 @@ AI 驱动的个人知识工作台 —— 笔记、书签、待办，一个入口
 
 ---
 
-## 痛点
+## 💡 我为什么做这个
 
-脑子里装满了要记住的事。灵感总在不恰当的时候冒出来。链接在聊天记录里越堆越多。
-待办分散在三个不同的应用。而当你想找某个东西 —— 那篇关于 RAG 的文章、上周会议
-的反馈、同事分享的链接 —— 你只能翻文件夹、滚聊天记录、然后问自己：放哪儿了？
+我是一个开发者，平时囤很多东西——Twitter 上的链接、半夜冒出来的想法、用户反馈、
+随手记的待办。时间一长就变成了：
 
-**Gotly Keeper 是你随手扔的地方，也是你随手找到的地方。**
+- 📌 **收藏了，找不到。** 书签在 Chrome，笔记在 Apple Notes，待办在 TickTick。
+  各管各的，互相不认识。
+- 📝 **记了，再也不看。** 碎片越堆越多，整理本身比记录还累。
+- ⏳ **整理了，太费时间。** 打标签、建文件夹、分类——光整理就劝退了。
+
+我想要**一个地方**。随便写什么，AI 自动判断类型。想找的时候，用自然语言问一句。
+不用文件夹，不用标签，零摩擦。于是我自己做了一个。
+
+**Gotly Keeper 是我自己想要的那个工具。**
 
 ---
 
@@ -64,6 +92,36 @@ AI 驱动的个人知识工作台 —— 笔记、书签、待办，一个入口
 > *"提醒我：周五下午3点发报告"* → **带到期时间的待办**
 >
 > *"我上个月收藏的那篇 RAG 文章在哪？"* → **瞬间找到**
+
+---
+
+## 🆚 为什么不用 Notion / Obsidian？
+
+这些我都用过。Notion 写文档很强，Obsidian 做双向链接很牛。
+但它们都不是为**碎片记录**设计的——那些不值得开一个文档、但不记又会忘的瞬间。
+
+| 我的日常碎片场景 | Notion | Obsidian | Apple Notes | Gotly Keeper |
+|---|---|---|---|---|
+| 2 秒存一个链接 | 太重了 | 不行 | ✅ | ✅ |
+| 「周五下午 3 点提醒我打电话」 | 手动设置 | 不行 | 不行 | ✅ |
+| 「上个月那篇 RAG 文章在哪？」 | 翻文件夹 | 搜文件名 | 滚动翻 | ✅ 自然语言问 |
+| 半夜冒出来的一个念头 | 打开太慢 | 打开太慢 | ✅ | ✅ |
+| 一个输入框搞定一切 | 3 种 block | 1 个文件 | 1 条笔记 | ✅ AI 自动分类 |
+| 跑在我自己的服务器上 | ❌ | ✅ | ❌ | ✅ |
+| 开源 | ❌ | ❌ | ❌ | ✅ |
+
+> **Gotly Keeper 不替代你的笔记软件。它接住那些没来得及进笔记的东西。**
+
+---
+
+## ⚠️ 还在快速迭代中
+
+Gotly Keeper 还很早期——我在快速出货、持续迭代。
+AI 目前还不够聪明，很多想法还在排队，没来得及落地。
+
+哪里做得糙，大概率是我还没来得及改。正在努力。
+
+欢迎提意见，也欢迎吐槽。不喜欢的话直接跳过就好，没关系的。
 
 ---
 
@@ -215,25 +273,74 @@ pnpm dev
 
 ## 部署
 
-### 生产部署（deploy.sh）
+### Docker 部署
 
-项目包含 `deploy.sh` 部署脚本：
+项目提供多阶段 `Dockerfile`，构建两个运行时镜像：
 
-1. 构建两个 Docker 镜像，目标 `linux/amd64`
-2. 推送到私有镜像仓库
-3. 通过 SSH + SCP 同步配置
-4. 执行数据库迁移
-5. 拉取并重启远程容器
+| 阶段 | 用途 |
+|------|------|
+| `web-runner` | Next.js 生产服务器（端口 3000） |
+| `worker-runner` | 后台工作器（URL 元信息抓取） |
+
+#### 1. 准备环境变量
+
+创建 `.env` 文件，参考 `.env.example` 填写生产环境配置。
+
+构建时通过 Docker secret 注入环境变量，不会写入镜像：
 
 ```bash
-./deploy.sh
+docker build --secret id=app_env,src=.env -t gotly-keeper:latest .
 ```
 
-提供 4 种模式：完整部署、构建+启动、仅启动、仅迁移。
+#### 2. 基础设施
 
-**Docker Compose 文件：**
-- `docker-compose.yml` — 本地开发（PostgreSQL + Redis）
-- `docker-compose.prod.yml` — 生产（PostgreSQL + Web + Worker）
+需要 PostgreSQL 16（含 pgvector）和 Redis 7。使用 `docker-compose.yml` 启动基础服务：
+
+```bash
+docker compose up -d postgres redis
+```
+
+#### 3. 构建与运行
+
+生产环境 `docker-compose.prod.yml` 示例：
+
+```yaml
+services:
+  web:
+    image: gotly-keeper:latest
+    target: web-runner
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    image: gotly-keeper:latest
+    target: worker-runner
+    environment:
+      NODE_ENV: production
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+```
+
+#### 4. 数据库迁移
+
+```bash
+# 对生产数据库执行迁移
+pnpm db:migrate
+```
+
+或在 worker 容器中执行一次性迁移命令。
 
 ---
 
@@ -284,6 +391,17 @@ pnpm dev
 
 ---
 
+## 💬 来聊聊
+
+我一个人在公开构建这个项目。反馈、bug 报告、功能想法都非常欢迎——每条我都会看。
+
+- 🗺 **[Roadmap](https://gotly-keeper.vercel.app)** — 接下来在做什么
+- 🐛 **[Issues](https://github.com/zguiyang/gotly-keeper/issues)** — bug、想法、功能请求
+- ⭐ **Star 一下** 如果对你有用——真的很有帮助
+- 📧 **邮箱** — `hi [at] zgyk.cc`
+
+---
+
 ## 参与开发
 
 1. 阅读 `.ai-rules/` 了解治理规范
@@ -300,5 +418,7 @@ pnpm dev
 ---
 
 <p align="center">
-  <em>安静地保管你的一切。</em>
+  <b>说一句，收好。再问一句，找出来。</b><br>
+  <sub>开源 · 自托管 · 数据归你说了算。</sub><br><br>
+  <a href="https://github.com/zguiyang/gotly-keeper">⭐ 在 GitHub 上 Star</a>
 </p>

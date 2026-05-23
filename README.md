@@ -22,15 +22,36 @@ all in one place. No folders, no tags, no friction.
 </p>
 
 <p>
+  <img src="https://img.shields.io/badge/version-0.1.4-0051b1?style=flat" alt="Version">
   <a href="https://github.com/zguiyang/gotly-keeper/stargazers">
-    <img src="https://img.shields.io/github/stars/zguiyang/gotly-keeper?style=flat&label=Stars" alt="Stars">
+    <img src="https://img.shields.io/github/stars/zguiyang/gotly-keeper?style=flat&label=Stars&color=yellow" alt="Stars">
   </a>
   <a href="https://github.com/zguiyang/gotly-keeper/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/zguiyang/gotly-keeper?style=flat&label=License" alt="License">
+    <img src="https://img.shields.io/github/license/zguiyang/gotly-keeper?style=flat&label=License&color=green" alt="License">
   </a>
+  <img src="https://img.shields.io/badge/PRs-welcome-0051b1?style=flat" alt="PRs Welcome">
+  <img src="https://img.shields.io/badge/Made%20with-TypeScript-3178c6?style=flat&logo=typescript" alt="TypeScript">
 </p>
 
 </div>
+
+---
+
+<details open>
+<summary><b>📑 Table of Contents</b></summary>
+
+- [Demo](#demo)
+- [Why I built this](#-why-i-built-this)
+- [How It Works](#how-it-works)
+- [Why not just use Notion / Obsidian?](#-why-not-just-use-notion--obsidian)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Architecture](#architecture)
+- [Deployment](#deployment)
+- [Let's talk](#-lets-talk)
+- [Contributing](#contributing)
+
+</details>
 
 ---
 
@@ -42,15 +63,22 @@ all in one place. No folders, no tags, no friction.
 
 ---
 
-## The Problem
+## 💡 Why I built this
 
-Your mind is full of things to remember. Ideas strike at odd moments. Links pile
-up in chat history. Todos live in three different apps. And when you need
-something — that article about RAG, the feedback from last week's meeting,
-the link a colleague shared — you end up digging through folders, scrolling
-chat history, and wondering where you put it.
+I'm a developer who collects a lot of stuff — links from Twitter, ideas at 2am,
+feedback from users, random todos. Over time this became:
 
-**Gotly Keeper is the place you throw it all, and the place you find it all.**
+- 📌 **Saved it. Can't find it.** Bookmarks in Chrome. Notes in Apple Notes.
+  Todos in TickTick. Nothing talks to anything.
+- 📝 **Jotted it down. Never looked again.** Random snippets pile up.
+  Organizing feels like a second job.
+- ⏳ **Organized it. Took longer than writing it.** Tags, folders, categories —
+  I spent more time filing than finding.
+
+I wanted **one place**. Type anything. AI figures out what it is. Ask naturally
+to find it. No folders, no tags, no friction. So I built it.
+
+**Gotly Keeper is the tool I wished existed.**
 
 ---
 
@@ -68,6 +96,39 @@ how you filed it.
 > *"Remind me: send the report by Friday 3pm"* → **Todo with due date**
 >
 > *"Where's that article about RAG I saved last month?"* → **Found instantly**
+
+---
+
+## 🆚 Why not just use Notion / Obsidian?
+
+I tried them all. Notion is great for writing docs. Obsidian is great for linked
+thinking. But neither is built for the **micro-moments** — the thought too small
+for a note, too important to forget.
+
+| My daily micro-moments | Notion | Obsidian | Apple Notes | Gotly Keeper |
+|---|---|---|---|---|
+| Save a link in 2 seconds | Too heavy | No | ✅ | ✅ |
+| "Remind me to call Mom Friday 3pm" | Manual setup | Nope | Nope | ✅ |
+| "Where's that article about RAG?" | Search folders | File names | Scroll | ✅ Ask naturally |
+| Dump a random idea at midnight | App is heavy | App is heavy | ✅ | ✅ |
+| One input for everything | 3 different blocks | 1 file | 1 note | ✅ AI sorts it |
+| Runs on my server | ❌ | ✅ | ❌ | ✅ |
+| Open source | ❌ | ❌ | ❌ | ✅ |
+
+> **Gotly Keeper doesn't replace your notes app. It catches what never makes it into one.**
+
+---
+
+## ⚠️ A work in progress
+
+Gotly Keeper is still early — I'm shipping fast and iterating constantly.
+The AI isn't as smart as I want it to be yet. A lot of ideas are still on the
+list, not in the product.
+
+If something feels rough, it probably is. I'm on it.
+
+Feedback and constructive rants are always welcome. If it's not your thing,
+feel free to skip — no hard feelings.
 
 ---
 
@@ -341,6 +402,18 @@ Or run them inside the worker container with a one-off command.
 
 ---
 
+## 💬 Let's talk
+
+I'm building this in public as a solo developer. Feedback, bug reports, and
+feature ideas are all welcome — I read everything.
+
+- 🗺 **[Roadmap](https://gotly-keeper.vercel.app)** — what I'm working on next
+- 🐛 **[Issues](https://github.com/zguiyang/gotly-keeper/issues)** — bugs, ideas, feature requests
+- ⭐ **Star the repo** if you find it useful — it genuinely helps
+- 📧 **Email** — `hi [at] zgyk.cc`
+
+---
+
 ## Contributing
 
 1. Read `.ai-rules/` for repository governance
@@ -357,5 +430,7 @@ Open source. See [LICENSE](./LICENSE) for details.
 ---
 
 <p align="center">
-  <em>Quietly keeping what matters.</em>
+  <b>Say it once. Find it anytime.</b><br>
+  <sub>Open source · Self-hosted · Your data, your rules.</sub><br><br>
+  <a href="https://github.com/zguiyang/gotly-keeper">⭐ Star on GitHub</a>
 </p>
