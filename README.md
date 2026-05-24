@@ -65,7 +65,7 @@ Notes, bookmarks, and todos. One input. Zero organizing.
 ## 💡 Why I built this
 
 I'm a developer who collects a lot of stuff — links from Twitter, ideas at 2am,
-feedback from users, random todos. Over time this became:
+stuff people send me, random todos. Over time this became:
 
 - 📌 **Saved it. Can't find it.** Bookmarks in Chrome. Notes in Apple Notes.
   Todos in TickTick. Nothing talks to anything.
@@ -75,7 +75,7 @@ feedback from users, random todos. Over time this became:
   I spent more time filing than finding.
 
 I wanted **one place**. Type anything. AI figures out what it is. Ask naturally
-to find it. No folders, no tags, no friction. So I built it.
+to find it. No folders, no tags. So I built it.
 
 **Gotly Keeper is the tool I wished existed.**
 
@@ -100,8 +100,7 @@ where you put it.
 
 ## 🆚 Why not just use Notion / Obsidian?
 
-I tried them all. Notion is great for writing docs. Obsidian is great for linked
-thinking. But neither is built for the **micro-moments** — the thought too small
+I tried them all. Notion is great for writing docs. Obsidian is great for connecting ideas. But neither is built for the **micro-moments** — the thought too small
 for a note, too important to forget.
 
 | My daily micro-moments | Notion | Obsidian | Apple Notes | Gotly Keeper |
@@ -155,7 +154,6 @@ Powered by pgvector embeddings and a multi-stage ranking pipeline.
 
 Let the AI summarize what you've collected:
 - *"Summarize my notes from this week"*
-- *"Review unfinished todos"*
 - *"What have I been collecting about AI tools?"*
 
 ### Auto Bookmark Metadata
@@ -408,7 +406,7 @@ I'm building this solo. Feedback, bug reports, and
 feature ideas are all welcome — I read everything.
 
 - 🐛 **[Issues](https://github.com/zguiyang/gotly-keeper/issues)** — bugs, ideas, feature requests
-- ⭐ **Star the repo** if you find it useful — it genuinely helps
+- ⭐ **Star the repo** if you find it useful — it helps
 - 📧 **Email** — `hi [at] zgyk.cc`
 
 ---
