@@ -4,8 +4,7 @@
 
 **Say it once. Find it anytime.**
 
-AI-powered personal knowledge workspace — notes, bookmarks, and todos,
-all in one place. No folders, no tags, no friction.
+Notes, bookmarks, and todos. One input. Zero organizing.
 
 <p>
   <a href="#demo">Demo</a> ·
@@ -87,7 +86,7 @@ to find it. No folders, no tags, no friction. So I built it.
 One input box. Whatever you type — a note, a bookmark, a todo — the AI
 classifies it, extracts time if any, and stores it. Later, just ask in natural
 language. Semantic search finds what you need, even if you don't remember
-how you filed it.
+where you put it.
 
 > *"Keep this: the Q3 pricing proposal feedback"* → **Note**
 >
@@ -121,9 +120,8 @@ for a note, too important to forget.
 
 ## ⚠️ A work in progress
 
-Gotly Keeper is still early — I'm shipping fast and iterating constantly.
-The AI isn't as smart as I want it to be yet. A lot of ideas are still on the
-list, not in the product.
+Gotly Keeper is still early. The AI isn't as smart as I want it to be
+yet. A lot of ideas are still on the list, not in the product.
 
 If something feels rough, it probably is. I'm on it.
 
@@ -134,12 +132,14 @@ feel free to skip — no hard feelings.
 
 ## Features
 
+Here's what it does today:
+
 ### Unified Capture
 
 A single input field for everything:
 - Notes, bookmarks, todos — the AI figures out which is which
 - Time expressions are parsed automatically ("next Wednesday 3pm")
-- No dropdowns, no forms, no friction
+- No dropdowns, no forms.
 
 ### Semantic Search
 
@@ -171,7 +171,7 @@ Move things out of sight without deleting. Or permanently remove them.
 
 ### PWA Ready
 
-Install as a standalone app on mobile or desktop. Works offline. Full-screen,
+Install as a standalone app on mobile or desktop. Full-screen,
 no browser chrome.
 
 ---
@@ -273,7 +273,7 @@ Open [http://localhost:3000](http://localhost:3000).
 - **`server/modules/workspace-agent/`** — AI orchestration: classifies intent,
   plans actions, executes tool calls, returns structured results
 - **`server/services/search/`** — Multi-stage search: semantic (pgvector cosine
-  distance), keyword (trigram), ranking fusion
+  distance), keyword (substring matching), ranking fusion
 - **`server/services/queue/`** — Redis-backed background job queue
 - **`server/prompts/`** — System & user prompts for all AI pipeline stages
 - **`server/services/bookmarks|notes|todos/`** — CRUD + lifecycle for each asset
@@ -404,7 +404,7 @@ Or run them inside the worker container with a one-off command.
 
 ## 💬 Let's talk
 
-I'm building this in public as a solo developer. Feedback, bug reports, and
+I'm building this solo. Feedback, bug reports, and
 feature ideas are all welcome — I read everything.
 
 - 🐛 **[Issues](https://github.com/zguiyang/gotly-keeper/issues)** — bugs, ideas, feature requests
