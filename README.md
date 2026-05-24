@@ -2,8 +2,6 @@
 
 # Gotly Keeper
 
-**Say it once. Find it anytime.**
-
 Notes, bookmarks, and todos. One input. Zero organizing.
 
 <p>
