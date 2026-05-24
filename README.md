@@ -405,7 +405,6 @@ feature ideas are all welcome — I read everything.
 
 - 🐛 **[Issues](https://github.com/zguiyang/gotly-keeper/issues)** — bugs, ideas, feature requests
 - ⭐ **Star the repo** if you find it useful — it helps
-- 📧 **Email** — `hi [at] zgyk.cc`
 
 ---
 

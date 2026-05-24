@@ -393,7 +393,6 @@ pnpm db:migrate
 
 - 🐛 **[Issues](https://github.com/zguiyang/gotly-keeper/issues)** — bug、想法、功能请求
 - ⭐ **Star 一下** 如果对你有用——很有帮助
-- 📧 **邮箱** — `hi [at] zgyk.cc`
 
 ---
 
