@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { getServerTranslation } from '@/hooks/use-locale.server'
+import { getServerLocale, getServerTranslation } from '@/hooks/use-locale.server'
 import { ModuleActionError, MODULE_ACTION_ERROR_CODES } from '@/server/modules/actions/action-error'
 import { executeModuleAction } from '@/server/modules/actions/run-server-action'
 import { requireSignedInUser } from '@/server/modules/auth/session'
@@ -620,7 +620,8 @@ export async function purgeWorkspaceAssetAction(
 export async function reviewUnfinishedTodosAction(): Promise<WorkspaceAssetActionResult> {
   return executeModuleAction('workspace.reviewUnfinishedTodos', async () => {
     const user = await requireSignedInUser()
-    const review = await reviewWorkspaceUnfinishedTodos({ userId: user.id })
+    const locale = await getServerLocale()
+    const review = await reviewWorkspaceUnfinishedTodos({ userId: user.id, locale })
     return { kind: 'todo-review', review }
   })
 }
@@ -628,7 +629,8 @@ export async function reviewUnfinishedTodosAction(): Promise<WorkspaceAssetActio
 export async function summarizeRecentNotesAction(): Promise<WorkspaceAssetActionResult> {
   return executeModuleAction('workspace.summarizeRecentNotes', async () => {
     const user = await requireSignedInUser()
-    const summary = await summarizeWorkspaceRecentNotes({ userId: user.id })
+    const locale = await getServerLocale()
+    const summary = await summarizeWorkspaceRecentNotes({ userId: user.id, locale })
     return { kind: 'note-summary', summary }
   })
 }
@@ -636,7 +638,8 @@ export async function summarizeRecentNotesAction(): Promise<WorkspaceAssetAction
 export async function summarizeRecentBookmarksAction(): Promise<WorkspaceAssetActionResult> {
   return executeModuleAction('workspace.summarizeRecentBookmarks', async () => {
     const user = await requireSignedInUser()
-    const summary = await summarizeWorkspaceRecentBookmarks({ userId: user.id })
+    const locale = await getServerLocale()
+    const summary = await summarizeWorkspaceRecentBookmarks({ userId: user.id, locale })
     return { kind: 'bookmark-summary', summary }
   })
 }

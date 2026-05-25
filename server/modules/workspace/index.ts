@@ -825,22 +825,25 @@ export async function listWorkspaceTrashedAssets(input: {
 export async function reviewWorkspaceUnfinishedTodos(input: {
   userId: string
   query?: string | null
+  locale?: string
 }): Promise<TodoReviewResult> {
-  return reviewWorkspaceUnfinishedTodosInternal(input.userId, input.query ?? null)
+  return reviewWorkspaceUnfinishedTodosInternal(input.userId, input.query ?? null, input.locale)
 }
 
 export async function summarizeWorkspaceRecentNotes(input: {
   userId: string
   query?: string | null
+  locale?: string
 }): Promise<NoteSummaryResult> {
-  return summarizeWorkspaceRecentNotesInternal(input.userId, input.query ?? null)
+  return summarizeWorkspaceRecentNotesInternal(input.userId, input.query ?? null, input.locale)
 }
 
 export async function summarizeWorkspaceRecentBookmarks(input: {
   userId: string
   query?: string | null
+  locale?: string
 }): Promise<BookmarkSummaryResult> {
-  return summarizeWorkspaceRecentBookmarksInternal(input.userId, input.query ?? null)
+  return summarizeWorkspaceRecentBookmarksInternal(input.userId, input.query ?? null, input.locale)
 }
 
 export async function searchWorkspaceAssets(input: {

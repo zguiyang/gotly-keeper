@@ -47,12 +47,17 @@ const todoReviewOutputSchema = z.object({
 
 type TodoReviewOutput = z.infer<typeof todoReviewOutputSchema>
 
-function getFallbackTodoReview(todos: AssetListItem[]): TodoReviewOutput {
+function getFallbackTodoReview(todos: AssetListItem[], locale?: string): TodoReviewOutput {
+  const isEn = locale === 'en'
   return {
-    headline: '待办复盘',
+    headline: isEn ? 'Todo review' : '待办复盘',
     summary: todos.length
-      ? `你还有 ${todos.length} 个未完成待办，先从时间最明确的事项开始处理。`
-      : '目前没有未完成待办。',
+      ? isEn
+        ? `You have ${todos.length} incomplete todos. Start with the most time-sensitive ones.`
+        : `你还有 ${todos.length} 个未完成待办，先从时间最明确的事项开始处理。`
+      : isEn
+        ? 'No incomplete todos.'
+        : '目前没有未完成待办。',
     nextActions: todos.slice(0, 3).map((todo) => todo.title),
     sourceAssetIds: todos.slice(0, 5).map((todo) => todo.id),
   }
@@ -60,7 +65,8 @@ function getFallbackTodoReview(todos: AssetListItem[]): TodoReviewOutput {
 
 export async function reviewWorkspaceUnfinishedTodosInternal(
   userId: string,
-  query?: string | null
+  query?: string | null,
+  locale?: string
 ): Promise<TodoReviewResult> {
   const trimmedQuery = query?.trim()
   const todos = trimmedQuery
@@ -76,7 +82,8 @@ export async function reviewWorkspaceUnfinishedTodosInternal(
   return generateWorkspaceInsight({
     assets: todos,
     buildPromptInput: buildTodoReviewPromptInput,
-    fallbackOutput: getFallbackTodoReview,
+    fallbackOutput: (assets) => getFallbackTodoReview(assets, locale),
+    locale,
     schema: todoReviewOutputSchema,
     promptKey: 'workspace/todo-review',
     promptPayloadKey: 'todos',

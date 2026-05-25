@@ -39,6 +39,7 @@ type GenerateWorkspaceInsightOptions<TPromptItem, TOutput extends WorkspaceInsig
   timeoutMs: number
   logTag: string
   logLabel: string
+  locale?: string
   normalizeResult: (output: TOutput, context: WorkspaceInsightContext) => TResult
 }
 
@@ -81,6 +82,7 @@ export async function generateWorkspaceInsight<
   timeoutMs,
   logTag,
   logLabel,
+  locale,
   normalizeResult,
 }: GenerateWorkspaceInsightOptions<TPromptItem, TOutput, TResult>): Promise<TResult> {
   const normalizeWithAssets = (output: TOutput) =>
@@ -97,7 +99,7 @@ export async function generateWorkspaceInsight<
 
   try {
     const [systemPrompt, userPrompt] = await Promise.all([
-      buildWorkspaceSystemPrompt(`${promptKey}.system`),
+      buildWorkspaceSystemPrompt(`${promptKey}.system`, {}, locale),
       renderPrompt(`${promptKey}.user`, {
         payloadJson: JSON.stringify({
           currentTime: nowIso(),

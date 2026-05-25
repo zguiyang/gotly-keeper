@@ -43,12 +43,17 @@ const noteSummaryOutputSchema = z.object({
 
 type NoteSummaryOutput = z.infer<typeof noteSummaryOutputSchema>
 
-function getFallbackNoteSummary(notes: AssetListItem[]): NoteSummaryOutput {
+function getFallbackNoteSummary(notes: AssetListItem[], locale?: string): NoteSummaryOutput {
+  const isEn = locale === 'en'
   return {
-    headline: '最近笔记摘要',
+    headline: isEn ? 'Recent notes' : '最近笔记摘要',
     summary: notes.length
-      ? `最近有 ${notes.length} 条笔记，先回看最靠前的几条内容。`
-      : '目前没有可总结的笔记。',
+      ? isEn
+        ? `You have ${notes.length} recent notes. Reviewing the latest ones.`
+        : `最近有 ${notes.length} 条笔记，先回看最靠前的几条内容。`
+      : isEn
+        ? 'No notes to summarize.'
+        : '目前没有可总结的笔记。',
     keyPoints: notes
       .slice(0, 3)
       .map((note) => note.excerpt || note.originalText)
@@ -60,7 +65,8 @@ function getFallbackNoteSummary(notes: AssetListItem[]): NoteSummaryOutput {
 
 export async function summarizeWorkspaceRecentNotesInternal(
   userId: string,
-  query?: string | null
+  query?: string | null,
+  locale?: string
 ): Promise<NoteSummaryResult> {
   const trimmedQuery = query?.trim()
   const notes = trimmedQuery
@@ -75,7 +81,8 @@ export async function summarizeWorkspaceRecentNotesInternal(
   return generateWorkspaceInsight({
     assets: notes,
     buildPromptInput: buildNoteSummaryPromptInput,
-    fallbackOutput: getFallbackNoteSummary,
+    fallbackOutput: (assets) => getFallbackNoteSummary(assets, locale),
+    locale,
     schema: noteSummaryOutputSchema,
     promptKey: 'workspace/note-summary',
     promptPayloadKey: 'notes',

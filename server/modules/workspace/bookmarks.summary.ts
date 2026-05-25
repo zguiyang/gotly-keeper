@@ -46,12 +46,17 @@ const bookmarkSummaryOutputSchema = z.object({
 
 type BookmarkSummaryOutput = z.infer<typeof bookmarkSummaryOutputSchema>
 
-function getFallbackBookmarkSummary(bookmarks: AssetListItem[]): BookmarkSummaryOutput {
+function getFallbackBookmarkSummary(bookmarks: AssetListItem[], locale?: string): BookmarkSummaryOutput {
+  const isEn = locale === 'en'
   return {
-    headline: '最近书签摘要',
+    headline: isEn ? 'Recent bookmarks' : '最近书签摘要',
     summary: bookmarks.length
-      ? `最近有 ${bookmarks.length} 条书签，先回看最靠前的几条链接。`
-      : '目前没有可总结的书签。',
+      ? isEn
+        ? `You have ${bookmarks.length} recent bookmarks. Reviewing the latest ones.`
+        : `最近有 ${bookmarks.length} 条书签，先回看最靠前的几条链接。`
+      : isEn
+        ? 'No bookmarks to summarize.'
+        : '目前没有可总结的书签。',
     keyPoints: bookmarks.slice(0, 3).map((bookmark) => bookmark.title),
     sourceAssetIds: bookmarks.slice(0, 5).map((bookmark) => bookmark.id),
   }
@@ -59,7 +64,8 @@ function getFallbackBookmarkSummary(bookmarks: AssetListItem[]): BookmarkSummary
 
 export async function summarizeWorkspaceRecentBookmarksInternal(
   userId: string,
-  query?: string | null
+  query?: string | null,
+  locale?: string
 ): Promise<BookmarkSummaryResult> {
   const trimmedQuery = query?.trim()
   const bookmarks = trimmedQuery
@@ -74,7 +80,7 @@ export async function summarizeWorkspaceRecentBookmarksInternal(
       )
 
   if (bookmarks.length <= 2) {
-    const fallback = getFallbackBookmarkSummary(bookmarks)
+    const fallback = getFallbackBookmarkSummary(bookmarks, locale)
     return {
       headline: fallback.headline,
       summary: fallback.summary,
@@ -88,7 +94,8 @@ export async function summarizeWorkspaceRecentBookmarksInternal(
   return generateWorkspaceInsight({
     assets: bookmarks,
     buildPromptInput: buildBookmarkSummaryPromptInput,
-    fallbackOutput: getFallbackBookmarkSummary,
+    fallbackOutput: (assets) => getFallbackBookmarkSummary(assets, locale),
+    locale,
     schema: bookmarkSummaryOutputSchema,
     promptKey: 'workspace/bookmark-summary',
     promptPayloadKey: 'bookmarks',
