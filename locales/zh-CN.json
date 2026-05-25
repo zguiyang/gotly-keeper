@@ -38,202 +38,66 @@
   },
   "landing": {
     "nav": {
-      "features": "功能",
-      "scenarios": "场景",
-      "roadmap": "路线图",
       "signIn": "登录",
       "signUp": "免费注册"
     },
     "hero": {
-      "tagline": "说一句，收好。再问一句，找出来。",
-      "subtitle": "笔记、书签、待办，不用整理，不用分类。",
-      "cta": "立即体验",
-      "githubLink": "GitHub 开源",
-      "viewSource": "查看源码",
-      "enterWorkspace": "进入工作区",
+      "tagline": "笔记、书签、待办，不用整理，不用分类",
+      "subtitle": "一个输入框，靠 AI 自动区分类型、提取时间。需要的时候，用自然语言搜回来。",
       "tryNow": "立即体验",
-      "demoCaption": "轻量的个人信息助理。能记笔记，能存书签，能管待办。",
-      "badges": [
-        "开源",
-        "自托管",
-        "数据归你"
+      "enterWorkspace": "进入工作区",
+      "githubLink": "GitHub"
+    },
+    "howItWorks": {
+      "eyebrow": "怎么用",
+      "steps": [
+        { "title": "随便写", "desc": "想法、链接、提醒——全在一个输入框里。" },
+        { "title": "自动整理", "desc": "AI 识别是笔记、书签还是待办，时间也自动提取。" },
+        { "title": "问着找", "desc": "不记得放哪了？用自然语言直接问，语义搜索帮你找。" }
+      ],
+      "examples": [
+        { "input": "「把 Q3 定价方案的反馈记一下」", "result": "→ 笔记" },
+        { "input": "「收藏这个 https://example.com/ai-paper」", "result": "→ 书签" },
+        { "input": "「提醒我周五下午三点前发报告」", "result": "→ 待办（带时间）" },
+        { "input": "「我上个月存的关于 RAG 的文章在哪？」", "result": "→ 瞬间找到" }
       ]
     },
-    "painPoints": {
-      "eyebrow": "你是不是也这样",
-      "title": "信息越来越多，<br />却越来越难找到。",
-      "items": {
-        "savedButLost": {
-          "title": "收藏了，但找不到",
-          "desc": "书签、微信收藏、笔记 app，分散在各处，需要时想不起来放在哪。"
-        },
-        "notedButUnorganized": {
-          "title": "记了，但没整理",
-          "desc": "随手记的东西堆在一起，时间一长就成了信息垃圾场。"
-        },
-        "organizedButTimeConsuming": {
-          "title": "整理了，但太费时",
-          "desc": "分类、打标签、写摘要，整理本身比记录更费劲。"
-        }
-      }
-    },
-    "features": {
-      "eyebrow": "核心功能",
-      "title": "四件事，全部搞定。",
-      "items": {
-        "quickCapture": {
-          "title": "随手记录",
-          "desc": "一句话输入，自动识别是笔记、待办还是书签。"
-        },
-        "saveLinks": {
-          "title": "收藏链接",
-          "desc": "粘贴链接，标题摘要自动抓取，以后直接检索。"
-        },
-        "timeReminders": {
-          "title": "时间提醒",
-          "desc": "说「下周三跟进报价」，时间自动提取，不用手动建任务。"
-        },
-        "naturalSearch": {
-          "title": "自然语言找回",
-          "desc": "不记得放在哪了？描述一下就能找到。"
-        }
-      }
-    },
-    "scenarios": {
-      "eyebrow": "使用场景",
-      "title": "不需要分类整理，<br />先交给它就好。",
-      "items": {
-        "productManager": {
-          "role": "产品经理",
-          "desc": "会议结束，随手记一句结论。不用新建文档，不用想标题。",
-          "example": "\"刚才讨论的定价方案先记一下\""
-        },
-        "researcher": {
-          "role": "研究者",
-          "desc": "看到有价值的论文先收藏，之后用自然语言找回。",
-          "example": "\"我收藏过关于 RAG 的文章吗\""
-        },
-        "freelancer": {
-          "role": "自由职业者",
-          "desc": "说出客户跟进事项，时间自动识别，不用手动建任务。",
-          "example": "\"下周三记得跟李总确认报价\""
-        },
-        "powerCollector": {
-          "role": "重度收藏者",
-          "desc": "所有收藏都能通过提问找到，再也不为「找不到」烦恼。",
-          "example": "\"帮我总结最近收藏的内容\""
-        }
-      }
-    },
-    "roadmap": {
-      "eyebrow": "持续在做的事",
-      "title": "从第一个版本开始，<br />一直在变好。",
-      "shipped": "已上线",
-      "building": "进行中",
-      "planned": "计划中",
-      "items": [
-        {
-          "label": "笔记 / 书签 / 待办",
-          "status": "shipped"
-        },
-        {
-          "label": "AI 统一入口",
-          "status": "shipped"
-        },
-        {
-          "label": "自然语言检索",
-          "status": "shipped"
-        },
-        {
-          "label": "AI 内容摘要",
-          "status": "shipped"
-        },
-        {
-          "label": "PWA 支持",
-          "status": "shipped"
-        },
-        {
-          "label": "链接正文提取 + AI 摘要",
-          "status": "building"
-        },
-        {
-          "label": "Markdown 编辑器",
-          "status": "building"
-        },
-        {
-          "label": "数据导出（Markdown / JSON）",
-          "status": "building"
-        },
-        {
-          "label": "浏览器插件",
-          "status": "planned"
-        },
-        {
-          "label": "移动端推送提醒",
-          "status": "planned"
-        },
-        {
-          "label": "邮件转资产",
-          "status": "planned"
-        },
-        {
-          "label": "iOS 快捷指令",
-          "status": "planned"
-        }
+    "comparison": {
+      "eyebrow": "和 Notion / Obsidian 有什么不同？",
+      "tagline": "Gotly Keeper 不替代你的笔记工具。它捕捉那些「不值得开一个文档，但又不该忘掉」的碎片。",
+      "scenario": "场景",
+      "others": "Notion / Obsidian",
+      "gotly": "Gotly Keeper",
+      "rows": [
+        { "scenario": "半夜冒出一个想法", "others": "打开 App，新建页面，开始写", "gotly": "打一句话，回车" },
+        { "scenario": "保存一个链接", "others": "手动粘贴整理，或丢进浏览器收藏夹", "gotly": "粘贴链接，自动抓取标题摘要" },
+        { "scenario": "「周五三点提醒我打电话」", "others": "需要切换到任务视图或手动设置", "gotly": "直接说，时间自动识别" },
+        { "scenario": "找回之前记的东西", "others": "翻文件夹、搜文件名、凭记忆翻", "gotly": "用自然语言问，语义搜索" },
+        { "scenario": "数据在哪", "others": "云端托管 / 本地文件", "gotly": "你自己的服务器，开源" }
       ]
     },
-    "ctaSection": {
-      "eyebrow": "轻量 · 开源 · 数据归你",
-      "title": "开始用 Gotly Keeper"
+    "status": {
+      "eyebrow": "项目状态",
+      "title": "还在早期，在持续迭代",
+      "description": "这个项目还在很早期的阶段。AI 还不够聪明，有些交互还不够顺畅——请多多理解。",
+      "shippedLabel": "已具备",
+      "buildingLabel": "在做",
+      "shipped": ["笔记/书签/待办", "AI 统一入口", "自然语言检索", "AI 内容摘要", "PWA 支持"],
+      "building": ["链接正文提取 + AI 摘要", "Markdown 编辑器", "数据导出"]
+    },
+    "cta": {
+      "greeting": "我是 Joey Zhao，一个在探索 AI × 生产力工具的独立开发者。Gotly Keeper 是我正在做的一个小产品——说不上多大野心，就是想让它先解决我自己的问题，顺便看看能不能帮到别人。",
+      "feedback": "如果你试过之后觉得它能解决你的一些问题，或者刚好满足了某种需求，欢迎告诉我。觉得哪里不好用，直接吐槽也行——",
+      "issuesLink": "GitHub Issues",
+      "tryNow": "立即体验",
+      "enterWorkspace": "进入工作区"
     },
     "footer": {
-      "tagline": "安静地保管你的一切。",
-      "privacy": "隐私政策",
-      "terms": "使用条款",
-      "contact": "联系我们",
+      "tagline": "开源 · 自托管 · 数据归你",
+      "privacy": "隐私",
+      "terms": "条款",
+      "contact": "联系",
       "github": "GitHub"
-    },
-    "demo": {
-      "inputPlaceholder": "随手记一句话…",
-      "messages": [
-        {
-          "role": "user",
-          "text": "明天下午记得发报价给李总"
-        },
-        {
-          "role": "ai",
-          "text": "已记录为待办，时间：明天下午。"
-        },
-        {
-          "role": "user",
-          "text": "https://example.com/ai-paper 这个后面看"
-        },
-        {
-          "role": "ai",
-          "text": "已收藏为书签。"
-        },
-        {
-          "role": "user",
-          "text": "我最近记过关于定价的内容吗"
-        },
-        {
-          "role": "ai",
-          "text": "找到 3 条相关记录：定价策略笔记、报价待办、竞品定价书签。"
-        }
-      ]
-    },
-    "socialProof": {
-      "items": {
-        "earlyUsers": {
-          "label": "早期用户"
-        },
-        "retrievalTime": {
-          "label": "平均找回时间"
-        },
-        "noCategorization": {
-          "label": "需要手动分类"
-        }
-      }
     }
   },
   "theme": {

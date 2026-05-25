@@ -1,14 +1,13 @@
 import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import * as React from "react";
 
 import { AccountMenu } from "@/components/account-menu";
 import { BrandLogo } from "@/components/brand-logo";
-import { FeatureList } from "@/components/landing/feature-list";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { painPointKeys, roadmapItems, scenarioKeys, socialProofData } from "@/config/landing-page-content";
+import { Separator } from "@/components/ui/separator";
 import { getServerTranslation } from "@/hooks/use-locale.server";
 import { cn } from "@/lib/utils";
 import { getSignedInUser } from "@/server/modules/auth/session";
@@ -21,65 +20,32 @@ function GithubIcon({ className }: { className?: string }) {
   );
 }
 
-const ANCHORS = {
-  features: "#features", // DESIGN_TOKEN_EXCEPTION: anchor href string, not a color value
-  scenarios: "#scenarios",
-  roadmap: "#roadmap",
-} as const;
-
 // Shared class strings
 const container = "w-[min(1120px,calc(100%-3rem))] mx-auto";
 const sectionPy = "py-[clamp(4.5rem,7vw,7rem)]";
 const navLinkCls = "inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-[450] text-on-surface-variant rounded-md no-underline transition-colors duration-150 hover:text-on-surface";
-const primaryCtaCls = "inline-flex items-center gap-1.5 bg-primary text-primary-foreground! rounded-md px-4 py-2 text-sm font-semibold no-underline transition-[opacity,transform] duration-150 hover:opacity-88 hover:-translate-y-px";
-const primaryCtaLargeCls = "inline-flex items-center gap-2 bg-primary text-primary-foreground! rounded-md px-[1.625rem] py-3 text-[0.9375rem] font-semibold no-underline transition-[opacity,transform] duration-150 hover:opacity-88 hover:-translate-y-px active:scale-[0.98]";
-const githubCtaCls = "inline-flex items-center gap-2 px-[1.625rem] py-3 text-[0.9375rem] font-medium text-on-surface! border border-foreground/14 rounded-md no-underline transition-[border-color,background] duration-150 hover:border-foreground/28 hover:bg-foreground/4";
 const eyebrowCls = "text-[0.72rem] font-semibold tracking-[0.16em] uppercase text-primary";
 const sectionTitleCls = "text-[clamp(1.875rem,3.2vw,2.625rem)] font-bold leading-[1.1] tracking-[-0.03em] text-on-surface text-balance";
+const bodyTextCls = "text-[0.9375rem] leading-[1.7] text-on-surface-variant max-w-[42rem]";
 
 export default async function LandingPage() {
   const user = await getSignedInUser();
   const workspaceHref = user ? "/workspace" : "/auth/sign-in";
 
-  // i18n
   const tNav = await getServerTranslation("landing.nav");
   const tHero = await getServerTranslation("landing.hero");
-  const tPain = await getServerTranslation("landing.painPoints");
-  const tFeatures = await getServerTranslation("landing.features");
-  const tScenarios = await getServerTranslation("landing.scenarios");
-  const tRoadmap = await getServerTranslation("landing.roadmap");
-  const tCta = await getServerTranslation("landing.ctaSection");
+  const tHow = await getServerTranslation("landing.howItWorks");
+  const tComparison = await getServerTranslation("landing.comparison");
+  const tStatus = await getServerTranslation("landing.status");
+  const tCta = await getServerTranslation("landing.cta");
   const tFooter = await getServerTranslation("landing.footer");
-  const tSocial = await getServerTranslation("landing.socialProof");
 
   const workspaceLabel = user ? tHero("enterWorkspace") : tHero("tryNow");
-
-  const features = [
-    { icon: "quickCapture", title: tFeatures("items.quickCapture.title"), desc: tFeatures("items.quickCapture.desc") },
-    { icon: "saveLinks", title: tFeatures("items.saveLinks.title"), desc: tFeatures("items.saveLinks.desc") },
-    { icon: "timeReminders", title: tFeatures("items.timeReminders.title"), desc: tFeatures("items.timeReminders.desc") },
-    { icon: "naturalSearch", title: tFeatures("items.naturalSearch.title"), desc: tFeatures("items.naturalSearch.desc") },
-  ];
-
-  const translatedPainPoints = painPointKeys.map((key) => ({
-    title: tPain(`items.${key}.title`),
-    desc: tPain(`items.${key}.desc`),
-  }));
-
-  const translatedScenarios = scenarioKeys.map((key) => ({
-    role: tScenarios(`items.${key}.role`),
-    desc: tScenarios(`items.${key}.desc`),
-    example: tScenarios(`items.${key}.example`),
-  }));
-
-  const socialItems = socialProofData.map((item) => ({
-    value: item.value,
-    label: tSocial(`items.${item.key}.label`),
-  }));
-
-  const shipped = roadmapItems.filter((i) => i.status === "shipped");
-  const building = roadmapItems.filter((i) => i.status === "building");
-  const planned = roadmapItems.filter((i) => i.status === "planned");
+  const steps = tHow.raw("steps") as { title: string; desc: string }[];
+  const examples = tHow.raw("examples") as { input: string; result: string }[];
+  const comparisonRows = tComparison.raw("rows") as { scenario: string; others: string; gotly: string }[];
+  const shipped = tStatus.raw("shipped") as string[];
+  const building = tStatus.raw("building") as string[];
 
   return (
     <div className="min-h-screen min-h-dvh bg-surface">
@@ -90,24 +56,17 @@ export default async function LandingPage() {
             <Link href="/" className="flex items-center shrink-0">
               <BrandLogo className="h-8 w-auto" priority />
             </Link>
-            <nav className="flex items-center gap-0.5 max-[900px]:hidden" aria-label={tNav("features")}>
-              <a href={ANCHORS.features} className={navLinkCls}>{tNav("features")}</a>
-              <a href={ANCHORS.scenarios} className={navLinkCls}>{tNav("scenarios")}</a>
-              <a href={ANCHORS.roadmap} className={navLinkCls}>{tNav("roadmap")}</a>
-            </nav>
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <Link href="https://github.com/zguiyang/gotly-keeper" target="_blank" rel="noopener noreferrer" className={navLinkCls}>
                 <GithubIcon className="h-4 w-4" />
               </Link>
               {user ? (
-                <>
-                  <AccountMenu userEmail={user.email} userImage={user.image} userName={user.name} />
-                </>
+                <AccountMenu userEmail={user.email} userImage={user.image} userName={user.name} />
               ) : (
                 <>
-                  <Link href="/auth/sign-in" className={cn(navLinkCls, "max-[900px]:hidden")}>{tNav("signIn")}</Link>
-                  <Link href="/auth/sign-up" className={cn(navLinkCls, "max-[900px]:hidden")}>{tNav("signUp")}</Link>
+                  <Link href="/auth/sign-in" className={cn(navLinkCls, "max-[640px]:hidden")}>{tNav("signIn")}</Link>
+                  <Link href="/auth/sign-up" className={cn(navLinkCls, "max-[640px]:hidden")}>{tNav("signUp")}</Link>
                 </>
               )}
               <LanguageSwitcher />
@@ -117,167 +76,198 @@ export default async function LandingPage() {
       </header>
 
       <main className="pt-16">
-        {/* Hero */}
-        <section className="pt-[clamp(6rem,10vw,10rem)] pb-0 text-center">
+        {/* ① Hero */}
+        <section className="pt-[clamp(6rem,10vw,10rem)] pb-0">
           <div className={container}>
-            <ScrollReveal variant="fade-up" delay={0}>
-              <div className="inline-flex items-center gap-2 text-[0.72rem] font-medium tracking-[0.06em] text-on-surface-variant mb-6 opacity-70">
-                {(tHero.raw("badges") as string[]).map((badge, i) => (
-                  <React.Fragment key={badge}>
-                    {i > 0 && <span className="w-[3px] h-[3px] rounded-full bg-current opacity-40" />}
-                    <span>{badge}</span>
-                  </React.Fragment>
-                ))}
-              </div>
+            <ScrollReveal variant="fade-up">
+              <h1 className="text-[clamp(2.5rem,5.5vw,4.5rem)] font-bold leading-[1.05] tracking-[-0.04em] text-on-surface text-balance mb-5">
+                {tHero("tagline")}
+              </h1>
+              <p className="text-[clamp(1rem,1.3vw,1.125rem)] text-on-surface-variant leading-[1.65] max-w-[36rem] mb-9">
+                {tHero("subtitle")}
+              </p>
             </ScrollReveal>
 
-            <ScrollReveal variant="fade-up" delay={80}>
-              <h1 className="text-[clamp(3rem,7vw,6rem)] font-bold leading-none tracking-[-0.04em] text-on-surface mb-5">Gotly Keeper</h1>
-            </ScrollReveal>
-
-            <ScrollReveal variant="fade-up" delay={160}>
-              <p className="text-[clamp(1.125rem,2vw,1.375rem)] font-medium text-on-surface tracking-[-0.01em] mb-2">{tHero("tagline")}</p>
-              <p className="text-[clamp(0.9375rem,1.1vw,1.0625rem)] text-on-surface-variant leading-[1.7] mb-9">{tHero("subtitle")}</p>
-            </ScrollReveal>
-
-            <ScrollReveal variant="fade-up" delay={240}>
-              <div className="flex flex-wrap items-center justify-center gap-3.5 max-sm:flex-col max-sm:items-stretch">
-                <Link href={workspaceHref} className={primaryCtaLargeCls}>
+            <ScrollReveal variant="fade-up">
+              <div className="flex flex-wrap items-center gap-3.5 max-sm:flex-col max-sm:items-stretch">
+                <Link
+                  href={workspaceHref}
+                  className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-lg px-[1.625rem] py-3 text-[0.9375rem] font-semibold no-underline transition-[opacity,transform] duration-150 hover:opacity-90 hover:-translate-y-px active:scale-[0.98]"
+                >
                   {workspaceLabel}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
-                <Link href="https://github.com/zguiyang/gotly-keeper" target="_blank" rel="noopener noreferrer" className={githubCtaCls}>
+                <Link
+                  href="https://github.com/zguiyang/gotly-keeper"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-[1.625rem] py-3 text-[0.9375rem] font-medium text-on-surface border border-foreground/14 rounded-lg no-underline transition-[border-color,background] duration-150 hover:border-foreground/28 hover:bg-foreground/4"
+                >
                   <GithubIcon className="h-4 w-4" />
                   {tHero("githubLink")}
                 </Link>
               </div>
             </ScrollReveal>
-          </div>
 
-          {/* Demo video */}
-          <ScrollReveal variant="fade-up" delay={320} className={cn(container, "mt-[clamp(3rem,5vw,4.5rem)] flex flex-col items-center gap-5")}>
-            <div className="w-full rounded-[10px] overflow-hidden border border-foreground/8 shadow-[0_-2px_40px_color-mix(in_srgb,var(--color-on-surface)_5%,transparent)]"> {/* DESIGN_TOKEN_EXCEPTION: shadow depth blend, no semantic token */}
-              <video
-                className="aspect-video w-full"
-                src="https://cloud.zgyk.cc/f/Y3cO/demo.mp4"
-                autoPlay
-                muted
-                loop
-                playsInline
-                controls
-              />
-            </div>
-            <p className="text-sm text-on-surface-variant opacity-70 text-center">{tHero("demoCaption")}</p>
-          </ScrollReveal>
+            {/* Demo video */}
+            <ScrollReveal variant="fade-up" className="mt-[clamp(3rem,5vw,4.5rem)]">
+              <div className="rounded-[10px] overflow-hidden border border-foreground/8 shadow-[0_-2px_40px_color-mix(in_srgb,var(--color-on-surface)_5%,transparent)]"> {/* DESIGN_TOKEN_EXCEPTION: shadow depth blend, no semantic token */}
+                <video
+                  className="aspect-video w-full"
+                  src="https://cloud.zgyk.cc/f/Y3cO/demo.mp4"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  controls
+                />
+              </div>
+            </ScrollReveal>
+          </div>
         </section>
 
-        {/* Pain points */}
+        {/* ② How It Works */}
         <section className={cn(container, sectionPy)}>
           <ScrollReveal variant="fade-in">
-            <div className="flex flex-col gap-2.5 mb-12">
-              <p className={eyebrowCls}>{tPain("eyebrow")}</p>
-              {/** Trust: tPain("title") is a compile-time i18n string containing <br> for rich-text formatting — not user/AI-controlled content. */}
-              <h2 className={sectionTitleCls} dangerouslySetInnerHTML={{ __html: tPain("title") }} />
+            <p className={eyebrowCls}>{tHow("eyebrow")}</p>
+          </ScrollReveal>
+
+          <div className="mt-12 space-y-10">
+            {steps.map((step, i) => (
+              <ScrollReveal key={step.title} variant="fade-up">
+                <h3 className="text-[1.125rem] font-semibold text-on-surface tracking-[-0.01em] mb-2">
+                  {step.title}
+                </h3>
+                <p className={bodyTextCls}>{step.desc}</p>
+                {i < steps.length - 1 && <Separator className="mt-10" />}
+              </ScrollReveal>
+            ))}
+          </div>
+
+          {/* Screenshot */}
+          <ScrollReveal variant="fade-up" className="mt-12">
+            <div className="rounded-[10px] overflow-hidden border border-foreground/8">
+              <Image
+                src="/demo.webp"
+                alt="Gotly Keeper interface"
+                width={1120}
+                height={630}
+                className="w-full h-auto"
+                priority={false}
+              />
             </div>
           </ScrollReveal>
-          <ScrollReveal variant="fade-up" delay={80}>
-            <div className="grid grid-cols-3 gap-5 max-[900px]:grid-cols-1">
-              {translatedPainPoints.map((p) => (
-                <div key={p.title} className="p-[1.625rem] border border-foreground/7 rounded-lg flex flex-col gap-2">
-                  <p className="text-[0.9375rem] font-semibold text-on-surface tracking-[-0.01em]">{p.title}</p>
-                  <p className="text-sm leading-[1.7] text-on-surface-variant">{p.desc}</p>
-                </div>
+
+          {/* Examples */}
+          <ScrollReveal variant="fade-up" className="mt-10">
+            <div className="space-y-2.5 pl-4 border-l-2 border-foreground/10">
+              {examples.map((ex) => (
+                <p key={ex.input} className="text-sm text-on-surface-variant leading-[1.6]">
+                  <span className="text-on-surface/70">{ex.input}</span>{" "}
+                  <span className="text-on-surface-variant/60">{ex.result}</span>
+                </p>
               ))}
             </div>
           </ScrollReveal>
         </section>
 
-        {/* Features */}
-        <section id="features" className={cn(sectionPy, "scroll-mt-16 bg-[color-mix(in_srgb,var(--color-on-surface)_2.5%,var(--color-surface))]")}> {/* DESIGN_TOKEN_EXCEPTION: alt-section tint, no semantic token for 2.5% surface blend */}
+        {/* ③ Comparison */}
+        <section className={cn(sectionPy, "bg-[color-mix(in_srgb,var(--color-on-surface)_2.5%,var(--color-surface))]")}> {/* DESIGN_TOKEN_EXCEPTION: alt-section tint, no semantic token for 2.5% surface blend */}
           <div className={container}>
             <ScrollReveal variant="fade-in">
-              <div className="flex flex-col gap-2.5 mb-12">
-                <p className={eyebrowCls}>{tFeatures("eyebrow")}</p>
-                <h2 className={sectionTitleCls}>{tFeatures("title")}</h2>
+              <p className={cn(eyebrowCls, "normal-case")}>{tComparison("eyebrow")}</p>
+              <h2 className={cn(sectionTitleCls, "mt-2.5 mb-4")}>{tComparison("tagline")}</h2>
+            </ScrollReveal>
+
+            <ScrollReveal variant="fade-up" className="mt-8">
+              <div className="overflow-x-auto -mx-4 px-4">
+                <table className="w-full min-w-[560px] text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-foreground/12">
+                      <th className="py-3 pr-6 text-xs font-semibold tracking-[0.08em] text-on-surface-variant/60">
+                        {tComparison("scenario")}
+                      </th>
+                      <th className="py-3 pr-6 text-xs font-semibold tracking-[0.08em] text-on-surface-variant/60">
+                        {tComparison("others")}
+                      </th>
+                      <th className="py-3 text-xs font-semibold tracking-[0.08em] text-on-surface-variant/60">
+                        {tComparison("gotly")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {comparisonRows.map((row) => (
+                      <tr key={row.scenario} className="border-b border-foreground/5 last:border-b-0">
+                        <td className="py-3.5 pr-6 text-sm font-medium text-on-surface">{row.scenario}</td>
+                        <td className="py-3.5 pr-6 text-sm text-on-surface-variant leading-[1.55]">{row.others}</td>
+                        <td className="py-3.5 text-sm text-on-surface-variant leading-[1.55]">{row.gotly}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </ScrollReveal>
-            <FeatureList features={features} />
           </div>
         </section>
 
-        {/* Scenarios */}
-        <section id="scenarios" className={cn(container, sectionPy, "scroll-mt-16")}>
+        {/* ④ Project Status */}
+        <section className={cn(container, sectionPy)}>
           <ScrollReveal variant="fade-in">
-            <div className="flex flex-col gap-2.5 mb-12">
-              <p className={eyebrowCls}>{tScenarios("eyebrow")}</p>
-              {/** Trust: see pain-points section — same compile-time i18n pattern. */}
-              <h2 className={sectionTitleCls} dangerouslySetInnerHTML={{ __html: tScenarios("title") }} />
-            </div>
+            <p className={eyebrowCls}>{tStatus("eyebrow")}</p>
+            <h2 className={cn(sectionTitleCls, "mt-2.5 mb-4")}>{tStatus("title")}</h2>
+            <p className={cn(bodyTextCls, "mb-10")}>{tStatus("description")}</p>
           </ScrollReveal>
-          <ScrollReveal variant="fade-in" delay={80}>
-            <div className="flex flex-col border-t border-foreground/8">
-              {translatedScenarios.map((s, i) => (
-                <article key={s.role} className="grid grid-cols-[3rem_1fr_auto] max-[900px]:grid-cols-[2.5rem_1fr] items-start gap-8 max-[900px]:gap-4 py-[1.875rem] border-b border-foreground/8 transition-colors duration-200 hover:bg-foreground/2">
-                  <span className="text-[0.72rem] font-semibold tracking-[0.1em] text-on-surface-variant/45 pt-[0.15rem] tabular-nums">0{i + 1}</span>
-                  <div className="flex flex-col gap-[0.3rem]">
-                    <h3 className="text-[0.9375rem] font-semibold text-on-surface tracking-[-0.01em]">{s.role}</h3>
-                    <p className="text-sm leading-[1.65] text-on-surface-variant max-w-[34rem]">{s.desc}</p>
-                  </div>
-                  <p className="text-[0.8125rem] text-on-surface-variant italic max-w-[16rem] text-right pt-[0.15rem] opacity-60 max-[900px]:hidden">{s.example}</p>
-                </article>
-              ))}
+
+          <ScrollReveal variant="fade-up">
+            <div className="grid grid-cols-2 gap-8 max-sm:grid-cols-1 max-sm:gap-6">
+              <div>
+                <h3 className="text-xs font-semibold tracking-[0.08em] uppercase text-status-success mb-4">
+                  {tStatus("shippedLabel")}
+                </h3>
+                <ul className="space-y-2">
+                  {shipped.map((item) => (
+                    <li key={item} className="text-sm text-on-surface-variant leading-[1.55]">{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-xs font-semibold tracking-[0.08em] uppercase text-primary mb-4">
+                  {tStatus("buildingLabel")}
+                </h3>
+                <ul className="space-y-2">
+                  {building.map((item) => (
+                    <li key={item} className="text-sm text-on-surface-variant leading-[1.55]">{item}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </ScrollReveal>
         </section>
 
-        {/* Roadmap */}
-        <section id="roadmap" className={cn(sectionPy, "scroll-mt-16 bg-[color-mix(in_srgb,var(--color-on-surface)_2.5%,var(--color-surface))]")}> {/* DESIGN_TOKEN_EXCEPTION: alt-section tint, no semantic token for 2.5% surface blend */}
+        {/* ⑤ CTA */}
+        <section className={cn(sectionPy, "bg-[color-mix(in_srgb,var(--color-on-surface)_2.5%,var(--color-surface))]")}> {/* DESIGN_TOKEN_EXCEPTION: alt-section tint, no semantic token for 2.5% surface blend */}
           <div className={container}>
-            <ScrollReveal variant="fade-in">
-              <div className="flex flex-col gap-2.5 mb-12">
-                <p className={eyebrowCls}>{tRoadmap("eyebrow")}</p>
-                {/** Trust: see pain-points section — same compile-time i18n pattern. */}
-              <h2 className={sectionTitleCls} dangerouslySetInnerHTML={{ __html: tRoadmap("title") }} />
-              </div>
-            </ScrollReveal>
-            <ScrollReveal variant="fade-up" delay={80}>
-              <div className="grid grid-cols-3 gap-5 max-[900px]:grid-cols-1">
-                {([["shipped", shipped], ["building", building], ["planned", planned]] as const).map(([status, items]) => (
-                  <div key={status} className="border border-foreground/7 rounded-lg overflow-hidden">
-                    <div className={cn(
-                      "px-5 py-3 text-xs font-semibold tracking-[0.08em] uppercase",
-                      status === "shipped" && "bg-status-success/10 text-status-success",
-                      status === "building" && "bg-primary/10 text-primary",
-                      status === "planned" && "bg-foreground/5 text-on-surface-variant",
-                    )}>
-                      {tRoadmap(status)}
-                    </div>
-                    <ul className="py-3 m-0 list-none flex flex-col">
-                      {items.map((item) => (
-                        <li key={item.label} className="px-5 py-2 text-sm text-on-surface-variant leading-[1.5] border-b border-foreground/5 last:border-b-0">{item.label}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </ScrollReveal>
-          </div>
-        </section>
-
-        {/* Final CTA */}
-        <section className="py-[clamp(5rem,9vw,9rem)] text-center">
-          <div className={cn(container, "flex flex-col items-center gap-6")}>
             <ScrollReveal variant="fade-up">
-              <p className={eyebrowCls}>{tCta("eyebrow")}</p>
-              <h2 className="text-[clamp(2rem,4vw,3rem)] font-bold tracking-[-0.04em] text-on-surface leading-[1.1] mt-2">{tCta("title")}</h2>
-              <div className="flex flex-wrap items-center justify-center gap-3.5 mt-6 max-sm:flex-col max-sm:items-stretch">
-                <Link href={workspaceHref} className={primaryCtaLargeCls}>
+              <div className="max-w-[38rem]">
+                <p className={cn(bodyTextCls, "mb-5")}>{tCta("greeting")}</p>
+                <p className={cn(bodyTextCls, "mb-4")}>{tCta("feedback")}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3.5 max-sm:flex-col max-sm:items-stretch">
+                <Link
+                  href={workspaceHref}
+                  className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-lg px-5 py-[0.625rem] text-sm font-semibold no-underline transition-[opacity,transform] duration-150 hover:opacity-90 hover:-translate-y-px active:scale-[0.98]"
+                >
                   {workspaceLabel}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
-                <Link href="https://github.com/zguiyang/gotly-keeper" target="_blank" rel="noopener noreferrer" className={githubCtaCls}>
+                <Link
+                  href="https://github.com/zguiyang/gotly-keeper/issues"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-[0.625rem] text-sm font-medium text-on-surface-variant border border-foreground/14 rounded-lg no-underline transition-colors duration-150 hover:border-foreground/28 hover:bg-foreground/4"
+                >
                   <GithubIcon className="h-4 w-4" />
-                  {tHero("viewSource")}
+                  {tCta("issuesLink")}
                 </Link>
               </div>
             </ScrollReveal>

@@ -38,202 +38,66 @@
   },
   "landing": {
     "nav": {
-      "features": "Features",
-      "scenarios": "Scenarios",
-      "roadmap": "Roadmap",
       "signIn": "Sign In",
       "signUp": "Sign Up Free"
     },
     "hero": {
-      "tagline": "Say it, and it's saved. Ask for it, and it's found.",
-      "subtitle": "Notes, bookmarks, todos — no organizing, no categorizing.",
-      "cta": "Get Started",
-      "githubLink": "Open Source on GitHub",
-      "viewSource": "View Source",
-      "enterWorkspace": "Go to Workspace",
+      "tagline": "Notes, bookmarks, and todos — no organizing needed.",
+      "subtitle": "A single input box. AI figures out what kind it is, extracts time, and stores it. Ask in natural language to get it back.",
       "tryNow": "Try Now",
-      "demoCaption": "A lightweight personal info assistant. Take notes, save bookmarks, manage todos.",
-      "badges": [
-        "Open Source",
-        "Self-hosted",
-        "Your Data"
+      "enterWorkspace": "Go to Workspace",
+      "githubLink": "GitHub"
+    },
+    "howItWorks": {
+      "eyebrow": "How It Works",
+      "steps": [
+        { "title": "Write anything", "desc": "Ideas, links, reminders — all in one input box." },
+        { "title": "Auto-sorted", "desc": "AI figures out if it's a note, bookmark, or todo. Extracts time when needed." },
+        { "title": "Ask to find", "desc": "Can't remember where you put it? Ask in natural language — semantic search finds it." }
+      ],
+      "examples": [
+        { "input": "\"Keep this: the Q3 pricing feedback\"", "result": "→ Note" },
+        { "input": "\"Save this: https://example.com/ai-paper\"", "result": "→ Bookmark" },
+        { "input": "\"Remind me: send the report by Friday 3pm\"", "result": "→ Todo with due date" },
+        { "input": "\"Where's that article about RAG I saved?\"", "result": "→ Found instantly" }
       ]
     },
-    "painPoints": {
-      "eyebrow": "Does this sound familiar?",
-      "title": "More information,<br />harder to find.",
-      "items": {
-        "savedButLost": {
-          "title": "Saved but lost",
-          "desc": "Bookmarks, WeChat favorites, note apps — scattered everywhere, impossible to find when needed."
-        },
-        "notedButUnorganized": {
-          "title": "Noted but unorganized",
-          "desc": "Random notes pile up, turning into an information dump over time."
-        },
-        "organizedButTimeConsuming": {
-          "title": "Organized but time-consuming",
-          "desc": "Sorting, tagging, summarizing — organizing takes more effort than capturing."
-        }
-      }
-    },
-    "features": {
-      "eyebrow": "Core Features",
-      "title": "Four things, all covered.",
-      "items": {
-        "quickCapture": {
-          "title": "Quick Capture",
-          "desc": "One sentence input, automatically recognizes notes, todos, or bookmarks."
-        },
-        "saveLinks": {
-          "title": "Save Links",
-          "desc": "Paste a link, title and summary auto-fetched, searchable later."
-        },
-        "timeReminders": {
-          "title": "Time Reminders",
-          "desc": "Say 'follow up next Wednesday' — time auto-extracted, no manual task creation."
-        },
-        "naturalSearch": {
-          "title": "Natural Language Search",
-          "desc": "Can't remember where you put it? Just describe it and find it."
-        }
-      }
-    },
-    "scenarios": {
-      "eyebrow": "Use Cases",
-      "title": "No need to categorize,<br />just leave it to Gotly.",
-      "items": {
-        "productManager": {
-          "role": "Product Manager",
-          "desc": "Meeting ends, jot down a conclusion. No new doc, no title needed.",
-          "example": "\"Just note down the pricing plan we discussed\""
-        },
-        "researcher": {
-          "role": "Researcher",
-          "desc": "Save interesting papers first, find them later with natural language.",
-          "example": "\"Do I have any articles about RAG saved?\""
-        },
-        "freelancer": {
-          "role": "Freelancer",
-          "desc": "Log client follow-ups, time auto-detected, no manual task creation.",
-          "example": "\"Remember to confirm the quote with Mr. Li next Wednesday\""
-        },
-        "powerCollector": {
-          "role": "Power Collector",
-          "desc": "Find everything you've saved just by asking. Never 'can't find it' again.",
-          "example": "\"Summarize my recent saved content\""
-        }
-      }
-    },
-    "roadmap": {
-      "eyebrow": "Always Improving",
-      "title": "Getting better<br />since day one.",
-      "shipped": "Shipped",
-      "building": "In Progress",
-      "planned": "Planned",
-      "items": [
-        {
-          "label": "Notes / Bookmarks / Todos",
-          "status": "shipped"
-        },
-        {
-          "label": "AI Unified Entry",
-          "status": "shipped"
-        },
-        {
-          "label": "Natural Language Search",
-          "status": "shipped"
-        },
-        {
-          "label": "AI Content Summary",
-          "status": "shipped"
-        },
-        {
-          "label": "PWA Support",
-          "status": "shipped"
-        },
-        {
-          "label": "Link Content Extraction + AI Summary",
-          "status": "building"
-        },
-        {
-          "label": "Markdown Editor",
-          "status": "building"
-        },
-        {
-          "label": "Data Export (Markdown / JSON)",
-          "status": "building"
-        },
-        {
-          "label": "Browser Extension",
-          "status": "planned"
-        },
-        {
-          "label": "Mobile Push Notifications",
-          "status": "planned"
-        },
-        {
-          "label": "Email-to-Asset",
-          "status": "planned"
-        },
-        {
-          "label": "iOS Shortcuts",
-          "status": "planned"
-        }
+    "comparison": {
+      "eyebrow": "Why not Notion / Obsidian?",
+      "tagline": "Gotly Keeper doesn't replace your notes app. It catches what never makes it into one.",
+      "scenario": "Scenario",
+      "others": "Notion / Obsidian",
+      "gotly": "Gotly Keeper",
+      "rows": [
+        { "scenario": "A late-night idea", "others": "Open app, create page, start writing", "gotly": "Type one line, hit enter" },
+        { "scenario": "Saving a link", "others": "Paste and sort manually, or dump into browser bookmarks", "gotly": "Paste the link — title and summary auto-fetched" },
+        { "scenario": "\"Remind me Friday at 3pm\"", "others": "Switch to task view or set manually", "gotly": "Just say it — time auto-extracted" },
+        { "scenario": "Finding something you saved", "others": "Dig through folders, search filenames, scroll by memory", "gotly": "Ask in natural language — semantic search" },
+        { "scenario": "Where's the data", "others": "Cloud-hosted / Local files", "gotly": "Your own server, open source" }
       ]
     },
-    "ctaSection": {
-      "eyebrow": "Lightweight · Open Source · Your Data",
-      "title": "Start Using Gotly Keeper"
+    "status": {
+      "eyebrow": "Project Status",
+      "title": "Still early. Actively improving.",
+      "description": "This project is in its early days. The AI isn't as sharp as I want it yet, and some interactions still feel rough — bear with me.",
+      "shippedLabel": "Shipped",
+      "buildingLabel": "Building",
+      "shipped": ["Notes / Bookmarks / Todos", "AI unified entry", "Natural language search", "AI summaries", "PWA support"],
+      "building": ["Link content extraction + AI summary", "Markdown editor", "Data export"]
+    },
+    "cta": {
+      "greeting": "I'm Joey Zhao, an indie developer exploring the space where AI meets productivity. Gotly Keeper is a small tool I'm building — no grand ambitions, I just wanted to solve my own problem first, and maybe help others along the way.",
+      "feedback": "If you try it and feel it solves a problem for you, or fits a need you've had, let me know. If something sucks, tell me that too —",
+      "issuesLink": "GitHub Issues",
+      "tryNow": "Try Now",
+      "enterWorkspace": "Go to Workspace"
     },
     "footer": {
-      "tagline": "Quietly keeping everything for you.",
-      "privacy": "Privacy Policy",
-      "terms": "Terms of Service",
-      "contact": "Contact Us",
+      "tagline": "Open source. Self-hosted. Your data.",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "contact": "Contact",
       "github": "GitHub"
-    },
-    "demo": {
-      "inputPlaceholder": "Jot down a note…",
-      "messages": [
-        {
-          "role": "user",
-          "text": "Send the quote to Mr. Li tomorrow afternoon"
-        },
-        {
-          "role": "ai",
-          "text": "Saved as a todo. Due: tomorrow afternoon."
-        },
-        {
-          "role": "user",
-          "text": "https://example.com/ai-paper check this out later"
-        },
-        {
-          "role": "ai",
-          "text": "Bookmarked."
-        },
-        {
-          "role": "user",
-          "text": "Did I save anything about pricing recently?"
-        },
-        {
-          "role": "ai",
-          "text": "Found 3 related records: pricing notes, a quote todo, and a competitor pricing bookmark."
-        }
-      ]
-    },
-    "socialProof": {
-      "items": {
-        "earlyUsers": {
-          "label": "Early Users"
-        },
-        "retrievalTime": {
-          "label": "Avg. Retrieval Time"
-        },
-        "noCategorization": {
-          "label": "Manual Categorization"
-        }
-      }
     }
   },
   "theme": {
