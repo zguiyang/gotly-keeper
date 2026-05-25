@@ -110,60 +110,89 @@ function buildPromptPayload(task: WorkspaceTask, plan: WorkspaceExecutionPlan, d
   }
 }
 
-function getTargetLabel(task: WorkspaceTask, data: WorkspaceToolResult) {
-  const target = task.target ?? (data.ok ? data.target : 'mixed')
-
-  if (target === 'notes') {
-    return '笔记'
-  }
-
-  if (target === 'todos') {
-    return '待办'
-  }
-
-  if (target === 'bookmarks') {
-    return '书签'
-  }
-
-  return '内容'
+const TARGET_LABELS: Record<string, { en: string; 'zh-CN': string }> = {
+  notes: { en: 'note', 'zh-CN': '笔记' },
+  todos: { en: 'todo', 'zh-CN': '待办' },
+  bookmarks: { en: 'bookmark', 'zh-CN': '书签' },
+  mixed: { en: 'item', 'zh-CN': '内容' },
 }
 
-function buildFallbackAnswer(task: WorkspaceTask, data: WorkspaceToolResult) {
+function getTargetLabel(target: string, locale: string = 'zh-CN'): string {
+  const labels = TARGET_LABELS[target] ?? TARGET_LABELS.mixed
+  return labels[locale as keyof typeof labels] ?? labels.en
+}
+
+const FALLBACK_MESSAGES: Record<string, Record<string, string>> = {
+  query_empty: {
+    en: 'No matching results found. Try different keywords.',
+    'zh-CN': '没有找到相关内容。可以换个关键词再试试。',
+  },
+  query_found: {
+    en: 'Found {total} {label}.',
+    'zh-CN': '已找到 {total} 条{label}。',
+  },
+  summarize_found: {
+    en: 'Summarized {total} {label}. Here are the key results.',
+    'zh-CN': '已整理 {total} 条{label}，下面是重点结果。',
+  },
+  summarize_empty: {
+    en: 'No {label} to summarize.',
+    'zh-CN': '目前没有可整理的{label}。',
+  },
+  create_done: {
+    en: '{label} created.',
+    'zh-CN': '已创建{label}。',
+  },
+  update_done: {
+    en: '{label} updated.',
+    'zh-CN': '已更新{label}。',
+  },
+}
+
+function buildFallbackAnswer(task: WorkspaceTask, data: WorkspaceToolResult, locale: string = 'zh-CN') {
   if (!data.ok) {
     return data.message
   }
 
-  const targetLabel = getTargetLabel(task, data)
+  const target = task.target ?? (data.ok ? data.target : 'mixed')
+  const targetLabel = getTargetLabel(target ?? 'mixed', locale)
   const total = data.total ?? data.items?.length ?? 0
 
   if (task.intent === 'query') {
     if (total === 0) {
-      return '没有找到相关内容。可以换个关键词再试试。'
+      return FALLBACK_MESSAGES.query_empty[locale] ?? FALLBACK_MESSAGES.query_empty.en
     }
-
-    return `已找到 ${total} 条${targetLabel}。`
+    const template = FALLBACK_MESSAGES.query_found[locale] ?? FALLBACK_MESSAGES.query_found.en
+    return template.replace('{total}', String(total)).replace('{label}', targetLabel)
   }
 
   if (task.intent === 'summarize') {
-    return total > 0
-      ? `已整理 ${total} 条${targetLabel}，下面是重点结果。`
-      : `目前没有可整理的${targetLabel}。`
+    if (total > 0) {
+      const template = FALLBACK_MESSAGES.summarize_found[locale] ?? FALLBACK_MESSAGES.summarize_found.en
+      return template.replace('{total}', String(total)).replace('{label}', targetLabel)
+    }
+    const template = FALLBACK_MESSAGES.summarize_empty[locale] ?? FALLBACK_MESSAGES.summarize_empty.en
+    return template.replace('{label}', targetLabel)
   }
 
   if (task.intent === 'create') {
-    return `已创建${targetLabel}。`
+    const template = FALLBACK_MESSAGES.create_done[locale] ?? FALLBACK_MESSAGES.create_done.en
+    return template.replace('{label}', targetLabel)
   }
 
-  return `已更新${targetLabel}。`
+  const template = FALLBACK_MESSAGES.update_done[locale] ?? FALLBACK_MESSAGES.update_done.en
+  return template.replace('{label}', targetLabel)
 }
 
 export async function composeWorkspaceAnswer(input: {
   task: WorkspaceTask
   plan: WorkspaceExecutionPlan
   data: WorkspaceToolResult
+  locale?: string
   signal?: AbortSignal
 }): Promise<WorkspaceComposeResult> {
-  const fallbackAnswer = buildFallbackAnswer(input.task, input.data)
+  const defaultLocale = input.locale ?? 'en'
+  const fallbackAnswer = buildFallbackAnswer(input.task, input.data, defaultLocale)
 
   if (!input.data.ok) {
     return {
@@ -183,7 +212,7 @@ export async function composeWorkspaceAnswer(input: {
   try {
     const payload = buildPromptPayload(input.task, input.plan, input.data)
     const [systemPrompt, userPrompt] = await Promise.all([
-      buildWorkspaceSystemPrompt('workspace-agent/compose.system', {}),
+      buildWorkspaceSystemPrompt('workspace-agent/compose.system', {}, defaultLocale),
       renderPrompt('workspace-agent/compose.user', {
         payloadJson: JSON.stringify(payload),
       }),

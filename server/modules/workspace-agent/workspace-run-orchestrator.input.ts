@@ -379,6 +379,7 @@ async function runCompose(
     task,
     plan,
     data,
+    locale: ctx.locale,
   })
 
   emitEvent(ctx, { type: 'phase_completed', phase: 'compose', output: result })
@@ -400,6 +401,7 @@ async function runBatchCompose(
     answer: buildBatchAnswer({
       plan: input.preview.plan,
       executeResult: input.executeResult,
+      locale: ctx.locale,
     }),
     usedFallback: true,
   }
@@ -446,7 +448,7 @@ export async function handleNewInput(
   const runId = createRunId()
   const updatedAt = new Date().toISOString()
 
-  const ctx: PhaseContext = { runId, userId, onEvent, signal: options.signal, phaseTimings: [] }
+  const ctx: PhaseContext = { runId, userId, locale: options.locale, onEvent, signal: options.signal, phaseTimings: [] }
   try {
     const normalized = await runNormalize(ctx, request.text)
     const normalizedForUnderstanding = applyTypoCorrections(normalized)
@@ -630,7 +632,8 @@ export async function handleNewInput(
                     intent: primaryTask.intent as WorkspaceIntent,
                     target: primaryTask.target as Exclude<WorkspaceTarget, 'mixed'>,
                   },
-                  firstOkResult
+                  firstOkResult,
+                  ctx.locale
                 ),
                 usedFallback: true,
               }

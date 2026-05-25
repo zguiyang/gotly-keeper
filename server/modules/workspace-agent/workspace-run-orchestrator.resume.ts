@@ -118,6 +118,7 @@ async function runCompose(
     task,
     plan,
     data,
+    locale: ctx.locale,
   })
 
   emitEvent(ctx, { type: 'phase_completed', phase: 'compose', output: result })
@@ -338,6 +339,7 @@ async function runBatchCompose(
     answer: buildBatchAnswer({
       plan: input.preview?.plan,
       executeResult: input.executeResult,
+      locale: ctx.locale,
     }),
     usedFallback: true,
   }
@@ -517,6 +519,7 @@ export async function handleResume(
   const ctx: PhaseContext = {
     runId: request.runId,
     userId,
+    locale: options.locale,
     onEvent,
     signal: options.signal,
     phaseTimings: [],
