@@ -54,75 +54,53 @@ type ProcessLine = {
   text: string
 }
 
-function getPhaseTitle(phase: VisibleWorkspaceRunPhase['phase']) {
-  if (phase === 'normalize') {
-    return 'Normalizing input'
-  }
-
-  if (phase === 'semantic_split') {
-    return 'Splitting semantic fragments'
-  }
-
-  if (phase === 'understand') {
-    return 'Understanding your input'
-  }
-
-  if (phase === 'plan') {
-    return 'Planning execution steps'
-  }
-
-  if (phase === 'review') {
-    return 'Checking execution risks'
-  }
-
-  if (phase === 'preview') {
-    return 'Preparing execution preview'
-  }
-
-  if (phase === 'execute') {
-    return 'Executing'
-  }
-
-  return 'Composing result'
+const PHASE_TITLE_KEY: Record<string, string> = {
+  normalize: 'phaseNormalize',
+  semantic_split: 'phaseSemanticSplit',
+  understand: 'phaseUnderstand',
+  plan: 'phasePlan',
+  review: 'phaseReview',
+  preview: 'phasePreview',
+  execute: 'phaseExecute',
 }
 
-function getTargetLabel(target: 'notes' | 'todos' | 'bookmarks' | 'mixed') {
-  if (target === 'notes') {
-    return 'Notes'
-  }
-
-  if (target === 'todos') {
-    return 'Todos'
-  }
-
-  if (target === 'bookmarks') {
-    return 'Bookmarks'
-  }
-
-  return 'Content'
+function getPhaseTitle(t: (key: string) => string, phase: VisibleWorkspaceRunPhase['phase']) {
+  return t(PHASE_TITLE_KEY[phase] ?? 'phaseCompose')
 }
 
-function getMutationTargetLabel(target: 'notes' | 'todos' | 'bookmarks') {
-  if (target === 'notes') {
-    return 'Note'
-  }
-
-  if (target === 'todos') {
-    return 'Todo'
-  }
-
-  return 'Bookmark'
+const TARGET_KEY: Record<string, string> = {
+  notes: 'targetNote',
+  todos: 'targetTodo',
+  bookmarks: 'targetBookmark',
+  mixed: 'targetMixed',
 }
 
-function getToolLabel(toolName: string) {
-  if (toolName === 'create_todo') return 'Create Todo'
-  if (toolName === 'update_todo') return 'Update Todo'
-  if (toolName === 'create_note') return 'Create Note'
-  if (toolName === 'update_note') return 'Update Note'
-  if (toolName === 'create_bookmark') return 'Create Bookmark'
-  if (toolName === 'query_assets') return 'Query Content'
-  if (toolName === 'summarize_assets') return 'Summarize Content'
-  return toolName
+function getTargetLabel(t: (key: string) => string, target: 'notes' | 'todos' | 'bookmarks' | 'mixed') {
+  return t(TARGET_KEY[target] ?? 'targetMixed')
+}
+
+const MUTATION_TARGET_KEY: Record<string, string> = {
+  notes: 'targetNote',
+  todos: 'targetTodo',
+  bookmarks: 'targetBookmark',
+}
+
+function getMutationTargetLabel(t: (key: string) => string, target: 'notes' | 'todos' | 'bookmarks') {
+  return t(MUTATION_TARGET_KEY[target] ?? 'targetNote')
+}
+
+const TOOL_LABEL_KEY: Record<string, string> = {
+  create_todo: 'toolCreateTodo',
+  update_todo: 'toolUpdateTodo',
+  create_note: 'toolCreateNote',
+  update_note: 'toolUpdateNote',
+  create_bookmark: 'toolCreateBookmark',
+  query_assets: 'toolQueryAssets',
+  summarize_assets: 'toolSummarizeAssets',
+}
+
+function getToolLabel(t: (key: string) => string, toolName: string) {
+  return t(TOOL_LABEL_KEY[toolName] ?? toolName)
 }
 
 function getVisiblePhase(
@@ -153,36 +131,18 @@ function getVisiblePhase(
   }
 }
 
-function getPhaseFallbackMessage(visiblePhase: VisibleWorkspaceRunPhase) {
-  if (visiblePhase.phase === 'normalize') {
-    return 'Organizing raw input for processing.'
-  }
+const PHASE_MSG_KEY: Record<string, string> = {
+  normalize: 'phaseMsgNormalize',
+  semantic_split: 'phaseMsgSemanticSplit',
+  understand: 'phaseMsgUnderstand',
+  plan: 'phaseMsgPlan',
+  review: 'phaseMsgReview',
+  preview: 'phaseMsgPreview',
+  execute: 'phaseMsgExecute',
+}
 
-  if (visiblePhase.phase === 'semantic_split') {
-    return 'Determining if single or multi-task, splitting semantic fragments.'
-  }
-
-  if (visiblePhase.phase === 'understand') {
-    return 'Identifying intent and tasks to execute.'
-  }
-
-  if (visiblePhase.phase === 'plan') {
-    return 'Organizing understanding into executable steps.'
-  }
-
-  if (visiblePhase.phase === 'review') {
-    return 'Determining if direct execution or confirmation needed.'
-  }
-
-  if (visiblePhase.phase === 'preview') {
-    return 'Preparing execution preview.'
-  }
-
-  if (visiblePhase.phase === 'execute') {
-    return 'Processing related content.'
-  }
-
-  return 'Composing readable response.'
+function getPhaseFallbackMessage(t: (key: string) => string, visiblePhase: VisibleWorkspaceRunPhase) {
+  return t(PHASE_MSG_KEY[visiblePhase.phase] ?? 'phaseMsgCompose')
 }
 
 function formatElapsedMs(elapsedMs: number | null | undefined) {
@@ -201,9 +161,9 @@ function formatElapsedMs(elapsedMs: number | null | undefined) {
   return `${minutes}m${String(seconds).padStart(2, '0')}s`
 }
 
-function getPhaseLine(visiblePhase: VisibleWorkspaceRunPhase) {
-  const phaseTitle = getPhaseTitle(visiblePhase.phase)
-  const message = visiblePhase.message ?? getPhaseFallbackMessage(visiblePhase)
+function getPhaseLine(t: (key: string) => string, visiblePhase: VisibleWorkspaceRunPhase) {
+  const phaseTitle = getPhaseTitle(t, visiblePhase.phase)
+  const message = visiblePhase.message ?? getPhaseFallbackMessage(t, visiblePhase)
   return message ? `${phaseTitle} · ${message}` : phaseTitle
 }
 
@@ -216,6 +176,7 @@ function pushUniqueLine(lines: ProcessLine[], line: ProcessLine) {
 }
 
 function collectProcessLines(
+  t: (key: string) => string,
   timeline: WorkspaceRunStreamEvent[],
   visiblePhase: VisibleWorkspaceRunPhase
 ) {
@@ -225,7 +186,7 @@ function collectProcessLines(
     if (event.type === 'phase_started') {
       pushUniqueLine(lines, {
         key: `phase-${event.phase}-${lines.length}`,
-        text: getPhaseLine({ phase: event.phase, status: 'active' }),
+        text: getPhaseLine(t, { phase: event.phase, status: 'active' }),
       })
     }
 
@@ -240,7 +201,7 @@ function collectProcessLines(
   if (lines.length === 0) {
     lines.push({
       key: `fallback-${visiblePhase.phase}`,
-      text: getPhaseLine(visiblePhase),
+      text: getPhaseLine(t, visiblePhase),
     })
   }
 
@@ -426,11 +387,13 @@ function StreamingPanel({
   timeline: WorkspaceRunStreamEvent[]
   visiblePhase: VisibleWorkspaceRunPhase
 }) {
+  const t = useTranslations('workspace.runPanel')
+
   if (planPreview && planPreview.steps.length > 1) {
     return <StreamingMultiPanel planPreview={planPreview} timeline={timeline} visiblePhase={visiblePhase} />
   }
 
-  return <StreamingSinglePanel lines={collectProcessLines(timeline, visiblePhase)} />
+  return <StreamingSinglePanel lines={collectProcessLines(t, timeline, visiblePhase)} />
 }
 
 type WorkspaceDisplayResult =
@@ -583,7 +546,7 @@ function FinalResult({
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className={workspacePillClassName}>
-            {t('found')} {result.total} {getTargetLabel(result.target)}
+            {t('found')} {result.total} {getTargetLabel(t, result.target)}
           </span>
           {assistantText ? (
             <span className={workspaceMetaTextClassName}>{assistantText}</span>
@@ -603,7 +566,7 @@ function FinalResult({
         <div className="flex flex-wrap items-center gap-2">
           <span className={workspacePillClassName}>
             {result.action === 'create' ? t('created') : t('updated')}
-            {getMutationTargetLabel(result.target)}
+            {getMutationTargetLabel(t, result.target)}
           </span>
           {assistantText ? (
             <span className={workspaceMetaTextClassName}>{assistantText}</span>
@@ -637,7 +600,7 @@ function FinalResult({
         </div>
         <div className="grid gap-2">
           {result.stepResults.map((step) => {
-            const normalized = getBatchStepItem(step)
+            const normalized = getBatchStepItem(t, step)
 
             if (normalized?.kind === 'mutation') {
               return (
@@ -647,10 +610,10 @@ function FinalResult({
                 >
                   <p className="text-xs font-medium text-on-surface-variant/70">
                     {normalized.action === 'create' ? t('created') : t('updated')}
-                    {getMutationTargetLabel(normalized.target)}
+                    {getMutationTargetLabel(t, normalized.target)}
                   </p>
                   <p className="mt-1 truncate text-sm font-medium text-on-surface">
-                    {normalized.item?.title ?? getToolLabel(step.toolName)}
+                    {normalized.item?.title ?? getToolLabel(t, step.toolName)}
                   </p>
                   {normalized.item?.excerpt ? (
                     <p className="mt-1 line-clamp-2 text-xs leading-5 text-on-surface-variant/70">
@@ -668,10 +631,10 @@ function FinalResult({
                   className="rounded-[1rem] border border-border/10 bg-muted/45 px-3 py-2.5"
                 >
                   <p className="text-xs font-medium text-on-surface-variant/70">
-                    {getToolLabel(step.toolName)}
+                    {getToolLabel(t, step.toolName)}
                   </p>
                   <p className="mt-1 text-sm font-medium text-on-surface">
-                    {t('found')} {normalized.total} {getTargetLabel(normalized.target)}
+                    {t('found')} {normalized.total} {getTargetLabel(t, normalized.target)}
                   </p>
                 </div>
               )
@@ -684,7 +647,7 @@ function FinalResult({
                   className="rounded-[1rem] border-l-4 border-l-red-400 border-red-200/20 bg-red-50/60 px-3 py-2.5 dark:bg-red-950/10"
                 >
                   <p className="text-xs font-medium text-red-600/90 dark:text-red-400">
-                    {getToolLabel(step.toolName)}
+                    {getToolLabel(t, step.toolName)}
                   </p>
                   <p className="mt-1 text-sm font-medium text-red-700 dark:text-red-300">
                     {normalized.message}
@@ -699,7 +662,7 @@ function FinalResult({
                 className="rounded-[1rem] border border-border/10 bg-muted/45 px-3 py-2.5"
               >
                 <p className="text-sm font-medium text-on-surface">
-                  {normalized?.message ?? getToolLabel(step.toolName)}
+                  {normalized?.message ?? getToolLabel(t, step.toolName)}
                 </p>
               </div>
             )
@@ -724,7 +687,7 @@ function FinalResult({
   )
 }
 
-function getBatchStepItem(step: WorkspaceRunStepResult) {
+function getBatchStepItem(t: (key: string) => string, step: WorkspaceRunStepResult) {
   const normalized = normalizeWorkspaceResultData(step.result)
   if (normalized) {
     return normalized
@@ -732,7 +695,7 @@ function getBatchStepItem(step: WorkspaceRunStepResult) {
 
   return {
     kind: 'fallback' as const,
-    message: getToolLabel(step.toolName),
+    message: getToolLabel(t, step.toolName),
   }
 }
 
@@ -944,7 +907,7 @@ export function WorkspaceRunPanel({
   const headerTitle = status === 'awaiting_user'
     ? null
     : status === 'streaming'
-      ? visiblePhase.message ?? getPhaseFallbackMessage(visiblePhase)
+      ? visiblePhase.message ?? getPhaseFallbackMessage(t, visiblePhase)
       : null
 
   function renderActions(interaction: WorkspaceInteraction) {
@@ -1207,7 +1170,7 @@ export function WorkspaceRunPanel({
         >
           <div className="min-w-0 flex-1 pr-2">
             <p className="text-xs font-medium text-on-surface-variant/70">
-              {InteractionActionIntro({ interaction })}
+              <InteractionActionIntro interaction={interaction} />
             </p>
           </div>
           <Separator orientation="vertical" className="hidden h-6 bg-border/10 sm:block" />

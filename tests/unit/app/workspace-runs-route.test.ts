@@ -13,6 +13,11 @@ vi.mock('@/server/modules/workspace-agent/workspace-run-orchestrator', () => ({
   orchestrateWorkspaceRun: orchestrateWorkspaceRunMock,
 }))
 
+vi.mock('@/hooks/use-locale.server', () => ({
+  getServerLocale: async () => 'en',
+  getServerTranslation: async () => async () => 'error',
+}))
+
 async function readSseEvents(response: Response) {
   const text = await response.text()
   return text

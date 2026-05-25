@@ -81,6 +81,7 @@ describe('workspace-run-orchestrator', () => {
 
     const result = await orchestrateWorkspaceRun({
       userId: 'user_123',
+        locale: "en",
       request: { kind: 'input', text: '记个待办：给客户发报价' },
       store: createMockStore(),
       runModel,
@@ -136,6 +137,7 @@ describe('workspace-run-orchestrator', () => {
 
     const result = await orchestrateWorkspaceRun({
       userId: 'user_123',
+        locale: "en",
       request: { kind: 'input', text: '记个待办：发报价；再记一下：一句话直接保存' },
       store,
       runModel,
@@ -177,6 +179,7 @@ describe('workspace-run-orchestrator', () => {
 
     const result = await orchestrateWorkspaceRun({
       userId: 'user_123',
+        locale: "en",
       request: { kind: 'input', text: '存书签：https://openai.com' },
       store,
       runModel,
@@ -213,6 +216,7 @@ describe('workspace-run-orchestrator', () => {
 
     const result = await orchestrateWorkspaceRun({
       userId: 'user_123',
+        locale: "en",
       request: { kind: 'input', text: '帮我找一下刚刚那篇讲 RSC 边界的书签' },
       store: createMockStore(),
       runModel,
@@ -270,6 +274,7 @@ describe('workspace-run-orchestrator', () => {
 
     const result = await orchestrateWorkspaceRun({
       userId: 'user_123',
+        locale: "en",
       request: {
         kind: 'resume',
         runId: 'run_1',
@@ -344,6 +349,7 @@ describe('workspace-run-orchestrator', () => {
 
     const result = await handleResume({
       userId: 'user_123',
+        locale: "en",
       request: {
         kind: 'resume',
         runId: 'run_1',
