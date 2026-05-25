@@ -37,9 +37,15 @@ export function isWorkspaceRunModelError(
   )
 }
 
-function toWorkspaceRunModelError(error: unknown): WorkspaceRunModelError {
+const TIMEOUT_ERROR_MESSAGES: Record<string, string> = {
+  en: 'Request timed out. Please try again, or split your content into smaller parts.',
+  'zh-CN': '理解这次输入超时了，请稍后重试；如果内容较多，可以分两次发送。',
+}
+
+function toWorkspaceRunModelError(error: unknown, locale?: string): WorkspaceRunModelError {
   if (isAiTimeoutError(error)) {
-    return new WorkspaceRunModelError('理解这次输入超时了，请稍后重试；如果内容较多，可以分两次发送。', {
+    const msg = TIMEOUT_ERROR_MESSAGES[locale ?? ''] ?? TIMEOUT_ERROR_MESSAGES['zh-CN']
+    return new WorkspaceRunModelError(msg, {
       code: 'AI_TIMEOUT',
       retryable: true,
       cause: error,
@@ -72,7 +78,7 @@ function toWorkspaceRunModelError(error: unknown): WorkspaceRunModelError {
   )
 }
 
-function createRunModel(): WorkspaceRunModel {
+function createRunModel(locale?: string): WorkspaceRunModel {
   return async (input) => {
     const result = await runAiGeneration({
       schema: input.schema as ZodType<unknown>,
@@ -84,7 +90,7 @@ function createRunModel(): WorkspaceRunModel {
     })
 
     if (!result.success) {
-      throw toWorkspaceRunModelError(result.error)
+      throw toWorkspaceRunModelError(result.error, locale)
     }
 
     return result.data
@@ -138,10 +144,10 @@ function createSearchCandidates(): SearchWorkspaceRunCandidates {
   }
 }
 
-export function createWorkspaceRunRuntime() {
+export function createWorkspaceRunRuntime(locale?: string) {
   return {
     store: createWorkspaceRunStore(),
-    runModel: createRunModel(),
+    runModel: createRunModel(locale),
     searchCandidates: createSearchCandidates(),
   }
 }

@@ -4,6 +4,7 @@ import type { WorkspaceRunPhase, WorkspaceRunStreamEvent } from '@/shared/worksp
 export type PhaseContext = {
   runId: string
   userId: string
+  locale: string
   onEvent?: (event: WorkspaceRunStreamEvent) => void
   signal?: AbortSignal
   phaseTimings: PhaseTimings

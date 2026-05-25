@@ -1,4 +1,4 @@
-import { getServerTranslation } from '@/hooks/use-locale.server'
+import { getServerLocale, getServerTranslation } from '@/hooks/use-locale.server'
 import { requireWorkspaceUserAccess } from '@/server/modules/auth/workspace-session'
 import { createWorkspaceRunRuntime } from '@/server/modules/workspace-agent'
 import { orchestrateWorkspaceRun } from '@/server/modules/workspace-agent/workspace-run-orchestrator'
@@ -10,6 +10,7 @@ import type { WorkspaceRunRequest } from '@/shared/workspace/workspace-run-proto
 
 export async function POST(req: Request) {
   const user = await requireWorkspaceUserAccess()
+  const locale = await getServerLocale()
   const t = await getServerTranslation('common.errors')
 
   let body: unknown
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
 
   const request: WorkspaceRunRequest = parsed.data
 
-  const { store, runModel, searchCandidates } = createWorkspaceRunRuntime()
+  const { store, runModel, searchCandidates } = createWorkspaceRunRuntime(locale)
 
   const encoder = new TextEncoder()
   const stream = new ReadableStream<Uint8Array>({
@@ -51,6 +52,7 @@ export async function POST(req: Request) {
       try {
         await orchestrateWorkspaceRun({
           userId: user.id,
+          locale,
           request,
           store,
           runModel,

@@ -1,4 +1,4 @@
-import { getServerTranslation } from '@/hooks/use-locale.server'
+import { getServerLocale, getServerTranslation } from '@/hooks/use-locale.server'
 import { requireWorkspaceUserAccess } from '@/server/modules/auth/workspace-session'
 import { createWorkspaceRunRuntime } from '@/server/modules/workspace-agent'
 import { orchestrateWorkspaceRun } from '@/server/modules/workspace-agent/workspace-run-orchestrator'
@@ -13,6 +13,7 @@ export async function POST(
   { params }: { params: Promise<{ runId: string }> | { runId: string } }
 ) {
   const user = await requireWorkspaceUserAccess()
+  const locale = await getServerLocale()
   const t = await getServerTranslation('common.errors')
   const { runId } = await params
 
@@ -35,7 +36,7 @@ export async function POST(
     return Response.json({ error: t('invalidParams') }, { status: 400 })
   }
 
-  const { store, runModel, searchCandidates } = createWorkspaceRunRuntime()
+  const { store, runModel, searchCandidates } = createWorkspaceRunRuntime(locale)
 
   const encoder = new TextEncoder()
   const stream = new ReadableStream<Uint8Array>({
@@ -59,6 +60,7 @@ export async function POST(
       try {
         await orchestrateWorkspaceRun({
           userId: user.id,
+          locale,
           request,
           store,
           runModel,

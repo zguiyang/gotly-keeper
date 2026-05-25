@@ -14,7 +14,14 @@ async function buildComposedSystemPrompt(
 
 export async function buildWorkspaceSystemPrompt(
   scopedSystemPromptPath: string,
-  vars: Record<string, unknown> = {}
+  vars: Record<string, unknown> = {},
+  locale?: string
 ): Promise<string> {
-  return buildComposedSystemPrompt(scopedSystemPromptPath, vars)
+  const prompt = await buildComposedSystemPrompt(scopedSystemPromptPath, vars)
+
+  if (locale) {
+    return `${prompt}\n\n## Language Directive\nThe user's system language is **${locale}**. Always reply in **${locale}**.`
+  }
+
+  return prompt
 }

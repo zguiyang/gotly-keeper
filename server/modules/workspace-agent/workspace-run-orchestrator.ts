@@ -28,6 +28,7 @@ export type OrchestrateWorkspaceRunOptions = {
   store: WorkspaceRunStore
   runModel: WorkspaceRunModel
   searchCandidates: SearchWorkspaceRunCandidates
+  locale: string
   onEvent?: (event: WorkspaceRunStreamEvent) => void
   signal?: AbortSignal
 }
