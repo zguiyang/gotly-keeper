@@ -155,7 +155,7 @@ function parseDateKeyInput(value: unknown): { startsAt: Date; endsAt: Date } {
     throw new ModuleActionError('Invalid date parameters.', MODULE_ACTION_ERROR_CODES.INVALID_ASSET_INPUT)
   }
 
-  const startsAt = new Date(`${value}T00:00:00+08:00`)
+  const startsAt = new Date(`${value}T00:00:00Z`)
   const endsAt = new Date(startsAt.getTime() + 24 * 60 * 60 * 1000)
   return { startsAt, endsAt }
 }
@@ -270,7 +270,7 @@ function parseUpdateAssetInput(input: unknown):
       assetType: 'note',
       rawInput,
       title,
-      content: 'content' in input && typeof input.content === 'string' ? (input.content.trim() ? input.content : null) : undefined,
+      content,
     }
   }
 
