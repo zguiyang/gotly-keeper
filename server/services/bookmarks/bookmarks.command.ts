@@ -58,7 +58,7 @@ export async function createBookmark(input: {
   return createAssetRecord({
     text: resolveRawInput(input),
     validate: () => {
-      void normalizeUrlOrThrow(input.url)
+      normalizeUrlOrThrow(input.url)
     },
     insert: async (trimmedText) => {
       const normalizedUrl = normalizeUrlOrThrow(input.url)

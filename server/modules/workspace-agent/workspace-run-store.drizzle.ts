@@ -105,5 +105,3 @@ export function createWorkspaceRunStore(): WorkspaceRunStore {
     },
   }
 }
-
-export const workspaceRunStore = createWorkspaceRunStore()

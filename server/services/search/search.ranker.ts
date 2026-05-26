@@ -32,15 +32,12 @@ export function mergeSearchResults(
   limit: number,
   preferRecent: RecencyMode = false
 ): RankResult[] {
-  const semanticWeight = 1.0
-  const keywordWeight = 1.0
-
   const ranked = new Map<string, RankedEntry>()
 
   for (const result of semanticResults) {
     ranked.set(result.asset.id, {
       asset: result.asset,
-      score: Math.max(0, SEMANTIC_BASE_SCORE - result.distance * SEMANTIC_DISTANCE_PENALTY) * semanticWeight,
+      score: Math.max(0, SEMANTIC_BASE_SCORE - result.distance * SEMANTIC_DISTANCE_PENALTY),
       source: 'semantic',
     })
   }
@@ -48,12 +45,12 @@ export function mergeSearchResults(
   for (const candidate of keywordCandidates) {
     const existing = ranked.get(candidate.asset.id)
     if (existing) {
-      existing.score += candidate.score * keywordWeight
+      existing.score += candidate.score
       existing.source = 'merged'
     } else {
       ranked.set(candidate.asset.id, {
         asset: candidate.asset,
-        score: candidate.score * keywordWeight,
+        score: candidate.score,
         source: 'keyword',
       })
     }

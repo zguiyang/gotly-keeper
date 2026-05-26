@@ -285,13 +285,10 @@ export type Account = typeof accounts.$inferSelect
 export type Verification = typeof verifications.$inferSelect
 export type Note = typeof notes.$inferSelect
 export type NewNote = typeof notes.$inferInsert
-export type NoteListItem = typeof notes.$inferSelect
 export type Todo = typeof todos.$inferSelect
 export type NewTodo = typeof todos.$inferInsert
-export type TodoListItem = typeof todos.$inferSelect
 export type Bookmark = typeof bookmarks.$inferSelect
 export type NewBookmark = typeof bookmarks.$inferInsert
-export type BookmarkListItem = typeof bookmarks.$inferSelect
 
 export const workspaceRuns = pgTable(
   'workspace_runs',

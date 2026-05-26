@@ -86,5 +86,5 @@ export function buildDescendingCursorCondition(
 // ── Limit clamping ─────────────────────────────────────────────────────
 
 export function clampListLimit(limit: number, maxLimit: number): number {
-  return Math.min(limit, maxLimit)
+  return Math.min(Math.max(1, limit), maxLimit)
 }
