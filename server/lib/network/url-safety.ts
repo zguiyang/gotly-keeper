@@ -5,7 +5,7 @@ import { isIP } from 'node:net'
 
 export type UrlSafetyCheckResult =
   | { safe: true }
-  | { safe: false; reason: 'invalid_url' | 'unsupported_protocol' | 'private_network' }
+  | { safe: false; reason: 'invalid_url' | 'unsupported_protocol' | 'private_network' | 'dns_resolution_failed' }
 
 function isPrivateIpv4Address(ip: string): boolean {
   const parts = ip.split('.').map((part) => Number.parseInt(part, 10))
@@ -26,9 +26,7 @@ function isPrivateIpv6Address(ip: string): boolean {
 
   if (lowered === '::1') return true
   if (lowered.startsWith('fc') || lowered.startsWith('fd')) return true
-  if (lowered.startsWith('fe8') || lowered.startsWith('fe9') || lowered.startsWith('fea') || lowered.startsWith('feb')) {
-    return true
-  }
+  if (/^fe[89a-f]/.test(lowered)) return true
 
   return false
 }
@@ -81,7 +79,7 @@ export async function checkUrlSafety(urlText: string): Promise<UrlSafetyCheckRes
       return { safe: false, reason: 'private_network' }
     }
   } catch {
-    return { safe: false, reason: 'invalid_url' }
+    return { safe: false, reason: 'dns_resolution_failed' }
   }
 
   return { safe: true }

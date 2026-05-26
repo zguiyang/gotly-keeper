@@ -2,6 +2,8 @@ import 'server-only'
 
 import { checkUrlSafety } from '@/server/lib/network/url-safety'
 
+import type { UrlSafetyCheckResult } from '@/server/lib/network/url-safety'
+
 const FETCH_TIMEOUT_MS = 8_000
 const MAX_HTML_BYTES = 256 * 1024
 const MAX_REDIRECTS = 3
@@ -20,6 +22,14 @@ function decodeHtmlEntities(text: string): string {
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
+}
+
+function matchMetaContent(html: string, property: string): string | null {
+  const pattern = new RegExp(`<meta[^>]*property=["']${property}["'][^>]*>`, 'i')
+  const match = html.match(pattern)
+  if (!match) return null
+  const contentMatch = match[0].match(/content=["']([^"']*)["']/i)
+  return contentMatch ? decodeHtmlEntities(contentMatch[1].trim()) || null : null
 }
 
 function matchFirstGroup(pattern: RegExp, text: string): string | null {
@@ -45,11 +55,11 @@ function resolveUrl(baseUrl: string, maybeRelativeUrl: string | null): string | 
 
 function extractMetadata(url: string, html: string): Omit<UrlMetadata, 'finalUrl'> {
   const title =
-    matchFirstGroup(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["'][^>]*>/i, html) ??
+    matchMetaContent(html, 'og:title') ??
     matchFirstGroup(/<title[^>]*>([\s\S]*?)<\/title>/i, html)
   const description =
     matchFirstGroup(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["'][^>]*>/i, html) ??
-    matchFirstGroup(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["'][^>]*>/i, html)
+    matchMetaContent(html, 'og:description')
   const iconHref = matchFirstGroup(
     /<link[^>]+rel=["'][^"']*icon[^"']*["'][^>]+href=["']([^"']+)["'][^>]*>/i,
     html
@@ -87,30 +97,47 @@ async function readHtmlResponse(response: Response): Promise<string | null> {
   let totalBytes = 0
   let html = ''
 
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) {
-      break
-    }
+  try {
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
 
-    totalBytes += value.byteLength
-    if (totalBytes > MAX_HTML_BYTES) {
-      await reader.cancel('FETCH_TOO_LARGE')
-      throw new Error('FETCH_TOO_LARGE')
-    }
+      totalBytes += value.byteLength
+      if (totalBytes > MAX_HTML_BYTES) {
+        await reader.cancel('FETCH_TOO_LARGE')
+        throw new Error('FETCH_TOO_LARGE')
+      }
 
-    html += decoder.decode(value, { stream: true })
+      html += decoder.decode(value, { stream: true })
+    }
+  } finally {
+    reader.releaseLock()
   }
 
   html += decoder.decode()
   return html
 }
 
+const safetyCache = new Map<string, UrlSafetyCheckResult>()
+
+async function checkUrlSafetyCached(urlText: string): Promise<UrlSafetyCheckResult> {
+  try {
+    const hostname = new URL(urlText).hostname.toLowerCase()
+    const cached = safetyCache.get(hostname)
+    if (cached) return cached
+    const result = await checkUrlSafety(urlText)
+    safetyCache.set(hostname, result)
+    return result
+  } catch {
+    return checkUrlSafety(urlText)
+  }
+}
+
 async function fetchMetadataResponse(url: string): Promise<{ response: Response; finalUrl: string }> {
   let currentUrl = url
 
   for (let redirectCount = 0; redirectCount <= MAX_REDIRECTS; redirectCount += 1) {
-    const safety = await checkUrlSafety(currentUrl)
+    const safety = await checkUrlSafetyCached(currentUrl)
     if (!safety.safe) {
       throw new Error(safety.reason === 'private_network' ? 'PRIVATE_URL_BLOCKED' : 'INVALID_URL')
     }
