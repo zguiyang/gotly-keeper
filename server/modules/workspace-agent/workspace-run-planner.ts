@@ -9,6 +9,8 @@ import type {
   WorkspaceTimeConstraint,
 } from '@/shared/workspace/workspace-run-protocol'
 
+const CONFIDENCE_HIGH_THRESHOLD = 0.7
+
 export type WorkspaceRunPlannerAction =
   | 'create_note'
   | 'create_todo'
@@ -80,8 +82,7 @@ function buildSelector(task: DraftWorkspaceTask): WorkspaceSelector {
   const statusConstraint = buildStatusConstraint(task)
   const target = task.target as WorkspaceSelector['target']
   const subject = getStringSlot(task, 'query')
-  const queryText = getStringSlot(task, 'query')
-  const keywords = queryText ? [queryText] : []
+  const keywords = subject ? [subject] : []
 
   return {
     target,
@@ -432,7 +433,7 @@ function assessReadRisk(task: DraftWorkspaceTask, target: string): { risk: 'low'
   const slotQuery = getStringSlot(task, 'query')
   const hasClearSubject = (slotQuery !== undefined && slotQuery.length > 0)
     || (task.title?.trim().length ?? 0) > 0
-  const hasHighConfidence = task.confidence >= 0.7
+  const hasHighConfidence = task.confidence >= CONFIDENCE_HIGH_THRESHOLD
 
   if (hasClearSubject && hasHighConfidence) {
     return { risk: 'low', requiresUserApproval: false }
@@ -572,6 +573,8 @@ async function buildUpdateStep(input: {
 }): Promise<WorkspaceRunPlannerStep> {
   const selector = buildSelector(input.task)
   const query = input.query?.trim() || selector.subject?.trim() || ''
+  // Invert: search for todos whose current status is the opposite of what user wants to change to.
+  // e.g. user wants to mark done → search open todos; user wants to reopen → search done todos.
   const requestedStatus = (() => {
     const status = getStringSlot(input.task, 'status') ?? getStringSlot(input.task, 'todoStatus')
     if (status === 'done') return 'open' as const
@@ -601,8 +604,6 @@ async function buildUpdateStep(input: {
     dueAt: isIsoDateTime(getStringSlot(input.task, 'dueAt')) ? getStringSlot(input.task, 'dueAt') : undefined,
     status: (getStringSlot(input.task, 'status') ?? getStringSlot(input.task, 'todoStatus')) as 'open' | 'done' | undefined,
   }
-  const statusSlot = getStringSlot(input.task, 'status') as 'open' | 'done' | undefined
-  if (statusSlot) patch.status = statusSlot
 
   const toolInput = buildPatchToolInput(input.task, selector, input.title)
 

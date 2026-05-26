@@ -11,6 +11,9 @@ import type {
   WorkspaceUnderstandingPreview,
 } from '@/shared/workspace/workspace-run-protocol'
 
+const CONFIDENCE_HIGH_THRESHOLD = 0.7
+const CONFIDENCE_LOW_THRESHOLD = 0.4
+
 export type WorkspaceCorrectionNote = string
 
 export type ReviewableDraftTask = {
@@ -466,7 +469,7 @@ function buildSelectCandidateDecision(input: {
 }
 
 function shouldClarify(task: ReviewableDraftTask, step?: ReviewablePlanStep) {
-  if (task.confidence < 0.4) return true
+  if (task.confidence < CONFIDENCE_LOW_THRESHOLD) return true
   const queryText = typeof task.slots.query === 'string' ? task.slots.query.trim() : ''
 
   if (task.intent === 'query' || task.intent === 'summarize') {
@@ -631,7 +634,7 @@ export function reviewWorkspaceRunPlan(
       })
     }
 
-    if (candidates[0].confidence < 0.7) {
+    if (candidates[0].confidence < CONFIDENCE_HIGH_THRESHOLD) {
       return buildConfirmPlanDecision({
         runId: input.runId,
         plan: input.plan,

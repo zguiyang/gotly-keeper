@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { getToolNameFromAction } from './workspace-run-orchestrator.shared'
 import { executeWorkspaceTool } from './workspace-tools'
 
 import type { WorkspaceToolContext, WorkspaceToolResult } from './types'
@@ -22,20 +23,11 @@ export type WorkspaceRunExecutorEvents = {
   onToolCallCompleted?: (event: { toolName: string; result: WorkspaceToolResult }) => void
 }
 
-const actionToToolMap: Record<string, keyof typeof workspaceTools> = {
-  create_note: 'create_note',
-  create_todo: 'create_todo',
-  create_bookmark: 'create_bookmark',
-  update_todo: 'update_todo',
-  query_assets: 'search_all',
-  summarize_assets: 'search_all',
-}
-
 function getToolForAction(step: WorkspaceRunPlannerStep): keyof typeof workspaceTools | null {
   if ((step.action === 'query_assets' || step.action === 'summarize_assets') && step.target === 'todos') {
     return 'search_todos'
   }
-  return actionToToolMap[step.action] ?? null
+  return (getToolNameFromAction(step.action) as keyof typeof workspaceTools) ?? null
 }
 
 function buildToolInputForStep(step: WorkspaceRunPlannerStep): Record<string, unknown> {

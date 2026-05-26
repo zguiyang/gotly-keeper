@@ -27,11 +27,8 @@ import type {
   ClarifySlotsInteraction,
   DraftWorkspaceTask,
   WorkspaceInteractionResponse,
-  WorkspaceRunRequest,
   WorkspaceRunResult,
 } from '@/shared/workspace/workspace-run-protocol'
-
-type ResumeResponse = Extract<WorkspaceRunRequest, { kind: 'resume' }>['response']
 
 function parseClarifiedTarget(value: string | undefined): WorkspaceTarget | null {
   const normalized = value?.trim()
@@ -126,11 +123,8 @@ async function runCompose(
   return result
 }
 function toDraftWorkspaceTasks(
-  snapshot: WorkspaceReviewPendingRunSnapshot,
-  _response: ResumeResponse
+  snapshot: WorkspaceReviewPendingRunSnapshot
 ): DraftWorkspaceTask[] | null {
-  void _response
-
   if (!snapshot.understandingPreview) {
     return null
   }
@@ -152,11 +146,7 @@ function mergeClarification(
     return typeof value === 'string' && value.trim().length > 0
   })
 
-  return tasks.map((task, index) => {
-    if (index !== 0) {
-      return task
-    }
-
+  return tasks.map((task) => {
     const mergedSlots = { ...task.slots, ...response.values }
     const nextTitle = response.values.title?.trim()
     const nextUrl = response.values.url?.trim()
@@ -451,11 +441,8 @@ async function failRun(
   code: string,
   message: string
 ) {
-  const clearedCount = await store.failAwaitingRuns(userId)
-
-  if (clearedCount === 0) {
-    await store.updateRunStatus(runId, userId, 'failed')
-  }
+  await store.failAwaitingRuns(userId)
+  await store.updateRunStatus(runId, userId, 'failed')
 
   emitEvent(ctx, {
     type: 'run_failed',
@@ -537,7 +524,7 @@ export async function handleResume(
     return failRun(ctx, store, request.runId, userId, 'SKIPPED', '已跳过这项，没有创建新内容。')
   }
 
-  const baseDraftTasks = toDraftWorkspaceTasks(snapshot, request.response)
+  const baseDraftTasks = toDraftWorkspaceTasks(snapshot)
   if (!baseDraftTasks || baseDraftTasks.length === 0) {
     return {
       ok: false,

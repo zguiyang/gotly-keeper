@@ -608,7 +608,7 @@ export async function handleNewInput(
 
       const firstOkResult = executeResult.stepResults.find((r) => r.result.ok)?.result
 
-      if (firstOkResult && firstOkResult.ok) {
+      if (firstOkResult) {
         const primaryTask = normalizedUnderstanding.draftTasks[0]
         const primaryPlan = {
           intent: primaryTask.intent as WorkspaceIntent,
@@ -649,28 +649,27 @@ export async function handleNewInput(
 
         await store.updateRunStatus(runId, userId, 'completed')
 
+        const completedResult = buildCompletedRunResult({
+          executeResult,
+          answer: composeResult.answer,
+          preview,
+          data: executeResult.stepResults.length > 1 ? null : firstOkResult,
+        })
+
         emitEvent(ctx, {
           type: 'run_completed',
-          result: buildCompletedRunResult({
-            executeResult,
-            answer: composeResult.answer,
-            preview,
-            data: executeResult.stepResults.length > 1 ? null : firstOkResult,
-          }),
+          result: completedResult,
         })
 
         return {
           ok: true,
           phase: 'completed',
-          result: buildCompletedRunResult({
-            executeResult,
-            answer: composeResult.answer,
-            preview,
-            data: executeResult.stepResults.length > 1 ? null : firstOkResult,
-          }),
+          result: completedResult,
           phaseTimings: ctx.phaseTimings,
         }
       }
+
+      await store.updateRunStatus(runId, userId, 'failed')
 
       return {
         ok: false,
