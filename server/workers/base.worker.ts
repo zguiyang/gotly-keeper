@@ -8,6 +8,7 @@ type BaseWorkerOptions = {
 export abstract class BaseWorker<TTask> {
   private readonly idleDelayMs: number
   private readonly errorDelayMs: number
+  private stopped = false
 
   constructor(
     readonly name: string,
@@ -17,9 +18,13 @@ export abstract class BaseWorker<TTask> {
     this.errorDelayMs = options.errorDelayMs ?? 50
   }
 
-  async start(): Promise<never> {
+  stop(): void {
+    this.stopped = true
+  }
+
+  async start(): Promise<void> {
     console.log(`[worker:${this.name}] started`)
-    for (;;) {
+    while (!this.stopped) {
       let task: TTask | null = null
 
       try {
@@ -42,6 +47,7 @@ export abstract class BaseWorker<TTask> {
         }
       }
     }
+    console.log(`[worker:${this.name}] stopped`)
   }
 
   protected abstract dequeueTask(): Promise<TTask | null>
