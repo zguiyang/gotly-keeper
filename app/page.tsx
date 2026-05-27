@@ -114,7 +114,7 @@ export default async function LandingPage() {
               <div className="rounded-[10px] overflow-hidden border border-foreground/8 shadow-[0_-2px_40px_color-mix(in_srgb,var(--color-on-surface)_5%,transparent)]"> {/* DESIGN_TOKEN_EXCEPTION: shadow depth blend, no semantic token */}
                 <video
                   className="aspect-video w-full"
-                  src="https://cloud.zgyk.cc/f/Y3cO/demo.mp4"
+                  src="https://cloud.zgyk.cc/f/OJfb/example.mp4"
                   autoPlay
                   muted
                   loop
@@ -148,7 +148,7 @@ export default async function LandingPage() {
           <ScrollReveal variant="fade-up" className="mt-12">
             <div className="rounded-[10px] overflow-hidden border border-foreground/8">
               <Image
-                src="/demo.webp"
+                src="https://cloud.zgyk.cc/f/xEt0/example2.webp"
                 alt="Gotly Keeper interface"
                 width={1120}
                 height={630}
