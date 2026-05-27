@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -64,6 +65,10 @@ dist-workers
 # AI agent skills & config — personal tooling, not project code
 .agents/
 .codex/
+opencode.json
+skills-lock.json
+CLAUIDE.md
+Gotly Keeper Promo Animation.html
 
 # personal deployment files (keep local only)
 deploy.sh
