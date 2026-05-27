@@ -54,10 +54,6 @@ docs
 .worktrees
 worktrees
 
-# test screenshots
-/landing-page*.png
-/notes-page*.png
-/sign-up-page*.png
 
 # worker
 dist-workers
@@ -68,7 +64,6 @@ dist-workers
 opencode.json
 skills-lock.json
 CLAUIDE.md
-Gotly Keeper Promo Animation.html
 
 # personal deployment files (keep local only)
 deploy.sh
