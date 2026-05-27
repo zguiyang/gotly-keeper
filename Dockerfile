@@ -3,7 +3,7 @@
 FROM node:22-alpine AS base
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN corepack enable && corepack prepare pnpm@11.1.2 --activate
+RUN corepack enable && corepack prepare pnpm@11.3.0 --activate
 
 FROM base AS deps
 COPY .npmrc pnpm-lock.yaml pnpm-workspace.yaml package.json ./
@@ -12,14 +12,21 @@ RUN HUSKY=0 pnpm install --frozen-lockfile || true \
   && HUSKY=0 pnpm install --frozen-lockfile
 
 FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/package.json ./package.json
+COPY --from=deps /app/pnpm-lock.yaml ./pnpm-lock.yaml
+RUN HUSKY=0 pnpm install --frozen-lockfile || true \
+  && pnpm approve-builds --all \
+  && HUSKY=0 pnpm install --frozen-lockfile
 RUN --mount=type=secret,id=app_env,target=/run/secrets/app_env \
   sh -ac 'set -a && . /run/secrets/app_env && set +a && pnpm build && pnpm worker:build'
 
 FROM base AS worker-migrate-deps
 COPY .npmrc pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 RUN node -e "const fs=require('node:fs'); const root=require('./package.json'); const deps=['dotenv','drizzle-kit','drizzle-orm','pg']; const pkg={name:'gotly-keeper-worker-migrate',private:true,dependencies:Object.fromEntries(deps.map((name)=>[name,root.dependencies[name]]))}; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n')" \
+  && HUSKY=0 pnpm install --prod --no-frozen-lockfile || true \
+  && pnpm approve-builds --all \
   && HUSKY=0 pnpm install --prod --no-frozen-lockfile
 
 FROM node:22-alpine AS web-runner

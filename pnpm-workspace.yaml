@@ -1,2 +1,10 @@
 packages:
   - .
+
+onlyBuiltDependencies:
+  - esbuild
+  - msw
+  - sharp
+  - unrs-resolver
+  - '@parcel/watcher'
+  - '@swc/core'
