@@ -61,7 +61,7 @@ function makePendingKey(assetId: string, action: MutationAction) {
 }
 
 export function useAssetMutations() {
-  const t = useTranslations('common.errors')
+  const t = useTranslations('workspace.mutations')
   const [pending, setPending] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
 
@@ -117,9 +117,9 @@ export function useAssetMutations() {
 
       return runMutation(input.assetId, 'update', () =>
         callAction(() => updateWorkspaceAsset(input), {
-          loading: t('generic'),
-          success: t('generic'),
-          error: t('generic'),
+          loading: t('updating'),
+          success: t('updateSuccess'),
+          error: t('updateFailed'),
         })
       )
     },
@@ -134,25 +134,25 @@ export function useAssetMutations() {
     ): Promise<AssetListItem | null> => {
       const result = await runMutation(assetId, 'archive', () =>
         callAction(() => archiveWorkspaceAsset({ assetId, assetType }), {
-          loading: t('generic'),
-          error: t('generic'),
+          loading: t('archiving'),
+          error: t('archiveFailed'),
         })
       )
 
       if (result) {
-        toast.success(t('generic'), {
-          description: t('generic'),
+        toast.success(t('archiveSuccessTitle'), {
+          description: t('archiveSuccessDescription'),
           action: options?.onUndo
             ? {
-                label: t('generic'),
+                label: t('undo'),
                 onClick: () => {
                   void runMutation(assetId, 'unarchive', async () => {
                     const restored = await callAction(
                       () => unarchiveWorkspaceAsset({ assetId, assetType }),
                       {
-                        loading: t('generic'),
-                        success: t('generic'),
-                        error: t('generic'),
+                        loading: t('restoringArchive'),
+                        success: t('restoreSuccess'),
+                        error: t('restoreFailed'),
                       }
                     )
                     options.onUndo?.(restored)
@@ -173,9 +173,9 @@ export function useAssetMutations() {
     async (assetId: string, assetType: AssetListItem['type']): Promise<AssetListItem | null> => {
       return runMutation(assetId, 'unarchive', () =>
         callAction(() => unarchiveWorkspaceAsset({ assetId, assetType }), {
-          loading: t('generic'),
-          success: t('generic'),
-          error: t('generic'),
+          loading: t('restoringArchive'),
+          success: t('restoreSuccess'),
+          error: t('restoreFailed'),
         })
       )
     },
@@ -190,25 +190,25 @@ export function useAssetMutations() {
     ): Promise<AssetListItem | null> => {
       const result = await runMutation(assetId, 'trash', () =>
         callAction(() => moveWorkspaceAssetToTrash({ assetId, assetType }), {
-          loading: t('generic'),
-          error: t('generic'),
+          loading: t('movingToTrash'),
+          error: t('moveToTrashFailed'),
         })
       )
 
       if (result) {
-        toast.success(t('generic'), {
-          description: t('generic'),
+        toast.success(t('moveToTrashSuccessTitle'), {
+          description: t('moveToTrashSuccessDescription'),
           action: options?.onUndo
             ? {
-                label: t('generic'),
+                label: t('undo'),
                 onClick: () => {
                   void runMutation(assetId, 'restore', async () => {
                     const restored = await callAction(
                       () => restoreWorkspaceAssetFromTrash({ assetId, assetType }),
                       {
-                        loading: t('generic'),
-                        success: t('generic'),
-                        error: t('generic'),
+                        loading: t('restoringFromTrash'),
+                        success: t('restoreSuccess'),
+                        error: t('restoreFailed'),
                       }
                     )
                     options.onUndo?.(restored)
@@ -229,9 +229,9 @@ export function useAssetMutations() {
     async (assetId: string, assetType: AssetListItem['type']): Promise<AssetListItem | null> => {
       return runMutation(assetId, 'restore', () =>
         callAction(() => restoreWorkspaceAssetFromTrash({ assetId, assetType }), {
-          loading: t('generic'),
-          success: t('generic'),
-          error: t('generic'),
+          loading: t('restoringFromTrash'),
+          success: t('restoreSuccess'),
+          error: t('restoreFailed'),
         })
       )
     },
@@ -242,9 +242,9 @@ export function useAssetMutations() {
     async (assetId: string, assetType: AssetListItem['type']): Promise<{ id: string; type: AssetListItem['type'] } | null> => {
       return runMutation(assetId, 'purge', () =>
         callAction(() => purgeWorkspaceAsset({ assetId, assetType }), {
-          loading: t('generic'),
-          success: t('generic'),
-          error: t('generic'),
+          loading: t('deletingPermanently'),
+          success: t('deleteSuccess'),
+          error: t('deleteFailed'),
         })
       )
     },
