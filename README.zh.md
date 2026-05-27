@@ -54,9 +54,9 @@
 
 ## 演示
 
-<img src="https://raw.githubusercontent.com/zguiyang/gotly-keeper/main/public/demo.webp" alt="Gotly Keeper 示例视频" width="100%" style="max-width:100%;border-radius:10px;border:1px solid rgba(0,0,0,0.1)">
+<img src="https://cloud.zgyk.cc/f/xEt0/example2.webp" alt="Gotly Keeper 示例视频" width="100%" style="max-width:100%;border-radius:10px;border:1px solid rgba(0,0,0,0.1)">
 
-[▶ 查看完整演示视频](https://cloud.zgyk.cc/f/Y3cO/demo.mp4)
+[▶ 查看完整演示视频](https://cloud.zgyk.cc/f/OJfb/example.mp4)
 
 ---
 

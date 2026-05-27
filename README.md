@@ -54,9 +54,9 @@ Notes, bookmarks, and todos. One input. Zero organizing.
 
 ## Demo
 
-<img src="https://raw.githubusercontent.com/zguiyang/gotly-keeper/main/public/demo.webp" alt="Gotly Keeper Demo" width="100%" style="max-width:100%;border-radius:10px;border:1px solid rgba(0,0,0,0.1)">
+<img src="https://cloud.zgyk.cc/f/xEt0/example2.webp" alt="Gotly Keeper Demo" width="100%" style="max-width:100%;border-radius:10px;border:1px solid rgba(0,0,0,0.1)">
 
-[▶ Watch full demo video](https://cloud.zgyk.cc/f/Y3cO/demo.mp4)
+[▶ Watch full demo video](https://cloud.zgyk.cc/f/OJfb/example.mp4)
 
 ---
 
