@@ -41,12 +41,14 @@ import type { LucideIcon } from 'lucide-react'
 type AssetFilter = 'all' | 'note' | 'todo' | 'link'
 type LifecycleViewMode = 'archive' | 'trash'
 
-const FILTERS: Array<{ key: AssetFilter; label: string }> = [
-  { key: 'all', label: 'All', },
-  { key: 'note', label: 'Note', },
-  { key: 'todo', label: 'Todo', },
-  { key: 'link', label: 'Bookmark', },
-]
+function getFilters(t: ReturnType<typeof useTranslations>): Array<{ key: AssetFilter; label: string }> {
+  return [
+    { key: 'all', label: t('all') },
+    { key: 'note', label: t('note') },
+    { key: 'todo', label: t('todo') },
+    { key: 'link', label: t('bookmark') },
+  ]
+}
 
 type LifecycleModeContent = {
   eyebrow: string
@@ -62,38 +64,40 @@ type LifecycleModeContent = {
   Icon: LucideIcon
 }
 
-const MODE_CONTENT: Record<LifecycleViewMode, LifecycleModeContent> = {
-  archive: {
-    eyebrow: 'Archived',
-    title: 'Archive',
-    description: "Archive items that don't need to be on your workspace. Context and restore entry are preserved.",
-    emptyTitle: 'No archived items',
-    emptyDescription: "When an item is worth keeping but shouldn't interrupt your flow, archive it.",
-    emptyFilteredDescription: 'No archived items of this type. Switch to "All" to browse other archived content.',
-    lifecycleLabel: 'archivedAt',
-    statusClassName: 'border-border/22 bg-muted/55 text-on-surface-variant',
-    countLabel: 'Neat Storage',
-    Icon: Archive,
-  },
-  trash: {
-    eyebrow: 'Pending',
-    title: 'Trash',
-    description: 'Recently removed items live here. Restore if still valuable, or permanently delete.',
-    emptyTitle: 'Trash is empty',
-    emptyDescription: 'No items to clean up. The workspace stays tidy.',
-    emptyFilteredDescription: 'No items of this type in trash. Switch to "All" to see other trashed items.',
-    lifecycleLabel: 'removedAt',
-    statusClassName: 'border-destructive/24 bg-destructive/10 text-destructive',
-    countLabel: 'Awaiting Confirmation',
-    notice: 'Permanent deletion cannot be undone.',
-    Icon: Trash2,
-  },
+function getModeContent(t: ReturnType<typeof useTranslations>): Record<LifecycleViewMode, LifecycleModeContent> {
+  return {
+    archive: {
+      eyebrow: t('archiveEyebrow'),
+      title: t('archiveTitle'),
+      description: t('archiveDescription'),
+      emptyTitle: t('archiveEmptyTitle'),
+      emptyDescription: t('archiveEmptyDescription'),
+      emptyFilteredDescription: t('archiveEmptyFilteredDescription'),
+      lifecycleLabel: 'archivedAt',
+      statusClassName: 'border-border/22 bg-muted/55 text-on-surface-variant',
+      countLabel: t('archiveEyebrow'),
+      Icon: Archive,
+    },
+    trash: {
+      eyebrow: t('trashEyebrow'),
+      title: t('trash'),
+      description: t('trashDescription'),
+      emptyTitle: t('trashEmptyTitle'),
+      emptyDescription: t('trashEmptyDescription'),
+      emptyFilteredDescription: t('trashEmptyFilteredDescription'),
+      lifecycleLabel: 'removedAt',
+      statusClassName: 'border-destructive/24 bg-destructive/10 text-destructive',
+      countLabel: t('trashEyebrow'),
+      notice: t('permanentDeleteWarning'),
+      Icon: Trash2,
+    },
+  }
 }
 
-function typeLabel(type: AssetListItem['type']): string {
-  if (type === 'note') return 'Note'
-  if (type === 'todo') return 'Todo'
-  return 'Bookmark'
+function getTypeLabel(t: ReturnType<typeof useTranslations>, type: AssetListItem['type']): string {
+  if (type === 'note') return t('noteAsset')
+  if (type === 'todo') return t('todoAsset')
+  return t('bookmarkAsset')
 }
 
 function typeBadgeVariant(type: AssetListItem['type']): 'default' | 'secondary' | 'outline' {
@@ -130,7 +134,8 @@ function EmptyState({
   mode: LifecycleViewMode
   isFiltered: boolean
 }) {
-  const content = MODE_CONTENT[mode]
+  const t = useTranslations('workspace.lifecycle')
+  const content = getModeContent(t)[mode]
 
   return (
     <WorkspaceEmptyState
@@ -186,9 +191,9 @@ function PurgeAssetDialog({
       </DialogTrigger>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Confirm permanent delete</DialogTitle>
+          <DialogTitle>{t('confirmPermanentDelete')}</DialogTitle>
           <DialogDescription>
-            Deletion cannot be undone, {asset.title} will be permanently removed from the system.
+            {t('confirmPermanentDeleteDescription', { title: asset.title })}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -220,7 +225,7 @@ function LifecycleAssetItem({
   onPurge: (item: AssetListItem) => Promise<void>
 }) {
   const t = useTranslations('workspace.lifecycle')
-  const content = MODE_CONTENT[mode]
+  const content = getModeContent(t)[mode]
   const lifecycleDate = getLifecycleDate(item, mode)
   const secondaryTime = lifecycleDate ?? item.createdAt
   const isCompletedTodo = item.type === 'todo' && item.completed
@@ -239,8 +244,8 @@ function LifecycleAssetItem({
 
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex flex-wrap items-center gap-2.5">
-              <WorkspaceTypeBadge label={typeLabel(item.type)} variant={typeBadgeVariant(item.type)} />
-              {isCompletedTodo ? <span className={workspacePillClassName}>Completed</span> : null}
+              <WorkspaceTypeBadge label={getTypeLabel(t, item.type)} variant={typeBadgeVariant(item.type)} />
+              {isCompletedTodo ? <span className={workspacePillClassName}>{t('completed')}</span> : null}
               <span
                 className={cn(
                   'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium',
@@ -266,7 +271,7 @@ function LifecycleAssetItem({
             </p>
 
             <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-on-surface-variant/75">
-              <span>Created {formatAssetRelativeTime(item.createdAt)}</span>
+              <span>{t('created')} {formatAssetRelativeTime(item.createdAt)}</span>
               {item.url ? (
                 <>
                   <span className="size-1 rounded-full bg-border/40" aria-hidden="true" />
@@ -341,8 +346,9 @@ export function LifecycleAssetsClient({
     })
   const [activeFilter, setActiveFilter] = useState<AssetFilter>('all')
   const { unarchiveAsset, moveToTrash, restoreFromTrash, purgeAsset, isPending } = useAssetMutations()
-  const content = MODE_CONTENT[mode]
+  const content = getModeContent(t)[mode]
   const SummaryIcon = content.Icon
+  const filters = getFilters(t)
 
   const filtered = items
 
@@ -408,7 +414,7 @@ export function LifecycleAssetsClient({
                 <SummaryIcon className="size-3.5" />
               </span>
               <span>
-                {content.countLabel}: Loaded  {items.length}  items
+                {content.countLabel}: {t('loadedCount', { count: items.length })}
                 {pageInfo.hasNextPage ? t('moreToLoad') : t('allLoaded')}
               </span>
             </p>
@@ -420,7 +426,7 @@ export function LifecycleAssetsClient({
             ) : null}
           </div>
           <WorkspaceFilterTabs
-            tabs={FILTERS}
+            tabs={filters}
             value={activeFilter}
             onValueChange={(value) => void handleFilterChange(value)}
             className="border-b-0 pb-0"

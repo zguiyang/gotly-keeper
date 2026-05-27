@@ -54,6 +54,7 @@ function ActionableAssetItem({
   onMoveToTrash: (asset: AssetListItem) => void
 }) {
   const tCommon = useTranslations('common')
+  const tTodos = useTranslations('workspace.todos')
   const presentation = assetTypePresentation[asset.type]
   const Icon = presentation.icon
   const supportingText = getAssetSupportingText(asset)
@@ -74,8 +75,8 @@ function ActionableAssetItem({
             variant="ghost"
             size="icon-sm"
             className="mt-0.5 shrink-0 text-on-surface-variant/75 hover:text-primary"
-            aria-label={asset.completed ? 'Mark as incomplete' : 'Mark as complete'}
-            title={asset.completed ? 'Mark as incomplete' : 'Mark as complete'}
+            aria-label={asset.completed ? tTodos('markIncomplete') : tTodos('markComplete')}
+            title={asset.completed ? tTodos('markIncomplete') : tTodos('markComplete')}
           >
             {asset.completed ? <SquareCheck className="text-primary" /> : <Square />}
           </Button>
@@ -149,16 +150,16 @@ function ActionableAssetItem({
                   size="sm"
                   className="text-on-surface-variant hover:text-primary"
                 >
-                  Open
+                  {tCommon('open')}
                   <ExternalLink />
                 </Button>
               ) : null}
               <AssetActionMenu
                 actions={[
-                  { label: 'Edit', onClick: () => onEdit(asset), disabled: pending },
-                  { label: 'Archive', onClick: () => onArchive(asset), disabled: pending },
+                  { label: tTodos('edit'), onClick: () => onEdit(asset), disabled: pending },
+                  { label: tTodos('archive'), onClick: () => onArchive(asset), disabled: pending },
                   {
-                    label: 'Move to Trash',
+                    label: tTodos('moveToTrash'),
                     onClick: () => onMoveToTrash(asset),
                     disabled: pending,
                     danger: true,

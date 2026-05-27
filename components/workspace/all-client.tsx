@@ -30,14 +30,6 @@ import { type AssetListItem } from '@/shared/assets/assets.types'
 import { type PaginatedResult } from '@/shared/pagination'
 
 type AssetType = 'note' | 'link' | 'todo'
-
-const typeLabels: Record<AssetType, string> = {
-  note: 'Note',
-  link: 'Bookmark',
-  todo: 'Todo',
-}
-
-// Maps internal asset type to locale key (type is "link", locale key is "bookmark")
 const ASSET_LOCALE_MAP: Record<AssetType, string> = {
   note: getAssetLocaleKey('note'),
   link: getAssetLocaleKey('link'),
@@ -69,6 +61,7 @@ function ArchiveSummaryBar({
   hasNextPage: boolean
 }) {
   const tSummary = useTranslations('common')
+  const tAll = useTranslations('workspace.all')
   const summaryItems: Array<{ type: AssetType; icon: typeof NotepadText }> = [
     { type: 'note', icon: NotepadText },
     { type: 'link', icon: Bookmark },
@@ -82,11 +75,11 @@ function ArchiveSummaryBar({
           <span className="h-8 w-1 shrink-0 rounded-full bg-primary/55" />
           <div className="min-w-0">
             <p className="text-sm font-medium text-on-surface">
-              Loaded {totalCount} items
-              {hasNextPage ? ', more to load' : ', all loaded'}
+              {tAll('loadedCount', { count: totalCount })}
+              {hasNextPage ? tAll('moreToLoad') : tAll('allLoaded')}
             </p>
             <p className="text-[11px] text-on-surface-variant/75">
-              Timeline grouped by capture time, not todo schedule. Easy for quick review.
+              {tAll('layoutHint')}
             </p>
           </div>
         </div>
@@ -162,7 +155,7 @@ function AssetItem({
                   <span className={workspaceMetaTextClassName}>{createdTimeText}</span>
                 )}
                 <TypePill type={asset.type} />
-                {asset.completed ? <span className={workspacePillClassName}>Completed</span> : null}
+                {asset.completed ? <span className={workspacePillClassName}>{tA('completed')}</span> : null}
               </div>
             </div>
 

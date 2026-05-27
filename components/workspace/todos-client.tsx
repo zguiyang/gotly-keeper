@@ -66,8 +66,8 @@ function getTodoDate(item: AssetListItem) {
   return dueAt
 }
 
-function getSelectedDateLabel(date: Date, today: Date) {
-  if (isSameDay(date, today)) return 'Today'
+function getSelectedDateLabel(date: Date, today: Date, todayLabel: string) {
+  if (isSameDay(date, today)) return todayLabel
   return formatDate(date, 'MMM d, dddd')
 }
 
@@ -116,7 +116,7 @@ function TodoDateHeader({
   todayDate: Date
 }) {
   const t = useTranslations('workspace.todos')
-  const label = getSelectedDateLabel(selectedDate, todayDate)
+  const label = getSelectedDateLabel(selectedDate, todayDate, t('today'))
 
   return (
     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -135,12 +135,12 @@ function TodoDateHeader({
       <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/10 bg-surface-container-lowest/75 px-3 py-2 text-[12px] text-on-surface-variant">
         <span className="inline-flex items-center gap-1.5">
           <span className="size-2 rounded-full bg-primary" />
-          Current  {selectedCount} 
+          {t('current')} {selectedCount}
         </span>
         <span className="size-1 rounded-full bg-border/40" aria-hidden="true" />
-        <span>Scheduled Dates  {scheduledCount}d</span>
+        <span>{t('scheduledDates')} {scheduledCount}d</span>
         <span className="size-1 rounded-full bg-border/40" aria-hidden="true" />
-        <span>Unscheduled  {unscheduledCount} </span>
+        <span>{t('unscheduledLabel')} {unscheduledCount}</span>
       </div>
     </div>
   )
@@ -382,19 +382,19 @@ function TodoCalendarPanel({
 
       <div className="mt-5 grid grid-cols-3 gap-2">
         <div className="rounded-xl border border-border/10 bg-muted/35 px-3 py-2.5">
-          <p className={workspaceMetaTextClassName}>Current </p>
+          <p className={workspaceMetaTextClassName}>{t('current')}</p>
           <p className="mt-1 font-mono text-lg font-semibold leading-none text-on-surface tabular-nums">
             {selectedCount}
           </p>
         </div>
         <div className="rounded-xl border border-border/10 bg-muted/35 px-3 py-2.5">
-          <p className={workspaceMetaTextClassName}>Scheduled Dates </p>
+          <p className={workspaceMetaTextClassName}>{t('scheduledDates')}</p>
           <p className="mt-1 font-mono text-lg font-semibold leading-none text-on-surface tabular-nums">
             {scheduledCount}
           </p>
         </div>
         <div className="rounded-xl border border-border/10 bg-muted/35 px-3 py-2.5">
-          <p className={workspaceMetaTextClassName}>Unscheduled </p>
+          <p className={workspaceMetaTextClassName}>{t('unscheduledLabel')}</p>
           <p className="mt-1 font-mono text-lg font-semibold leading-none text-on-surface tabular-nums">
             {unscheduledCount}
           </p>

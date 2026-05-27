@@ -208,7 +208,7 @@ export function BookmarksClient({
     item: AssetListItem,
     values: AssetEditValues
   ) {
-    if (!('note' in values)) {
+    if (!('url' in values)) {
       return false
     }
 
@@ -264,10 +264,10 @@ export function BookmarksClient({
 
       <div className="mb-7 flex flex-col gap-2 md:mb-8">
         <p className="text-sm leading-6 text-on-surface-variant">
-          Loaded  {items.length}  items
-          {pageInfo.hasNextPage ? '，more to load' : '，Loaded all'}
+          {t('loadedCount', { count: items.length })}
+          {pageInfo.hasNextPage ? t('moreToLoad') : t('allLoaded')}
         </p>
-        <span className={workspacePillClassName}>Sorted by source for review.</span>
+        <span className={workspacePillClassName}>{t('sortedHint')}</span>
       </div>
 
       <div className="max-w-6xl space-y-4">

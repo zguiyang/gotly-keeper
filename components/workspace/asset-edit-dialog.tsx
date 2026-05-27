@@ -1,6 +1,6 @@
 'use client'
 
-import { enUS } from 'date-fns/locale'
+import { enUS, zhCN } from 'date-fns/locale'
 import { ChevronDownIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -19,8 +19,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Textarea } from '@/components/ui/textarea'
-import { useTranslations } from '@/hooks/use-locale'
-import { formatDate } from '@/shared/time/dayjs'
+import { useLocale, useTranslations } from '@/hooks/use-locale'
 
 import type { AssetListItem } from '@/shared/assets/assets.types'
 
@@ -55,12 +54,6 @@ export type LinkEditValues = {
 
 export type AssetEditValues = NoteEditValues | TodoEditValues | LinkEditValues
 
-function getTitle(asset: AssetListItem) {
-  if (asset.type === 'note') return 'Edit Note'
-  if (asset.type === 'todo') return 'Edit Todo'
-  return 'Edit Bookmark'
-}
-
 function normalizeEditableValue(value: string | null | undefined): string {
   return value?.trim() ?? ''
 }
@@ -69,11 +62,17 @@ function getDateTimestamp(value: Date | null): number | null {
   return value ? value.getTime() : null
 }
 
-function formatDateButtonLabel(value: Date | null): string {
+function formatDateButtonLabel(value: Date | null, locale: string, selectDateLabel: string): string {
   if (!value) {
-    return 'Select date'
+    return selectDateLabel
   }
-  return formatDate(value, 'MMMM Do, YYYY')
+
+  const formatter = new Intl.DateTimeFormat(locale === 'zh-CN' ? 'zh-CN' : 'en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+  return formatter.format(value)
 }
 
 function formatTimeInputValue(value: Date | null): string {
@@ -236,6 +235,7 @@ export function AssetEditDialog({
   onSubmit: (asset: AssetListItem, values: AssetEditValues) => Promise<boolean>
 }) {
   const t = useTranslations('workspace.editDialog')
+  const { locale } = useLocale()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [url, setUrl] = useState('')
@@ -244,6 +244,7 @@ export function AssetEditDialog({
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const calendarLocale = locale === 'zh-CN' ? zhCN : enUS
 
   useEffect(() => {
     const initial = getAssetEditInitialState(asset)
@@ -303,13 +304,21 @@ export function AssetEditDialog({
       <DialogContent className="sm:max-w-lg">
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{asset ? getTitle(asset) : t('editContent')}</DialogTitle>
-            <DialogDescription>Saving updates this item in the workspace.</DialogDescription>
+            <DialogTitle>
+              {asset
+                ? asset.type === 'note'
+                  ? t('editNote')
+                  : asset.type === 'todo'
+                    ? t('editTodo')
+                    : t('editBookmark')
+                : t('editContent')}
+            </DialogTitle>
+            <DialogDescription>{t('savingDescription')}</DialogDescription>
           </DialogHeader>
 
           <FieldGroup>
             <Field data-invalid={!!error}>
-              <FieldLabel htmlFor="asset-edit-title">Title</FieldLabel>
+              <FieldLabel htmlFor="asset-edit-title">{t('titleLabel')}</FieldLabel>
               <Input
                 id="asset-edit-title"
                 aria-invalid={!!error}
@@ -323,7 +332,7 @@ export function AssetEditDialog({
               <>
                 <FieldGroup className="flex-row items-end">
                   <Field className="flex-1">
-                    <FieldLabel htmlFor="asset-edit-date">Date</FieldLabel>
+                    <FieldLabel htmlFor="asset-edit-date">{t('dateLabel')}</FieldLabel>
                     <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                       <PopoverTrigger
                         render={
@@ -334,7 +343,7 @@ export function AssetEditDialog({
                           />
                         }
                       >
-                        {formatDateButtonLabel(dueAt)}
+                        {formatDateButtonLabel(dueAt, locale, t('selectDate'))}
                         <ChevronDownIcon data-icon="inline-end" />
                       </PopoverTrigger>
                       <PopoverContent className="w-auto overflow-hidden p-0" align="start">
@@ -343,7 +352,7 @@ export function AssetEditDialog({
                           selected={dueAt ?? undefined}
                           captionLayout="dropdown"
                           defaultMonth={dueAt ?? undefined}
-                          locale={enUS}
+                          locale={calendarLocale}
                           onSelect={(nextDate) => {
                             setDueAt((current) => mergeDatePart(current, nextDate))
                             setCalendarOpen(false)
@@ -354,7 +363,7 @@ export function AssetEditDialog({
                   </Field>
 
                   <Field className="w-32">
-                    <FieldLabel htmlFor="asset-edit-due-time">Time</FieldLabel>
+                    <FieldLabel htmlFor="asset-edit-due-time">{t('timeLabel')}</FieldLabel>
                     <Input
                       id="asset-edit-due-time"
                       type="time"
@@ -369,10 +378,10 @@ export function AssetEditDialog({
                   </Field>
 
                   {dueAt ? (
-                    <Field className="w-auto shrink-0">
-                      <FieldLabel className="sr-only" htmlFor="asset-edit-clear-date">
-                        ClearDateTime
-                      </FieldLabel>
+                      <Field className="w-auto shrink-0">
+                        <FieldLabel className="sr-only" htmlFor="asset-edit-clear-date">
+                          {t('clearDateTime')}
+                        </FieldLabel>
                       <Button
                         id="asset-edit-clear-date"
                         type="button"
@@ -381,14 +390,14 @@ export function AssetEditDialog({
                           setDueAt(null)
                         }}
                       >
-                        Clear
+                        {t('clear')}
                       </Button>
                     </Field>
                   ) : null}
                 </FieldGroup>
 
                 <Field>
-                  <FieldLabel htmlFor="asset-edit-time">Time（Optional）</FieldLabel>
+                  <FieldLabel htmlFor="asset-edit-time">{t('optionalTimeLabel')}</FieldLabel>
                   <Input
                     id="asset-edit-time"
                     placeholder={t('timePlaceholder')}
@@ -401,7 +410,7 @@ export function AssetEditDialog({
 
             {asset?.type === 'link' ? (
               <Field>
-                <FieldLabel htmlFor="asset-edit-url">Link</FieldLabel>
+                <FieldLabel htmlFor="asset-edit-url">{t('linkLabel')}</FieldLabel>
                 <Input
                   id="asset-edit-url"
                   type="url"
@@ -426,7 +435,7 @@ export function AssetEditDialog({
           </FieldGroup>
 
           <DialogFooter>
-            <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
+            <DialogClose render={<Button type="button" variant="outline" />}>{t('cancel')}</DialogClose>
             <Button type="submit" disabled={submitting}>
               {submitting ? t('saving') : t('save')}
             </Button>

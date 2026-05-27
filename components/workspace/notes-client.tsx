@@ -40,6 +40,7 @@ function NoteCardContextMenu({
   onMoveToTrash: () => void
   children: ReactNode
 }) {
+  const t = useTranslations('workspace.notes')
   const [open, setOpen] = useState(false)
   const [anchor, setAnchor] = useState({ x: 0, y: 0 })
   const triggerRef = useRef<HTMLButtonElement | null>(null)
@@ -79,10 +80,10 @@ function NoteCardContextMenu({
       <DropdownMenuContent align="start" sideOffset={6} className="min-w-[152px]">
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={onArchive} className="text-[12px]">
-            Archive
+            {t('archive')}
           </DropdownMenuItem>
           <DropdownMenuItem variant="destructive" onClick={onMoveToTrash} className="text-[12px]">
-            Move to Trash
+            {t('moveToTrash')}
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
@@ -188,7 +189,7 @@ function NoteCard({
 
           {!isEditing ? (
             <div className={`${workspaceMetaTextClassName} mt-4 text-on-surface-variant`}>
-              <span>Updated  {formatAssetRelativeTime(updatedAt)}</span>
+              <span>{t('updated')} {formatAssetRelativeTime(updatedAt)}</span>
             </div>
           ) : null}
         </div>
@@ -198,10 +199,11 @@ function NoteCard({
 }
 
 function EmptyState() {
+  const t = useTranslations('workspace.notes')
   return (
     <WorkspaceEmptyState
-      title="No notes yet"
-      description="Save an idea or text first."
+      title={t('empty')}
+      description={t('emptyHint')}
       icon={NotepadText}
       className="mt-20 py-16"
     />
@@ -282,12 +284,12 @@ export function NotesClient({ initialPage }: { initialPage: PaginatedResult<Asse
       />
 
       <div className="mb-7 flex flex-wrap items-center gap-3 md:mb-8">
-        <span className={workspacePillClassName}>Loaded {noteCount} items</span>
+        <span className={workspacePillClassName}>{t('loadedCount', { count: noteCount })}</span>
         <span className={workspacePillClassName}>
           {pageInfo.hasNextPage ? t('moreToLoad') : t('allLoaded')}
         </span>
         <p className={`${workspaceMetaTextClassName} text-on-surface-variant`}>
-          Recent items appear first, arranged in a waterfall layout that auto-expands.
+          {t('layoutHint')}
         </p>
       </div>
 
