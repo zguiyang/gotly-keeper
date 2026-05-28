@@ -113,7 +113,7 @@ export default async function LandingPage() {
             <ScrollReveal variant="fade-up" className="mt-[clamp(3rem,5vw,4.5rem)]">
               <div className="rounded-[10px] overflow-hidden border border-foreground/8 shadow-[0_-2px_40px_color-mix(in_srgb,var(--color-on-surface)_5%,transparent)]"> {/* DESIGN_TOKEN_EXCEPTION: shadow depth blend, no semantic token */}
                 <video
-                  className="aspect-video w-full"
+                  className="w-full"
                   src="https://cloud.zgyk.cc/f/OJfb/example.mp4"
                   autoPlay
                   muted
