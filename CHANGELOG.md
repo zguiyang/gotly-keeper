@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0] - 2026-05-29
+
+### Added
+- Thread locale from `useLocale()` to all date formatters in client components
+- Add dayjs compact locale via `updateLocale` plugin and `formatShortMonthDay` helpers
+- Update landing page demo video and image URLs
+
+### Fixed
+- Remove forced aspect-ratio on demo video to prevent pillarboxing in dark theme
+- Configure next/image remote hostname `cloud.zgyk.cc`
+
+### Changed
+- Simplify shared formatters with `fromNow` and `formatShortMonthDay`
+
 ## [0.2.0] - 2026-05-27
 
 ### Added
