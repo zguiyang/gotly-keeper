@@ -16,7 +16,7 @@ import {
   WorkspacePageHeader,
   workspacePillClassName,
 } from '@/components/workspace/workspace-view-primitives'
-import { useTranslations } from '@/hooks/use-locale'
+import { useLocale, useTranslations } from '@/hooks/use-locale'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
 import { cn } from '@/lib/utils'
@@ -64,6 +64,7 @@ function BookmarkItem({
   onArchive: (item: AssetListItem) => void
   onMoveToTrash: (item: AssetListItem) => void
 }) {
+  const { locale } = useLocale()
   const t = useTranslations('workspace.bookmarks')
   return (
     <article
@@ -140,7 +141,7 @@ function BookmarkItem({
       </div>
 
       <div className="flex items-center justify-between gap-3 border-t border-border/10 px-4 py-3 md:px-5">
-        <p className={workspaceMetaTextClassName}>{formatBookmarkTime(item.createdAt)}</p>
+        <p className={workspaceMetaTextClassName}>{formatBookmarkTime(item.createdAt, undefined, locale)}</p>
       </div>
     </article>
   )

@@ -27,7 +27,7 @@ import {
   WorkspaceTypeBadge,
 } from '@/components/workspace/workspace-view-primitives'
 import { assetTypePresentation, getAssetLocaleKey } from '@/config/ui/asset-presentation'
-import { useTranslations } from '@/hooks/use-locale'
+import { useLocale, useTranslations } from '@/hooks/use-locale'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
 import { cn } from '@/lib/utils'
@@ -224,6 +224,7 @@ function LifecycleAssetItem({
   onRestore: (item: AssetListItem) => void
   onPurge: (item: AssetListItem) => Promise<void>
 }) {
+  const { locale } = useLocale()
   const t = useTranslations('workspace.lifecycle')
   const content = getModeContent(t)[mode]
   const lifecycleDate = getLifecycleDate(item, mode)
@@ -253,7 +254,7 @@ function LifecycleAssetItem({
                 )}
               >
                 <Clock3 className="size-3" />
-                {t(content.lifecycleLabel)} {formatAssetRelativeTime(secondaryTime)}
+                {t(content.lifecycleLabel)} {formatAssetRelativeTime(secondaryTime, locale)}
               </span>
             </div>
 
@@ -271,7 +272,7 @@ function LifecycleAssetItem({
             </p>
 
             <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-on-surface-variant/75">
-              <span>{t('created')} {formatAssetRelativeTime(item.createdAt)}</span>
+              <span>{t('created')} {formatAssetRelativeTime(item.createdAt, locale)}</span>
               {item.url ? (
                 <>
                   <span className="size-1 rounded-full bg-border/40" aria-hidden="true" />

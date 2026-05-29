@@ -20,7 +20,7 @@ import {
   workspacePillClassName,
   WorkspacePageHeader,
 } from '@/components/workspace/workspace-view-primitives'
-import { useTranslations } from '@/hooks/use-locale'
+import { useLocale, useTranslations } from '@/hooks/use-locale'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useNoteInlineEdit } from '@/hooks/workspace/use-note-inline-edit'
 import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
@@ -110,6 +110,7 @@ function NoteCard({
   onArchive: (note: AssetListItem) => void
   onMoveToTrash: (note: AssetListItem) => void
 }) {
+  const { locale } = useLocale()
   const t = useTranslations('workspace.notes')
   const contentText = note.content ?? note.originalText ?? t('noBody')
   const updatedAt = note.updatedAt ?? note.createdAt
@@ -189,7 +190,7 @@ function NoteCard({
 
           {!isEditing ? (
             <div className={`${workspaceMetaTextClassName} mt-4 text-on-surface-variant`}>
-              <span>{t('updated')} {formatAssetRelativeTime(updatedAt)}</span>
+              <span>{t('updated')} {formatAssetRelativeTime(updatedAt, locale)}</span>
             </div>
           ) : null}
         </div>

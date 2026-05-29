@@ -13,7 +13,7 @@ import {
   workspacePillClassName,
 } from '@/components/workspace/workspace-view-primitives'
 import { assetTypePresentation, getAssetLocaleKey } from '@/config/ui/asset-presentation'
-import { useTranslations } from '@/hooks/use-locale'
+import { useLocale, useTranslations } from '@/hooks/use-locale'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useTodoCompletion } from '@/hooks/workspace/use-todo-completion'
 import { formatAssetRelativeTime } from '@/shared/assets/asset-time-display'
@@ -53,12 +53,13 @@ function ActionableAssetItem({
   onArchive: (asset: AssetListItem) => void
   onMoveToTrash: (asset: AssetListItem) => void
 }) {
+  const { locale } = useLocale()
   const tCommon = useTranslations('common')
   const tTodos = useTranslations('workspace.todos')
   const presentation = assetTypePresentation[asset.type]
   const Icon = presentation.icon
   const supportingText = getAssetSupportingText(asset)
-  const timeText = asset.timeText || formatAssetRelativeTime(asset.createdAt)
+  const timeText = asset.timeText || formatAssetRelativeTime(asset.createdAt, locale)
 
   return (
     <div
@@ -115,7 +116,7 @@ function ActionableAssetItem({
             </div>
 
             <span className={`${workspaceMetaTextClassName} hidden shrink-0 sm:inline`}>
-              {formatAbsoluteTime(asset.createdAt)}
+              {formatAbsoluteTime(asset.createdAt, undefined, locale)}
             </span>
           </div>
 

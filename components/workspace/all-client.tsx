@@ -19,7 +19,7 @@ import {
 } from '@/components/workspace/workspace-view-primitives'
 import { assetTypePresentation, getAssetLocaleKey } from '@/config/ui/asset-presentation'
 import { filterTabs, emptyFilterMessages } from '@/config/workspace/filters'
-import { useTranslations } from '@/hooks/use-locale'
+import { useLocale, useTranslations } from '@/hooks/use-locale'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useWorkspaceAssetsPage } from '@/hooks/workspace/use-workspace-assets-page'
 import {
@@ -108,9 +108,10 @@ function AssetItem({
   onArchive: (asset: AssetListItem) => void
   onMoveToTrash: (asset: AssetListItem) => void
 }) {
+  const { locale } = useLocale()
   const presentation = assetTypePresentation[asset.type]
   const Icon = presentation.icon
-  const createdTimeText = formatAssetRelativeTime(asset.createdAt)
+  const createdTimeText = formatAssetRelativeTime(asset.createdAt, locale)
   const tA = useTranslations('workspace.all')
   const actions = [
     { label: tA('edit'), onClick: () => onEdit(asset) },

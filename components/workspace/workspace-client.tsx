@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { assetTypePresentation, getAssetLocaleKey } from '@/config/ui/asset-presentation'
-import { useTranslations } from '@/hooks/use-locale'
+import { useLocale, useTranslations } from '@/hooks/use-locale'
 import { useWorkspaceStream } from '@/hooks/workspace/use-workspace-stream'
 import { formatAbsoluteTime } from '@/shared/time/formatters'
 
@@ -70,6 +70,7 @@ export function WorkspaceClient({
 }: {
   recentAssets: AssetListItem[]
 }) {
+  const { locale } = useLocale()
   const t = useTranslations('workspace.client')
   const tRun = useTranslations('workspace.runPanel')
   const tCommon = useTranslations('common')
@@ -240,7 +241,7 @@ export function WorkspaceClient({
                 {pendingRun.interaction.message}
               </p>
               <p className="text-xs text-on-surface-variant/80">
-                {tRun('updated')}  {formatAbsoluteTime(pendingRun.updatedAt)}
+                {tRun('updated')}  {formatAbsoluteTime(pendingRun.updatedAt, undefined, locale)}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -327,7 +328,7 @@ export function WorkspaceClient({
                     iconColor={presentation.iconColor}
                     title={asset.title}
                     excerpt={asset.excerpt}
-                    time={formatAbsoluteTime(asset.createdAt)}
+                    time={formatAbsoluteTime(asset.createdAt, undefined, locale)}
                     type={tCommon(`assets.${getAssetLocaleKey(asset.type)}`)}
                     timeText={asset.timeText}
                     dueAt={asset.dueAt}

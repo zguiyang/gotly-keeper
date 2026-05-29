@@ -1,6 +1,6 @@
 'use client'
 
-import { enUS } from 'date-fns/locale'
+import { enUS, zhCN } from 'date-fns/locale'
 import { ListTodo, Square, SquareCheck } from 'lucide-react'
 import { useMemo, useState, type ComponentProps } from 'react'
 
@@ -22,7 +22,7 @@ import {
   workspacePanelSurfaceClassName,
   workspaceSurfaceClassName,
 } from '@/components/workspace/workspace-view-primitives'
-import { useTranslations } from '@/hooks/use-locale'
+import { useLocale, useTranslations } from '@/hooks/use-locale'
 import { useAssetMutations } from '@/hooks/workspace/use-asset-mutations'
 import { useTodoCompletion } from '@/hooks/workspace/use-todo-completion'
 import { cn } from '@/lib/utils'
@@ -66,9 +66,9 @@ function getTodoDate(item: AssetListItem) {
   return dueAt
 }
 
-function getSelectedDateLabel(date: Date, today: Date, todayLabel: string) {
+function getSelectedDateLabel(date: Date, today: Date, todayLabel: string, locale?: string) {
   if (isSameDay(date, today)) return todayLabel
-  return formatDate(date, 'MMM d, dddd')
+  return formatDate(date, 'MMM d, dddd', locale)
 }
 
 function isOverdueTodo(item: AssetListItem, todayDate: string) {
@@ -115,8 +115,9 @@ function TodoDateHeader({
   promotedUnscheduled: boolean
   todayDate: Date
 }) {
+  const { locale } = useLocale()
   const t = useTranslations('workspace.todos')
-  const label = getSelectedDateLabel(selectedDate, todayDate, t('today'))
+  const label = getSelectedDateLabel(selectedDate, todayDate, t('today'), locale)
 
   return (
     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -346,6 +347,7 @@ function TodoCalendarPanel({
   onMonthChange: (month: Date) => void
   todayDate: Date
 }) {
+  const { locale } = useLocale()
   const t = useTranslations('workspace.todos')
   function DayButtonWithTodoMarker(props: ComponentProps<typeof CalendarDayButton>) {
     const hasTodo = scheduledDateKeys.has(getDateKey(props.day.date))
@@ -375,7 +377,7 @@ function TodoCalendarPanel({
           if (date) onSelectDate(date)
         }}
         onMonthChange={onMonthChange}
-        locale={enUS}
+        locale={locale === 'zh-CN' ? zhCN : enUS}
         className="mx-auto w-full max-w-[20rem] bg-transparent p-0 [--cell-size:--spacing(9)] sm:[--cell-size:--spacing(10)] xl:[--cell-size:--spacing(8)]"
         components={{ DayButton: DayButtonWithTodoMarker }}
       />

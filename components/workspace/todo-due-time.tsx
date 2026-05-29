@@ -3,6 +3,7 @@
 import { CalendarClock, Clock } from 'lucide-react'
 
 import { getTodoDueDisplay, type TodoDueInput } from '@/shared/assets/todo-due-display'
+import { useLocale } from '@/hooks/use-locale'
 
 type TodoDueTimeProps = {
   item: TodoDueInput
@@ -16,7 +17,8 @@ const icons = {
 } as const
 
 export function TodoDueTime({ item, className }: TodoDueTimeProps) {
-  const display = getTodoDueDisplay(item)
+  const { locale } = useLocale()
+  const display = getTodoDueDisplay(item, undefined, locale)
   const Icon = icons[display.kind]
 
   return (
