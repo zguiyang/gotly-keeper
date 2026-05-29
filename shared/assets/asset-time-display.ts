@@ -1,4 +1,4 @@
-import { dayjs } from '../time/dayjs'
+import { dayjs, formatShortMonthDay } from '../time/dayjs'
 
 import { type AssetListItem } from './assets.types'
 
@@ -17,21 +17,13 @@ export function getAssetDateGroup(date: Date, now?: Date): AssetDateGroup {
 }
 
 export function formatAssetRelativeTime(date: Date, locale?: string, now?: Date): string {
-  const current = now ? dayjs(now) : dayjs()
+  const normalizedLocale = locale?.toLowerCase() ?? 'en'
   const d = dayjs(date)
-
-  const days = current.diff(d, 'day')
-  if (days > 7) {
-    return d.locale(locale ?? 'en').format('MMM D')
+  const base = now ? dayjs(now) : dayjs()
+  if (Math.abs(base.diff(d, 'day')) > 7) {
+    return formatShortMonthDay(d, normalizedLocale)
   }
-  if (days > 1) return `${days}d ago`
-  if (days === 1) return 'yesterday'
-  const hours = current.diff(d, 'hour')
-  if (hours > 1) return `${hours}h ago`
-  if (hours === 1) return '1h ago'
-  const minutes = current.diff(d, 'minute')
-  if (minutes > 1) return `${minutes}min ago`
-  return 'just now'
+  return d.locale(normalizedLocale).from(base)
 }
 
 export type TodoGroupKey = 'today' | 'thisWeek' | 'noDate' | 'completed'

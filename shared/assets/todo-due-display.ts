@@ -1,4 +1,4 @@
-import { ASIA_SHANGHAI_TIME_ZONE, dayjs } from '@/shared/time/dayjs'
+import { ASIA_SHANGHAI_TIME_ZONE, dayjs, formatShortDateTime } from '@/shared/time/dayjs'
 
 export type TodoDueDisplayKind = 'scheduled' | 'time_recorded' | 'unscheduled'
 
@@ -19,39 +19,41 @@ function parseDueAt(dueAt: TodoDueInput['dueAt']) {
   return parsed.isValid() ? parsed.tz(ASIA_SHANGHAI_TIME_ZONE) : null
 }
 
-function formatDueLabel(dueAt: dayjs.Dayjs, now: Date) {
+function formatDueLabel(dueAt: dayjs.Dayjs, now: Date, locale?: string) {
+  const isZh = locale === 'zh-cn'
   const current = dayjs(now).tz(ASIA_SHANGHAI_TIME_ZONE)
 
   if (dueAt.isSame(current, 'day')) {
-    return `today ${dueAt.format('HH:mm')}`
+    return isZh ? `今天 ${dueAt.format('HH:mm')}` : `today ${dueAt.format('HH:mm')}`
   }
 
   if (dueAt.isSame(current, 'year')) {
-    return dueAt.format('MMM D HH:mm')
+    return formatShortDateTime(dueAt, locale)
   }
 
-  return dueAt.format('YYYY MMM D HH:mm')
+  return dueAt.locale(locale ?? 'en').format(isZh ? 'YYYY年M月D日 HH:mm' : 'YYYY MMM D HH:mm')
 }
 
-export function getTodoDueDisplay(input: TodoDueInput, now: Date = new Date()): TodoDueDisplay {
+export function getTodoDueDisplay(input: TodoDueInput, now: Date = new Date(), locale?: string): TodoDueDisplay {
+  const isZh = locale === 'zh-cn'
   const dueAt = parseDueAt(input.dueAt)
 
   if (dueAt) {
     return {
       kind: 'scheduled',
-      label: formatDueLabel(dueAt, now),
+      label: formatDueLabel(dueAt, now, locale),
     }
   }
 
   if (input.timeText) {
     return {
       kind: 'time_recorded',
-      label: `Scheduled: ${input.timeText}`,
+      label: isZh ? `已安排: ${input.timeText}` : `Scheduled: ${input.timeText}`,
     }
   }
 
   return {
     kind: 'unscheduled',
-    label: 'No due date',
+    label: isZh ? '无到期日' : 'No due date',
   }
 }
