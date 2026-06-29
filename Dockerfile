@@ -16,11 +16,38 @@ COPY . .
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package.json ./package.json
 COPY --from=deps /app/pnpm-lock.yaml ./pnpm-lock.yaml
+ARG DATABASE_URL
+ARG REDIS_URL
+ARG REDIS_KEY_PREFIX
+ARG BETTER_AUTH_SECRET
+ARG BETTER_AUTH_URL
+ARG AI_GATEWAY_API_KEY
+ARG AI_GATEWAY_URL
+ARG AI_MODEL_NAME
+ARG AI_EMBEDDING_MODEL_NAME
+ARG AI_EMBEDDING_DIMENSIONS
+ARG RESEND_KEY
+ARG GITHUB_CLIENT_ID
+ARG GITHUB_CLIENT_SECRET
 RUN HUSKY=0 pnpm install --frozen-lockfile || true \
   && pnpm approve-builds --all \
   && HUSKY=0 pnpm install --frozen-lockfile
-RUN --mount=type=secret,id=app_env,target=/run/secrets/app_env \
-  sh -ac 'set -a && . /run/secrets/app_env && set +a && pnpm build && pnpm worker:build'
+RUN --mount=type=secret,id=app_env,required=false,target=/run/secrets/app_env \
+  sh -ac 'if [ -f /run/secrets/app_env ]; then set -a && . /run/secrets/app_env && set +a; fi; \
+    export DATABASE_URL="$DATABASE_URL" \
+      REDIS_URL="$REDIS_URL" \
+      REDIS_KEY_PREFIX="$REDIS_KEY_PREFIX" \
+      BETTER_AUTH_SECRET="$BETTER_AUTH_SECRET" \
+      BETTER_AUTH_URL="$BETTER_AUTH_URL" \
+      AI_GATEWAY_API_KEY="$AI_GATEWAY_API_KEY" \
+      AI_GATEWAY_URL="$AI_GATEWAY_URL" \
+      AI_MODEL_NAME="$AI_MODEL_NAME" \
+      AI_EMBEDDING_MODEL_NAME="$AI_EMBEDDING_MODEL_NAME" \
+      AI_EMBEDDING_DIMENSIONS="$AI_EMBEDDING_DIMENSIONS" \
+      RESEND_KEY="$RESEND_KEY" \
+      GITHUB_CLIENT_ID="$GITHUB_CLIENT_ID" \
+      GITHUB_CLIENT_SECRET="$GITHUB_CLIENT_SECRET"; \
+    pnpm build && pnpm worker:build'
 
 FROM base AS worker-migrate-deps
 COPY .npmrc pnpm-lock.yaml pnpm-workspace.yaml package.json ./

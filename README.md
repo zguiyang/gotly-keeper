@@ -282,72 +282,102 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Docker Deployment
 
-The project provides a multi-stage `Dockerfile` that produces two runtime images:
+The project ships with one shared multi-stage `Dockerfile` and builds two runtime targets from the same source tree:
 
 | Stage | Purpose |
 |-------|---------|
 | `web-runner` | Next.js production server (port 3000) |
 | `worker-runner` | Background worker (URL metadata fetch) |
 
-#### 1. Prepare environment
+#### Prerequisites
 
-Create a `.env` file with your production settings (see `.env.example` for all variables).
+- Docker Engine 24+ with Docker Compose v2
+- PostgreSQL 16+ with the `vector` extension enabled
+- Redis 7+
+- A public application URL for auth callbacks and session cookies
 
-The `.env` file is used at build time via a Docker secret — no env files are baked into the image:
+For production, prefer:
+
+- a dedicated PostgreSQL database for this app
+- a dedicated Redis instance, or at minimum a unique `REDIS_KEY_PREFIX` when Redis is shared across apps
+
+#### Required environment variables
+
+Create `.env.production` from `.env.example` and fill in your production values.
+
+The same variables must be available at build time and runtime. This project reads server environment during `next build`, so missing build-time variables can break the image build.
+
+| Variable | Required | Notes |
+|----------|----------|-------|
+| `DATABASE_URL` | Yes | Example: `postgres://user:password@db-host:5432/gotly_keeper` |
+| `REDIS_URL` | Yes | Example: `redis://:password@redis-host:6379/0` or `rediss://...` |
+| `REDIS_KEY_PREFIX` | Recommended when Redis is shared | Example: `gotly-keeper` |
+| `BETTER_AUTH_SECRET` | Yes | Minimum 32 characters |
+| `BETTER_AUTH_URL` | Yes | Public base URL, e.g. `https://app.example.com` |
+| `AI_GATEWAY_API_KEY` | Usually yes | Depends on your AI gateway setup |
+| `AI_GATEWAY_URL` | Usually yes | AI gateway base URL |
+| `AI_MODEL_NAME` | Usually yes | Main generation model |
+| `AI_EMBEDDING_MODEL_NAME` | Usually yes | Embedding model |
+| `AI_EMBEDDING_DIMENSIONS` | Usually yes | Must match your embedding model |
+| `RESEND_KEY` | No | Required only if email features are enabled |
+| `GITHUB_CLIENT_ID` | No | Required only for GitHub OAuth |
+| `GITHUB_CLIENT_SECRET` | No | Required only for GitHub OAuth |
+
+#### Build strategy
+
+The default Docker flow uses a BuildKit secret so your env file is not copied into the image:
 
 ```bash
-docker build --secret id=app_env,src=.env -t gotly-keeper:latest .
+docker build --target web-runner --secret id=app_env,src=.env.production -t gotly-keeper-web:latest .
+docker build --target worker-runner --secret id=app_env,src=.env.production -t gotly-keeper-worker:latest .
 ```
 
-#### 2. Infrastructure
+The `Dockerfile` also accepts build-time variables through Docker build args, which is useful for source-based deployment platforms. They are only exported for the build step and are not kept as final runtime `ENV` instructions in the image.
 
-You need PostgreSQL 16 (with pgvector) and Redis 7. Use the provided `docker-compose.yml` for infrastructure only:
+#### Generic source-based deployment with Docker Compose
+
+The included `docker-compose.prod.yml` builds both services directly from the repository and assumes PostgreSQL and Redis are provided externally.
+
+1. Create the production env file:
+
+```bash
+cp .env.example .env.production
+```
+
+2. Edit `.env.production` so it points at your production PostgreSQL and Redis.
+
+3. Build both images from source:
+
+```bash
+docker compose -f docker-compose.prod.yml build
+```
+
+4. Run database migrations before the first rollout and before releases that add new migrations:
+
+```bash
+docker compose -f docker-compose.prod.yml run --rm worker ./node_modules/.bin/drizzle-kit migrate
+```
+
+5. Start the app services:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+6. Inspect logs when needed:
+
+```bash
+docker compose -f docker-compose.prod.yml logs -f web
+docker compose -f docker-compose.prod.yml logs -f worker
+```
+
+#### Local infrastructure-only compose
+
+For local development only, `docker-compose.yml` still starts PostgreSQL and Redis on your machine:
 
 ```bash
 docker compose up -d postgres redis
 ```
-
-#### 3. Build & run
-
-Example `docker-compose.prod.yml` for production:
-
-```yaml
-services:
-  web:
-    image: gotly-keeper:latest
-    target: web-runner
-    ports:
-      - "3000:3000"
-    environment:
-      NODE_ENV: production
-    env_file: .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  worker:
-    image: gotly-keeper:latest
-    target: worker-runner
-    environment:
-      NODE_ENV: production
-    env_file: .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-```
-
-#### 4. Database migrations
-
-```bash
-# Run migrations against your production database
-pnpm db:migrate
-```
-
-Or run them inside the worker container with a one-off command.
 
 ---
 

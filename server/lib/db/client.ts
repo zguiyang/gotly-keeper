@@ -25,7 +25,7 @@ const REQUIRED_LIFECYCLE_COLUMNS = [
 ] as const
 
 function createPool() {
-  const pool = new Pool(serverEnv.database)
+  const pool = new Pool({ connectionString: serverEnv.database.url })
 
   console.info(chalk.green('[db] Postgres pool initialized'))
 

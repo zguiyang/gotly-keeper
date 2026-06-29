@@ -271,72 +271,102 @@ pnpm dev
 
 ### Docker 部署
 
-项目提供多阶段 `Dockerfile`，构建两个运行时镜像：
+项目提供一个共享的多阶段 `Dockerfile`，从同一份源码构建两个运行目标：
 
 | 阶段 | 用途 |
 |------|------|
 | `web-runner` | Next.js 生产服务器（端口 3000） |
 | `worker-runner` | 后台工作器（URL 元信息抓取） |
 
-#### 1. 准备环境变量
+#### 前置条件
 
-创建 `.env` 文件，参考 `.env.example` 填写生产环境配置。
+- Docker Engine 24+ 与 Docker Compose v2
+- PostgreSQL 16+，并启用 `vector` 扩展
+- Redis 7+
+- 一个可公开访问的应用地址，用于认证回调与 Cookie
 
-构建时通过 Docker secret 注入环境变量，不会写入镜像：
+生产环境建议：
+
+- 为本项目分配独立的 PostgreSQL database
+- 如果多个项目共用一个 Redis，至少要为本项目设置唯一的 `REDIS_KEY_PREFIX`
+
+#### 必填环境变量
+
+基于 `.env.example` 创建 `.env.production`，再填入生产环境配置。
+
+这些变量在构建期和运行期都需要可用。因为项目会在 `next build` 阶段读取服务端环境变量，缺少构建期变量会直接导致镜像构建失败。
+
+| 变量 | 是否必填 | 说明 |
+|------|----------|------|
+| `DATABASE_URL` | 是 | 例如 `postgres://user:password@db-host:5432/gotly_keeper` |
+| `REDIS_URL` | 是 | 例如 `redis://:password@redis-host:6379/0` 或 `rediss://...` |
+| `REDIS_KEY_PREFIX` | 共用 Redis 时建议填写 | 例如 `gotly-keeper` |
+| `BETTER_AUTH_SECRET` | 是 | 至少 32 个字符 |
+| `BETTER_AUTH_URL` | 是 | 对外访问地址，例如 `https://app.example.com` |
+| `AI_GATEWAY_API_KEY` | 通常需要 | 取决于你的 AI 网关配置 |
+| `AI_GATEWAY_URL` | 通常需要 | AI 网关地址 |
+| `AI_MODEL_NAME` | 通常需要 | 主生成模型名 |
+| `AI_EMBEDDING_MODEL_NAME` | 通常需要 | 向量模型名 |
+| `AI_EMBEDDING_DIMENSIONS` | 通常需要 | 必须和向量模型维度一致 |
+| `RESEND_KEY` | 否 | 仅启用邮件能力时需要 |
+| `GITHUB_CLIENT_ID` | 否 | 仅启用 GitHub OAuth 时需要 |
+| `GITHUB_CLIENT_SECRET` | 否 | 仅启用 GitHub OAuth 时需要 |
+
+#### 构建方式
+
+默认 Docker 流程通过 BuildKit secret 注入环境变量，避免把 env 文件写进镜像：
 
 ```bash
-docker build --secret id=app_env,src=.env -t gotly-keeper:latest .
+docker build --target web-runner --secret id=app_env,src=.env.production -t gotly-keeper-web:latest .
+docker build --target worker-runner --secret id=app_env,src=.env.production -t gotly-keeper-worker:latest .
 ```
 
-#### 2. 基础设施
+这个 `Dockerfile` 也支持通过 Docker build args 在构建阶段注入配置，适合源码直连的部署平台；这些值只在构建命令执行时导出，不会以最终镜像的运行时 `ENV` 指令形式保留。
 
-需要 PostgreSQL 16（含 pgvector）和 Redis 7。使用 `docker-compose.yml` 启动基础服务：
+#### 通用源码部署方式（Docker Compose）
+
+仓库自带的 `docker-compose.prod.yml` 会直接从源码构建 `web` 和 `worker` 两个服务，并假设 PostgreSQL 与 Redis 由外部提供。
+
+1. 创建生产环境变量文件：
+
+```bash
+cp .env.example .env.production
+```
+
+2. 编辑 `.env.production`，让它指向你的生产 PostgreSQL 和 Redis。
+
+3. 从源码构建两个镜像：
+
+```bash
+docker compose -f docker-compose.prod.yml build
+```
+
+4. 首次上线前，以及每次包含新 migration 的发布前，先执行数据库迁移：
+
+```bash
+docker compose -f docker-compose.prod.yml run --rm worker ./node_modules/.bin/drizzle-kit migrate
+```
+
+5. 启动应用服务：
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+6. 需要排查时查看日志：
+
+```bash
+docker compose -f docker-compose.prod.yml logs -f web
+docker compose -f docker-compose.prod.yml logs -f worker
+```
+
+#### 本地开发基础设施
+
+仅用于本地开发时，`docker-compose.yml` 仍然可以在本机启动 PostgreSQL 和 Redis：
 
 ```bash
 docker compose up -d postgres redis
 ```
-
-#### 3. 构建与运行
-
-生产环境 `docker-compose.prod.yml` 示例：
-
-```yaml
-services:
-  web:
-    image: gotly-keeper:latest
-    target: web-runner
-    ports:
-      - "3000:3000"
-    environment:
-      NODE_ENV: production
-    env_file: .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  worker:
-    image: gotly-keeper:latest
-    target: worker-runner
-    environment:
-      NODE_ENV: production
-    env_file: .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-```
-
-#### 4. 数据库迁移
-
-```bash
-# 对生产数据库执行迁移
-pnpm db:migrate
-```
-
-或在 worker 容器中执行一次性迁移命令。
 
 ---
 

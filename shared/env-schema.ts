@@ -9,17 +9,9 @@ const optionalNonEmptyString = z
   .transform((value) => (value ? value : undefined))
 
 export const serverOnlyEnvSchema = z.object({
-  POSTGRES_HOST: z.string().min(1, 'POSTGRES_HOST is required'),
-  POSTGRES_PORT: z.coerce.number().int().positive('POSTGRES_PORT must be a positive integer'),
-  POSTGRES_USER: z.string().min(1, 'POSTGRES_USER is required'),
-  POSTGRES_PASSWORD: z.string(),
-  POSTGRES_DATABASE: z.string().min(1, 'POSTGRES_DATABASE is required'),
-
-  REDIS_HOST: z.string().min(1, 'REDIS_HOST is required'),
-  REDIS_PORT: z.coerce.number().int().positive('REDIS_PORT must be a positive integer'),
-  REDIS_DB: z.coerce.number().int().nonnegative('REDIS_DB must be zero or greater').default(0),
-  REDIS_USERNAME: optionalNonEmptyString,
-  REDIS_PASSWORD: optionalNonEmptyString,
+  DATABASE_URL: z.string().url('DATABASE_URL must be a valid URL'),
+  REDIS_URL: z.string().url('REDIS_URL must be a valid URL'),
+  REDIS_KEY_PREFIX: optionalNonEmptyString,
 
   BETTER_AUTH_SECRET: z.string().min(32, 'BETTER_AUTH_SECRET must be at least 32 characters'),
   BETTER_AUTH_URL: z.string().url('BETTER_AUTH_URL must be a valid URL'),
