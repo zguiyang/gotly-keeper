@@ -189,12 +189,23 @@ cp .env.example .env
 
 | 变量 | 说明 |
 |------|------|
+| `DATABASE_URL` | PostgreSQL 连接 URL |
+| `REDIS_URL` | Redis 连接 URL |
 | `BETTER_AUTH_SECRET` | 至少 32 位随机字符 |
+| `BETTER_AUTH_URL` | 应用访问地址，例如 `http://localhost:3000` |
+| `RESEND_KEY` | 找回密码邮件发送必填 |
 | `AI_GATEWAY_API_KEY` | LLM API 密钥 |
 | `AI_GATEWAY_URL` | AI 网关地址 |
 | `AI_MODEL_NAME` | LLM 模型（如 `qwen3-max`） |
-| `AI_EMBEDDING_MODEL_NAME` | 嵌入向量模型 |
-| `AI_EMBEDDING_DIMENSIONS` | 嵌入向量维度 |
+| `AI_EMBEDDING_MODEL_NAME` | 用于语义搜索的嵌入向量模型 |
+| `AI_EMBEDDING_DIMENSIONS` | 嵌入向量维度，当前 schema 必须填写 `1024` |
+
+这些变量都属于完整功能运行所需的基础配置。
+如果缺少嵌入模型配置，或维度与 schema 不一致，语义检索和 embedding 回填都会失效；
+如果缺少 `RESEND_KEY`，找回密码邮件无法工作。
+
+`GITHUB_CLIENT_ID` 和 `GITHUB_CLIENT_SECRET` 属于可选项。
+如果不填写，前端登录/注册页会自动隐藏 GitHub 登录按钮。
 
 ### 3. 安装与初始化
 
@@ -303,14 +314,14 @@ pnpm dev
 | `REDIS_KEY_PREFIX` | 共用 Redis 时建议填写 | 例如 `gotly-keeper` |
 | `BETTER_AUTH_SECRET` | 是 | 至少 32 个字符 |
 | `BETTER_AUTH_URL` | 是 | 对外访问地址，例如 `https://app.example.com` |
-| `AI_GATEWAY_API_KEY` | 通常需要 | 取决于你的 AI 网关配置 |
-| `AI_GATEWAY_URL` | 通常需要 | AI 网关地址 |
-| `AI_MODEL_NAME` | 通常需要 | 主生成模型名 |
-| `AI_EMBEDDING_MODEL_NAME` | 通常需要 | 向量模型名 |
-| `AI_EMBEDDING_DIMENSIONS` | 通常需要 | 必须和向量模型维度一致 |
-| `RESEND_KEY` | 否 | 仅启用邮件能力时需要 |
-| `GITHUB_CLIENT_ID` | 否 | 仅启用 GitHub OAuth 时需要 |
-| `GITHUB_CLIENT_SECRET` | 否 | 仅启用 GitHub OAuth 时需要 |
+| `RESEND_KEY` | 是 | 找回密码邮件发送必填 |
+| `AI_GATEWAY_API_KEY` | 是 | AI 生成与检索能力必填 |
+| `AI_GATEWAY_URL` | 是 | AI 网关地址 |
+| `AI_MODEL_NAME` | 是 | 主生成模型名 |
+| `AI_EMBEDDING_MODEL_NAME` | 是 | 用于语义搜索的向量模型名 |
+| `AI_EMBEDDING_DIMENSIONS` | 是 | 当前必须填写 `1024`，以匹配 pgvector schema |
+| `GITHUB_CLIENT_ID` | 否 | 可选 GitHub OAuth，不填则前端隐藏 GitHub 登录 |
+| `GITHUB_CLIENT_SECRET` | 否 | 可选 GitHub OAuth，不填则前端隐藏 GitHub 登录 |
 
 #### 构建方式
 

@@ -198,12 +198,23 @@ Edit `.env` with your settings. At minimum:
 
 | Variable | Description |
 |----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection URL |
+| `REDIS_URL` | Redis connection URL |
 | `BETTER_AUTH_SECRET` | At least 32 random characters |
+| `BETTER_AUTH_URL` | App base URL, e.g. `http://localhost:3000` |
+| `RESEND_KEY` | Required for password reset emails |
 | `AI_GATEWAY_API_KEY` | Your LLM API key |
 | `AI_GATEWAY_URL` | AI gateway endpoint |
 | `AI_MODEL_NAME` | LLM model (e.g. `qwen3-max`) |
-| `AI_EMBEDDING_MODEL_NAME` | Embedding model |
-| `AI_EMBEDDING_DIMENSIONS` | Embedding vector dimensions |
+| `AI_EMBEDDING_MODEL_NAME` | Embedding model used for semantic search |
+| `AI_EMBEDDING_DIMENSIONS` | Embedding vector dimensions. Must be `1024` for the current schema |
+
+These variables are required for full product functionality. If the embedding
+settings are missing or use the wrong dimensions, semantic retrieval and embedding
+backfill cannot run correctly. If `RESEND_KEY` is missing, password reset cannot work.
+
+`GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are optional. If you leave them empty,
+the GitHub sign-in buttons stay hidden on the auth pages.
 
 ### 3. Install & initialize
 
@@ -314,14 +325,14 @@ The same variables must be available at build time and runtime. This project rea
 | `REDIS_KEY_PREFIX` | Recommended when Redis is shared | Example: `gotly-keeper` |
 | `BETTER_AUTH_SECRET` | Yes | Minimum 32 characters |
 | `BETTER_AUTH_URL` | Yes | Public base URL, e.g. `https://app.example.com` |
-| `AI_GATEWAY_API_KEY` | Usually yes | Depends on your AI gateway setup |
-| `AI_GATEWAY_URL` | Usually yes | AI gateway base URL |
-| `AI_MODEL_NAME` | Usually yes | Main generation model |
-| `AI_EMBEDDING_MODEL_NAME` | Usually yes | Embedding model |
-| `AI_EMBEDDING_DIMENSIONS` | Usually yes | Must match your embedding model |
-| `RESEND_KEY` | No | Required only if email features are enabled |
-| `GITHUB_CLIENT_ID` | No | Required only for GitHub OAuth |
-| `GITHUB_CLIENT_SECRET` | No | Required only for GitHub OAuth |
+| `RESEND_KEY` | Yes | Required for password reset email delivery |
+| `AI_GATEWAY_API_KEY` | Yes | Required for AI generation and retrieval |
+| `AI_GATEWAY_URL` | Yes | AI gateway base URL |
+| `AI_MODEL_NAME` | Yes | Main generation model |
+| `AI_EMBEDDING_MODEL_NAME` | Yes | Embedding model used for semantic search |
+| `AI_EMBEDDING_DIMENSIONS` | Yes | Must be `1024` to match the current pgvector schema |
+| `GITHUB_CLIENT_ID` | No | Optional GitHub OAuth. Leave empty to hide GitHub sign-in |
+| `GITHUB_CLIENT_SECRET` | No | Optional GitHub OAuth. Leave empty to hide GitHub sign-in |
 
 #### Build strategy
 
