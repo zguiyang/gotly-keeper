@@ -5,6 +5,12 @@ const testEnvDefaults: Record<string, string> = {
   REDIS_URL: 'redis://127.0.0.1:6379/0',
   BETTER_AUTH_SECRET: 'test-secret-test-secret-test-secret',
   BETTER_AUTH_URL: 'http://localhost:3000',
+  AI_GATEWAY_API_KEY: 'test-ai-gateway-key',
+  AI_GATEWAY_URL: 'https://example.com/v1',
+  AI_MODEL_NAME: 'test-model',
+  AI_EMBEDDING_MODEL_NAME: 'test-embedding-model',
+  AI_EMBEDDING_DIMENSIONS: '1024',
+  RESEND_KEY: 'test-resend-key',
 }
 
 for (const [key, value] of Object.entries(testEnvDefaults)) {

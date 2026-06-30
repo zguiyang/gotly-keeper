@@ -7,9 +7,11 @@ import { SignInWithGithubButton } from "@/components/auth/sign-in-with-github-bu
 import { SignUpForm } from "@/components/auth/sign-up-form";
 import { getServerTranslation } from "@/hooks/use-locale.server";
 import { cn } from "@/lib/utils";
+import { isGithubAuthEnabled } from "@/server/modules/auth";
 
 export default async function SignUpPage() {
   const t = await getServerTranslation("auth.signUp");
+  const githubAuthEnabled = isGithubAuthEnabled()
 
   return (
     <AuthPageScaffold
@@ -35,9 +37,12 @@ export default async function SignUpPage() {
           </p>
         </div>
 
-        <AuthDivider className="my-6" text={t("divider")} />
-
-        <SignInWithGithubButton label={t("githubSignUp")} pendingLabel={t("submittingLabel")} />
+        {githubAuthEnabled ? (
+          <>
+            <AuthDivider className="my-6" text={t("divider")} />
+            <SignInWithGithubButton label={t("githubSignUp")} pendingLabel={t("submittingLabel")} />
+          </>
+        ) : null}
       </AuthCard>
     </AuthPageScaffold>
   );

@@ -7,9 +7,11 @@ import { SignInForm } from "@/components/auth/sign-in-form";
 import { SignInWithGithubButton } from "@/components/auth/sign-in-with-github-button";
 import { getServerTranslation } from "@/hooks/use-locale.server";
 import { cn } from "@/lib/utils";
+import { isGithubAuthEnabled } from "@/server/modules/auth";
 
 export default async function SignInPage() {
   const t = await getServerTranslation("auth.signIn");
+  const githubAuthEnabled = isGithubAuthEnabled()
 
   return (
     <AuthPageScaffold
@@ -23,9 +25,12 @@ export default async function SignInPage() {
 
         <SignInForm />
 
-        <AuthDivider className="my-6" text={t("divider")} />
-
-        <SignInWithGithubButton label={t("githubSignIn")} pendingLabel={t("submittingLabel")} />
+        {githubAuthEnabled ? (
+          <>
+            <AuthDivider className="my-6" text={t("divider")} />
+            <SignInWithGithubButton label={t("githubSignIn")} pendingLabel={t("submittingLabel")} />
+          </>
+        ) : null}
 
         <div className="mt-7 text-center">
           <p className={cn("text-sm text-on-surface-variant")}>

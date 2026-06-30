@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+const ASSET_EMBEDDING_DIMENSIONS = 1024
+
 export const publicEnvSchema = z.object({})
 
 const optionalNonEmptyString = z
@@ -16,16 +18,20 @@ export const serverOnlyEnvSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32, 'BETTER_AUTH_SECRET must be at least 32 characters'),
   BETTER_AUTH_URL: z.string().url('BETTER_AUTH_URL must be a valid URL'),
 
-  AI_GATEWAY_API_KEY: optionalNonEmptyString,
-  AI_GATEWAY_URL: optionalNonEmptyString.pipe(
-    z.string().url('AI_GATEWAY_URL must be a valid URL').optional()
-  ),
-  AI_MODEL_NAME: optionalNonEmptyString,
+  AI_GATEWAY_API_KEY: z.string().trim().min(1, 'AI_GATEWAY_API_KEY is required'),
+  AI_GATEWAY_URL: z.string().url('AI_GATEWAY_URL must be a valid URL'),
+  AI_MODEL_NAME: z.string().trim().min(1, 'AI_MODEL_NAME is required'),
 
-  AI_EMBEDDING_MODEL_NAME: optionalNonEmptyString,
-  AI_EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().optional(),
+  AI_EMBEDDING_MODEL_NAME: z.string().trim().min(1, 'AI_EMBEDDING_MODEL_NAME is required'),
+  AI_EMBEDDING_DIMENSIONS: z.coerce
+    .number()
+    .int()
+    .refine(
+      (value) => value === ASSET_EMBEDDING_DIMENSIONS,
+      `AI_EMBEDDING_DIMENSIONS must be ${ASSET_EMBEDDING_DIMENSIONS}`
+    ),
 
-  RESEND_KEY: optionalNonEmptyString,
+  RESEND_KEY: z.string().trim().min(1, 'RESEND_KEY is required'),
 
   GITHUB_CLIENT_ID: optionalNonEmptyString,
   GITHUB_CLIENT_SECRET: optionalNonEmptyString,
